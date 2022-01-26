@@ -39,9 +39,7 @@ def open_api_do(url: str, access_key: str, method: str, **kwargs: Any) -> Respon
     headers["X-Request-Id"] = uuid4().hex
 
     try:
-        return get_session().request(  # type: ignore[no-any-return]
-            method=method, url=url, **kwargs
-        )
+        return get_session().request(method=method, url=url, **kwargs)
     except ResponseError as error:
         response = error.response
         error_code = response.json()["code"]

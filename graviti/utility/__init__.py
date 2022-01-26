@@ -4,6 +4,7 @@
 #
 """Utility module."""
 
+from graviti.utility.lazy import LazyFactory
 from graviti.utility.request import URL_PATH_PREFIX, open_api_do
 
-__all__ = ["open_api_do", "URL_PATH_PREFIX"]
+__all__ = ["LazyFactory", "open_api_do", "URL_PATH_PREFIX"]
