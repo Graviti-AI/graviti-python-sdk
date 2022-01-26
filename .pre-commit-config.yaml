@@ -1,0 +1,149 @@
+#
+# Copyright 2021 Graviti. Licensed under MIT License.
+#
+
+---
+default_stages: [commit]
+default_language_version:
+  python: python3.8
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.9.3
+    hooks:
+      - id: isort
+        types: [python]
+        exclude: "^examples"
+        args: ["--profile=black", "-w 100"]
+      - id: isort
+        name: isort-examples
+        types: [python]
+        files: "^examples"
+        args: ["--profile=black", "-w 100", "--thirdparty=tensorbay"]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.29.1
+    hooks:
+      - id: pyupgrade
+        args: [--py36-plus]
+
+  - repo: https://github.com/ambv/black
+    rev: 21.9b0
+    hooks:
+      - id: black
+        types: [python]
+        args: ["-l 100"]
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+      - id: flake8
+        types: [python]
+        exclude: "(test_\\w*\\.py$)"
+        additional_dependencies: ["flake8-docstrings", "darglint"]
+        args:
+          [
+            "--max-line-length=100",
+            "--docstring-style=google",
+            "--docstring-convention=google",
+            "--ignore-decorators=overload",
+            "--ignore=E203,W503,D105,D107,DAR203",
+            "--per-file-ignores=docs/code/*:E402,F811 tensorbay/opendataset/*:D100",
+          ]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.910
+    hooks:
+      - id: mypy
+        types: [python]
+        exclude: "(test_\\w*\\.py$)"
+        additional_dependencies: [types-PyYAML, types-mock, types-requests, click]
+        args:
+          [
+            "--cache-dir=/tmp/mypy_cache/",
+            "--ignore-missing-imports",
+            "--warn-unreachable",
+            "--show-error-code",
+            "--strict-equality",
+            "--strict",
+          ]
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.4.1
+    hooks:
+      - id: prettier
+        types_or: [markdown, json]
+        args: ["--print-width=100", "--tab-width=4"]
+      - id: prettier
+        name: prettier-yaml
+        types: [yaml]
+        args: ["--print-width=100", "--tab-width=2"]
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.26.3
+    hooks:
+      - id: yamllint
+        types: [yaml]
+        args:
+          [
+            "--strict",
+            "--config-data",
+            "{extends: default, rules: {line-length: {max: 100}, truthy: {check-keys: false}}}",
+          ]
+
+  - repo: https://github.com/myint/rstcheck
+    rev: 3f92957478422df87bd730abde66f089cc1ee19b
+    hooks:
+      - id: rstcheck
+        types: [rst]
+        additional_dependencies: ["sphinx"]
+        args:
+          [
+            "--ignore-directives=automodule",
+            "--ignore-messages",
+            'Hyperlink target ".+?" is not referenced.',
+          ]
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.28.1
+    hooks:
+      - id: markdownlint
+        types: [markdown]
+        args: ["--config=.markdownlint.json"]
+
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: "(test_\\w*\\.py$)"
+        args:
+          [
+            "--min-public-methods=0",
+            "--good-names=i,j,k,m,n,x,y,z,w,fp",
+            "--disable=bad-continuation,cyclic-import",
+            "--generated-members=torch.*,cv2.*",
+            "--min-similarity-lines=15",
+            "--notes=FIXME,XXX",
+          ]
+
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.15.0
+    hooks:
+      - id: gitlint
+        name: gitlint
+        args: ["--msg-filename"]
+        stages: [commit-msg]
+
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.0
+    hooks:
+      - id: absolufy-imports
