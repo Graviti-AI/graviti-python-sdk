@@ -1,3 +1,7 @@
+#
+# Copyright 2022 Graviti. Licensed under MIT License.
+#
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
