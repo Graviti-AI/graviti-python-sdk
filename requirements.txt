@@ -2,4 +2,7 @@
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
 
+numpy >= 1.16.0; python_version < '3.7'
+numpy >= 1.21.0; python_version == '3.7'
+numpy >= 1.22.0; python_version >= '3.8'
 tensorbay >= 1.20.0
