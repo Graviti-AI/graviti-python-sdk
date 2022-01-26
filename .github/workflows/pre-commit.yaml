@@ -1,0 +1,63 @@
+#
+# Copyright 2022 Graviti. Licensed under MIT License.
+#
+
+---
+name: Pre-commit
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.8.0]
+        os: [ubuntu-18.04]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Set up ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6
+          bundler-cache: true
+
+      - name: Cache python ${{ matrix.python-version }}
+        uses: actions/cache@v2
+        with:
+          path: /opt/hostedtoolcache/Python/${{ matrix.python-version }}
+          key: >-
+            ${{ matrix.os }}-${{ matrix.python-version }}-pre-commit-
+            ${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements_linter.txt') }}
+
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements_linter.txt
+
+      - name: Cache linters
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit for all files
+        run: |
+          pre-commit run --all-files
+          git log --format=%B --no-merges -n 1 > commit-msg
+          pre-commit run --commit-msg-filename commit-msg --hook-stage commit-msg gitlint
+
+      - name: Run pre-commit for commit files
+        if: always()
+        run: |
+          git reset --soft HEAD~1
+          pre-commit run

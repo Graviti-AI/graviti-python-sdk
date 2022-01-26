@@ -1,0 +1,5 @@
+#
+# Copyright 2022 Graviti. Licensed under MIT License.
+#
+
+tensorbay >= 1.20.0

@@ -1,0 +1,7 @@
+#
+# Copyright 2022 Graviti. Licensed under MIT License.
+#
+
+# linter
+pre-commit
+pylint == 2.11.1
