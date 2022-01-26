@@ -1,0 +1,12 @@
+#
+# Copyright 2022 Graviti. Licensed under MIT License.
+#
+
+* @linjiX
+
+/.github/workflows/ @AChenQ
+/.pre-commit-config.yaml @AChenQ
+
+/graviti/client/ @graczhual
+/graviti/dataframe/ @AChenQ
+/graviti/schema/ @Lee-000
