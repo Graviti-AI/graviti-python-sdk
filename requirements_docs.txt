@@ -1,0 +1,6 @@
+#
+# Copyright 2022 Graviti. Licensed under MIT License.
+#
+
+furo >= 2022.1.2
+sphinx == 4.2.0
