@@ -377,7 +377,7 @@ def list_mask_urls(
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets{id}/mask/urls`.
+    """Execute the OpenAPI `GET /v1/datasets{id}/masks/urls`.
 
     Arguments:
         url: The URL of the graviti website.
