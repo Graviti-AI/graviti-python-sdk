@@ -16,11 +16,13 @@ from graviti.schema.builtin import (
     string,
     tensor,
 )
+from graviti.schema.catalog_to_schema import catalog_to_schema
 from graviti.schema.extractors import get_extractors
 
 __all__ = [
     "array",
     "bytes_",
+    "catalog_to_schema",
     "enum",
     "float32",
     "float64",
