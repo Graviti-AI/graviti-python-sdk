@@ -5,7 +5,7 @@
 
 """The implementation of the Graviti."""
 
-from graviti.dataset.manager import DatasetManager
+from graviti.manager.dataset import DatasetManager
 
 
 class Graviti:
@@ -40,16 +40,6 @@ class Graviti:
         self._dataset_manager = DatasetManager(access_key, url)
 
     @property
-    def url(self) -> str:
-        """Return the url of the graviti website.
-
-        Returns:
-            The url of the graviti website.
-
-        """
-        return self._url
-
-    @property
     def access_key(self) -> str:
         """Return the access key of the user.
 
@@ -58,6 +48,16 @@ class Graviti:
 
         """
         return self._access_key
+
+    @property
+    def url(self) -> str:
+        """Return the url of the graviti website.
+
+        Returns:
+            The url of the graviti website.
+
+        """
+        return self._url
 
     @property
     def datasets(self) -> DatasetManager:

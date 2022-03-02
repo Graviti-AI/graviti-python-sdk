@@ -11,7 +11,10 @@ from tensorbay.client.status import Status
 from tensorbay.utility.user import UserMutableMapping
 
 from graviti.dataframe.frame import DataFrame
-from graviti.dataset.manager import BranchManager, CommitManager, DraftManager, TagManager
+from graviti.manager.branch import BranchManager
+from graviti.manager.commit import CommitManager
+from graviti.manager.draft import DraftManager
+from graviti.manager.tag import TagManager
 
 
 class Dataset(UserMutableMapping[str, DataFrame]):
