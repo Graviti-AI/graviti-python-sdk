@@ -27,8 +27,6 @@ class Dataset(UserMutableMapping[str, DataFrame]):
         name: The name of the dataset, unique for a user.
         status: The version control status of the dataset.
         alias: Dataset alias.
-        is_public: Whether the dataset is public.
-        config_name: The auth storage config name.
 
     """
 
@@ -41,8 +39,6 @@ class Dataset(UserMutableMapping[str, DataFrame]):
         *,
         status: Status,
         alias: str,
-        is_public: bool,
-        config_name: str,
     ) -> None:
         pass
 

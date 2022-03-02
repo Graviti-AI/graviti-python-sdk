@@ -5,10 +5,13 @@
 
 """The implementation of the DatasetManager."""
 
-from typing import Optional
+from typing import Generator, Optional
 
 from tensorbay.client.lazy import PagingList
+from tensorbay.client.status import Status
+from tensorbay.exception import ResourceNotExistError
 
+from graviti.client.dataset import list_datasets
 from graviti.dataset.dataset import Dataset
 
 
@@ -22,7 +25,25 @@ class DatasetManager:
     """
 
     def __init__(self, access_key: str, url: str) -> None:
-        pass
+        self._access_key = access_key
+        self._url = url
+
+    def _generate(
+        self, name: Optional[str] = None, offset: int = 0, limit: int = 128
+    ) -> Generator[Dataset, None, int]:
+        response = list_datasets(self._url, self._access_key, name=name, limit=limit, offset=offset)
+
+        for item in response["datasets"]:
+            yield Dataset(
+                self._access_key,
+                self._url,
+                item["id"],
+                item["name"],
+                status=Status(item["defaultBranch"], commit_id=item["commitId"]),
+                alias=item["alias"],
+            )
+
+        return response["totalCount"]  # type: ignore[no-any-return]
 
     def create(
         self,
@@ -50,18 +71,32 @@ class DatasetManager:
         Arguments:
             name: The name of the dataset, unique for a user.
 
-        Return:
+        Returns:
             The requested :class:`~graviti.dataset.dataset.Dataset` instance.
 
+        Raises:
+            ResourceNotExistError: When the required dataset does not exist.
+
         """
+        if not name:
+            raise ResourceNotExistError(resource="dataset", identification=name)
+
+        try:
+            return next(self._generate(name))
+        except StopIteration as error:
+            raise ResourceNotExistError(resource="dataset", identification=name) from error
 
     def list(self) -> PagingList[Dataset]:
         """List Graviti datasets.
 
-        Return:
+        Returns:
             The PagingList of :class:`~graviti.dataset.dataset.Dataset` instances.
 
         """
+        return PagingList(
+            lambda offset, limit: self._generate(None, offset, limit),
+            128,
+        )
 
     def delete(self, name: str) -> None:
         """Delete a Graviti dataset with given name.
