@@ -3,7 +3,3 @@
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
 """Dataset module."""
-
-from graviti.dataset.graviti import Graviti
-
-__all__ = ["Graviti"]
