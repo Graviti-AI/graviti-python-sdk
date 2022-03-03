@@ -5,20 +5,23 @@
 
 """The implementation of the Graviti Dataset."""
 
-from typing import Optional
+from typing import Any, Dict, Iterator, KeysView, Mapping, Optional
 
 from tensorbay.client.status import Status
-from tensorbay.utility.user import UserMutableMapping
 
+# from graviti.client.catalog import get_catalog
+from graviti.client.data import list_data_details
 from graviti.client.dataset import get_dataset
+from graviti.client.segment import list_segments
 from graviti.dataframe.frame import DataFrame
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.tag import TagManager
+from graviti.utility.lazy import LazyFactory
 
 
-class Dataset(UserMutableMapping[str, DataFrame]):
+class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-attributes
     """This class defines the basic concept of the dataset on Graviti.
 
     Arguments:
@@ -30,6 +33,8 @@ class Dataset(UserMutableMapping[str, DataFrame]):
         alias: Dataset alias.
 
     """
+
+    _data: Dict[str, DataFrame]
 
     def __init__(
         self,
@@ -48,6 +53,78 @@ class Dataset(UserMutableMapping[str, DataFrame]):
         self._status = status
         self._alias = alias
         self._is_public: Optional[bool] = None
+
+    def __len__(self) -> int:
+        return self._get_data().__len__()
+
+    def __getitem__(self, key: str) -> DataFrame:
+        return self._get_data().__getitem__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        return self._get_data().__iter__()
+
+    def _init_data(self) -> None:
+        self._data = {}
+        response = list_segments(
+            self._url,
+            self._access_key,
+            self._dataset_id,
+            draft_number=self._status.draft_number,
+            commit=self._status.commit_id,
+        )
+        for sheet in response["segments"]:
+            sheet_name = sheet["name"]
+            data_details = list_data_details(
+                self._url,
+                self._access_key,
+                self._dataset_id,
+                sheet_name,
+                draft_number=self._status.draft_number,
+                commit=self._status.commit_id,
+            )
+
+            def factory_getter(
+                offset: int, limit: int, sheet_name: str = sheet_name
+            ) -> Dict[str, Any]:
+                return list_data_details(
+                    self._url,
+                    self._access_key,
+                    self._dataset_id,
+                    sheet_name,
+                    draft_number=self._status.draft_number,
+                    commit=self._status.commit_id,
+                    offset=offset,
+                    limit=limit,
+                )
+
+            factory = LazyFactory(
+                data_details["totalCount"],
+                128,
+                factory_getter,
+            )
+            # catalog = get_catalog(
+            # self._url,
+            # self._access_key,
+            # self._dataset_id,
+            # draft_number=self._status.draft_number,
+            # commit=self._status.commit_id,
+            # )
+            self._data[sheet_name] = DataFrame.from_lazy_factory(factory)
+
+    def _get_data(self) -> Dict[str, DataFrame]:
+        if not hasattr(self, "_data"):
+            self._init_data()
+
+        return self._data
+
+    def keys(self) -> KeysView[str]:
+        """Return a new view of the keys in dict.
+
+        Returns:
+            The keys in dict.
+
+        """
+        return self._get_data().keys()
 
     @property
     def access_key(self) -> str:
@@ -185,10 +262,7 @@ class Dataset(UserMutableMapping[str, DataFrame]):
 
         """
 
-    def upload(
-        self,
-        jobs: int = 1,
-    ) -> None:
+    def upload(self, jobs: int = 1) -> None:
         """Upload the local dataset to Graviti.
 
         Arguments:

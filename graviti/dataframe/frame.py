@@ -6,10 +6,11 @@
 """The implementation of the Graviti DataFrame."""
 
 
-from typing import Any, Dict, Iterable, Optional, Tuple, Union, overload
+from typing import Any, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union, overload
 
 from graviti.dataframe.column.series import Series
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
+from graviti.utility.lazy import LazyFactory
 
 
 class DataFrame:
@@ -45,6 +46,8 @@ class DataFrame:
 
     """
 
+    _T = TypeVar("_T", bound="DataFrame")
+
     def __init__(
         self,
         data: Union[Iterable[Any], Dict[Any, Any], "DataFrame", None] = None,
@@ -74,6 +77,18 @@ class DataFrame:
 
     def __len__(self) -> int:
         pass
+
+    @classmethod
+    def from_lazy_factory(cls: Type[_T], factory: LazyFactory) -> _T:
+        """Create DataFrame with lazy factory and schema.
+
+        Arguments:
+            factory: class :class:`~graviti.utility.lazy.LazyFactory` instance.
+
+        Return:
+            The loaded :class:`~graviti.dataframe.DataFrame` object.
+
+        """
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
