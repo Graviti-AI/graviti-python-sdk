@@ -31,8 +31,8 @@ class PortexNumericType(PortexType):
 
     """
 
-    minimum: Optional[float] = param("minimum", False, None)
-    maximum: Optional[float] = param("maximum", False, None)
+    minimum: Optional[float] = param(None)
+    maximum: Optional[float] = param(None)
 
     def __init__(self, minimum: Optional[float] = None, maximum: Optional[float] = None) -> None:
         self.minimum = minimum
@@ -262,7 +262,7 @@ class record(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    fields: Fields = param("fields", True)
+    fields: Fields = param()
 
     def __init__(
         self,
@@ -308,7 +308,7 @@ class enum(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    values: List[Any] = param("values", True)
+    values: List[Any] = param()
 
     def __init__(self, values: List[Any]) -> None:
         self.values = values
@@ -334,8 +334,8 @@ class array(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    items: PortexType = param("items", True)
-    length: Optional[int] = param("length", False, None)
+    items: PortexType = param()
+    length: Optional[int] = param(None)
 
     def __init__(self, items: PortexType, length: Optional[int] = None) -> None:
         self.items = items
@@ -360,8 +360,8 @@ class tensor(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    shape: Tuple[Optional[int], ...] = param("shape", True)
-    dtype: str = param("dtype", True)
+    shape: Tuple[Optional[int], ...] = param()
+    dtype: str = param()
 
     def __init__(self, shape: Iterable[Optional[int]], dtype: str) -> None:
         self.shape = tuple(shape)
