@@ -6,7 +6,8 @@
 
 
 import json
-from typing import Any, Dict, Iterable, Optional, Type, TypeVar
+from inspect import Parameter
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
 import yaml
 
@@ -44,61 +45,58 @@ class TypeRegister:
         return class_
 
 
-class Param:
+class Param(Parameter):
     """Represents a parameter of a portex type.
 
     Arguments:
-        key: The name of the parameter.
-        required: Whether the parameter is required.
+        name: The name of the parameter.
         default: The default value of the parameter.
         options: All possible values of the parameter.
-
-    Raises:
-        TypeError: A required parameter should not have default value.
+        annotation: The python type hint of the parameter.
 
     """
 
-    def __init__(
-        self, key: str, required: bool, default: Any = ..., options: Optional[Iterable[Any]] = None
-    ) -> None:
-        if required and default is not ...:
-            raise TypeError("required parameter should not have default value")
+    _empty = Parameter.empty
 
-        self.key = key
-        self.required = required
-        self.default = default
+    def __init__(
+        self,
+        name: str,
+        default: Any = _empty,
+        options: Optional[Iterable[Any]] = None,
+        *,
+        annotation: Any = _empty,
+    ) -> None:
+        super().__init__(
+            name, Parameter.POSITIONAL_OR_KEYWORD, default=default, annotation=annotation
+        )
         self.options = options
 
 
-def param(
-    key: str, required: bool, default: Any = ..., options: Optional[Iterable[Any]] = None
-) -> Any:
+def param(default: Any = Parameter.empty, options: Optional[Iterable[Any]] = None) -> Any:
     """The factory function of Param.
 
     Arguments:
-        key: The name of the parameter.
-        required: Whether the parameter is required.
         default: The default value of the parameter.
         options: All possible values of the parameter.
 
     Returns:
-        A :class:`Param` instance created by the given input.
+        A tuple which contains "default" and "options".
 
     """
-    return Param(key, required, default, options)
+    return default, options
 
 
 class PortexType:
     """The base class of portex type."""
 
-    params: Dict[str, Param] = {}
+    params: List[Param] = []
 
     def __init_subclass__(cls) -> None:
         params = cls.params.copy()
-        for name in getattr(cls, "__annotations__", {}):
+        for name, annotation in getattr(cls, "__annotations__", {}).items():
             parameter = getattr(cls, name, None)
-            if isinstance(parameter, Param):
-                params[name] = parameter
+            if isinstance(parameter, tuple):
+                params.append(Param(name, *parameter, annotation=annotation))
                 delattr(cls, name)
 
         cls.params = params
@@ -110,7 +108,8 @@ class PortexType:
         with_params = False
         indent = level * _INDENT
         lines = [f"{self.__class__.__name__}("]
-        for name, parameter in self.params.items():
+        for parameter in self.params:
+            name = parameter.name
             attr = getattr(self, name)
             if attr != parameter.default:
                 with_params = True
@@ -140,9 +139,10 @@ class PortexType:
         assert issubclass(class_, cls)
         kwargs = {}
         for parameter in class_.params:
-            kwarg = content.get(parameter, ...)
+            name = parameter.name
+            kwarg = content.get(name, ...)
             if kwarg is not ...:
-                kwargs[parameter] = kwarg
+                kwargs[name] = kwarg
 
         return class_(**kwargs)  # type: ignore[call-arg]
 
@@ -180,7 +180,8 @@ class PortexType:
 
         """
         pydict = {"type": TypeRegister.CLASS_TO_NAME[self.__class__]}
-        for name, parameter in self.params.items():
+        for parameter in self.params:
+            name = parameter.name
             attr = getattr(self, name)
             if attr != parameter.default:
                 pydict[name] = attr.to_pyobj() if hasattr(attr, "to_pyobj") else attr
