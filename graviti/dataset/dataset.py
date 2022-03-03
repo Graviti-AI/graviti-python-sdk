@@ -10,6 +10,7 @@ from typing import Optional
 from tensorbay.client.status import Status
 from tensorbay.utility.user import UserMutableMapping
 
+from graviti.client.dataset import get_dataset
 from graviti.dataframe.frame import DataFrame
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
@@ -40,52 +41,86 @@ class Dataset(UserMutableMapping[str, DataFrame]):
         status: Status,
         alias: str,
     ) -> None:
-        pass
-
-    @property
-    def url(self) -> str:
-        """Return the url of the graviti website.
-
-        Return:
-            The url of the graviti website.
-
-        """
+        self._access_key = access_key
+        self._url = url
+        self._dataset_id = dataset_id
+        self._name = name
+        self._status = status
+        self._alias = alias
+        self._is_public: Optional[bool] = None
 
     @property
     def access_key(self) -> str:
         """Return the access key of the user.
 
-        Return:
+        Returns:
             The access key of the user.
 
         """
+        return self._access_key
+
+    @property
+    def url(self) -> str:
+        """Return the url of the graviti website.
+
+        Returns:
+            The url of the graviti website.
+
+        """
+        return self._url
 
     @property
     def dataset_id(self) -> str:
         """Return the ID of the dataset.
 
-        Return:
+        Returns:
             The ID of the dataset.
 
         """
+        return self._dataset_id
+
+    @property
+    def name(self) -> str:
+        """Return the name of the dataset.
+
+        Returns:
+            The name of the dataset.
+
+        """
+        return self._name
 
     @property
     def status(self) -> Status:
         """Return the status of the dataset.
 
-        Return:
+        Returns:
             The status of the dataset.
 
         """
+        return self._status
 
     @property
-    def config_name(self) -> str:
-        """Return the config name of the dataset.
+    def alias(self) -> str:
+        """Return the alias of the dataset.
 
-        Return:
-            The config name of the dataset.
+        Returns:
+            The alias of the dataset.
 
         """
+        return self._alias
+
+    @property
+    def is_public(self) -> bool:
+        """Return whether the dataset is public.
+
+        Returns:
+            Whether the dataset is public.
+
+        """
+        if self._is_public is None:
+            info = get_dataset(url=self.url, access_key=self.access_key, dataset_id=self.dataset_id)
+            self._is_public = info["isPublic"]
+        return self._is_public
 
     @property
     def branches(self) -> BranchManager:
