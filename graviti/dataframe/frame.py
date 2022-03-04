@@ -8,8 +8,8 @@
 
 from typing import Any, Dict, Iterable, Optional, Tuple, Union, overload
 
+from graviti.dataframe.column.series import Series
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
-from graviti.dataframe.series import Series
 
 
 class DataFrame:
@@ -55,7 +55,7 @@ class DataFrame:
         pass
 
     @overload
-    def __getitem__(self, key: str) -> Union[Series[int], "DataFrame"]:  # type: ignore[misc]
+    def __getitem__(self, key: str) -> Union[Series, "DataFrame"]:  # type: ignore[misc]
         # https://github.com/python/mypy/issues/5090
         ...
 
@@ -63,7 +63,7 @@ class DataFrame:
     def __getitem__(self, key: Iterable[str]) -> "DataFrame":
         ...
 
-    def __getitem__(self, key: Union[str, Iterable[str]]) -> Union[Series[int], "DataFrame"]:
+    def __getitem__(self, key: Union[str, Iterable[str]]) -> Union[Series, "DataFrame"]:
         pass
 
     def __setitem__(self, key: str, value: Iterable[Any]) -> None:
