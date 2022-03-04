@@ -5,7 +5,7 @@
 
 """Graviti Python SDK."""
 
-from graviti.dataframe import DataFrame, Series
+from graviti.dataframe import DataFrame
 from graviti.graviti import Graviti
 
-__all__ = ["DataFrame", "Graviti", "Series"]
+__all__ = ["DataFrame", "Graviti"]

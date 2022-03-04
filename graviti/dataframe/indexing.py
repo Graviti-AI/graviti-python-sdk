@@ -9,15 +9,16 @@ from typing import TYPE_CHECKING, Any, Generic, Iterable, Tuple, TypeVar, Union,
 
 if TYPE_CHECKING:
     from graviti.dataframe.dataframe import DataFrame
-    from graviti.dataframe.series import Series
+    from graviti.dataframe.row.series import Series
+    from graviti.dataframe.series import SeriesBase
 
 _T = TypeVar("_T", int, str)
 
 
-class SeriesILocIndexer:  # pylint: disable=too-few-public-methods
+class SeriesILocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
     """Index class for Series.iloc."""
 
-    def __init__(self, obj: "Series[_T]") -> None:
+    def __init__(self, obj: "SeriesBase[_T]") -> None:
         pass
 
     @overload
@@ -25,7 +26,7 @@ class SeriesILocIndexer:  # pylint: disable=too-few-public-methods
         ...
 
     @overload
-    def __getitem__(self, key: Union[Iterable[int], Iterable[bool], slice]) -> "Series[_T]":
+    def __getitem__(self, key: Union[Iterable[int], Iterable[bool], slice]) -> "SeriesBase[_T]":
         ...
 
     def __getitem__(self, key: Union[int, Iterable[int], Iterable[bool], slice]) -> Any:
@@ -35,7 +36,7 @@ class SeriesILocIndexer:  # pylint: disable=too-few-public-methods
 class SeriesLocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
     """Index class for Series.loc."""
 
-    def __init__(self, obj: "Series[_T]") -> None:
+    def __init__(self, obj: "SeriesBase[_T]") -> None:
         pass
 
     @overload
@@ -43,7 +44,7 @@ class SeriesLocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
         ...
 
     @overload
-    def __getitem__(self, key: Union[Iterable[_T], Iterable[bool], slice]) -> "Series[_T]":
+    def __getitem__(self, key: Union[Iterable[_T], Iterable[bool], slice]) -> "SeriesBase[_T]":
         ...
 
     def __getitem__(self, key: Union[_T, Iterable[_T], Iterable[bool], slice]) -> Any:

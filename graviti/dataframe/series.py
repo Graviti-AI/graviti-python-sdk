@@ -5,15 +5,15 @@
 
 """The implementation of the Graviti Series."""
 
-from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar, Union, overload
+from typing import Any, Generic, Sequence, TypeVar
 
 from graviti.dataframe.indexing import SeriesILocIndexer, SeriesLocIndexer
 
 _T = TypeVar("_T", int, str)
 
 
-class Series(Generic[_T]):
-    """One-dimensional ndarray.
+class SeriesBase(Generic[_T]):
+    """Base of the series.
 
     Arguments:
         data: The data that needs to be stored in Series. Could be ndarray or Iterable.
@@ -21,95 +21,18 @@ class Series(Generic[_T]):
             inferred from `data`.
         name: The name to the Series.
 
-    Examples:
-        Constructing Series from a list.
-
-        >>> d = {"filename": "a.jpg", "attributes": {"color": "red", "pose": "frontal"}}
-        >>> series = Series(data=d)
-        >>> series
-        filename         a.jpg
-        attributes color red
-                   pose  frontal
-        schema: string
-
     """
 
-    _data: List[Any]
-    _indices_data: Dict[_T, int]
-    _indices: List[_T]
-
-    def __init__(  # pylint: disable=too-many-arguments
-        self,
-        data: Optional[Dict[_T, Any]] = None,
-        schema: Any = None,
-        name: Optional[Union[str, int]] = None,
-    ) -> None:
-        if data is None:
-            data = {}
-        if schema is not None:
-            # TODO: missing schema processing
-            pass
-
-        self._data = []
-        self._indices_data = {}
-        for key, value in data.items():
-            if isinstance(value, dict):
-                value = Series(value, name=name)
-            self._data.append(value)
-            self._indices_data[key] = value
-        self._indices = list(data.keys())
-        self.name: Optional[Union[str, int]] = name
-
-    # @overload
-    # def __getitem__(self, key: slice) -> "Series":
-    #    ...
-
-    @overload
-    def __getitem__(self, key: Tuple[_T]) -> "Series[_T]":
-        ...
-
-    @overload
-    def __getitem__(self, key: _T) -> Any:
-        ...
-
-    @overload
-    def __getitem__(self, key: Iterable[_T]) -> "Series[_T]":
-        ...
-
-    def __getitem__(self, key: Union[_T, Iterable[_T]]) -> Any:
-        if isinstance(key, (str, int)):
-            return self._indices_data[key]
-
-        new_data = {name: self._indices_data[name] for name in key}
-        return Series(new_data, name=self.name)
+    _data: Sequence[Any]
 
     def __repr__(self) -> str:
-        pass
+        return str(self._data)
 
     def __len__(self) -> int:
         return self._data.__len__()
 
-    # @overload
-    # def _getitem_by_location(self, key: slice) -> "Series":
-    #    ...
-
-    @overload
-    def _getitem_by_location(self, key: int) -> Union["Series[_T]", Any]:
-        ...
-
-    @overload
-    def _getitem_by_location(self, key: Iterable[int]) -> "Series[_T]":
-        ...
-
-    def _getitem_by_location(self, key: Union[int, Iterable[int]]) -> Union["Series[_T]", Any]:
-        if isinstance(key, int):
-            return self._data[key]
-
-        new_data = {self._indices[index]: self._data[index] for index in key}
-        return Series(new_data, name=self.name)
-
     @property
-    def iloc(self) -> SeriesILocIndexer:
+    def iloc(self) -> SeriesILocIndexer[_T]:
         """Purely integer-location based indexing for selection by position.
 
         Allowed inputs are:
