@@ -16,6 +16,7 @@ from graviti.schema.builtin import (
     string,
     tensor,
 )
+from graviti.schema.extractors import get_extractors
 
 __all__ = [
     "array",
@@ -23,6 +24,7 @@ __all__ = [
     "enum",
     "float32",
     "float64",
+    "get_extractors",
     "int32",
     "int64",
     "record",
