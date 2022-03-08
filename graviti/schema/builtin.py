@@ -75,14 +75,14 @@ class boolean(PortexType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("int")
-class int_(PortexNumericType):  # pylint: disable=invalid-name
-    """Portex primitive type ``int``.
+@TypeRegister("int32")
+class int32(PortexNumericType):  # pylint: disable=invalid-name
+    """Portex primitive type ``int32``.
 
     Examples:
-        >>> t = int_(0, 100)
+        >>> t = int32(0, 100)
         >>> t
-        int_(
+        int32(
           minimum=0,
           maximum=100,
         )
@@ -90,14 +90,14 @@ class int_(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("long")
-class long(PortexNumericType):  # pylint: disable=invalid-name
-    """Portex primitive type ``long``.
+@TypeRegister("int64")
+class int64(PortexNumericType):  # pylint: disable=invalid-name
+    """Portex primitive type ``int64``.
 
     Examples:
-        >>> t = long(0, 100)
+        >>> t = int64(0, 100)
         >>> t
-        long(
+        int64(
           minimum=0,
           maximum=100,
         )
@@ -105,14 +105,14 @@ class long(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("float")
-class float_(PortexNumericType):  # pylint: disable=invalid-name
+@TypeRegister("float32")
+class float32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float``.
 
     Examples:
-        >>> t = float_(0, 100)
+        >>> t = float32(0, 100)
         >>> t
-        float_(
+        float32(
           minimum=0,
           maximum=100,
         )
@@ -120,14 +120,14 @@ class float_(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("double")
-class double(PortexNumericType):  # pylint: disable=invalid-name
-    """Portex primitive type ``double``.
+@TypeRegister("float64")
+class float64(PortexNumericType):  # pylint: disable=invalid-name
+    """Portex primitive type ``float64``.
 
     Examples:
-        >>> t = double(0, 100)
+        >>> t = float64(0, 100)
         >>> t
-        double(
+        float64(
           minimum=0,
           maximum=100,
         )
@@ -220,12 +220,12 @@ class record(PortexType):  # pylint: disable=invalid-name
     Examples:
         Create a record by dict:
 
-        >>> t = record({"f0": int_(), "f1": float_(0, 100)})
+        >>> t = record({"f0": int32(), "f1": float32(0, 100)})
         >>> t
         record(
           fields={
-            'f0': int_(),
-            'f1': float_(
+            'f0': int32(),
+            'f1': float32(
               minimum=0,
               maximum=100,
             ),
@@ -247,15 +247,15 @@ class record(PortexType):  # pylint: disable=invalid-name
 
         Create a record by :class:`Field` list:
 
-        >>> t = record([Field("f0", double(0)), Field("f1", array(long()))])
+        >>> t = record([Field("f0", float64(0)), Field("f1", array(int64()))])
         >>> t
         record(
           fields={
-            'f0': double(
+            'f0': float64(
               minimum=0,
             ),
             'f1': array(
-              items=long(),
+              items=int64(),
             ),
           },
         )
@@ -323,10 +323,10 @@ class array(PortexType):  # pylint: disable=invalid-name
         length: The length of the array.
 
     Examples:
-        >>> t = array(int_(0), 100)
+        >>> t = array(int32(0), 100)
         >>> t
         array(
-          items=int_(
+          items=int32(
             minimum=0,
           ),
           length=100,
@@ -351,11 +351,11 @@ class tensor(PortexType):  # pylint: disable=invalid-name
         dtype: The dtype of the tensor.
 
     Examples:
-        >>> t = tensor((3, 3), "double")
+        >>> t = tensor((3, 3), "float64")
         >>> t
         tensor(
           shape=(3, 3),
-          dtype='double',
+          dtype='float64',
         )
 
     """

@@ -35,7 +35,7 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
         ...     "params": {
         ...         "dtype": {
         ...             "required": False,
-        ...             "default": "int",
+        ...             "default": "int32",
         ...         }
         ...     },
         ...     "declaration": {
@@ -59,20 +59,20 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
         >>> vector2d_int.internal_type
         record(
           fields={
-            'x': int_(),
-            'y': int_(),
+            'x': int32(),
+            'y': int32(),
           },
         )
         >>>
-        >>> vector2d_float = Vector2D("float")
+        >>> vector2d_float = Vector2D("float32")
         Vector2D(
-          dtype='float',
+          dtype='float32',
         )
         >>> vector2d_float.internal_type
         record(
           fields={
-            'x': float_(),
-            'y': float_(),
+            'x': float32(),
+            'y': float32(),
           },
         )
 
