@@ -7,7 +7,7 @@
 
 from typing import Any, Dict, Iterator, KeysView, Mapping, Optional
 
-from tensorbay.client.status import Status
+from tensorbay.exception import ResourceNotExistError
 
 # from graviti.client.catalog import get_catalog
 from graviti.client.data import list_data_details
@@ -29,8 +29,9 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
         url: The URL of the graviti website.
         dataset_id: Dataset ID.
         name: The name of the dataset, unique for a user.
-        status: The version control status of the dataset.
         alias: Dataset alias.
+        commit_id: The commit ID.
+        branch_name: The branch name.
 
     """
 
@@ -43,15 +44,18 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
         dataset_id: str,
         name: str,
         *,
-        status: Status,
         alias: str,
+        commit_id: str,
+        branch_name: Optional[str] = None,
     ) -> None:
         self._access_key = access_key
         self._url = url
         self._dataset_id = dataset_id
         self._name = name
-        self._status = status
         self._alias = alias
+        self._commit_id = commit_id
+        self._branch_name = branch_name
+
         self._is_public: Optional[bool] = None
 
     def __len__(self) -> int:
@@ -69,8 +73,7 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
             self._url,
             self._access_key,
             self._dataset_id,
-            draft_number=self._status.draft_number,
-            commit=self._status.commit_id,
+            commit=self._commit_id,
         )
         for sheet in response["segments"]:
             sheet_name = sheet["name"]
@@ -79,8 +82,7 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
                 self._access_key,
                 self._dataset_id,
                 sheet_name,
-                draft_number=self._status.draft_number,
-                commit=self._status.commit_id,
+                commit=self._commit_id,
             )
 
             def factory_getter(
@@ -91,8 +93,7 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
                     self._access_key,
                     self._dataset_id,
                     sheet_name,
-                    draft_number=self._status.draft_number,
-                    commit=self._status.commit_id,
+                    commit=self._commit_id,
                     offset=offset,
                     limit=limit,
                 )
@@ -167,16 +168,6 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
         return self._name
 
     @property
-    def status(self) -> Status:
-        """Return the status of the dataset.
-
-        Returns:
-            The status of the dataset.
-
-        """
-        return self._status
-
-    @property
     def alias(self) -> str:
         """Return the alias of the dataset.
 
@@ -185,6 +176,26 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
 
         """
         return self._alias
+
+    @property
+    def commit_id(self) -> str:
+        """Return the commit id of the dataset.
+
+        Returns:
+            The commit id of the dataset.
+
+        """
+        return self._commit_id
+
+    @property
+    def branch_name(self) -> Optional[str]:
+        """Return the branch name of the dataset.
+
+        Returns:
+            The branch name of the dataset.
+
+        """
+        return self._branch_name
 
     @property
     def is_public(self) -> bool:
@@ -203,10 +214,11 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
     def branches(self) -> BranchManager:
         """Get class :class:`~graviti.manager.dataset.BranchManager` instance.
 
-        Return:
+        Returns:
             Required :class:`~graviti.manager.dataset.BranchManager` instance.
 
         """
+        return BranchManager(self)
 
     @property
     def drafts(self) -> DraftManager:
@@ -221,10 +233,11 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
     def commits(self) -> CommitManager:
         """Get class :class:`~graviti.manager.dataset.CommitManager` instance.
 
-        Return:
+        Returns:
             Required :class:`~graviti.manager.dataset.CommitManager` instance.
 
         """
+        return CommitManager(self)
 
     @property
     def tags(self) -> TagManager:
@@ -243,6 +256,15 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
                 the branch, or the tag.
 
         """
+        try:
+            branch = self.branches.get(revision)
+            self._branch_name = branch.name
+            self._commit_id = branch.commit_id
+        except ResourceNotExistError:
+            self._commit_id = self.commits.get(revision).commit_id
+            self._branch_name = None
+
+        delattr(self, "_data")
 
     def checkout_draft(self, draft_number: int) -> None:
         """Checkout to a draft.
@@ -269,6 +291,3 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
             jobs: The number of the max workers in multi-thread upload.
 
         """
-
-    def edit(self) -> None:
-        """Edit the dataset."""
