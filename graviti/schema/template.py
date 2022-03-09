@@ -8,15 +8,18 @@
 from inspect import Signature
 from typing import Any, Dict, Type
 
-from graviti.schema.base import Param, PortexType, TypeRegister
+from graviti.schema.base import Param, PortexType
 from graviti.schema.builtin import Fields
 from graviti.schema.factory import Dynamic, type_factory_creator
+from graviti.schema.package import package_manager
 
 
 class PortexExternalType(PortexType):
     """The base class of Portex external type."""
 
     internal_type: PortexType
+    repo: str
+    version: str
 
 
 def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
@@ -111,5 +114,5 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
         self.__dict__.update(arguments)
 
     type_ = type(name, (PortexExternalType,), {"params": parameters, "__init__": __init__})
-    TypeRegister(name)(type_)
+    package_manager.local_package[name] = type_
     return type_
