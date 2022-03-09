@@ -5,7 +5,9 @@
 """Template factory releated classes."""
 
 
-from typing import Any, Callable, Dict, Generic, List, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, List, Optional, OrderedDict, Type, TypeVar, Union
+
+import yaml
 
 from graviti.schema.base import Param, PortexType
 from graviti.schema.builtin import Field, Fields
@@ -122,6 +124,62 @@ class Factory:
 
         """
         ...
+
+
+class BinaryExpression(Factory):
+    """The Portex binary expression parser.
+
+    Arguments:
+        decl: A dict which indicates a portex expression.
+
+    """
+
+    _OPERATORS: OrderedDict[str, Callable[[Any, Any], bool]] = OrderedDict(
+        {
+            "==": lambda x, y: x == y,  # type: ignore[no-any-return]
+            "!=": lambda x, y: x != y,  # type: ignore[no-any-return]
+            ">=": lambda x, y: x >= y,  # type: ignore[no-any-return]
+            "<=": lambda x, y: x <= y,  # type: ignore[no-any-return]
+            ">": lambda x, y: x > y,  # type: ignore[no-any-return]
+            "<": lambda x, y: x < y,  # type: ignore[no-any-return]
+        }
+    )
+
+    def __init__(self, decl: str) -> None:
+        keys = {}
+        for operator, method in self._OPERATORS.items():
+            if operator not in decl:
+                continue
+
+            operands = decl.split(operator)
+            if len(operands) != 2:
+                raise SyntaxError("Binary operator only accept two operands")
+
+            factories = [string_factory_creator(operand.strip()) for operand in operands]
+            for i, factory in enumerate(factories):
+                if isinstance(factory, ConstantFactory):
+                    factories[i] = ConstantFactory(yaml.load(factory(), yaml.Loader))
+                else:
+                    keys.update(factory.keys)
+
+            self._factories = factories
+            self._method = method
+            self.keys = keys
+            return
+
+        raise SyntaxError("No operator found in expression")
+
+    def __call__(self, **kwargs: Any) -> bool:
+        """Apply the input arguments to the expression.
+
+        Arguments:
+            kwargs: The input arguments.
+
+        Returns:
+            The bool result of the expression.
+
+        """
+        return self._method(*(factory(**kwargs) for factory in self._factories))
 
 
 class TypeFactory(Factory):
@@ -333,14 +391,23 @@ class FieldFactory(Factory):
         self.creator: Callable[..., Field]
 
         item = decl.copy()
+        keys = {}
+
+        expression = expression_creator(item.pop("existIf", None))
+        keys.update(expression.keys)
+
         name_factory = string_factory_creator(item.pop("name"))
         type_factory = type_factory_creator(item)
 
-        self.keys = {**type_factory.keys, **name_factory.keys}
+        keys.update(name_factory.keys)
+        keys.update(type_factory.keys)
+
+        self._expression = expression
         self._name_factory = name_factory
         self._type_factory = type_factory
+        self.keys = keys
 
-    def __call__(self, **kwargs: Any) -> Field:
+    def __call__(self, **kwargs: Any) -> Optional[Field]:
         """Apply the input arguments to the ``Field`` template.
 
         Arguments:
@@ -350,6 +417,9 @@ class FieldFactory(Factory):
             The applied ``Field``.
 
         """
+        if not self._expression(**kwargs):
+            return None
+
         return Field(self._name_factory(**kwargs), self._type_factory(**kwargs))
 
 
@@ -380,7 +450,9 @@ class FieldsFactory(Factory):
             The applied ``Fields``.
 
         """
-        return Fields(factory(**kwargs) for factory in self._factories)
+        return Fields(
+            filter(bool, (factory(**kwargs) for factory in self._factories)),  # type: ignore[misc]
+        )
 
 
 def type_factory_creator(decl: Dict[str, Any]) -> Union[TypeFactory, DynamicTypeFactory]:
@@ -413,6 +485,22 @@ def string_factory_creator(decl: str) -> Union[VariableFactory, ConstantFactory[
         return VariableFactory(decl[8:], str)
 
     return ConstantFactory(decl)
+
+
+def expression_creator(decl: Optional[str]) -> Union[BinaryExpression, ConstantFactory[bool]]:
+    """Check whether the input string is binary expression and returns the corresponding factory.
+
+    Arguments:
+        decl: A string which indicates a expression.
+
+    Returns:
+        A ``BinaryExpression`` or a ``ConstantFactory`` instance according to the input.
+
+    """
+    if decl is None:
+        return ConstantFactory(True)
+
+    return BinaryExpression(decl)
 
 
 def factory_creator(decl: Any, annotation: Any = Any) -> Factory:

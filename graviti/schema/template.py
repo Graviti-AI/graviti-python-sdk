@@ -33,13 +33,18 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
         A subclass of ``PortexExternalType``.
 
     Examples:
-        >>> vector2d_template = {
+        >>> vector_template = {
         ...     "type": "template",
         ...     "params": {
         ...         "dtype": {
         ...             "required": False,
         ...             "default": "int32",
-        ...         }
+        ...         },
+        ...         "dimension": {
+        ...             "required": False,
+        ...             "default": "2D",
+        ...             "options": ["2D", "3D"],
+        ...         },
         ...     },
         ...     "declaration": {
         ...         "type": "record",
@@ -51,14 +56,19 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
         ...             {
         ...                 "name": "y",
         ...                 "type": "$params.dtype"
+        ...             },
+        ...             {
+        ...                 "name": "z",
+        ...                 "existIf": "$params.dimension == '3D'",
+        ...                 "type": "$params.dtype",
         ...             }
         ...         ]
         ...     }
         ... }
-        >>> Vector2D = template("Vector2D", vector2d_template)
-        >>> vector2d_int = Vector2D()
+        >>> Vector = template("Vector", vector_template)
+        >>> vector2d_int = Vector()
         >>> vector2d_int
-        Vector2D
+        Vector
         >>> vector2d_int.internal_type
         record(
           fields={
@@ -67,8 +77,9 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
           },
         )
         >>>
-        >>> vector2d_float = Vector2D("float32")
-        Vector2D(
+        >>> vector2d_float = Vector("float32")
+        >>> vector2d_float
+        Vector(
           dtype='float32',
         )
         >>> vector2d_float.internal_type
@@ -76,6 +87,20 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
           fields={
             'x': float32(),
             'y': float32(),
+          },
+        )
+        >>>
+        >>> vector3d = Vector(dimension="3D")
+        >>> vector3d
+        Vector(
+          dimension='3D',
+        )
+        >>> vector3d.internal_type
+        record(
+          fields={
+            'x': int32(),
+            'y': int32(),
+            'z': int32(),
           },
         )
 
