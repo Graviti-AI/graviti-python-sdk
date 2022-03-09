@@ -62,7 +62,7 @@ class DataFrameILocIndexer:  # pylint: disable=too-few-public-methods
         ...
 
     @overload
-    def __getitem__(self, key: int) -> "Series[str]":
+    def __getitem__(self, key: int) -> "Series":
         ...
 
     @overload
@@ -86,7 +86,7 @@ class DataFrameLocIndexer:  # pylint: disable=too-few-public-methods
         ...
 
     @overload
-    def __getitem__(self, key: int) -> "Series[str]":
+    def __getitem__(self, key: int) -> "Series":
         ...
 
     @overload

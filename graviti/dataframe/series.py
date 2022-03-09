@@ -5,7 +5,7 @@
 
 """The implementation of the Graviti Series."""
 
-from typing import Any, Generic, Sequence, TypeVar
+from typing import Generic, TypeVar
 
 from graviti.dataframe.indexing import SeriesILocIndexer, SeriesLocIndexer
 
@@ -23,13 +23,8 @@ class SeriesBase(Generic[_T]):
 
     """
 
-    _data: Sequence[Any]
-
     def __repr__(self) -> str:
-        return str(self._data)
-
-    def __len__(self) -> int:
-        return self._data.__len__()
+        pass
 
     @property
     def iloc(self) -> SeriesILocIndexer[_T]:

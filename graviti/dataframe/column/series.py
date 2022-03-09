@@ -82,6 +82,9 @@ class Series(SeriesBase[int]):
 
         return self._data[integer_location]
 
+    def __len__(self) -> int:
+        return self._data.__len__()
+
     @overload
     def _get_location_by_index(self, key: Iterable[int]) -> List[int]:
         ...
