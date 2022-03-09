@@ -19,7 +19,10 @@ from typing import (
     overload,
 )
 
-from graviti.schema.base import _INDENT, PortexType, TypeRegister, param
+from graviti.schema.base import _INDENT, PortexType, param
+from graviti.schema.package import package_manager
+
+builtin_package = package_manager.builtin_package
 
 
 class PortexNumericType(PortexType):
@@ -39,7 +42,7 @@ class PortexNumericType(PortexType):
         self.maximum = maximum
 
 
-@TypeRegister("string")
+@builtin_package("string")
 class string(PortexType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
 
@@ -51,7 +54,7 @@ class string(PortexType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("bytes")
+@builtin_package("bytes")
 class bytes_(PortexType):  # pylint: disable=invalid-name
     """Portex primitive type ``bytes``.
 
@@ -63,7 +66,7 @@ class bytes_(PortexType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("boolean")
+@builtin_package("boolean")
 class boolean(PortexType):  # pylint: disable=invalid-name
     """Portex primitive type ``boolean``.
 
@@ -75,7 +78,7 @@ class boolean(PortexType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("int32")
+@builtin_package("int32")
 class int32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int32``.
 
@@ -90,7 +93,7 @@ class int32(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("int64")
+@builtin_package("int64")
 class int64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int64``.
 
@@ -105,9 +108,9 @@ class int64(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("float32")
+@builtin_package("float32")
 class float32(PortexNumericType):  # pylint: disable=invalid-name
-    """Portex primitive type ``float``.
+    """Portex primitive type ``float32``.
 
     Examples:
         >>> t = float32(0, 100)
@@ -120,7 +123,7 @@ class float32(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@TypeRegister("float64")
+@builtin_package("float64")
 class float64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float64``.
 
@@ -210,7 +213,7 @@ class Fields(Sequence[Field]):
         return pylist
 
 
-@TypeRegister("record")
+@builtin_package("record")
 class record(PortexType):  # pylint: disable=invalid-name
     """Portex complex type ``record``.
 
@@ -292,7 +295,7 @@ class record(PortexType):  # pylint: disable=invalid-name
         return self.fields[index].type
 
 
-@TypeRegister("enum")
+@builtin_package("enum")
 class enum(PortexType):  # pylint: disable=invalid-name
     """Portex complex type ``enum``.
 
@@ -314,7 +317,7 @@ class enum(PortexType):  # pylint: disable=invalid-name
         self.values = values
 
 
-@TypeRegister("array")
+@builtin_package("array")
 class array(PortexType):  # pylint: disable=invalid-name
     """Portex complex type ``array``.
 
@@ -342,7 +345,7 @@ class array(PortexType):  # pylint: disable=invalid-name
         self.length = length
 
 
-@TypeRegister("tensor")
+@builtin_package("tensor")
 class tensor(PortexType):  # pylint: disable=invalid-name
     """Portex complex type ``tensor``.
 

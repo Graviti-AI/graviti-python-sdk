@@ -7,42 +7,13 @@
 
 import json
 from inspect import Parameter
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional
 
 import yaml
 
+from graviti.schema.package import package_manager
+
 _INDENT = " " * 2
-
-
-class TypeRegister:
-    """A class decorator to register the Portex types.
-
-    Arguments:
-        name: The name of the Portex type.
-
-    """
-
-    _S = TypeVar("_S", bound=Type["PortexType"])
-
-    NAME_TO_CLASS: Dict[str, Type["PortexType"]] = {}
-    CLASS_TO_NAME: Dict[Type["PortexType"], str] = {}
-
-    def __init__(self, name: str) -> None:
-        self._name = name
-
-    def __call__(self, class_: _S) -> _S:
-        """Register the input Portex type.
-
-        Arguments:
-            class_: The Portex type needs be registered.
-
-        Returns:
-            The input class unchanged.
-
-        """
-        self.NAME_TO_CLASS[self._name] = class_
-        self.CLASS_TO_NAME[class_] = self._name
-        return class_
 
 
 class Param(Parameter):
@@ -89,6 +60,7 @@ def param(default: Any = Parameter.empty, options: Optional[Iterable[Any]] = Non
 class PortexType:
     """The base class of portex type."""
 
+    name: str
     params: List[Param] = []
 
     def __init_subclass__(cls) -> None:
@@ -135,7 +107,7 @@ class PortexType:
             A Portex type instance created from the input python dict.
 
         """
-        class_ = TypeRegister.NAME_TO_CLASS[content["type"]]
+        class_ = package_manager.search_type(content["type"])
         assert issubclass(class_, cls)
         kwargs = {}
         for parameter in class_.params:
@@ -179,7 +151,7 @@ class PortexType:
             A python dict representation of the Portex type.
 
         """
-        pydict = {"type": TypeRegister.CLASS_TO_NAME[self.__class__]}
+        pydict = {"type": self.__class__.name}
         for parameter in self.params:
             name = parameter.name
             attr = getattr(self, name)

@@ -7,8 +7,9 @@
 
 from typing import Any, Callable, Dict, Generic, List, Type, TypeVar, Union
 
-from graviti.schema.base import Param, PortexType, TypeRegister
+from graviti.schema.base import Param, PortexType
 from graviti.schema.builtin import Field, Fields
+from graviti.schema.package import package_manager
 
 _C = TypeVar("_C", str, float, bool, None)
 
@@ -72,8 +73,8 @@ class DynamicDictParameter(Dynamic):
             if self._key in {"name", "type"} if annotation == Field else {"type"}:
                 return str
 
-            factory = string_factory_creator(self._decl["type"])
-            class_ = TypeRegister.NAME_TO_CLASS[factory(**kwargs)]
+            name_factory = string_factory_creator(self._decl["type"])
+            class_ = package_manager.search_type(name_factory(**kwargs))
             for parameter in class_.params:
                 if parameter.name == self._key:
                     return parameter.annotation
@@ -132,7 +133,7 @@ class TypeFactory(Factory):
     """
 
     def __init__(self, decl: Dict[str, Any]) -> None:
-        class_ = TypeRegister.NAME_TO_CLASS[decl["type"]]
+        class_ = package_manager.search_type(decl["type"])
 
         factories = {}
         keys = {}
