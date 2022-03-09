@@ -6,10 +6,23 @@
 """The implementation of the Graviti DataFrame."""
 
 
-from typing import Any, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from graviti.dataframe.column.series import Series
+from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
+from graviti.dataframe.row.series import Series as RowSeries
 from graviti.utility.lazy import LazyFactory
 
 
@@ -23,7 +36,6 @@ class DataFrame:
         columns: Column labels to use for resulting frame when data does not have them,
             defaulting to RangeIndex(0, 1, 2, ..., n). If data contains column labels,
             will perform column selection instead.
-        client: The client for getting a remote data.
 
     Examples:
         Constructing DataFrame from a dictionary.
@@ -47,18 +59,40 @@ class DataFrame:
     """
 
     _T = TypeVar("_T", bound="DataFrame")
+    _columns: Dict[str, Union["DataFrame", ColumnSeries]]
+    _column_names: List[str]
+    _index: ColumnSeries
 
     def __init__(
         self,
-        data: Union[Iterable[Any], Dict[Any, Any], "DataFrame", None] = None,
+        data: Union[Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", None] = None,
         schema: Any = None,
         columns: Optional[Iterable[str]] = None,
-        client: Any = None,
     ) -> None:
-        pass
+        if data is None:
+            data = {}
+        if schema is not None:
+            # TODO: missing schema processing
+            pass
+        if columns is not None:
+            # TODO: missing columns processing
+            pass
+
+        self._columns = {}
+        self._column_names = []
+        if isinstance(data, dict):
+            for key, value in data.items():
+                self._columns[key] = (
+                    DataFrame(value) if isinstance(value, dict) else ColumnSeries(value, name=key)
+                )
+                self._column_names.append(key)
+            self._index = ColumnSeries(list(range(self.__len__())))
+        else:
+            raise ValueError("DataFrame only supports generating from dictionary now")
+        print(self._index)
 
     @overload
-    def __getitem__(self, key: str) -> Union[Series, "DataFrame"]:  # type: ignore[misc]
+    def __getitem__(self, key: str) -> Union[ColumnSeries, "DataFrame"]:  # type: ignore[misc]
         # https://github.com/python/mypy/issues/5090
         ...
 
@@ -66,17 +100,21 @@ class DataFrame:
     def __getitem__(self, key: Iterable[str]) -> "DataFrame":
         ...
 
-    def __getitem__(self, key: Union[str, Iterable[str]]) -> Union[Series, "DataFrame"]:
-        pass
+    def __getitem__(self, key: Union[str, Iterable[str]]) -> Union[ColumnSeries, "DataFrame"]:
+        if isinstance(key, str):
+            return self._columns[key]
+
+        new_columns = {name: self._columns[name] for name in key}
+        return self._construct(new_columns, self._index)
 
     def __setitem__(self, key: str, value: Iterable[Any]) -> None:
         pass
 
     def __repr__(self) -> str:
-        pass
+        return f"\n DataFrame\n columns: {self._columns} \n index: {self._index}"
 
     def __len__(self) -> int:
-        pass
+        return self._columns[self._column_names[0]].__len__()
 
     @classmethod
     def from_lazy_factory(cls: Type[_T], factory: LazyFactory) -> _T:
@@ -89,6 +127,18 @@ class DataFrame:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
 
         """
+
+    @classmethod
+    def _construct(
+        cls,
+        columns: Dict[str, Union["DataFrame", ColumnSeries]],
+        index: ColumnSeries,
+    ) -> "DataFrame":
+        obj: DataFrame = object.__new__(cls)
+        obj._columns = columns
+        obj._column_names = list(obj._columns.keys())
+        obj._index = index
+        return obj
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
@@ -171,6 +221,39 @@ class DataFrame:
             4
 
         """
+
+    # @overload
+    # def _getitem_by_location(self, key: slice) -> "DataFrame":
+    #    ...
+
+    @overload
+    def _getitem_by_location(self, key: int) -> RowSeries:
+        ...
+
+    @overload
+    def _getitem_by_location(self, key: Iterable[int]) -> "DataFrame":
+        ...
+
+    def _getitem_by_location(self, key: Union[int, Iterable[int]]) -> Union["DataFrame", RowSeries]:
+        if isinstance(key, int):
+            # pylint: disable=protected-access
+            indices_data = {
+                name: self._columns[name]._getitem_by_location(key) for name in self._column_names
+            }
+            return RowSeries._construct(indices_data, key)
+
+        return self._construct(self._columns, self._index[key])
+
+    @overload
+    def _get_location_by_index(self, key: Iterable[int]) -> List[int]:
+        ...
+
+    @overload
+    def _get_location_by_index(self, key: int) -> int:
+        ...
+
+    def _get_location_by_index(self, key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
+        return self._index._get_location_by_index(key)  # pylint: disable=protected-access
 
     def head(self, n: int = 5) -> "DataFrame":
         """Return the first `n` rows.
