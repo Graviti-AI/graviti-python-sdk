@@ -8,7 +8,6 @@
 from typing import Generator, Optional
 
 from tensorbay.client.lazy import PagingList
-from tensorbay.client.status import Status
 from tensorbay.exception import ResourceNotExistError
 
 from graviti.client.dataset import list_datasets
@@ -39,7 +38,8 @@ class DatasetManager:
                 self._url,
                 item["id"],
                 item["name"],
-                status=Status(item["defaultBranch"], commit_id=item["commitId"]),
+                branch_name=item["defaultBranch"],
+                commit_id=item["commitId"],
                 alias=item["alias"],
             )
 

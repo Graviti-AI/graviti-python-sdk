@@ -5,10 +5,13 @@
 
 """The implementation of the BranchManager."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
 from tensorbay.client.lazy import PagingList
 from tensorbay.client.struct import Branch
+from tensorbay.exception import ResourceNotExistError
+
+from graviti.client.branch import list_branches
 
 if TYPE_CHECKING:
     from graviti.dataset.dataset import Dataset
@@ -23,7 +26,24 @@ class BranchManager:
     """
 
     def __init__(self, dataset: "Dataset") -> None:
-        pass
+        self._dataset = dataset
+
+    def _generate(
+        self, name: Optional[str] = None, offset: int = 0, limit: int = 128
+    ) -> Generator[Branch, None, int]:
+        response = list_branches(
+            self._dataset.url,
+            self._dataset.access_key,
+            self._dataset.dataset_id,
+            name=name,
+            offset=offset,
+            limit=limit,
+        )
+
+        for item in response["branches"]:
+            yield Branch.loads(item)
+
+        return response["totalCount"]  # type: ignore[no-any-return]
 
     def create(self, name: str, revision: Optional[str] = None) -> Branch:
         """Create a branch.
@@ -37,7 +57,6 @@ class BranchManager:
         Return:
             The :class:`.Branch` instance with the given name.
 
-
         """
 
     def get(self, name: str) -> Branch:
@@ -46,18 +65,32 @@ class BranchManager:
         Arguments:
             name: The required branch name.
 
-        Return:
+        Raises:
+            TypeError: When the given branch name is illegal.
+            ResourceNotExistError: When the required branch does not exist.
+
+        Returns:
             The :class:`.Branch` instance with the given name.
 
         """
+        if not name:
+            raise TypeError("The given branch name is illegal")
+
+        try:
+            branch = next(self._generate(name))
+        except StopIteration as error:
+            raise ResourceNotExistError(resource="branch", identification=name) from error
+
+        return branch
 
     def list(self) -> PagingList[Branch]:
         """List the information of branches.
 
-        Return:
+        Returns:
             The PagingList of :class:`branches<.Branch>` instances.
 
         """
+        return PagingList(lambda offset, limit: self._generate(None, offset, limit), 128)
 
     def delete(self, name: str) -> None:
         """Delete a branch.
