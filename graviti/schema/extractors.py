@@ -27,6 +27,8 @@ _PORTEX_TYPE_TO_NUMPY_DTYPE = {
     "enum": "object",
 }
 
+_URL = partial(URL, updater=lambda: "update is not supported currently")
+
 
 def _get_filename(*_: Any) -> _Extractor[str]:
     def extractor(data: Dict[str, Any]) -> Iterator[str]:
@@ -40,9 +42,7 @@ def _get_file(*_: Any) -> _Extractor[File]:
     def extractor(data: Dict[str, Any]) -> Iterator[File]:
         for item in data["dataDetails"]:
             url = item["url"]
-            yield File(
-                item["remotePath"], url=URL(url, lambda: "update is not supported currently")
-            )
+            yield File(item["remotePath"], url=_URL(url))
 
     return extractor, "object"
 
@@ -123,10 +123,30 @@ def _get_keypoints2ds(
     return extractor, "object"
 
 
-def _get_mask(
-    schema: Dict[str, Any], key: str  # pylint: disable=unused-argument
-) -> _Extractors[Any]:
-    raise NotImplementedError
+def _mask_extractor(data: Dict[str, Any], key: str) -> Iterator[Any]:
+    for item in data["dataDetails"]:
+        label = item["label"][key]
+        yield File(label["remotePath"], url=_URL(label["url"]))
+
+
+def _info_extractor(data: Dict[str, Any], schema: Dict[str, Any], key: str) -> Iterator[DataFrame]:
+    id_key = "categoryId" if key == "SEMANTIC_MASK" else "instanceId"
+    for item in data["dataDetails"]:
+        all_info = item["label"][key]["info"]
+        mask_info = {
+            "id": [info[id_key] for info in all_info],
+            "attribute": _extract_attribute(all_info, schema),
+        }
+        if key == "PANOPTIC_MASK":
+            mask_info["categoryId"] = [info["categoryId"] for info in all_info]
+        yield DataFrame(mask_info)
+
+
+def _get_mask(schema: Dict[str, Any], key: str) -> _Extractors[Any]:
+    mask: Dict[str, Any] = {"mask": (partial(_mask_extractor, key=key), "object")}
+    if "attributes" in schema:
+        mask["info"] = partial(_info_extractor, schema=schema, key=key), "object"
+    return mask
 
 
 def _get_multi_pointlists(
@@ -165,9 +185,9 @@ _EXTRACTORS_GETTER: Dict[
     ("polyline2ds", "array"): partial(_get_pointlists, key="polyline2ds"),
     ("keypoints2d", "array"): _get_keypoints2ds,
     ("face-keypoints2d", "laebl.Keypoints2D"): _get_keypoints2ds,
-    ("semantic_mask", "label.file.SemanticMask"): partial(_get_mask, key="semantic_mask"),
-    ("instance_mask", "label.file.InstanceMask"): partial(_get_mask, key="instance_mask"),
-    ("panoptic_mask", "label.file.PanopticMask"): partial(_get_mask, key="panoptic_mask"),
+    ("semantic_mask", "label.file.SemanticMask"): partial(_get_mask, key="SEMANTIC_MASK"),
+    ("instance_mask", "label.file.InstanceMask"): partial(_get_mask, key="INSTANCE_MASK"),
+    ("panoptic_mask", "label.file.PanopticMask"): partial(_get_mask, key="PANOPTIC_MASK"),
     ("multi_polygons", "array"): partial(_get_multi_pointlists, key="multi_polygons"),
     ("multi_polyline2ds", "array"): partial(_get_multi_pointlists, key="multi_polyline2ds"),
     ("RLE", "array"): _get_rle,
