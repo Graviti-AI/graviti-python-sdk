@@ -77,9 +77,7 @@ class LazyList(Sequence[_T], ReprMixin):
 
     def __getitem__(self, index: Union[int, slice]) -> Union[_T, "NDArray[_T]"]:
         if isinstance(index, slice):
-            return np.fromiter(
-                (self._getitem(i) for i in range(*index.indices(self._total_count))), self._dtype
-            )
+            return np.array([self._getitem(i) for i in range(*index.indices(self._total_count))])
 
         index = index if index >= 0 else self._total_count + index
         return self._getitem(index)
@@ -108,7 +106,7 @@ class LazyList(Sequence[_T], ReprMixin):
             data: The source data which needs to be input to the extractor.
 
         """
-        self.pages[pos] = np.fromiter(self._extractor(data), self._dtype)
+        self.pages[pos] = np.array(list(self._extractor(data)), self._dtype)
 
 
 class LazyPage(Generic[_T]):
