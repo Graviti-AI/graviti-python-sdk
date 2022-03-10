@@ -16,11 +16,19 @@ from graviti import DataFrame
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
-_ICallable = Tuple[Callable[[Dict[str, Any]], Iterator[_T]], str]
-_DCallable = Callable[[Dict[str, Any]], _D[_T]]
+_Extractor = Tuple[Callable[[Dict[str, Any]], Iterator[_T]], str]
+_Extractors = Dict[str, _Extractor[_T]]
 
 
-def _get_filename(*_: Any) -> _ICallable[str]:
+_PORTEX_TYPE_TO_NUMPY_DTYPE = {
+    "boolean": "bool",
+    "bytes": "object",
+    "string": "object",
+    "enum": "object",
+}
+
+
+def _get_filename(*_: Any) -> _Extractor[str]:
     def extractor(data: Dict[str, Any]) -> Iterator[str]:
         for item in data["dataDetails"]:
             yield item["remotePath"]
@@ -28,7 +36,7 @@ def _get_filename(*_: Any) -> _ICallable[str]:
     return extractor, "object"
 
 
-def _get_file(*_: Any) -> _ICallable[File]:
+def _get_file(*_: Any) -> _Extractor[File]:
     def extractor(data: Dict[str, Any]) -> Iterator[File]:
         for item in data["dataDetails"]:
             url = item["url"]
@@ -39,7 +47,7 @@ def _get_file(*_: Any) -> _ICallable[File]:
     return extractor, "object"
 
 
-def _get_category(*_: Any) -> _ICallable[Any]:
+def _get_category(*_: Any) -> _Extractor[Any]:
     def extractor(data: Dict[str, Any]) -> Iterator[Any]:
         for item in data["dataDetails"]:
             yield item["label"]["CLASSIFICATION"]["category"]
@@ -47,16 +55,24 @@ def _get_category(*_: Any) -> _ICallable[Any]:
     return extractor, "object"
 
 
-def _get_attribute(schema: Dict[str, Any]) -> _DCallable[Any]:  # pylint: disable=unused-argument
-    def extractor_and_dtype(data: Dict[str, Any]) -> _D[Any]:
-        raise NotImplementedError
+def _attribute_extractor(data: Dict[str, Any], name: str) -> Iterator[Any]:
+    for item in data["dataDetails"]:
+        yield item["label"]["CLASSIFICATION"]["attributes"][name]
 
-    return extractor_and_dtype
+
+def _get_attribute(schema: Dict[str, Any]) -> _Extractors[Any]:  # pylint: disable=unused-argument
+    attributes: _Extractors[Any] = {}
+    for attribute_info in schema["attributes"]:
+        name = attribute_info["name"]
+        type_ = attribute_info["type"]
+        dtype = _PORTEX_TYPE_TO_NUMPY_DTYPE.get(type_, type_)
+        attributes[name] = partial(_attribute_extractor, name=name), dtype
+    return attributes
 
 
 def _get_box2ds(
     schema: Dict[str, Any], *_: Any  # pylint: disable=unused-argument
-) -> _ICallable[DataFrame]:
+) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
         raise NotImplementedError
 
@@ -65,7 +81,7 @@ def _get_box2ds(
 
 def _get_pointlists(
     schema: Dict[str, Any], key: str  # pylint: disable=unused-argument
-) -> _ICallable[DataFrame]:
+) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
         raise NotImplementedError
 
@@ -74,7 +90,7 @@ def _get_pointlists(
 
 def _get_keypoints2ds(
     schema: Dict[str, Any]  # pylint: disable=unused-argument
-) -> _ICallable[DataFrame]:
+) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
         raise NotImplementedError
 
@@ -83,31 +99,28 @@ def _get_keypoints2ds(
 
 def _get_mask(
     schema: Dict[str, Any], key: str  # pylint: disable=unused-argument
-) -> _DCallable[Any]:
-    def extractor_and_dtype(data: Dict[str, Any]) -> _D[Any]:
-        raise NotImplementedError
-
-    return extractor_and_dtype
+) -> _Extractors[Any]:
+    raise NotImplementedError
 
 
 def _get_multi_pointlists(
     schema: Dict[str, Any], key: str  # pylint: disable=unused-argument
-) -> _ICallable[DataFrame]:
+) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
         raise NotImplementedError
 
     return extractor, "object"
 
 
-def _get_rle(schema: Dict[str, Any]) -> _ICallable[DataFrame]:  # pylint: disable=unused-argument
+def _get_rle(schema: Dict[str, Any]) -> _Extractor[DataFrame]:  # pylint: disable=unused-argument
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
         raise NotImplementedError
 
     return extractor, "object"
 
 
-_EXTRACTORS_AND_DTYPES_GETTER: Dict[
-    Tuple[str, str], Callable[[Dict[str, Any]], Union[_ICallable[Any], _DCallable[Any]]]
+_EXTRACTORS_GETTER: Dict[
+    Tuple[str, str], Callable[[Dict[str, Any]], Union[_Extractor[Any], _Extractors[Any]]]
 ] = {
     ("filename", "string"): _get_filename,
     ("image", "file.Image"): _get_file,
@@ -131,7 +144,7 @@ _EXTRACTORS_AND_DTYPES_GETTER: Dict[
 }
 
 
-def get_extractors(schema: Dict[str, Any]) -> Dict[str, Union[_ICallable[Any], _DCallable[Any]]]:
+def get_extractors(schema: Dict[str, Any]) -> Dict[str, Union[_Extractor[Any], _Extractors[Any]]]:
     """Get the extractors and dtypes for colomns.
 
     Arguments:
@@ -171,10 +184,10 @@ def get_extractors(schema: Dict[str, Any]) -> Dict[str, Union[_ICallable[Any], _
         >>> schema = yaml.load(
         ...    catalog_to_schema(dataset.catalog, dataset["train"][0], dataset.notes), yaml.Loader
         ... )
-        >>> extractors_and_dtypes = get_extractors(schema)
+        >>> extractors = get_extractors(schema)
         >>> lazy_lists = {}
-        >>> for key, (extractor, dtype) in extractors_and_dtypes.items():
-        ...     lazy_lists[key] = factory.create_list(extractor, dtype)
+        >>> for key, arguments in extractors.items():
+        ...     lazy_lists[key] = factory.create_list(*arguments)
         >>> lazy_lists
         {'filename': LazyList [
            'train_image_00000.png',
@@ -232,9 +245,9 @@ def get_extractors(schema: Dict[str, Any]) -> Dict[str, Union[_ICallable[Any], _
          ]}
 
     """
-    extractors_and_dtypes: Dict[str, Union[_ICallable[Any], _DCallable[Any]]] = {}
+    extractors: Dict[str, Union[_Extractor[Any], _Extractors[Any]]] = {}
     for field in schema["fields"]:
         field_name, field_type = field["name"], field["type"]
-        extractor_and_dtype_getter = _EXTRACTORS_AND_DTYPES_GETTER[field_name, field_type]
-        extractors_and_dtypes[field_name] = extractor_and_dtype_getter(field)
-    return extractors_and_dtypes
+        extractor_getter = _EXTRACTORS_GETTER[field_name, field_type]
+        extractors[field_name] = extractor_getter(field)
+    return extractors
