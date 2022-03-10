@@ -5,7 +5,7 @@
 
 """The implementation of the Graviti Series."""
 
-from typing import Generic, TypeVar
+from typing import Any, Generic, Iterable, TypeVar, Union, overload
 
 from graviti.dataframe.indexing import SeriesILocIndexer, SeriesLocIndexer
 
@@ -25,6 +25,17 @@ class SeriesBase(Generic[_T]):
 
     def __repr__(self) -> str:
         pass
+
+    @overload
+    def __getitem__(self, key: _T) -> Any:
+        ...
+
+    @overload
+    def __getitem__(self, key: Iterable[_T]) -> "SeriesBase[_T]":
+        ...
+
+    def __getitem__(self, key: Union[_T, Iterable[_T]]) -> Any:
+        raise NotImplementedError
 
     @property
     def iloc(self) -> SeriesILocIndexer[_T]:
@@ -75,3 +86,14 @@ class SeriesBase(Generic[_T]):
 
         """
         return SeriesLocIndexer(self)
+
+    @overload
+    def _getitem_by_location(self, key: int) -> Union["SeriesBase[_T]", Any]:
+        ...
+
+    @overload
+    def _getitem_by_location(self, key: Iterable[int]) -> "SeriesBase[_T]":
+        ...
+
+    def _getitem_by_location(self, key: Union[int, Iterable[int]]) -> Any:
+        raise NotImplementedError
