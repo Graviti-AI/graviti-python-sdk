@@ -236,11 +236,8 @@ class DataFrame:
 
     def _getitem_by_location(self, key: Union[int, Iterable[int]]) -> Union["DataFrame", RowSeries]:
         if isinstance(key, int):
-            # pylint: disable=protected-access
-            indices_data = {
-                name: self._columns[name]._getitem_by_location(key) for name in self._column_names
-            }
-            return RowSeries._construct(indices_data, key)
+            indices_data = {name: self._columns[name].iloc[key] for name in self._column_names}
+            return RowSeries._construct(indices_data, key)  # pylint: disable=protected-access
 
         return self._construct(self._columns, self._index[key])
 
