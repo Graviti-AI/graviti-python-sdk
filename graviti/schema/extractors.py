@@ -7,7 +7,7 @@
 
 
 from functools import partial
-from typing import Any, Callable, Dict, Iterator, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
 from tensorbay.utility.file import URL
 from tensorbay.utility.file import RemoteFileMixin as File
@@ -60,7 +60,7 @@ def _attribute_extractor(data: Dict[str, Any], name: str) -> Iterator[Any]:
         yield item["label"]["CLASSIFICATION"]["attributes"][name]
 
 
-def _get_attribute(schema: Dict[str, Any]) -> _Extractors[Any]:  # pylint: disable=unused-argument
+def _get_attribute(schema: Dict[str, Any]) -> _Extractors[Any]:
     attributes: _Extractors[Any] = {}
     for attribute_info in schema["attributes"]:
         name = attribute_info["name"]
@@ -70,11 +70,37 @@ def _get_attribute(schema: Dict[str, Any]) -> _Extractors[Any]:  # pylint: disab
     return attributes
 
 
-def _get_box2ds(
-    schema: Dict[str, Any], *_: Any  # pylint: disable=unused-argument
-) -> _Extractor[DataFrame]:
+def _extract_attribute(data: List[Dict[str, Any]], schema: Dict[str, Any]) -> Dict[str, List[Any]]:
+    attributes = {}
+    for attribute_info in schema["attributes"]:
+        name = attribute_info["name"]
+        attributes[name] = [item["attributes"][name] for item in data]
+    return attributes
+
+
+def _extract_category_and_attribute(
+    schema: Dict[str, Any], labels: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    results: Dict[str, Any] = {}
+    if "categories" in schema:
+        results["category"] = [label["category"] for label in labels]
+    if "attributes" in schema:
+        results["attribute"] = _extract_attribute(labels, schema)
+    return results
+
+
+def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
-        raise NotImplementedError
+        for item in data["dataDetails"]:
+            labels = item["label"]["BOX2D"]
+            box2d: Dict[str, Any] = {
+                "xmin": [label["box2d"]["xmin"] for label in labels],
+                "xmax": [label["box2d"]["xmax"] for label in labels],
+                "ymin": [label["box2d"]["ymin"] for label in labels],
+                "ymax": [label["box2d"]["ymax"] for label in labels],
+            }
+            box2d.update(_extract_category_and_attribute(schema["items"], labels))
+            yield DataFrame(box2d)
 
     return extractor, "object"
 
@@ -112,9 +138,13 @@ def _get_multi_pointlists(
     return extractor, "object"
 
 
-def _get_rle(schema: Dict[str, Any]) -> _Extractor[DataFrame]:  # pylint: disable=unused-argument
+def _get_rle(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
-        raise NotImplementedError
+        for item in data["dataDetails"]:
+            labels = item["label"]["RLE"]
+            rle: Dict[str, Any] = {"code": [label["rle"] for label in labels]}
+            rle.update(_extract_category_and_attribute(schema["items"], labels))
+            yield DataFrame(rle)
 
     return extractor, "object"
 
