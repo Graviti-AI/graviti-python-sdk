@@ -5,7 +5,7 @@
 
 """The implementation of the Graviti Series."""
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
+from typing import Any, Dict, Iterable, List, Optional, Union, overload
 
 from graviti.dataframe.series import SeriesBase
 
@@ -60,12 +60,8 @@ class Series(SeriesBase[str]):
         self.name = name
 
     # @overload
-    # def __getitem__(self, key: slice) -> "Series":
+    # def __getitem__(self, key: Union[slice, Tuple[str]]) -> "Series":
     #    ...
-
-    @overload
-    def __getitem__(self, key: Tuple[str]) -> "Series":
-        ...
 
     @overload
     def __getitem__(self, key: str) -> Any:
