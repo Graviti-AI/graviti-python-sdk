@@ -10,7 +10,7 @@ from functools import partial
 from tensorbay.cli.utility import shorten
 from tensorbay.utility.file import URL, RemoteFileMixin
 
-_URL = partial(URL, updater=lambda: "update is not supported currently")
+READ_ONLY_URL = partial(URL, updater=lambda: "update is not supported currently")
 
 
 class File(RemoteFileMixin):
@@ -26,7 +26,7 @@ class File(RemoteFileMixin):
 
     def __init__(self, url: str, checksum: str) -> None:
         super().__init__("")
-        self.url = _URL(url)
+        self.url = READ_ONLY_URL(url)
         self._checksum = checksum
 
     def _repr_head(self) -> str:

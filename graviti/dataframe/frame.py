@@ -7,6 +7,7 @@
 
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
@@ -23,7 +24,9 @@ from typing import (
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.utility.lazy import LazyFactory
+
+if TYPE_CHECKING:
+    from graviti.dataset.dataset import LazyLists
 
 
 class DataFrame:
@@ -65,12 +68,13 @@ class DataFrame:
 
     def __init__(
         self,
-        data: Union[Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", None] = None,
+        data: Union[Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", "LazyLists", None] = None,
         schema: Any = None,
         columns: Optional[Iterable[str]] = None,
     ) -> None:
         if data is None:
-            data = {}
+            data = {}  # type: ignore[assignment]
+            # https://github.com/python/mypy/issues/6463
         if schema is not None:
             # TODO: missing schema processing
             pass
@@ -119,18 +123,6 @@ class DataFrame:
         return self._columns[self._column_names[0]].__len__()
 
     @classmethod
-    def from_lazy_factory(cls: Type[_T], factory: LazyFactory) -> _T:
-        """Create DataFrame with lazy factory and schema.
-
-        Arguments:
-            factory: class :class:`~graviti.utility.lazy.LazyFactory` instance.
-
-        Return:
-            The loaded :class:`~graviti.dataframe.DataFrame` object.
-
-        """
-
-    @classmethod
     def _construct(
         cls,
         columns: Dict[str, Union["DataFrame", ColumnSeries]],
@@ -141,6 +133,20 @@ class DataFrame:
         obj._column_names = list(obj._columns.keys())
         obj._index = index
         return obj
+
+    @classmethod
+    def from_lazy_lists(cls: Type[_T], lazy_lists: "LazyLists") -> _T:
+        """Create DataFrame with lazy lists.
+
+        Arguments:
+            lazy_lists: A dict used to initialize dataframe whose data is stored in
+                lazy-loaded form.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.DataFrame` object.
+
+        """
+        return cls(lazy_lists)
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
