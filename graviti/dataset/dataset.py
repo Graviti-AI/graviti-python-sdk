@@ -7,18 +7,27 @@
 
 from typing import Any, Dict, Iterator, KeysView, Mapping, Optional
 
+from tensorbay.dataset import Notes, RemoteData
 from tensorbay.exception import ResourceNotExistError
+from tensorbay.label import Catalog
 
-# from graviti.client.catalog import get_catalog
+from graviti.client.catalog import get_catalog
 from graviti.client.data import list_data_details
 from graviti.client.dataset import get_dataset
+from graviti.client.notes import get_notes
 from graviti.client.segment import list_segments
 from graviti.dataframe.frame import DataFrame
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.tag import TagManager
-from graviti.utility.lazy import LazyFactory
+from graviti.schema.catalog_to_schema import catalog_to_schema
+from graviti.schema.extractors import Extractors, get_extractors
+from graviti.utility.file import READ_ONLY_URL
+from graviti.utility.lazy import LazyFactory, LazyList
+from graviti.utility.typing import NestedDict
+
+LazyLists = NestedDict[str, LazyList[Any]]
 
 
 class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-attributes
@@ -67,6 +76,15 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
     def __iter__(self) -> Iterator[str]:
         return self._get_data().__iter__()
 
+    def _get_lazy_lists(self, factory: LazyFactory, extractors: Extractors) -> LazyLists:
+        lazy_lists: LazyLists = {}
+        for key, arguments in extractors.items():
+            if isinstance(arguments, tuple):
+                lazy_lists[key] = factory.create_list(*arguments)
+            else:
+                lazy_lists[key] = self._get_lazy_lists(factory, arguments)
+        return lazy_lists
+
     def _init_data(self) -> None:
         self._data = {}
         response = list_segments(
@@ -103,14 +121,30 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
                 128,
                 factory_getter,
             )
-            # catalog = get_catalog(
-            # self._url,
-            # self._access_key,
-            # self._dataset_id,
-            # draft_number=self._status.draft_number,
-            # commit=self._status.commit_id,
-            # )
-            self._data[sheet_name] = DataFrame.from_lazy_factory(factory)
+            catalog = get_catalog(
+                self._url,
+                self._access_key,
+                self._dataset_id,
+                commit=self._commit_id,
+            )
+
+            first_data_details = data_details["dataDetails"][0]
+            remote_data = RemoteData.from_response_body(
+                first_data_details,
+                url=READ_ONLY_URL(first_data_details["url"]),
+            )
+            notes = get_notes(
+                self._url,
+                self._access_key,
+                self._dataset_id,
+                commit=self._commit_id,
+            )
+
+            schema = catalog_to_schema(
+                Catalog.loads(catalog["catalog"]), remote_data, Notes.loads(notes)
+            )
+            lazy_lists = self._get_lazy_lists(factory, get_extractors(schema))
+            self._data[sheet_name] = DataFrame.from_lazy_lists(lazy_lists)
 
     def _get_data(self) -> Dict[str, DataFrame]:
         if not hasattr(self, "_data"):

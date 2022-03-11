@@ -2,7 +2,7 @@
 graviti.Dataframe
 #################
 
-.. currentmodule:: graviti
+.. currentmodule:: graviti.dataframe
 
 .. autosummary::
    :nosignatures:

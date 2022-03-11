@@ -7,24 +7,16 @@
 
 
 from functools import partial
-from typing import Any, Callable, Dict, Iterator, List, Protocol, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
 from graviti import DataFrame
 from graviti.utility.file import File
+from graviti.utility.typing import NestedDict
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
 _Extractor = Tuple[Callable[[Dict[str, Any]], Iterator[_T]], str]
-
-
-class Extractors(Protocol):
-    """Typehint for nested extractors."""
-
-    def __getitem__(self, key: str) -> Union["Extractors", _Extractor[Any]]:
-        ...
-
-    def __setitem__(self, key: str, value: Union["Extractors", _Extractor[Any]]) -> None:
-        ...
+Extractors = NestedDict[str, _Extractor[Any]]
 
 
 _PORTEX_TYPE_TO_NUMPY_DTYPE = {
