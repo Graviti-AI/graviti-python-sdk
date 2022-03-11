@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import yaml
 
-from graviti.schema.package import package_manager
+from graviti.schema.package import packages
 
 _INDENT = " " * 2
 
@@ -107,7 +107,7 @@ class PortexType:
             A Portex type instance created from the input python dict.
 
         """
-        class_ = package_manager.search_type(content["type"])
+        class_ = packages.search_type(content["type"])
         assert issubclass(class_, cls)
         kwargs = {}
         for parameter in class_.params:

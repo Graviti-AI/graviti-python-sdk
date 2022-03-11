@@ -6,28 +6,32 @@
 
 
 from inspect import Signature
-from typing import Any, Dict, Type
+from typing import Any, ClassVar, Dict, Set, Type
 
 from graviti.schema.base import Param, PortexType
 from graviti.schema.builtin import Fields
 from graviti.schema.factory import Dynamic, type_factory_creator
-from graviti.schema.package import package_manager
+from graviti.schema.package import Imports, Package, packages
 
 
 class PortexExternalType(PortexType):
     """The base class of Portex external type."""
 
     internal_type: PortexType
+    dependences: ClassVar[Set[PortexType]]
     repo: str
     version: str
 
 
-def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
+def template(
+    name: str, content: Dict[str, Any], package: Package[Any] = packages.locals
+) -> Type[PortexExternalType]:
     """Generate a Portex external type according to the input template.
 
     Arguments:
         name: The class name of the Portex external type.
         content: A dict indicates a Portex template.
+        package: The package this template belongs to.
 
     Returns:
         A subclass of ``PortexExternalType``.
@@ -105,10 +109,14 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
         )
 
     """
-    params = content["params"]
-    decl = content["declaration"]
+    try:
+        params = content["params"]
+        decl = content["declaration"]
+    except KeyError:
+        params = {}
+        decl = content
 
-    factory = type_factory_creator(decl)
+    factory = type_factory_creator(decl, Imports(package))
     keys = factory.keys
 
     parameters = []
@@ -133,11 +141,15 @@ def template(name: str, content: Dict[str, Any]) -> Type[PortexType]:
 
         for key, value in factory.keys.items():
             type_ = value if not isinstance(value, Dynamic) else value(**arguments)
-            if type_ == Fields:
+            if type_ == Fields and arguments[key] is not None:
                 arguments[key] = Fields(arguments[key])
 
         self.__dict__.update(arguments)
 
-    type_ = type(name, (PortexExternalType,), {"params": parameters, "__init__": __init__})
-    package_manager.local_package[name] = type_
+    type_ = type(
+        name,
+        (PortexExternalType,),
+        {"params": parameters, "dependences": factory.dependences, "__init__": __init__},
+    )
+    package[name] = type_
     return type_
