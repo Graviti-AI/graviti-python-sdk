@@ -105,11 +105,23 @@ def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
     return extractor, "object"
 
 
-def _get_pointlists(
-    schema: Dict[str, Any], key: str  # pylint: disable=unused-argument
-) -> _Extractor[DataFrame]:
+def _extract_vetices(
+    pointlist: List[Dict[str, Any]], vertices_keys: Tuple[str, ...]
+) -> Dict[str, List[Any]]:
+    return {key: [point[key] for point in pointlist] for key in vertices_keys}
+
+
+def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
-        raise NotImplementedError
+        for item in data["dataDetails"]:
+            labels = item["label"][key.upper()]
+            pointlists: Dict[str, Any] = {
+                "vertices": [
+                    DataFrame(_extract_vetices(label[key], ("x", "y"))) for label in labels
+                ]
+            }
+            pointlists.update(_extract_category_and_attribute(schema["items"], labels))
+            yield DataFrame(pointlists)
 
     return extractor, "object"
 
@@ -149,11 +161,21 @@ def _get_mask(schema: Dict[str, Any], key: str) -> _Extractors[Any]:
     return mask
 
 
-def _get_multi_pointlists(
-    schema: Dict[str, Any], key: str  # pylint: disable=unused-argument
-) -> _Extractor[DataFrame]:
+def _get_multi_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[DataFrame]:
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
-        raise NotImplementedError
+        for item in data["dataDetails"]:
+            labels = item["label"][f"MULTI_{key.upper()}"]
+            multi_pointlists: Dict[str, Any] = {
+                f"{key}s": [
+                    [
+                        DataFrame(_extract_vetices(pointlist, ("x", "y")))
+                        for pointlist in label[f"multi{key.capitalize()}"]
+                    ]
+                    for label in labels
+                ]
+            }
+            multi_pointlists.update(_extract_category_and_attribute(schema["items"], labels))
+            yield DataFrame(multi_pointlists)
 
     return extractor, "object"
 
@@ -181,15 +203,15 @@ _EXTRACTORS_GETTER: Dict[
     ("attribute", "label.Attribute"): _get_attribute,
     ("category", "label.Category"): _get_category,
     ("box2ds", "array"): _get_box2ds,
-    ("polygons", "array"): partial(_get_pointlists, key="polygons"),
-    ("polyline2ds", "array"): partial(_get_pointlists, key="polyline2ds"),
+    ("polygons", "array"): partial(_get_pointlists, key="polygon"),
+    ("polyline2ds", "array"): partial(_get_pointlists, key="polyline2d"),
     ("keypoints2d", "array"): _get_keypoints2ds,
     ("face-keypoints2d", "laebl.Keypoints2D"): _get_keypoints2ds,
     ("semantic_mask", "label.file.SemanticMask"): partial(_get_mask, key="SEMANTIC_MASK"),
     ("instance_mask", "label.file.InstanceMask"): partial(_get_mask, key="INSTANCE_MASK"),
     ("panoptic_mask", "label.file.PanopticMask"): partial(_get_mask, key="PANOPTIC_MASK"),
-    ("multi_polygons", "array"): partial(_get_multi_pointlists, key="multi_polygons"),
-    ("multi_polyline2ds", "array"): partial(_get_multi_pointlists, key="multi_polyline2ds"),
+    ("multi_polygons", "array"): partial(_get_multi_pointlists, key="polygon"),
+    ("multi_polyline2ds", "array"): partial(_get_multi_pointlists, key="polyline2d"),
     ("RLE", "array"): _get_rle,
 }
 
