@@ -6,6 +6,7 @@
 """The implementation of the Graviti DataFrame."""
 
 
+from itertools import chain, islice, zip_longest
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -28,6 +29,9 @@ from graviti.dataframe.row.series import Series as RowSeries
 if TYPE_CHECKING:
     from graviti.dataset.dataset import LazyLists
 
+_DEFAULT_COLUMN_WIDTH = 3
+_MAX_REPR_ROWS = 10
+
 
 class DataFrame:
     """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
@@ -46,18 +50,22 @@ class DataFrame:
         >>> data = {"col1": [1, 2], "col2": [3, 4]}
         >>> df = DataFrame(data=data)
         >>> df
-           col1  col2
-        0     1     3
-        1     2     4
+            col1 col2
+        0   1    3
+        1   2    4
 
-        Constructing DataFrame from numpy ndarray:
-
-        >>> df2 = DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), columns=["a", "b", "c"])
-        >>> df2
-           a  b  c
-        0  1  2  3
-        1  4  5  6
-        2  7  8  9
+        >>> df = DataFrame(
+                {
+                    "filename": ["a.jpg", "b.jpg", "c.jpg"],
+                    "box2ds": {"x": [1, 2, 3], "y": [1, 2, 3]},
+                }
+            )
+        >>> df
+            filename box2ds
+                     x      y
+        0   a.jpg    1      1
+        1   b.jpg    2      2
+        2   c.jpg    3      3
 
     """
 
@@ -117,10 +125,33 @@ class DataFrame:
         pass
 
     def __repr__(self) -> str:
-        return f"\n DataFrame\n columns: {self._columns} \n index: {self._index}"
+        flatten_header, flatten_data = self._flatten()
+        header = self._get_repr_header(flatten_header)
+        body = self._get_repr_body(flatten_data)
+        column_widths = [len(max(column, key=len)) for column in zip_longest(*header, *body)]
+        lines = [
+            "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
+            for line in chain(header, body)
+        ]
+        if self.__len__() > _MAX_REPR_ROWS:
+            lines.append(f"...({self.__len__()})")
+        return "\n".join(lines)
 
     def __len__(self) -> int:
         return self._columns[self._column_names[0]].__len__()
+
+    @staticmethod
+    def _get_repr_header(flatten_header: List[Tuple[str, ...]]) -> List[List[str]]:
+        lines: List[List[str]] = []
+        for names in zip_longest(*flatten_header, fillvalue=""):
+            line = [""]
+            pre_name = None
+            upper_line = lines[-1][1:] if lines else [""]
+            for name, upper_name in zip_longest(names, upper_line, fillvalue=""):
+                line.append("" if name == pre_name and upper_name == "" else name)
+                pre_name = name
+            lines.append(line)
+        return lines
 
     @classmethod
     def _construct(
@@ -147,6 +178,49 @@ class DataFrame:
 
         """
         return cls(lazy_lists)
+
+    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
+        header: List[Tuple[str, ...]] = []
+        data: List[ColumnSeries] = []
+        for key, value in self._columns.items():
+            if isinstance(value, DataFrame):
+                nested_header, nested_data = value._flatten()  # pylint: disable=protected-access
+                header.extend((key, *sub_column) for sub_column in nested_header)
+                data.extend(nested_data)
+            else:
+                data.append(value)
+                header.append((key,))
+
+        return header, data
+
+    def _repr_folding(self) -> str:
+        return f"{self.__class__.__name__}{self.shape}"
+
+    def _get_repr_indices(self) -> Iterable[int]:
+        length = self.__len__()
+        # pylint: disable=protected-access
+        if self._index._indices is None:
+            return range(min(length, _MAX_REPR_ROWS))
+
+        if length >= _MAX_REPR_ROWS:
+            return islice(self._index._indices, _MAX_REPR_ROWS)
+
+        return self._index._indices
+
+    def _get_repr_body(self, flatten_data: List[ColumnSeries]) -> List[List[str]]:
+        lines = []
+        for i in self._get_repr_indices():
+            line: List[str] = [str(i)]
+            for column in flatten_data:
+                item = column[i]
+                name = (
+                    item._repr_folding()  # pylint: disable=protected-access
+                    if isinstance(item, DataFrame)
+                    else str(item)
+                )
+                line.append(name)
+            lines.append(line)
+        return lines
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
@@ -206,15 +280,27 @@ class DataFrame:
     def shape(self) -> Tuple[int, int]:
         """Return a tuple representing the dimensionality of the DataFrame.
 
-        Return:
+        Returns:
             Shape of the DataFrame.
 
         Examples:
-            >>> df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+            >>> df = DataFrame(
+                    {
+                        "filename": ["a.jpg", "b.jpg", "c.jpg"],
+                        "box2ds": {"x": [1, 2, 3], "y": [1, 2, 3]},
+                    }
+                )
+            >>> df
+                filename box2ds
+                         x      y
+            0   a.jpg    1      1
+            1   b.jpg    2      2
+            2   c.jpg    3      3
             >>> df.shape
-            (2, 2)
+            (3, 2)
 
         """
+        return (self.__len__(), len(self._column_names))
 
     @property
     def size(self) -> int:
