@@ -126,11 +126,21 @@ def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[DataFrame]:
     return extractor, "object"
 
 
-def _get_keypoints2ds(
-    schema: Dict[str, Any]  # pylint: disable=unused-argument
-) -> _Extractor[DataFrame]:
+def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
+    keypoints2d_schema = schema["items"]
+    vertices_keys = ("x", "y", "z") if keypoints2d_schema.get("visible") else ("x", "y")
+    vertices_extractor = partial(_extract_vetices, vertices_keys=vertices_keys)
+
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
-        raise NotImplementedError
+        for item in data["dataDetails"]:
+            labels = item["label"]["KEYPOINTS2D"]
+            keypoints2d: Dict[str, Any] = {
+                "vertices": [
+                    DataFrame(vertices_extractor(label["keypoints2d"])) for label in labels
+                ]
+            }
+            keypoints2d.update(_extract_category_and_attribute(keypoints2d_schema, labels))
+            yield DataFrame(keypoints2d)
 
     return extractor, "object"
 
@@ -206,7 +216,6 @@ _EXTRACTORS_GETTER: Dict[
     ("polygons", "array"): partial(_get_pointlists, key="polygon"),
     ("polyline2ds", "array"): partial(_get_pointlists, key="polyline2d"),
     ("keypoints2d", "array"): _get_keypoints2ds,
-    ("face-keypoints2d", "laebl.Keypoints2D"): _get_keypoints2ds,
     ("semantic_mask", "label.file.SemanticMask"): partial(_get_mask, key="SEMANTIC_MASK"),
     ("instance_mask", "label.file.InstanceMask"): partial(_get_mask, key="INSTANCE_MASK"),
     ("panoptic_mask", "label.file.PanopticMask"): partial(_get_mask, key="PANOPTIC_MASK"),
