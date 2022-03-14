@@ -128,7 +128,7 @@ def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[DataFrame]:
 
 def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
     keypoints2d_schema = schema["items"]
-    vertices_keys = ("x", "y", "z") if keypoints2d_schema.get("visible") else ("x", "y")
+    vertices_keys = ("x", "y", "v") if keypoints2d_schema.get("visible") else ("x", "y")
     vertices_extractor = partial(_extract_vetices, vertices_keys=vertices_keys)
 
     def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
@@ -215,7 +215,7 @@ _EXTRACTORS_GETTER: Dict[
     ("box2ds", "array"): _get_box2ds,
     ("polygons", "array"): partial(_get_pointlists, key="polygon"),
     ("polyline2ds", "array"): partial(_get_pointlists, key="polyline2d"),
-    ("keypoints2d", "array"): _get_keypoints2ds,
+    ("keypoints2ds", "array"): _get_keypoints2ds,
     ("semantic_mask", "label.file.SemanticMask"): partial(_get_mask, key="SEMANTIC_MASK"),
     ("instance_mask", "label.file.InstanceMask"): partial(_get_mask, key="INSTANCE_MASK"),
     ("panoptic_mask", "label.file.PanopticMask"): partial(_get_mask, key="PANOPTIC_MASK"),
