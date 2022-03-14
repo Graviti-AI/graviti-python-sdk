@@ -264,7 +264,8 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
             self._commit_id = self.commits.get(revision).commit_id
             self._branch_name = None
 
-        delattr(self, "_data")
+        if hasattr(self, "_data"):
+            delattr(self, "_data")
 
     def checkout_draft(self, draft_number: int) -> None:
         """Checkout to a draft.
