@@ -5,7 +5,8 @@
 
 """The implementation of the Graviti Series."""
 
-from typing import Any, Dict, Iterable, List, Optional, Union, overload
+from itertools import zip_longest
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
 
 from graviti.dataframe.series import SeriesBase
 
@@ -58,6 +59,49 @@ class Series(SeriesBase[str]):
             self._indices_data[key] = value
             self._indices.append(key)
         self.name = name
+
+    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[Any]]:
+        header: List[Tuple[str, ...]] = []
+        data: List[Any] = []
+        for key, value in self._indices_data.items():
+            if isinstance(value, Series):
+                nested_header, nested_data = value._flatten()  # pylint: disable=protected-access
+                header.extend((key, *sub_column) for sub_column in nested_header)
+                data.extend(nested_data)
+            else:
+                data.append(value)
+                header.append((key,))
+        return header, data
+
+    @staticmethod
+    def _get_repr_header(flatten_header: List[Tuple[str, ...]]) -> List[List[str]]:
+        lines: List[List[str]] = []
+        for names in zip_longest(*flatten_header, fillvalue=""):
+            line = []
+            pre_name = None
+            upper_line = lines[-1][1:] if lines else []
+            for name, upper_name in zip_longest(names, upper_line, fillvalue=""):
+                if name == pre_name and upper_name == "":
+                    line.append("")
+                else:
+                    line.append(name)
+                pre_name = name
+            lines.append(line)
+        return lines
+
+    def __repr__(self) -> str:
+        flatten_header, flatten_data = self._flatten()
+        header = self._get_repr_header(flatten_header)
+        body = flatten_data
+        rows = header
+        rows.append(body)
+        column_widths = [len(max(column, key=len)) for column in rows]
+        lines = [[row[i] for row in rows] for i in range(len(rows[0]))]
+        repr_lines = [
+            "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
+            for line in lines
+        ]
+        return "\n".join(repr_lines)
 
     # @overload
     # def __getitem__(self, key: Union[slice, Tuple[str]]) -> "Series":

@@ -6,9 +6,14 @@
 """The implementation of the Graviti Series."""
 
 
+from itertools import islice
+from textwrap import indent
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Union, overload
 
 from graviti.dataframe.series import SeriesBase
+
+_INDENT = " "
+_MAX_REPR_ROWS = 10
 
 
 class Series(SeriesBase[int]):
@@ -56,6 +61,39 @@ class Series(SeriesBase[int]):
         else:
             self._indices_data = {raw_index: location for location, raw_index in enumerate(index)}
             self._indices = list(index)
+
+    def _get_repr_indices(self) -> Iterable[int]:
+        length = self.__len__()
+        # pylint: disable=protected-access
+        if self._indices is None:
+            return range(min(length, _MAX_REPR_ROWS))
+
+        if length >= _MAX_REPR_ROWS:
+            return islice(self._indices, _MAX_REPR_ROWS)
+
+        return self._indices
+
+    def __repr__(self) -> str:
+
+        length = self.__len__()
+        lines = []
+        repr_indices = list(self._get_repr_indices())
+        repr_indices = map(str, repr_indices)
+        indice_width = len(max(repr_indices))
+
+        repr_body = self._get_repr_body()
+
+        if self.name:
+            column_width = max(len(max(repr_indices)), len(self.name))
+            lines.append(f"{_INDENT:<{indice_width+2}}{value:<{column_width+2}}")
+        for indice, value in zip(repr_indices, repr_body):
+            lines.append(
+                f"{indice:<{indice_width+2}}{value:<{column_width+2}}"
+                # pylint: disable=protected-access
+            )
+        if length > _MAX_REPR_ROWS:
+            lines.append(f"...({self.__len__()})")
+        return "\n".join(lines)
 
     # @overload
     # def __getitem__(self, key: slice) -> "Series":
