@@ -89,7 +89,6 @@ class DataFrame:
             self._index = ColumnSeries(list(range(self.__len__())))
         else:
             raise ValueError("DataFrame only supports generating from dictionary now")
-        print(self._index)
 
     @overload
     def __getitem__(self, key: str) -> Union[ColumnSeries, "DataFrame"]:  # type: ignore[misc]
@@ -104,8 +103,11 @@ class DataFrame:
         if isinstance(key, str):
             return self._columns[key]
 
-        new_columns = {name: self._columns[name] for name in key}
-        return self._construct(new_columns, self._index)
+        if isinstance(key, Iterable):
+            new_columns = {name: self._columns[name] for name in key}
+            return self._construct(new_columns, self._index)
+
+        raise KeyError(key)
 
     def __setitem__(self, key: str, value: Iterable[Any]) -> None:
         pass
