@@ -7,7 +7,7 @@
 
 
 from functools import partial
-from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Iterator, List, Protocol, Tuple, TypeVar, Union
 
 from graviti import DataFrame
 from graviti.utility.file import File
@@ -15,7 +15,16 @@ from graviti.utility.file import File
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
 _Extractor = Tuple[Callable[[Dict[str, Any]], Iterator[_T]], str]
-_Extractors = Dict[str, _Extractor[_T]]
+
+
+class Extractors(Protocol):
+    """Typehint for nested extractors."""
+
+    def __getitem__(self, key: str) -> Union["Extractors", _Extractor[Any]]:
+        ...
+
+    def __setitem__(self, key: str, value: Union["Extractors", _Extractor[Any]]) -> None:
+        ...
 
 
 _PORTEX_TYPE_TO_NUMPY_DTYPE = {
@@ -55,8 +64,8 @@ def _attribute_extractor(data: Dict[str, Any], name: str) -> Iterator[Any]:
         yield item["label"]["CLASSIFICATION"]["attributes"][name]
 
 
-def _get_attribute(schema: Dict[str, Any]) -> _Extractors[Any]:
-    attributes: _Extractors[Any] = {}
+def _get_attribute(schema: Dict[str, Any]) -> Extractors:
+    attributes: Extractors = {}
     for attribute_info in schema["attributes"]:
         name = attribute_info["name"]
         type_ = attribute_info["type"]
@@ -159,7 +168,7 @@ def _info_extractor(data: Dict[str, Any], schema: Dict[str, Any], key: str) -> I
         yield DataFrame(mask_info)
 
 
-def _get_mask(schema: Dict[str, Any], key: str) -> _Extractors[Any]:
+def _get_mask(schema: Dict[str, Any], key: str) -> Extractors:
     mask: Dict[str, Any] = {"mask": (partial(_mask_extractor, key=key), "object")}
     if "attributes" in schema:
         mask["info"] = partial(_info_extractor, schema=schema, key=key), "object"
@@ -197,7 +206,7 @@ def _get_rle(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
 
 
 _EXTRACTORS_GETTER: Dict[
-    Tuple[str, str], Callable[[Dict[str, Any]], Union[_Extractor[Any], _Extractors[Any]]]
+    Tuple[str, str], Callable[[Dict[str, Any]], Union[_Extractor[Any], Extractors]]
 ] = {
     ("filename", "string"): _get_filename,
     ("image", "file.Image"): _get_file,
@@ -220,7 +229,7 @@ _EXTRACTORS_GETTER: Dict[
 }
 
 
-def get_extractors(schema: Dict[str, Any]) -> Dict[str, Union[_Extractor[Any], _Extractors[Any]]]:
+def get_extractors(schema: Dict[str, Any]) -> Extractors:
     """Get the extractors and dtypes for colomns.
 
     Arguments:
@@ -321,7 +330,7 @@ def get_extractors(schema: Dict[str, Any]) -> Dict[str, Union[_Extractor[Any], _
          ]}
 
     """
-    extractors: Dict[str, Union[_Extractor[Any], _Extractors[Any]]] = {}
+    extractors: Extractors = {}
     for field in schema["fields"]:
         field_name, field_type = field["name"], field["type"]
         extractor_getter = _EXTRACTORS_GETTER[field_name, field_type]
