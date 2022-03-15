@@ -9,10 +9,8 @@
 from functools import partial
 from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
-from tensorbay.utility.file import URL
-from tensorbay.utility.file import RemoteFileMixin as File
-
 from graviti import DataFrame
+from graviti.utility.file import File
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
@@ -27,8 +25,6 @@ _PORTEX_TYPE_TO_NUMPY_DTYPE = {
     "enum": "object",
 }
 
-_URL = partial(URL, updater=lambda: "update is not supported currently")
-
 
 def _get_filename(*_: Any) -> _Extractor[str]:
     def extractor(data: Dict[str, Any]) -> Iterator[str]:
@@ -41,8 +37,7 @@ def _get_filename(*_: Any) -> _Extractor[str]:
 def _get_file(*_: Any) -> _Extractor[File]:
     def extractor(data: Dict[str, Any]) -> Iterator[File]:
         for item in data["dataDetails"]:
-            url = item["url"]
-            yield File(item["remotePath"], url=_URL(url))
+            yield File(item["url"], item["checksum"])
 
     return extractor, "object"
 
@@ -148,7 +143,7 @@ def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
 def _mask_extractor(data: Dict[str, Any], key: str) -> Iterator[Any]:
     for item in data["dataDetails"]:
         label = item["label"][key]
-        yield File(label["remotePath"], url=_URL(label["url"]))
+        yield File(label["url"], label["checksum"])
 
 
 def _info_extractor(data: Dict[str, Any], schema: Dict[str, Any], key: str) -> Iterator[DataFrame]:
