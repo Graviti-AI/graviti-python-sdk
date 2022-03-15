@@ -37,6 +37,7 @@ class Package(UserMapping[str, _T]):
         if key in self._data:
             raise KeyError(f"{key} already exists in package")
         value.name = key
+        value.package = self
         self._data[key] = value
 
     def __missing__(self, key: str) -> _T:
@@ -83,11 +84,6 @@ class ExternalPackage(Package[Type["PortexExternalType"]]):
         self.version = version
         self._builders: Dict[str, TypeBuilder] = {}
         self._build()
-
-    def __setitem__(self, key: str, value: Type["PortexExternalType"]) -> None:
-        super().__setitem__(key, value)
-        value.repo = self.repo
-        value.version = self.version
 
     def __missing__(self, key: str) -> Type["PortexExternalType"]:
         return self._builders[key]()

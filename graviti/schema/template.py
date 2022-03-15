@@ -11,7 +11,7 @@ from typing import Any, ClassVar, Dict, Set, Type
 from graviti.schema.base import Param, PortexType
 from graviti.schema.builtin import Fields
 from graviti.schema.factory import Dynamic, type_factory_creator
-from graviti.schema.package import Imports, Package, packages
+from graviti.schema.package import ExternalPackage, Imports, Package, packages
 
 
 class PortexExternalType(PortexType):
@@ -19,8 +19,7 @@ class PortexExternalType(PortexType):
 
     internal_type: PortexType
     dependences: ClassVar[Set[PortexType]]
-    repo: str
-    version: str
+    package: ClassVar[ExternalPackage]
 
 
 def template(
