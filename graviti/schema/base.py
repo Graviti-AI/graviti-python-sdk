@@ -7,11 +7,11 @@
 
 import json
 from inspect import Parameter
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, ClassVar, Dict, Iterable, List, Optional
 
 import yaml
 
-from graviti.schema.package import packages
+from graviti.schema.package import Package, packages
 
 _INDENT = " " * 2
 
@@ -61,7 +61,8 @@ class PortexType:
     """The base class of portex type."""
 
     name: str
-    params: List[Param] = []
+    package: ClassVar[Package[Any]]
+    params: ClassVar[List[Param]] = []
 
     def __init_subclass__(cls) -> None:
         params = cls.params.copy()
