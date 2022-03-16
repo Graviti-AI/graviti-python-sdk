@@ -8,7 +8,7 @@
 from pathlib import Path
 from subprocess import run
 from tempfile import gettempdir
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 import yaml
 from tensorbay.utility import UserMapping
@@ -73,15 +73,15 @@ class ExternalPackage(Package[Type["PortexExternalType"]]):
     """The external Portex package used to manage external types.
 
     Arguments:
-        repo: The git repo url of the external package.
-        version: The git repo version (tag/commit) of the external package.
+        url: The git repo url of the external package.
+        revision: The git repo revision (tag/commit) of the external package.
 
     """
 
-    def __init__(self, repo: str, version: str) -> None:
+    def __init__(self, url: str, revision: str) -> None:
         super().__init__()
-        self.repo = repo
-        self.version = version
+        self.url = url
+        self.revision = revision
         self._builders: Dict[str, TypeBuilder] = {}
         self._build()
 
@@ -91,10 +91,10 @@ class ExternalPackage(Package[Type["PortexExternalType"]]):
     def _build(self) -> None:
         temp_path = Path(gettempdir()) / "portex"
         temp_path.mkdir(exist_ok=True)
-        repo_name = self.repo.rsplit("/", 1)[-1]
+        repo_name = self.url.rsplit("/", 1)[-1]
         repo_path = temp_path / repo_name
         if not repo_path.exists():
-            run(["git", "clone", self.repo, "-b", self.version, repo_path], check=True)
+            run(["git", "clone", self.url, "-b", self.revision, repo_path], check=True)
 
         roots = list(repo_path.glob("**/ROOT.yaml"))
 
@@ -116,6 +116,77 @@ class ExternalPackage(Package[Type["PortexExternalType"]]):
             if builder.is_building:
                 continue
             builder()
+
+    @property
+    def repo(self) -> str:
+        """The repo string of the package.
+
+        Returns:
+            The "<url>@<rev>" format repo string.
+
+        """
+        return f"{self.url}@{self.revision}"
+
+
+class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
+    """The subset of Portex package, used in :class:`Imports`.
+
+    Arguments:
+        package: The source package of this subpackage.
+
+    """
+
+    def __init__(self, package: ExternalPackage) -> None:
+        self.package = package
+        self._data: Dict[str, Type["PortexExternalType"]] = {}
+
+    def add_type(self, name: str, alias: Optional[str] = None) -> None:
+        """Add type from the source package to the subpackage.
+
+        Arguments:
+            name: The name of the Portex type.
+            alias: The alias of the Portex type.
+
+        """
+        self._data[name if alias is None else alias] = self.package[name]
+
+    @classmethod
+    def from_pyobj(cls, content: Dict[str, Any]) -> "Subpackage":
+        """Create :class:`Subpackage` instance from python dict.
+
+        Arguments:
+            content: A python dict representing a subpackage.
+
+        Returns:
+            A :class:`Subpackage` instance created from the input python dict.
+
+        """
+        url, revision = content["repo"].split("@", 1)
+        package = packages.externals[url, revision]
+        partial_package = cls(package)
+        for type_ in content["types"]:
+            partial_package.add_type(type_["name"], type_.get("alias"))
+
+        return partial_package
+
+    def to_pyobj(self) -> Dict[str, Any]:
+        """Dump the instance to a python dict.
+
+        Returns:
+            A python dict representation of the :class:`Subpackage` instance.
+
+        """
+        pyobj: Dict[str, Any] = {"repo": self.package.repo}
+        types = []
+        for key, value in self._data.items():
+            name = value.name
+            type_ = {"name": name}
+            if key != name:
+                type_["alias"] = key
+            types.append(type_)
+
+        pyobj["types"] = types
+        return pyobj
 
 
 class TypeBuilder:
@@ -182,37 +253,6 @@ class Packages:
         self.externals[repo, version] = package
         return package
 
-    def search_type(
-        self, name: str, repo: Optional[str] = None, version: Optional[str] = None
-    ) -> Type["PortexType"]:
-        """Search the Portex type from all packages.
-
-        Arguments:
-            name: The name of the Portex type.
-            repo: The git repo url of the external package.
-            version: The git repo version (tag/commit) of the external package.
-
-        Returns:
-            The Portex Type which matches the inputs.
-
-        Raises:
-            KeyError: The Portex type which meets the inputs does not exist.
-
-        """
-        if name in self.builtins:
-            return self.builtins[name]
-
-        try:
-            external_package = self.externals[repo, version]  # type: ignore[index]
-            return external_package[name]
-        except KeyError:
-            pass
-
-        try:
-            return self.locals[name]
-        except KeyError as error:
-            raise KeyError("Type not found") from error
-
 
 packages = Packages()
 
@@ -225,11 +265,82 @@ class Imports:
 
     """
 
-    def __init__(self, package: Package[Type["PortexType"]]) -> None:
+    def __init__(self, package: Optional[Package[Type["PortexType"]]] = None) -> None:
         self._package = package
+        self._subpackages: List[Subpackage] = []
 
     def __getitem__(self, key: str) -> Type["PortexType"]:
         try:
             return packages.builtins[key]
         except KeyError:
+            pass
+
+        for subpackage in self._subpackages:
+            try:
+                return subpackage[key]
+            except KeyError:
+                continue
+
+        if self._package:
             return self._package[key]
+
+        raise KeyError(key)
+
+    def __contain__(self, key: str) -> bool:
+        try:
+            self.__getitem__(key)
+            return True
+        except KeyError:
+            return False
+
+    @classmethod
+    def from_pyobj(cls, content: List[Dict[str, Any]]) -> "Imports":
+        """Create :class:`Imports` instance from python list.
+
+        Arguments:
+            content: A python list representing imported types.
+
+        Returns:
+            A :class:`Imports` instance created from the input python list.
+
+        """
+        imports = cls()
+        for pyobj in content:
+            partial_package = Subpackage.from_pyobj(pyobj)
+            imports.add_subpackage(partial_package)
+
+        return imports
+
+    def to_pyobj(self) -> List[Dict[str, Any]]:
+        """Dump the instance to a python list.
+
+        Returns:
+            A python list representation of the Portex imported types.
+
+        """
+        return [partial_package.to_pyobj() for partial_package in self._subpackages]
+
+    def add_subpackage(self, subpackage: Subpackage) -> None:
+        """Add subpackage to this :class:`Imports` instance.
+
+        Arguments:
+            subpackage: The subpackage which needs to be added.
+
+        Raises:
+            KeyError: When there are duplicate names in the :class:`imports` instance.
+
+        """
+        for key in subpackage:
+            if self.__contain__(key):
+                raise KeyError("Duplicate names")
+
+        self._subpackages.append(subpackage)
+
+    def update_base_package(self, package: Package[Type["PortexType"]]) -> None:
+        """Update base package to the :class:`Imports` instance.
+
+        Arguments:
+            package: The base package which needs to be updated.
+
+        """
+        self._package = package

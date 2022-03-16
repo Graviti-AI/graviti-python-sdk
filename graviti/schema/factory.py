@@ -88,7 +88,7 @@ class DynamicDictParameter(Dynamic):
                 return str
 
             name_factory = string_factory_creator(self._decl["type"])
-            class_ = packages.search_type(name_factory(**kwargs))
+            class_ = packages.builtins[name_factory(**kwargs)]
             for parameter in class_.params:
                 if parameter.name == self._key:
                     return parameter.annotation
