@@ -115,7 +115,10 @@ def template(
         params = {}
         decl = content
 
-    factory = type_factory_creator(decl, Imports(package))
+    imports = Imports.from_pyobj(content.get("imports", []))
+    imports.update_base_package(package)
+
+    factory = type_factory_creator(decl, imports)
     keys = factory.keys
 
     parameters = []

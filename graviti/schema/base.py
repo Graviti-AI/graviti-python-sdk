@@ -11,7 +11,7 @@ from typing import Any, ClassVar, Dict, Iterable, List, Optional
 
 import yaml
 
-from graviti.schema.package import Package, packages
+from graviti.schema.package import Imports, Package
 
 _INDENT = " " * 2
 
@@ -61,6 +61,7 @@ class PortexType:
     """The base class of portex type."""
 
     name: str
+    imports: Imports = Imports()
     package: ClassVar[Package[Any]]
     params: ClassVar[List[Param]] = []
 
@@ -108,7 +109,9 @@ class PortexType:
             A Portex type instance created from the input python dict.
 
         """
-        class_ = packages.search_type(content["type"])
+        imports = Imports.from_pyobj(content.get("imports", []))
+        class_ = imports[content["type"]]
+
         assert issubclass(class_, cls)
         kwargs = {}
         for parameter in class_.params:
@@ -117,7 +120,9 @@ class PortexType:
             if kwarg is not ...:
                 kwargs[name] = kwarg
 
-        return class_(**kwargs)  # type: ignore[call-arg]
+        type_ = class_(**kwargs)  # type: ignore[call-arg]
+        type_.imports = imports
+        return type_
 
     @classmethod
     def from_json(cls, content: str) -> "PortexType":
@@ -152,7 +157,12 @@ class PortexType:
             A python dict representation of the Portex type.
 
         """
-        pydict = {"type": self.__class__.name}
+        pydict: Dict[str, Any] = {}
+        imports_pyobj = self.imports.to_pyobj()
+        if imports_pyobj:
+            pydict["imports"] = imports_pyobj
+
+        pydict["type"] = self.__class__.name
         for parameter in self.params:
             name = parameter.name
             attr = getattr(self, name)
