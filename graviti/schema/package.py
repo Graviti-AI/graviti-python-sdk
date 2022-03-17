@@ -15,10 +15,11 @@ from tensorbay.utility import UserMapping
 
 if TYPE_CHECKING:
     from graviti.schema.base import PortexType
+    from graviti.schema.builtin import PortexBuiltinType
     from graviti.schema.template import PortexExternalType
 
 _T = TypeVar("_T", bound=Type["PortexType"])
-_S = TypeVar("_S", bound=Type["PortexType"])
+_S = TypeVar("_S", bound=Type["PortexBuiltinType"])
 
 
 class Package(UserMapping[str, _T]):
@@ -44,7 +45,7 @@ class Package(UserMapping[str, _T]):
         raise KeyError(key)
 
 
-class BuiltinPackage(Package[Type["PortexType"]]):
+class BuiltinPackage(Package[Type["PortexBuiltinType"]]):
     """The builtin Portex package used to manage builtin types."""
 
     def __call__(self, name: str) -> Callable[[_S], _S]:

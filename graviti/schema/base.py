@@ -6,55 +6,16 @@
 
 
 import json
-from inspect import Parameter
-from typing import Any, ClassVar, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict
 
 import yaml
 
 from graviti.schema.package import Imports, Package
 
+if TYPE_CHECKING:
+    from graviti.schema.param import Params
+
 _INDENT = " " * 2
-
-
-class Param(Parameter):
-    """Represents a parameter of a portex type.
-
-    Arguments:
-        name: The name of the parameter.
-        default: The default value of the parameter.
-        options: All possible values of the parameter.
-        annotation: The python type hint of the parameter.
-
-    """
-
-    _empty = Parameter.empty
-
-    def __init__(
-        self,
-        name: str,
-        default: Any = _empty,
-        options: Optional[Iterable[Any]] = None,
-        *,
-        annotation: Any = _empty,
-    ) -> None:
-        super().__init__(
-            name, Parameter.POSITIONAL_OR_KEYWORD, default=default, annotation=annotation
-        )
-        self.options = options
-
-
-def param(default: Any = Parameter.empty, options: Optional[Iterable[Any]] = None) -> Any:
-    """The factory function of Param.
-
-    Arguments:
-        default: The default value of the parameter.
-        options: All possible values of the parameter.
-
-    Returns:
-        A tuple which contains "default" and "options".
-
-    """
-    return default, options
 
 
 class PortexType:
@@ -63,17 +24,10 @@ class PortexType:
     name: str
     imports: Imports = Imports()
     package: ClassVar[Package[Any]]
-    params: ClassVar[List[Param]] = []
+    params: ClassVar["Params"]
 
-    def __init_subclass__(cls) -> None:
-        params = cls.params.copy()
-        for name, annotation in getattr(cls, "__annotations__", {}).items():
-            parameter = getattr(cls, name, None)
-            if isinstance(parameter, tuple):
-                params.append(Param(name, *parameter, annotation=annotation))
-                delattr(cls, name)
-
-        cls.params = params
+    def __init__(self, **kwargs: Any) -> None:
+        self.__dict__.update(kwargs)
 
     def __repr__(self) -> str:
         return self._repr1(0)
@@ -82,8 +36,7 @@ class PortexType:
         with_params = False
         indent = level * _INDENT
         lines = [f"{self.__class__.__name__}("]
-        for parameter in self.params:
-            name = parameter.name
+        for name, parameter in self.params.items():
             attr = getattr(self, name)
             if attr != parameter.default:
                 with_params = True
@@ -97,6 +50,12 @@ class PortexType:
             return f"\n{indent}".join(lines)
 
         return f"{lines[0]})"
+
+    def _bind_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        signature = self.params.get_signature()
+        bound_arguments = signature.bind(*args, **kwargs)
+        bound_arguments.apply_defaults()
+        return bound_arguments.arguments
 
     @classmethod
     def from_pyobj(cls, content: Dict[str, Any]) -> "PortexType":
@@ -114,13 +73,12 @@ class PortexType:
 
         assert issubclass(class_, cls)
         kwargs = {}
-        for parameter in class_.params:
-            name = parameter.name
+        for name in class_.params:
             kwarg = content.get(name, ...)
             if kwarg is not ...:
                 kwargs[name] = kwarg
 
-        type_ = class_(**kwargs)  # type: ignore[call-arg]
+        type_ = class_(**kwargs)
         type_.imports = imports
         return type_
 
@@ -163,8 +121,7 @@ class PortexType:
             pydict["imports"] = imports_pyobj
 
         pydict["type"] = self.__class__.name
-        for parameter in self.params:
-            name = parameter.name
+        for name, parameter in self.params.items():
             attr = getattr(self, name)
             if attr != parameter.default:
                 pydict[name] = attr.to_pyobj() if hasattr(attr, "to_pyobj") else attr

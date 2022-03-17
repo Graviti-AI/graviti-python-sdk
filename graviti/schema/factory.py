@@ -5,24 +5,14 @@
 """Template factory releated classes."""
 
 
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    OrderedDict,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from collections import OrderedDict
+from typing import Any, Callable, Dict, Generic, List, Mapping, Optional, Set, Type, TypeVar, Union
 
 import yaml
 
-from graviti.schema.base import Param, PortexType
-from graviti.schema.builtin import Field, Fields
+import graviti.schema.ptype as PTYPE
+from graviti.schema.base import PortexType
+from graviti.schema.field import Field, Fields
 from graviti.schema.package import Imports, packages
 
 _C = TypeVar("_C", str, float, bool, None)
@@ -31,7 +21,7 @@ _C = TypeVar("_C", str, float, bool, None)
 class Dynamic:
     """The base class of the runtime parameter type analyzer."""
 
-    def __call__(self, **_: Any) -> Any:
+    def __call__(self, **_: Any) -> PTYPE.PType:
         """Get the parameter type.
 
         Arguments:
@@ -44,7 +34,7 @@ class Dynamic:
 class DynamicPortexType(Dynamic):
     """The runtime parameter type analyzer for portex type."""
 
-    def __call__(self, **_: Any) -> Type[PortexType]:
+    def __call__(self, **_: Any) -> PTYPE.PType:
         """Get the parameter type.
 
         Arguments:
@@ -54,7 +44,7 @@ class DynamicPortexType(Dynamic):
             The ``PortexType``.
 
         """
-        return PortexType
+        return PTYPE.PortexType
 
 
 class DynamicDictParameter(Dynamic):
@@ -67,12 +57,12 @@ class DynamicDictParameter(Dynamic):
 
     """
 
-    def __init__(self, annotation_getter: Dynamic, key: str, decl: Dict[str, Any]):
-        self._annotation_getter = annotation_getter
+    def __init__(self, ptype_getter: Dynamic, key: str, decl: Dict[str, Any]):
+        self._ptype_getter = ptype_getter
         self._key = key
         self._decl = decl
 
-    def __call__(self, **kwargs: Any) -> Any:
+    def __call__(self, **kwargs: Any) -> PTYPE.PType:
         """Get the parameter type.
 
         Arguments:
@@ -82,32 +72,35 @@ class DynamicDictParameter(Dynamic):
             The parameter type of the dict value.
 
         """
-        annotation = self._annotation_getter(**kwargs)
-        if annotation in {PortexType, Field}:
-            if self._key in {"name", "type"} if annotation == Field else {"type"}:
-                return str
+        ptype = self._ptype_getter(**kwargs)
+        if ptype in {PTYPE.PortexType, PTYPE.Field}:
+            if self._key == "type":
+                return PTYPE.TypeName
 
-            name_factory = string_factory_creator(self._decl["type"])
+            if self._key == "name" and ptype == PTYPE.Field:
+                return PTYPE.String
+
+            name_factory = string_factory_creator(self._decl["type"], PTYPE.TypeName)
             class_ = packages.builtins[name_factory(**kwargs)]
-            for parameter in class_.params:
-                if parameter.name == self._key:
-                    return parameter.annotation
+            for name, parameter in class_.params.items():
+                if name == self._key:
+                    return parameter.ptype
 
-        return Any
+        return PTYPE.Any
 
 
 class DynamicListParameter(Dynamic):
     """The runtime parameter type analyzer for list values.
 
     Arguments:
-        annotation_getter: A callable object returns the type of the list.
+        ptype_getter: A callable object returns the type of the list.
 
     """
 
-    def __init__(self, annotation_getter: Dynamic):
-        self._annotation_getter = annotation_getter
+    def __init__(self, ptype_getter: Dynamic):
+        self._ptype_getter = ptype_getter
 
-    def __call__(self, **kwargs: Any) -> Any:
+    def __call__(self, **kwargs: Any) -> PTYPE.PType:
         """Get the parameter type.
 
         Arguments:
@@ -117,10 +110,10 @@ class DynamicListParameter(Dynamic):
             The parameter type of the list value.
 
         """
-        if self._annotation_getter(**kwargs) == Fields:
-            return Field
+        if self._ptype_getter(**kwargs) == PTYPE.Fields:
+            return PTYPE.Field
 
-        return Any
+        return PTYPE.Any
 
 
 class Factory:
@@ -147,7 +140,10 @@ class BinaryExpression(Factory):
 
     """
 
-    _OPERATORS: OrderedDict[str, Callable[[Any, Any], bool]] = OrderedDict(
+    # Why not use typing.OrderedDict here?
+    # typing.OrderedDict is supported after python 3.7.2
+    # typing_extensions.OrderedDict will trigger https://github.com/python/mypy/issues/11528
+    _OPERATORS: Mapping[str, Callable[[Any, Any], bool]] = OrderedDict(
         {
             "==": lambda x, y: x == y,  # type: ignore[no-any-return]
             "!=": lambda x, y: x != y,  # type: ignore[no-any-return]
@@ -168,6 +164,7 @@ class BinaryExpression(Factory):
             if len(operands) != 2:
                 raise SyntaxError("Binary operator only accept two operands")
 
+            # TODO: Use "string_factory_creator" in non-string case
             factories = [string_factory_creator(operand.strip()) for operand in operands]
             for i, factory in enumerate(factories):
                 if isinstance(factory, ConstantFactory):
@@ -210,17 +207,16 @@ class TypeFactory(Factory):
         keys = {}
         dependences = {class_}
 
-        for parameter in class_.params:
-            key = parameter.name
+        for name, parameter in class_.params.items():
             try:
-                value = decl[key]
+                value = decl[name]
             except KeyError as error:
-                if parameter.default == Param.empty:
-                    raise KeyError(f"parameter '{key}' is required") from error
+                if parameter.required:
+                    raise KeyError(f"Parameter '{name}' is required") from error
                 continue
 
-            factory = factory_creator(value, imports, parameter.annotation)
-            factories[key] = factory
+            factory = factory_creator(value, imports, parameter.ptype)
+            factories[name] = factory
             keys.update(factory.keys)
             dependences.update(factory.dependences)
 
@@ -240,7 +236,7 @@ class TypeFactory(Factory):
 
         """
         type_kwargs = {key: factory(**kwargs) for key, factory in self._factories.items()}
-        return self._class(**type_kwargs)  # type: ignore[call-arg]
+        return self._class(**type_kwargs)
 
 
 class DynamicTypeFactory(Factory):
@@ -258,7 +254,7 @@ class DynamicTypeFactory(Factory):
 
         self.keys = DictFactory(decl, DynamicPortexType()).keys.copy()
         self.dependences = set()
-        self.keys[self._type_parameter] = str
+        self.keys[self._type_parameter] = PTYPE.TypeName
 
     def __call__(self, **kwargs: Any) -> PortexType:
         """Apply the input arguments to the dynamic type template.
@@ -306,14 +302,14 @@ class VariableFactory(Factory):
 
     Arguments:
         decl: The parameter name of the variable.
-        annotation: The parameter type.
+        ptype: The parameter type.
 
     """
 
-    def __init__(self, decl: str, annotation: Any = Any) -> None:
+    def __init__(self, decl: str, ptype: PTYPE.PType = PTYPE.Any) -> None:
         self._key = decl
         self.dependences = set()
-        self.keys = {decl: annotation}
+        self.keys = {decl: ptype}
 
     def __call__(self, **kwargs: Any) -> Any:
         """Apply the input arguments to the variable template.
@@ -333,19 +329,17 @@ class ListFactory(Factory):
 
     Arguments:
         decl: A list template.
-        annotation: The parameter type of the list.
+        ptype: The parameter type of the list.
 
     """
 
-    def __init__(self, decl: List[Any], annotation: Any = Any) -> None:
+    def __init__(self, decl: List[Any], ptype: PTYPE.PType = PTYPE.Any) -> None:
         factories = []
         dependences = set()
         keys = {}
-        annotation = (
-            DynamicListParameter(annotation) if isinstance(annotation, Dynamic) else annotation
-        )
+        ptype = DynamicListParameter(ptype) if isinstance(ptype, Dynamic) else ptype
         for value in decl:
-            factory = factory_creator(value, None, annotation)
+            factory = factory_creator(value, None, ptype)
             factories.append(factory)
             dependences.update(factory.dependences)
             keys.update(factory.keys)
@@ -372,18 +366,17 @@ class DictFactory(Factory):
 
     Arguments:
         decl: A dict template.
-        annotation: The parameter type of the dict.
+        ptype: The parameter type of the dict.
 
     """
 
-    def __init__(self, decl: Dict[str, Any], annotation: Any = Any) -> None:
+    def __init__(self, decl: Dict[str, Any], ptype: PTYPE.PType = PTYPE.Any) -> None:
         factories = {}
         dependences = set()
         keys = {}
-        is_dynamic = isinstance(annotation, Dynamic)
         for key, value in decl.items():
-            annotation = DynamicDictParameter(annotation, key, decl) if is_dynamic else annotation
-            factory = factory_creator(value, None, annotation)
+            ptype = DynamicDictParameter(ptype, key, decl) if isinstance(ptype, Dynamic) else ptype
+            factory = factory_creator(value, None, ptype)
             factories[key] = factory
             dependences.update(factory.dependences)
             keys.update(factory.keys)
@@ -423,7 +416,7 @@ class FieldFactory(Factory):
         expression = expression_creator(item.pop("existIf", None))
         keys.update(expression.keys)
 
-        name_factory = string_factory_creator(item.pop("name"))
+        name_factory = string_factory_creator(item.pop("name"), PTYPE.String)
         type_factory = type_factory_creator(item, imports)
 
         dependences.update(type_factory.dependences)
@@ -506,18 +499,21 @@ def type_factory_creator(
     return TypeFactory(decl, imports)
 
 
-def string_factory_creator(decl: str) -> Union[VariableFactory, ConstantFactory[str]]:
+def string_factory_creator(
+    decl: str, ptype: PTYPE.PType = PTYPE.Any
+) -> Union[VariableFactory, ConstantFactory[str]]:
     """Check whether the input string is variable and returns the corresponding factory.
 
     Arguments:
         decl: A string which indicates a constant or a variable.
+        ptype: The parameter type of the string.
 
     Returns:
         A ``VariableFactory`` or a ``ConstantFactory`` instance according to the input.
 
     """
     if decl.startswith("$params."):
-        return VariableFactory(decl[8:], str)
+        return VariableFactory(decl[8:], ptype)
 
     return ConstantFactory(decl)
 
@@ -538,35 +534,37 @@ def expression_creator(decl: Optional[str]) -> Union[BinaryExpression, ConstantF
     return BinaryExpression(decl)
 
 
-def factory_creator(decl: Any, imports: Optional[Imports], annotation: Any = Any) -> Factory:
+def factory_creator(
+    decl: Any, imports: Optional[Imports], ptype: PTYPE.PType = PTYPE.Any
+) -> Factory:
     """Check input type and returns the corresponding factory.
 
     Arguments:
         decl: A template which indicates any Portex object.
         imports: The :class:`Imports` instance to specify the import scope of the template.
-        annotation: The parameter type of the input.
+        ptype: The parameter type of the input.
 
     Returns:
         A ``Factory`` instance according the input.
 
     """
     if isinstance(decl, str) and decl.startswith("$params."):
-        return VariableFactory(decl[8:], annotation)
+        return VariableFactory(decl[8:], ptype)
 
-    if annotation == PortexType:
+    if ptype == PTYPE.PortexType:
         assert isinstance(decl, dict)
         assert imports is not None
         return type_factory_creator(decl, imports)
 
-    if annotation == Fields:
+    if ptype == PTYPE.Fields:
         assert isinstance(decl, list)
         assert imports is not None
         return FieldsFactory(decl, imports)
 
     if isinstance(decl, list):
-        return ListFactory(decl, annotation)
+        return ListFactory(decl, ptype)
 
     if isinstance(decl, dict):
-        return DictFactory(decl, annotation)
+        return DictFactory(decl, ptype)
 
     return ConstantFactory(decl)

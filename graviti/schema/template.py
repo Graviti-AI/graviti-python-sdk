@@ -5,13 +5,13 @@
 """Template base class."""
 
 
-from inspect import Signature
 from typing import Any, ClassVar, Dict, Set, Type
 
-from graviti.schema.base import Param, PortexType
-from graviti.schema.builtin import Fields
-from graviti.schema.factory import Dynamic, type_factory_creator
+import graviti.schema.ptype as PTYPE
+from graviti.schema.base import PortexType
+from graviti.schema.factory import Dynamic, Factory, type_factory_creator
 from graviti.schema.package import ExternalPackage, Imports, Package, packages
+from graviti.schema.param import Param, Params
 
 
 class PortexExternalType(PortexType):
@@ -20,6 +20,22 @@ class PortexExternalType(PortexType):
     internal_type: PortexType
     dependences: ClassVar[Set[PortexType]]
     package: ClassVar[ExternalPackage]
+    factory: ClassVar[Factory]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        arguments = self._bind_arguments(*args, **kwargs)
+
+        for key, value in arguments.items():
+            param = self.params[key]
+            if isinstance(param.ptype, Dynamic):
+                ptype = param.ptype(**arguments)
+                param = Param(param.name, param.default, param.options, ptype)
+
+            arguments[key] = param.check(value)
+
+        super().__init__(**arguments)
+
+        self.internal_type = self.factory(**arguments)
 
 
 def template(
@@ -109,49 +125,27 @@ def template(
 
     """
     try:
-        params = content["params"]
+        params_pyobj = content["params"]
         decl = content["declaration"]
     except KeyError:
-        params = {}
+        params_pyobj = {}
         decl = content
 
     imports = Imports.from_pyobj(content.get("imports", []))
     imports.update_base_package(package)
 
     factory = type_factory_creator(decl, imports)
+
     keys = factory.keys
+    params = Params.from_pyobj(params_pyobj)
 
-    parameters = []
     for key, value in params.items():
-        parameters.append(
-            Param(
-                key,
-                value.get("default", Param.empty),
-                value.get("options", Param.empty),
-                annotation=keys.get(key, Param.empty),
-            )
-        )
-
-    signature = Signature(parameters)
-
-    def __init__(self: PortexExternalType, *args: Any, **kwargs: Any) -> None:
-        bound_arguments = signature.bind(*args, **kwargs)
-        bound_arguments.apply_defaults()
-        arguments = bound_arguments.arguments
-
-        self.internal_type = factory(**arguments)
-
-        for key, value in factory.keys.items():
-            type_ = value if not isinstance(value, Dynamic) else value(**arguments)
-            if type_ == Fields and arguments[key] is not None:
-                arguments[key] = Fields(arguments[key])
-
-        self.__dict__.update(arguments)
+        value.ptype = keys.get(key, PTYPE.Any)
 
     type_ = type(
         name,
         (PortexExternalType,),
-        {"params": parameters, "dependences": factory.dependences, "__init__": __init__},
+        {"params": params, "dependences": factory.dependences, "factory": factory},
     )
     package[name] = type_
     return type_
