@@ -5,27 +5,40 @@
 """The Portex builtin types."""
 
 
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union, overload
 
-from graviti.schema.base import _INDENT, PortexType, param
+import graviti.schema.ptype as PTYPE
+from graviti.schema.base import PortexType
+from graviti.schema.field import Field, Fields
 from graviti.schema.package import packages
+from graviti.schema.param import Param, Params, param
 
 builtins = packages.builtins
 
 
-class PortexNumericType(PortexType):
+class PortexBuiltinType(PortexType):
+    """The base class of Portex builtin type."""
+
+    params = Params()
+
+    def __init_subclass__(cls) -> None:
+        params = Params(cls.params)
+        for name in getattr(cls, "__annotations__", {}):
+            parameter = getattr(cls, name, None)
+            if isinstance(parameter, tuple):
+                params.add(Param(name, *parameter))
+                delattr(cls, name)
+
+        cls.params = params
+
+    def __init__(self, **kwargs: Any) -> None:
+        for key, value in kwargs.items():
+            kwargs[key] = self.params[key].check(value)
+
+        super().__init__(**kwargs)
+
+
+class PortexNumericType(PortexBuiltinType):
     """The base class of the Portex numeric types.
 
     Arguments:
@@ -34,16 +47,15 @@ class PortexNumericType(PortexType):
 
     """
 
-    minimum: Optional[float] = param(None)
-    maximum: Optional[float] = param(None)
+    minimum: Optional[float] = param(None, ptype=PTYPE.Number)
+    maximum: Optional[float] = param(None, ptype=PTYPE.Number)
 
     def __init__(self, minimum: Optional[float] = None, maximum: Optional[float] = None) -> None:
-        self.minimum = minimum
-        self.maximum = maximum
+        super().__init__(minimum=minimum, maximum=maximum)
 
 
 @builtins("string")
-class string(PortexType):  # pylint: disable=invalid-name
+class string(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
 
     Examples:
@@ -55,7 +67,7 @@ class string(PortexType):  # pylint: disable=invalid-name
 
 
 @builtins("bytes")
-class bytes_(PortexType):  # pylint: disable=invalid-name
+class bytes_(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``bytes``.
 
     Examples:
@@ -67,7 +79,7 @@ class bytes_(PortexType):  # pylint: disable=invalid-name
 
 
 @builtins("boolean")
-class boolean(PortexType):  # pylint: disable=invalid-name
+class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``boolean``.
 
     Examples:
@@ -138,83 +150,8 @@ class float64(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-class Field(NamedTuple):
-    """Represents a Portex ``record`` field, contains the field name and type."""
-
-    name: str
-    type: PortexType
-
-
-class Fields(Sequence[Field]):
-    """Represents a Portex ``record`` field list."""
-
-    def __init__(
-        self,
-        fields: Union[Iterable[Union[Field, Tuple[str, PortexType]]], Mapping[str, PortexType]],
-    ):
-        iterable = fields.items() if isinstance(fields, Mapping) else fields
-        self._data = [Field(*field) for field in iterable]  # pyright: reportGeneralTypeIssues=false
-
-    @overload
-    def __getitem__(self, index: int) -> Field:
-        ...
-
-    @overload
-    def __getitem__(self, index: slice) -> List[Field]:
-        ...
-
-    def __getitem__(self, index: Union[int, slice]) -> Union[Field, List[Field]]:
-        return self._data.__getitem__(index)
-
-    def __len__(self) -> int:
-        return self._data.__len__()
-
-    def __repr__(self) -> str:
-        return self._repr1(0)
-
-    def _repr1(self, level: int) -> str:
-        indent = level * _INDENT
-        lines = ["{"]
-        for field in self._data:
-            lines.append(
-                f"{_INDENT}'{field.name}': "  # pylint: disable=protected-access
-                f"{field.type._repr1(level + 1)},"
-            )
-
-        lines.append("}")
-        return f"\n{indent}".join(lines)
-
-    @classmethod
-    def from_pyobj(cls, content: List[Dict[str, Any]]) -> "Fields":
-        """Create Portex field list instance from python list.
-
-        Arguments:
-            content: A python list representing a Portex field list.
-
-        Returns:
-            A Portex field list instance created from the input python list.
-
-        """
-        return Fields(Field(item["name"], PortexType.from_pyobj(item)) for item in content)
-
-    def to_pyobj(self) -> List[Dict[str, Any]]:
-        """Dump the instance to a python list.
-
-        Returns:
-            A Python List representation of the field list.
-
-        """
-        pylist = []
-        for field in self._data:
-            pydict = {"name": field.name}
-            pydict.update(field.type.to_pyobj())
-            pylist.append(pydict)
-
-        return pylist
-
-
 @builtins("record")
-class record(PortexType):  # pylint: disable=invalid-name
+class record(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``record``.
 
     Arguments:
@@ -265,13 +202,13 @@ class record(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    fields: Fields = param()
+    fields: Fields = param(ptype=PTYPE.Fields)
 
     def __init__(
         self,
         fields: Union[Sequence[Union[Field, Tuple[str, PortexType]]], Mapping[str, PortexType]],
     ) -> None:
-        self.fields = Fields(fields)
+        super().__init__(fields=fields)
 
     @overload
     def __getitem__(self, index: Union[int, str]) -> PortexType:
@@ -296,7 +233,7 @@ class record(PortexType):  # pylint: disable=invalid-name
 
 
 @builtins("enum")
-class enum(PortexType):  # pylint: disable=invalid-name
+class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``enum``.
 
     Arguments:
@@ -311,14 +248,14 @@ class enum(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    values: List[Any] = param()
+    values: List[Any] = param(ptype=PTYPE.Array)
 
     def __init__(self, values: List[Any]) -> None:
-        self.values = values
+        super().__init__(values=values)
 
 
 @builtins("array")
-class array(PortexType):  # pylint: disable=invalid-name
+class array(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``array``.
 
     Arguments:
@@ -337,16 +274,15 @@ class array(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    items: PortexType = param()
-    length: Optional[int] = param(None)
+    items: PortexType = param(ptype=PTYPE.PortexType)
+    length: Optional[int] = param(None, ptype=PTYPE.Integer)
 
     def __init__(self, items: PortexType, length: Optional[int] = None) -> None:
-        self.items = items
-        self.length = length
+        super().__init__(items=items, length=length)
 
 
 @builtins("tensor")
-class tensor(PortexType):  # pylint: disable=invalid-name
+class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``tensor``.
 
     Arguments:
@@ -363,9 +299,9 @@ class tensor(PortexType):  # pylint: disable=invalid-name
 
     """
 
-    shape: Tuple[Optional[int], ...] = param()
-    dtype: str = param()
+    shape: Tuple[Optional[int], ...] = param(ptype=PTYPE.Array)
+    dtype: str = param(ptype=PTYPE.TypeName)
 
     def __init__(self, shape: Iterable[Optional[int]], dtype: str) -> None:
+        super().__init__(shape=shape, dtype=dtype)
         self.shape = tuple(shape)
-        self.dtype = dtype
