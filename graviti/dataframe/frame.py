@@ -25,12 +25,10 @@ from typing import (
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
+from graviti.utility.repr import _MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.dataset.dataset import LazyLists
-
-_DEFAULT_COLUMN_WIDTH = 3
-_MAX_REPR_ROWS = 10
 
 
 class DataFrame:
