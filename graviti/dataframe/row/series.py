@@ -5,9 +5,11 @@
 
 """The implementation of the Graviti Series."""
 
-from typing import Any, Dict, Iterable, List, Optional, Union, overload
+from itertools import chain, zip_longest
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
 
 from graviti.dataframe.series import SeriesBase
+from graviti.utility.repr import _MAX_REPR_ROWS
 
 
 class Series(SeriesBase[str]):
@@ -59,6 +61,23 @@ class Series(SeriesBase[str]):
             self._indices.append(key)
         self.name = name
 
+    def __repr__(self) -> str:
+        flatten_header, flatten_data = self._flatten()
+        header = self._get_repr_header(flatten_header)
+        body = [
+            item._repr_folding() if hasattr(item, "_repr_folding") else str(item)
+            for item in flatten_data
+        ]
+        column_widths = [len(max(row, key=len)) for row in chain(header, [body])]
+        lines = [
+            "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
+            for line in zip_longest(*header, body)
+        ]
+        if self.__len__() > _MAX_REPR_ROWS:
+            lines.append(f"...({self.__len__()})")
+        lines.append(f"Series('{self.name}')")
+        return "\n".join(lines)
+
     # @overload
     # def __getitem__(self, key: Union[slice, Tuple[str]]) -> "Series":
     #    ...
@@ -81,6 +100,22 @@ class Series(SeriesBase[str]):
     def __len__(self) -> int:
         return self._indices.__len__()
 
+    @staticmethod
+    def _get_repr_header(flatten_header: List[Tuple[str, ...]]) -> List[List[str]]:
+        lines: List[List[str]] = []
+        for names in zip_longest(*flatten_header, fillvalue=""):
+            line = []
+            pre_name = None
+            upper_line = lines[-1][1:] if lines else []
+            for name, upper_name in zip_longest(names, upper_line, fillvalue=""):
+                if name == pre_name and upper_name == "":
+                    line.append("")
+                else:
+                    line.append(name)
+                pre_name = name
+            lines.append(line)
+        return lines
+
     @classmethod
     def _construct(cls, indices_data: Dict[str, Any], new_name: Union[str, int, None]) -> "Series":
         obj: Series = object.__new__(cls)
@@ -89,6 +124,19 @@ class Series(SeriesBase[str]):
         obj._indices = list(indices_data.keys())
         obj.name = new_name
         return obj
+
+    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[Any]]:
+        header: List[Tuple[str, ...]] = []
+        data: List[Any] = []
+        for key, value in self._indices_data.items():
+            if isinstance(value, Series):
+                nested_header, nested_data = value._flatten()  # pylint: disable=protected-access
+                header.extend((key, *sub_column) for sub_column in nested_header)
+                data.extend(nested_data)
+            else:
+                data.append(value)
+                header.append((key,))
+        return header, data
 
     # @overload
     # def _getitem_by_location(self, key: slice) -> "Series":
