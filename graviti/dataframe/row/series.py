@@ -30,7 +30,6 @@ class Series(SeriesBase[str]):
         filename           a.jpg
         attributes color     red
                     pose frontal
-        schema: string
 
     """
 
@@ -75,7 +74,8 @@ class Series(SeriesBase[str]):
         ]
         if self.__len__() > _MAX_REPR_ROWS:
             lines.append(f"...({self.__len__()})")
-        lines.append(f"Series('{self.name}')")
+        if self.name:
+            lines.append(f"Name: {self.name}")
         return "\n".join(lines)
 
     # @overload

@@ -6,9 +6,11 @@
 """The implementation of the Graviti Series."""
 
 
+from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Union, overload
 
 from graviti.dataframe.series import SeriesBase
+from graviti.utility.repr import _MAX_REPR_ROWS
 
 
 class Series(SeriesBase[int]):
@@ -30,7 +32,6 @@ class Series(SeriesBase[int]):
         1 2
         2 3
         3 4
-        schema: int
 
     """
 
@@ -84,6 +85,38 @@ class Series(SeriesBase[int]):
 
     def __len__(self) -> int:
         return self._data.__len__()
+
+    def __repr__(self) -> str:
+        indices = list(self._get_repr_indices())
+        indice_width = len(str(max(indices)))
+
+        body = []
+        body_item_width = 0
+        for i in indices:
+            item = self.loc[i]
+            name = item._repr_folding() if hasattr(item, "_repr_folding") else str(item)
+            body.append(name)
+            body_item_width = max(len(name), body_item_width)
+
+        lines = []
+        for indice, value in zip(indices, body):
+            lines.append(f"{indice:<{indice_width+2}}{value:<{body_item_width+2}}")
+        if self.__len__() > _MAX_REPR_ROWS:
+            lines.append(f"...({self.__len__()})")
+        if self.name:
+            lines.append(f"Name: {self.name}")
+        return "\n".join(lines)
+
+    def _get_repr_indices(self) -> Iterable[int]:
+        length = self.__len__()
+        # pylint: disable=protected-access
+        if self._indices is None:
+            return range(min(length, _MAX_REPR_ROWS))
+
+        if length >= _MAX_REPR_ROWS:
+            return islice(self._indices, _MAX_REPR_ROWS)
+
+        return self._indices
 
     @overload
     def _get_location_by_index(self, key: Iterable[int]) -> List[int]:
