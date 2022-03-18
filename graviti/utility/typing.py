@@ -5,7 +5,9 @@
 
 """Graviti customized types."""
 
-from typing import AbstractSet, Protocol, Tuple, TypeVar, Union
+from typing import AbstractSet, Tuple, TypeVar, Union
+
+from typing_extensions import Protocol
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
