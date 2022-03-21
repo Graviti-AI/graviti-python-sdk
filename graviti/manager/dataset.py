@@ -305,32 +305,6 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
         if hasattr(self, "_data"):
             delattr(self, "_data")
 
-    def checkout_draft(self, draft_number: int) -> None:
-        """Checkout to a draft.
-
-        Arguments:
-            draft_number: The draft number.
-
-        """
-
-    def commit(self, title: str, description: str = "", *, tag: Optional[str] = None) -> None:
-        """Commit the current draft.
-
-        Arguments:
-            title: The commit title.
-            description: The commit description.
-            tag: A tag for current commit.
-
-        """
-
-    def upload(self, jobs: int = 1) -> None:
-        """Upload the local dataset to Graviti.
-
-        Arguments:
-            jobs: The number of the max workers in multi-thread upload.
-
-        """
-
 
 class DatasetManager:
     """This class defines the operations on the dataset on Graviti.
