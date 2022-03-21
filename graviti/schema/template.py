@@ -124,12 +124,8 @@ def template(
         )
 
     """
-    try:
-        params_pyobj = content["params"]
-        decl = content["declaration"]
-    except KeyError:
-        params_pyobj = {}
-        decl = content
+    params_pyobj = content.get("params", {})
+    decl = content["declaration"]
 
     imports = Imports.from_pyobj(content.get("imports", []))
     imports.update_base_package(package)
