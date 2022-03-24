@@ -22,6 +22,7 @@ class PortexType:
     """The base class of portex type."""
 
     name: str
+    nullable: bool
     imports: Imports = Imports()
     package: ClassVar[Package[Any]]
     params: ClassVar["Params"]

@@ -17,6 +17,7 @@ from graviti.schema.param import Param, Params
 class PortexExternalType(PortexType):
     """The base class of Portex external type."""
 
+    nullable: bool
     internal_type: PortexType
     dependences: ClassVar[Set[PortexType]]
     package: ClassVar[ExternalPackage]
@@ -137,6 +138,8 @@ def template(
 
     for key, value in params.items():
         value.ptype = keys.get(key, PTYPE.Any)
+
+    params.add(Param("nullable", False, ptype=PTYPE.Boolean))
 
     type_ = type(
         name,
