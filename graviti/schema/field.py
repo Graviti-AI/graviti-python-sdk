@@ -5,9 +5,12 @@
 """Portex record field releated classes."""
 
 
-from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Sequence, Tuple, Union, overload
+from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Tuple, Union
+
+from tensorbay.utility import UserSequence
 
 from graviti.schema.base import _INDENT, PortexType
+from graviti.schema.package import Imports
 
 
 class Field(NamedTuple):
@@ -16,8 +19,43 @@ class Field(NamedTuple):
     name: str
     type: PortexType
 
+    @property
+    def imports(self) -> Imports:
+        """Property imports to indicate the imports of this field.
 
-class Fields(Sequence[Field]):
+        Returns:
+            The imports of this field.
+
+        """
+        imports = Imports()
+        imports.update_from_type(self.type)
+        return imports
+
+    @classmethod
+    def from_pyobj(cls, content: Dict[str, Any], imports: Imports) -> "Field":
+        """Create Portex field instance from python dict.
+
+        Arguments:
+            content: A python dict representing a Portex field.
+            imports: The imports of the Portex field.
+
+        Returns:
+            A Portex field instance created from the input python dict.
+
+        """
+        return cls(content["name"], PortexType.from_pyobj(content, imports))
+
+    def to_pyobj(self) -> Dict[str, Any]:
+        """Dump the instance to a python dict.
+
+        Returns:
+            A Python dict representation of the field.
+
+        """
+        return {"name": self.name, **self.type.to_pyobj(False)}
+
+
+class Fields(UserSequence[Field]):
     """Represents a Portex ``record`` field list."""
 
     def __init__(
@@ -27,19 +65,11 @@ class Fields(Sequence[Field]):
         iterable = fields.items() if isinstance(fields, Mapping) else fields
         self._data = [Field(*field) for field in iterable]
 
-    @overload
-    def __getitem__(self, index: int) -> Field:
-        ...
+        imports = Imports()
+        for field in self._data:
+            imports.update_from_type(field.type)
 
-    @overload
-    def __getitem__(self, index: slice) -> List[Field]:
-        ...
-
-    def __getitem__(self, index: Union[int, slice]) -> Union[Field, List[Field]]:
-        return self._data.__getitem__(index)
-
-    def __len__(self) -> int:
-        return self._data.__len__()
+        self.imports = imports
 
     def __repr__(self) -> str:
         return self._repr1(0)
@@ -57,17 +87,18 @@ class Fields(Sequence[Field]):
         return f"\n{indent}".join(lines)
 
     @classmethod
-    def from_pyobj(cls, content: List[Dict[str, Any]]) -> "Fields":
+    def from_pyobj(cls, content: List[Dict[str, Any]], imports: Imports) -> "Fields":
         """Create Portex field list instance from python list.
 
         Arguments:
             content: A python list representing a Portex field list.
+            imports: The imports of the Portex field list.
 
         Returns:
             A Portex field list instance created from the input python list.
 
         """
-        return Fields((item["name"], PortexType.from_pyobj(item)) for item in content)
+        return Fields(Field.from_pyobj(item, imports) for item in content)
 
     def to_pyobj(self) -> List[Dict[str, Any]]:
         """Dump the instance to a python list.
@@ -76,4 +107,4 @@ class Fields(Sequence[Field]):
             A Python List representation of the field list.
 
         """
-        return [{"name": field.name, **field.type.to_pyobj()} for field in self._data]
+        return [field.to_pyobj() for field in self._data]
