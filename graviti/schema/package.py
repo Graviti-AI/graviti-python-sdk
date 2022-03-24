@@ -197,11 +197,12 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
             package = packages.externals[url, revision]
         except KeyError:
             package = packages.build_package(url, revision)
-        partial_package = cls(package)
-        for type_ in content["types"]:
-            partial_package.add_type(type_["name"], type_.get("alias"))
 
-        return partial_package
+        subpackage = cls(package)
+        for type_ in content["types"]:
+            subpackage.add_type(type_["name"], type_.get("alias"))
+
+        return subpackage
 
     def to_pyobj(self) -> Dict[str, Any]:
         """Dump the instance to a python dict.
@@ -272,19 +273,19 @@ class Packages:
         self.externals: Dict[Tuple[str, str], "ExternalPackage"] = {}
         self.locals = LocalPackage()
 
-    def build_package(self, repo: str, version: str) -> "ExternalPackage":
+    def build_package(self, url: str, revision: str) -> "ExternalPackage":
         """Build an external package.
 
         Arguments:
-            repo: The git repo url of the external package.
-            version: The git repo version (tag/commit) of the external package.
+            url: The git repo url of the external package.
+            revision: The git repo revision (tag/commit) of the external package.
 
         Returns:
             The :class:`ExternalPackage` instance.
 
         """
-        package = ExternalPackage(repo, version)
-        self.externals[repo, version] = package
+        package = ExternalPackage(url, revision)
+        self.externals[url, revision] = package
         return package
 
 
