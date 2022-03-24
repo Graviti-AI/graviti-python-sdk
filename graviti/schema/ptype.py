@@ -82,6 +82,29 @@ class Any(ParameterType):
         return arg
 
 
+class Boolean(ParameterType):
+    """Parameter type for JSON Boolean."""
+
+    @staticmethod
+    def check(arg: TypingAny) -> TypingAny:
+        """Check the parameter type.
+
+        Arguments:
+            arg: The argument which needs to be checked.
+
+        Returns:
+            The input argument unchanged.
+
+        Raises:
+            TypeError: When the input argument is not a JSON boolean (bool in python).
+
+        """
+        if not isinstance(arg, bool):
+            raise TypeError("Argument should be a bool")
+
+        return arg
+
+
 class Array(ParameterType):
     """Parameter type for JSON Array."""
 

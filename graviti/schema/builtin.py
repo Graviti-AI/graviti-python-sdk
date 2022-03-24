@@ -44,19 +44,29 @@ class PortexNumericType(PortexBuiltinType):
     Arguments:
         minimum: The minimum value.
         maximum: The maximum value.
+        nullable: Whether it is a nullable type.
 
     """
 
     minimum: Optional[float] = param(None, ptype=PTYPE.Number)
     maximum: Optional[float] = param(None, ptype=PTYPE.Number)
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, minimum: Optional[float] = None, maximum: Optional[float] = None) -> None:
-        super().__init__(minimum=minimum, maximum=maximum)
+    def __init__(
+        self,
+        minimum: Optional[float] = None,
+        maximum: Optional[float] = None,
+        nullable: bool = False,
+    ) -> None:
+        super().__init__(minimum=minimum, maximum=maximum, nullable=nullable)
 
 
 @builtins("string")
 class string(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
+
+    Arguments:
+        nullable: Whether it is a nullable type.
 
     Examples:
         >>> t = string()
@@ -65,10 +75,16 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
+
 
 @builtins("bytes")
 class bytes_(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``bytes``.
+
+    Arguments:
+        nullable: Whether it is a nullable type.
 
     Examples:
         >>> t = bytes_()
@@ -77,10 +93,16 @@ class bytes_(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
+
 
 @builtins("boolean")
 class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``boolean``.
+
+    Arguments:
+        nullable: Whether it is a nullable type.
 
     Examples:
         >>> t = boolean()
@@ -88,6 +110,9 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
         boolean()
 
     """
+
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
 
 
 @builtins("int32")
@@ -156,6 +181,7 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
 
     Arguments:
         fields: The fields of the record.
+        nullable: Whether it is a nullable type.
 
     Examples:
         Create a record by dict:
@@ -203,12 +229,14 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
     """
 
     fields: Fields = param(ptype=PTYPE.Fields)
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(
         self,
         fields: Union[Sequence[Union[Field, Tuple[str, PortexType]]], Mapping[str, PortexType]],
+        nullable: bool = False,
     ) -> None:
-        super().__init__(fields=fields)
+        super().__init__(fields=fields, nullable=nullable)
 
     @overload
     def __getitem__(self, index: Union[int, str]) -> PortexType:
@@ -238,6 +266,7 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
 
     Arguments:
         values: The values of the enum members.
+        nullable: Whether it is a nullable type.
 
     Examples:
         >>> t = enum(["v0", "v1"])
@@ -249,9 +278,10 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     """
 
     values: List[Any] = param(ptype=PTYPE.Array)
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, values: List[Any]) -> None:
-        super().__init__(values=values)
+    def __init__(self, values: List[Any], nullable: bool = False) -> None:
+        super().__init__(values=values, nullable=nullable)
 
 
 @builtins("array")
@@ -261,6 +291,7 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
     Arguments:
         items: The item type of the array.
         length: The length of the array.
+        nullable: Whether it is a nullable type.
 
     Examples:
         >>> t = array(int32(0), 100)
@@ -276,9 +307,12 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
 
     items: PortexType = param(ptype=PTYPE.PortexType)
     length: Optional[int] = param(None, ptype=PTYPE.Integer)
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, items: PortexType, length: Optional[int] = None) -> None:
-        super().__init__(items=items, length=length)
+    def __init__(
+        self, items: PortexType, length: Optional[int] = None, nullable: bool = False
+    ) -> None:
+        super().__init__(items=items, length=length, nullable=nullable)
 
 
 @builtins("tensor")
@@ -288,6 +322,7 @@ class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
     Arguments:
         shape: The shape of the tensor.
         dtype: The dtype of the tensor.
+        nullable: Whether it is a nullable type.
 
     Examples:
         >>> t = tensor((3, 3), "float64")
@@ -301,7 +336,8 @@ class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
 
     shape: Tuple[Optional[int], ...] = param(ptype=PTYPE.Array)
     dtype: str = param(ptype=PTYPE.TypeName)
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, shape: Iterable[Optional[int]], dtype: str) -> None:
-        super().__init__(shape=shape, dtype=dtype)
+    def __init__(self, shape: Iterable[Optional[int]], dtype: str, nullable: bool = False) -> None:
+        super().__init__(shape=shape, dtype=dtype, nullable=nullable)
         self.shape = tuple(shape)
