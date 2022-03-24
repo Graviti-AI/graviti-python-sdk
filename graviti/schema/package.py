@@ -193,7 +193,10 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
 
         """
         url, revision = content["repo"].split("@", 1)
-        package = packages.externals[url, revision]
+        try:
+            package = packages.externals[url, revision]
+        except KeyError:
+            package = packages.build_package(url, revision)
         partial_package = cls(package)
         for type_ in content["types"]:
             partial_package.add_type(type_["name"], type_.get("alias"))
