@@ -5,13 +5,26 @@
 """Package related class."""
 
 
+from itertools import chain
 from pathlib import Path
 from subprocess import run
 from tempfile import gettempdir
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 import yaml
-from tensorbay.utility import UserMapping
+from tensorbay.utility import ReprMixin, ReprType, UserMapping
 
 if TYPE_CHECKING:
     from graviti.schema.base import PortexType
@@ -141,6 +154,23 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
         self.package = package
         self._data: Dict[str, Type["PortexExternalType"]] = {}
 
+    def __setitem__(self, key: str, value: Type["PortexExternalType"]) -> None:
+        type_ = self._data.get(key)
+        if type_:
+            if type_ != value:
+                raise KeyError("Duplicate names")
+            return
+
+        for name, type_ in self._data.items():
+            if type_ == value:
+                if name != key:
+                    raise ValueError(
+                        "Same type with a different name already exists in the subpackage"
+                    )
+                return
+
+        self._data[key] = value
+
     def add_type(self, name: str, alias: Optional[str] = None) -> None:
         """Add type from the source package to the subpackage.
 
@@ -216,7 +246,7 @@ class TypeBuilder:
             TypeError: Raise when circular reference detected.
 
         """
-        # Import "template" on toplevel will cause circular imports, wait to be solved.
+        # TODO: Import "template" on toplevel will cause circular imports, wait to be solved.
         # pylint: disable=import-outside-toplevel
         from graviti.schema.template import template
 
@@ -258,7 +288,7 @@ class Packages:
 packages = Packages()
 
 
-class Imports:
+class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
     """The imports of the Portex template type.
 
     Arguments:
@@ -266,9 +296,14 @@ class Imports:
 
     """
 
+    _repr_type = ReprType.MAPPING
+
     def __init__(self, package: Optional[Package[Type["PortexType"]]] = None) -> None:
         self._package = package
-        self._subpackages: List[Subpackage] = []
+        self._subpackages: Dict[str, Subpackage] = {}
+
+    def __len__(self) -> int:
+        return sum(map(len, self._subpackages.values()))
 
     def __getitem__(self, key: str) -> Type["PortexType"]:
         try:
@@ -276,7 +311,7 @@ class Imports:
         except KeyError:
             pass
 
-        for subpackage in self._subpackages:
+        for subpackage in self._subpackages.values():
             try:
                 return subpackage[key]
             except KeyError:
@@ -287,12 +322,52 @@ class Imports:
 
         raise KeyError(key)
 
-    def __contain__(self, key: str) -> bool:
-        try:
-            self.__getitem__(key)
-            return True
-        except KeyError:
-            return False
+    def __setitem__(self, key: str, value: Type["PortexType"]) -> None:
+        type_ = self.get(key)
+        if type_:
+            if type_ != value:
+                raise KeyError("Duplicate names")
+            return
+
+        # TODO: Import "PortexExternalType" on toplevel will cause circular imports, to be solved.
+        # pylint: disable=import-outside-toplevel
+        from graviti.schema.template import PortexExternalType
+
+        if not issubclass(value, PortexExternalType):
+            raise TypeError("Local portex type is not supported yet")
+
+        package = value.package
+        subpackage = self._subpackages.get(package.repo)
+        if not subpackage:
+            subpackage = Subpackage(package)
+            self._subpackages[package.repo] = subpackage
+
+        subpackage[key] = value
+
+    def __iter__(self) -> Iterator[str]:
+        return chain(*self._subpackages.values())
+
+    def update(self, other: "Imports") -> None:
+        """Update the imports with another imports.
+
+        Arguments:
+            other: An :class:`Imports` instance whose types need to be updated to this imports.
+
+        """
+        assert not self._package and not other._package  # pylint: disable=protected-access
+        for key, value in other.items():
+            self.__setitem__(key, value)
+
+    def update_from_type(self, type_: "PortexType") -> None:
+        """Update the imports from a Portex type instance.
+
+        Arguments:
+            type_: The Portex type instance needs to be updated into this imports.
+
+        """
+        class_ = type_.__class__
+        self.__setitem__(class_.name, class_)
+        self.update(type_.imports)
 
     @classmethod
     def from_pyobj(cls, content: List[Dict[str, Any]]) -> "Imports":
@@ -307,8 +382,8 @@ class Imports:
         """
         imports = cls()
         for pyobj in content:
-            partial_package = Subpackage.from_pyobj(pyobj)
-            imports.add_subpackage(partial_package)
+            subpackage = Subpackage.from_pyobj(pyobj)
+            imports.add_subpackage(subpackage)
 
         return imports
 
@@ -319,7 +394,7 @@ class Imports:
             A python list representation of the Portex imported types.
 
         """
-        return [partial_package.to_pyobj() for partial_package in self._subpackages]
+        return [subpackage.to_pyobj() for subpackage in self._subpackages.values()]
 
     def add_subpackage(self, subpackage: Subpackage) -> None:
         """Add subpackage to this :class:`Imports` instance.
@@ -332,10 +407,10 @@ class Imports:
 
         """
         for key in subpackage:
-            if self.__contain__(key):
+            if self.__contains__(key):
                 raise KeyError("Duplicate names")
 
-        self._subpackages.append(subpackage)
+        self._subpackages[subpackage.package.repo] = subpackage
 
     def update_base_package(self, package: Package[Type["PortexType"]]) -> None:
         """Update base package to the :class:`Imports` instance.

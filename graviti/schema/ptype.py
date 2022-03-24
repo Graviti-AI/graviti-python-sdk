@@ -7,11 +7,12 @@
 
 from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Sequence, Type, Union
+from typing import Dict, List, Sequence, Type, Union
 
 from graviti.schema.base import PortexType as ClassPortexType
 from graviti.schema.field import Field as ClassField
 from graviti.schema.field import Fields as ClassFields
+from graviti.schema.package import Imports
 
 if TYPE_CHECKING:
     from graviti.schema.factory import Dynamic
@@ -32,6 +33,33 @@ class ParameterType:
 
         """
         raise NotImplementedError
+
+    @staticmethod
+    def load(content: TypingAny, _: Imports) -> TypingAny:
+        """Create an instance of the parameter type from the python content.
+
+        Arguments:
+            content: A python presentation of the parameter type.
+            _: The imports of the parameter type.
+
+        Returns:
+            An instance of the parameter type.
+
+        """
+        return content
+
+    @staticmethod
+    def dump(arg: TypingAny) -> TypingAny:
+        """Dump the parameter type instance into the python presentation.
+
+        Arguments:
+            arg: The parameter type instance.
+
+        Returns:
+            The python presentation of the input instance.
+
+        """
+        return arg
 
 
 PType = Union[Type[ParameterType], "Dynamic"]
@@ -93,6 +121,33 @@ class Field(ParameterType):
         """
         return ClassField(*arg)
 
+    @staticmethod
+    def load(content: Dict[str, TypingAny], imports: Imports) -> ClassField:
+        """Create Portex field instance from python dict.
+
+        Arguments:
+            content: A python dict representing a Portex field.
+            imports: The imports of the Portex field.
+
+        Returns:
+            A Portex field instance created from the input python dict.
+
+        """
+        return ClassField.from_pyobj(content, imports)
+
+    @staticmethod
+    def dump(arg: ClassField) -> Dict[str, TypingAny]:
+        """Dump the input Portex field instance to a python dict.
+
+        Arguments:
+            arg: A Portex field instance.
+
+        Returns:
+            A Python dict representation of the Portex field.
+
+        """
+        return arg.to_pyobj()
+
 
 class Fields(ParameterType):
     """Parameter type for Portex record fields."""
@@ -109,6 +164,33 @@ class Fields(ParameterType):
 
         """
         return ClassFields(arg)
+
+    @staticmethod
+    def load(content: List[TypingAny], imports: Imports) -> ClassFields:
+        """Create Portex field list instance from python list.
+
+        Arguments:
+            content: A python list representing a Portex field list.
+            imports: The imports of the Portex field.
+
+        Returns:
+            A Portex field list instance created from the input python list.
+
+        """
+        return ClassFields.from_pyobj(content, imports)
+
+    @staticmethod
+    def dump(arg: ClassFields) -> List[TypingAny]:
+        """Dump the input Portex field list instance to a python list.
+
+        Arguments:
+            arg: A Portex field list instance.
+
+        Returns:
+            A Python list representation of the Portex field list.
+
+        """
+        return arg.to_pyobj()
 
 
 class Number(ParameterType):
@@ -178,6 +260,33 @@ class PortexType(ParameterType):
             raise TypeError("Argument should be a Portex type")
 
         return arg
+
+    @staticmethod
+    def load(content: Dict[str, TypingAny], imports: Imports) -> ClassPortexType:
+        """Create Portex type instance from python dict.
+
+        Arguments:
+            content: A python dict representing a Portex type.
+            imports: The imports of the Portex type.
+
+        Returns:
+            A Portex type instance created from the input python dict.
+
+        """
+        return ClassPortexType.from_pyobj(content, imports)
+
+    @staticmethod
+    def dump(arg: ClassPortexType) -> Dict[str, TypingAny]:
+        """Dump the instance to a python dict.
+
+        Arguments:
+            arg: A Portex type instance.
+
+        Returns:
+            A python dict representation of the Portex type.
+
+        """
+        return arg.to_pyobj(False)
 
 
 class String(ParameterType):

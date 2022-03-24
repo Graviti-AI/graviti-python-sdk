@@ -13,6 +13,7 @@ from tensorbay.utility.user import UserMapping
 
 import graviti.schema.ptype as PTYPE
 from graviti.schema.factory import Dynamic
+from graviti.schema.package import Imports
 
 
 def param(
@@ -130,6 +131,45 @@ class Param(Parameter):
             raise ValueError(f"Arguments '{arg}' is not in {self.options}")
 
         return arg
+
+    def load(self, content: Any, imports: Imports) -> Any:
+        """Create an instance of the parameter type from the python content.
+
+        Arguments:
+            content: A python presentation of the parameter type.
+            imports: The imports of the parameter type.
+
+        Returns:
+            An instance of the parameter type.
+
+        Raises:
+            TypeError: When ptype is dynamic.
+
+        """
+        # TODO: Support load for dynamic parameter types.
+        if isinstance(self.ptype, Dynamic):
+            raise TypeError("Load for dynamic type is not supported yet")
+
+        return self.ptype.load(content, imports)
+
+    def dump(self, arg: Any) -> Any:
+        """Dump the parameter type instance into the python presentation.
+
+        Arguments:
+            arg: The parameter type instance.
+
+        Returns:
+            The python presentation of the input instance.
+
+        Raises:
+            TypeError: When ptype is dynamic.
+
+        """
+        # TODO: Support dump for dynamic parameter types.
+        if isinstance(self.ptype, Dynamic):
+            raise TypeError("Dump for dynamic type is not supported yet")
+
+        return self.ptype.dump(arg)
 
 
 class Params(UserMapping[str, Param]):

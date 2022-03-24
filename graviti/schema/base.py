@@ -6,7 +6,7 @@
 
 
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Dict
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 
 import yaml
 
@@ -28,6 +28,16 @@ class PortexType:
 
     def __init__(self, **kwargs: Any) -> None:
         self.__dict__.update(kwargs)
+        imports = Imports()
+        for kwarg in kwargs.values():
+            if hasattr(kwarg, "imports"):
+                imports.update(kwarg.imports)
+
+            if isinstance(kwarg, PortexType):
+                class_ = kwarg.__class__
+                imports[class_.name] = class_
+
+        self.imports = imports
 
     def __repr__(self) -> str:
         return self._repr1(0)
@@ -58,7 +68,9 @@ class PortexType:
         return bound_arguments.arguments
 
     @classmethod
-    def from_pyobj(cls, content: Dict[str, Any]) -> "PortexType":
+    def from_pyobj(
+        cls, content: Dict[str, Any], _imports: Optional["Imports"] = None
+    ) -> "PortexType":
         """Create Portex type instance from python dict.
 
         Arguments:
@@ -68,18 +80,19 @@ class PortexType:
             A Portex type instance created from the input python dict.
 
         """
-        imports = Imports.from_pyobj(content.get("imports", []))
-        class_ = imports[content["type"]]
+        if _imports is None:
+            _imports = Imports.from_pyobj(content.get("imports", []))
+
+        class_ = _imports[content["type"]]
 
         assert issubclass(class_, cls)
         kwargs = {}
-        for name in class_.params:
+        for name, param in class_.params.items():
             kwarg = content.get(name, ...)
             if kwarg is not ...:
-                kwargs[name] = kwarg
+                kwargs[name] = param.load(kwarg, _imports)
 
         type_ = class_(**kwargs)
-        type_.imports = imports
         return type_
 
     @classmethod
@@ -108,7 +121,7 @@ class PortexType:
         """
         return cls.from_pyobj(yaml.load(content, yaml.Loader))
 
-    def to_pyobj(self) -> Dict[str, Any]:
+    def to_pyobj(self, _with_imports: bool = True) -> Dict[str, Any]:
         """Dump the instance to a python dict.
 
         Returns:
@@ -116,15 +129,16 @@ class PortexType:
 
         """
         pydict: Dict[str, Any] = {}
-        imports_pyobj = self.imports.to_pyobj()
-        if imports_pyobj:
-            pydict["imports"] = imports_pyobj
+        if _with_imports:
+            imports_pyobj = self.imports.to_pyobj()
+            if imports_pyobj:
+                pydict["imports"] = imports_pyobj
 
         pydict["type"] = self.__class__.name
         for name, parameter in self.params.items():
             attr = getattr(self, name)
             if attr != parameter.default:
-                pydict[name] = attr.to_pyobj() if hasattr(attr, "to_pyobj") else attr
+                pydict[name] = parameter.dump(attr)
 
         return pydict
 
