@@ -26,6 +26,8 @@ from typing import (
 import yaml
 from tensorbay.utility import ReprMixin, ReprType, UserMapping
 
+from graviti.utility import AttrDict
+
 if TYPE_CHECKING:
     from graviti.schema.base import PortexType
     from graviti.schema.builtin import PortexBuiltinType
@@ -35,27 +37,16 @@ _T = TypeVar("_T", bound=Type["PortexType"])
 _S = TypeVar("_S", bound=Type["PortexBuiltinType"])
 
 
-class Package(UserMapping[str, _T]):
+class Package(AttrDict[_T]):
     """The base class of Portex package."""
 
-    def __init__(self) -> None:
-        self._data: Dict[str, _T] = {}
-
-    def __getitem__(self, key: str) -> _T:
-        try:
-            return self._data.__getitem__(key)
-        except KeyError:
-            return self.__missing__(key)
-
     def __setitem__(self, key: str, value: _T) -> None:
-        if key in self._data:
+        if key in self:
             raise KeyError(f"{key} already exists in package")
+
+        super().__setitem__(key, value)
         value.name = key
         value.package = self
-        self._data[key] = value
-
-    def __missing__(self, key: str) -> _T:
-        raise KeyError(key)
 
 
 class BuiltinPackage(Package[Type["PortexBuiltinType"]]):
