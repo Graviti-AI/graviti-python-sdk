@@ -75,6 +75,8 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
 
@@ -93,6 +95,8 @@ class bytes_(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
 
@@ -110,6 +114,8 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
         boolean()
 
     """
+
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
