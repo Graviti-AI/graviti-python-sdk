@@ -171,16 +171,6 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
 
         self._data[key] = value
 
-    def add_type(self, name: str, alias: Optional[str] = None) -> None:
-        """Add type from the source package to the subpackage.
-
-        Arguments:
-            name: The name of the Portex type.
-            alias: The alias of the Portex type.
-
-        """
-        self._data[name if alias is None else alias] = self.package[name]
-
     @classmethod
     def from_pyobj(cls, content: Dict[str, Any]) -> "Subpackage":
         """Create :class:`Subpackage` instance from python dict.
@@ -200,7 +190,8 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
 
         subpackage = cls(package)
         for type_ in content["types"]:
-            subpackage.add_type(type_["name"], type_.get("alias"))
+            name = type_["name"]
+            subpackage[type_.get("alias", name)] = package[name]
 
         return subpackage
 
