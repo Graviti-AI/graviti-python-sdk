@@ -30,6 +30,7 @@ class PortexBuiltinType(PortexType):
                 delattr(cls, name)
 
         cls.params = params
+        builtins[cls.__name__] = cls
 
     def __init__(self, **kwargs: Any) -> None:
         for key, value in kwargs.items():
@@ -61,7 +62,6 @@ class PortexNumericType(PortexBuiltinType):
         super().__init__(minimum=minimum, maximum=maximum, nullable=nullable)
 
 
-@builtins("string")
 class string(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
 
@@ -81,7 +81,6 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
 
-@builtins("binary")
 class binary(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``binary``.
 
@@ -101,7 +100,6 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
 
-@builtins("boolean")
 class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``boolean``.
 
@@ -121,7 +119,6 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
 
-@builtins("int32")
 class int32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int32``.
 
@@ -136,7 +133,6 @@ class int32(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@builtins("int64")
 class int64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int64``.
 
@@ -151,7 +147,6 @@ class int64(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@builtins("float32")
 class float32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float32``.
 
@@ -166,7 +161,6 @@ class float32(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@builtins("float64")
 class float64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float64``.
 
@@ -181,7 +175,6 @@ class float64(PortexNumericType):  # pylint: disable=invalid-name
     """
 
 
-@builtins("record")
 class record(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``record``.
 
@@ -266,7 +259,6 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
         return self.fields[index].type
 
 
-@builtins("enum")
 class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``enum``.
 
@@ -290,7 +282,6 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(values=values, nullable=nullable)
 
 
-@builtins("array")
 class array(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``array``.
 
@@ -321,7 +312,6 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(items=items, length=length, nullable=nullable)
 
 
-@builtins("tensor")
 class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``tensor``.
 

@@ -21,7 +21,6 @@ _INDENT = " " * 2
 class PortexType:
     """The base class of portex type."""
 
-    name: str
     nullable: bool
     imports: Imports = Imports()
     package: ClassVar[Package[Any]]
@@ -36,7 +35,7 @@ class PortexType:
 
             if isinstance(kwarg, PortexType):
                 class_ = kwarg.__class__
-                imports[class_.name] = class_
+                imports[class_.__name__] = class_
 
         self.imports = imports
 
@@ -135,7 +134,7 @@ class PortexType:
             if imports_pyobj:
                 pydict["imports"] = imports_pyobj
 
-        pydict["type"] = self.__class__.name
+        pydict["type"] = self.__class__.__name__
         for name, parameter in self.params.items():
             attr = getattr(self, name)
             if attr != parameter.default:

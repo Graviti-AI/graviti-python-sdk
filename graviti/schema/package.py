@@ -9,19 +9,7 @@ from itertools import chain
 from pathlib import Path
 from subprocess import run
 from tempfile import gettempdir
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar
 
 import yaml
 from tensorbay.utility import ReprMixin, ReprType, UserMapping
@@ -34,7 +22,6 @@ if TYPE_CHECKING:
     from graviti.schema.template import PortexExternalType
 
 _T = TypeVar("_T", bound=Type["PortexType"])
-_S = TypeVar("_S", bound=Type["PortexBuiltinType"])
 
 
 class Package(AttrDict[_T]):
@@ -45,29 +32,11 @@ class Package(AttrDict[_T]):
             raise KeyError(f"{key} already exists in package")
 
         super().__setitem__(key, value)
-        value.name = key
         value.package = self
 
 
 class BuiltinPackage(Package[Type["PortexBuiltinType"]]):
     """The builtin Portex package used to manage builtin types."""
-
-    def __call__(self, name: str) -> Callable[[_S], _S]:
-        """Parameterized decorator for registering Portex builtin type to builtin package.
-
-        Arguments:
-            name: The builtin type name.
-
-        Returns:
-            The decorator to registering Portex builtin type to builtin package.
-
-        """
-
-        def register(class_: _S) -> _S:
-            self[name] = class_
-            return class_
-
-        return register
 
 
 class LocalPackage(Package[Type["PortexType"]]):
@@ -196,7 +165,7 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
         pyobj: Dict[str, Any] = {"repo": self.package.repo}
         types = []
         for key, value in self._data.items():
-            name = value.name
+            name = value.__name__
             type_ = {"name": name}
             if key != name:
                 type_["alias"] = key
@@ -352,7 +321,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
         """
         class_ = type_.__class__
-        self.__setitem__(class_.name, class_)
+        self.__setitem__(class_.__name__, class_)
         self.update(type_.imports)
 
     @classmethod
