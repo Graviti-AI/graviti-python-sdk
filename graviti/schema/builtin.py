@@ -81,17 +81,17 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
 
-@builtins("bytes")
-class bytes_(PortexBuiltinType):  # pylint: disable=invalid-name
-    """Portex primitive type ``bytes``.
+@builtins("binary")
+class binary(PortexBuiltinType):  # pylint: disable=invalid-name
+    """Portex primitive type ``binary``.
 
     Arguments:
         nullable: Whether it is a nullable type.
 
     Examples:
-        >>> t = bytes_()
+        >>> t = binary()
         >>> t
-        bytes_()
+        binary()
 
     """
 

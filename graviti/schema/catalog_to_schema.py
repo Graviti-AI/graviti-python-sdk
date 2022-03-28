@@ -257,7 +257,7 @@ _ConverterPanopticMask("panoptic_mask", "label.file.PanopticMask")
 
 
 def _get_file_field(data: RemoteData, notes: Notes) -> Dict[str, Any]:
-    field = _SUFFIX_TO_FILE_FIELDS.get(Path(data.path).suffix, {"name": "file", "type": "bytes"})
+    field = _SUFFIX_TO_FILE_FIELDS.get(Path(data.path).suffix, {"name": "file", "type": "binary"})
 
     if field["type"] == "file.PointCloudBin":
         bin_point_cloud_fields = notes.bin_point_cloud_fields
@@ -306,7 +306,7 @@ def catalog_to_schema(catalog: Catalog, data_sample: RemoteData, notes: Notes) -
 
     import_types = []
     file_field_type = file_field["type"]
-    if file_field_type != "bytes":
+    if file_field_type != "binary":
         import_types.append({"name": file_field_type})
 
     label = data_sample.label

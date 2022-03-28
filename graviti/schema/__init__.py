@@ -6,7 +6,7 @@
 
 from graviti.schema.builtin import (
     array,
-    bytes_,
+    binary,
     enum,
     float32,
     float64,
@@ -21,7 +21,7 @@ from graviti.schema.extractors import get_extractors
 
 __all__ = [
     "array",
-    "bytes_",
+    "binary",
     "catalog_to_schema",
     "enum",
     "float32",

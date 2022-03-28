@@ -21,7 +21,7 @@ Extractors = NestedDict[str, _Extractor[Any]]
 
 _PORTEX_TYPE_TO_NUMPY_DTYPE = {
     "boolean": "bool",
-    "bytes": "object",
+    "binary": "object",
     "string": "object",
     "enum": "object",
 }
@@ -205,7 +205,7 @@ _EXTRACTORS_GETTER: Dict[
     ("point_cloud", "file.PointCloud"): _get_file,
     ("point_cloud", "file.PointCloudBin"): _get_file,
     ("audio", "file.Audio"): _get_file,
-    ("file", "bytes"): _get_file,
+    ("file", "binary"): _get_file,
     ("attribute", "label.Attribute"): _get_attribute,
     ("category", "label.Category"): _get_category,
     ("box2ds", "array"): _get_box2ds,
