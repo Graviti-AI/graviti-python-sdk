@@ -14,7 +14,7 @@ from graviti.schema.package import ExternalPackage, Imports, Package, packages
 from graviti.schema.param import Param, Params
 
 
-class PortexExternalType(PortexType):
+class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex external type."""
 
     nullable: bool
