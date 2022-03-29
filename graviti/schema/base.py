@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 import yaml
 
 from graviti.schema.package import Imports, Package
+from graviti.schema.pyarrow import ExtensionBase
 
 if TYPE_CHECKING:
     from graviti.schema.param import Params
@@ -66,6 +67,9 @@ class PortexType:
         bound_arguments = signature.bind(*args, **kwargs)
         bound_arguments.apply_defaults()
         return bound_arguments.arguments
+
+    def _get_pyarrow_arguments(self) -> Dict[str, Any]:
+        return {key: getattr(self, key, value.default) for key, value in self.params.items()}
 
     @classmethod
     def from_pyobj(
@@ -159,3 +163,15 @@ class PortexType:
 
         """
         return yaml.dump(self.to_pyobj(), sort_keys=False)  # type: ignore[no-any-return]
+
+    def to_pyarrow(self) -> ExtensionBase:
+        """Convert the instance to an ``ExtensionBase`` instance.
+
+        Raises:
+            NotImplementedError: When calling ``PortexType.to_pyarrow``.
+
+        Return:
+            An ``ExtensionBase`` instance representing the Portex type.
+
+        """
+        raise NotImplementedError

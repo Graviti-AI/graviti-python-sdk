@@ -5,15 +5,43 @@
 """The Portex builtin types."""
 
 
-from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union, overload
+from functools import reduce
+from operator import mul
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
+
+import pyarrow as pa
 
 import graviti.schema.ptype as PTYPE
 from graviti.schema.base import PortexType
 from graviti.schema.field import Field, Fields
 from graviti.schema.package import packages
 from graviti.schema.param import Param, Params, param
+from graviti.schema.pyarrow import BuiltinExtension
+
+if TYPE_CHECKING:
+    from pyarrow.lib import DataType as paDataType
 
 builtins = packages.builtins
+
+_PYTHON_TYPE_TO_PYARROW_TYPE = {
+    int: pa.int64(),
+    float: pa.float64(),
+    bool: pa.bool_(),
+    str: pa.string(),
+    bytes: pa.binary(),
+}
 
 
 class PortexBuiltinType(PortexType):
@@ -38,8 +66,22 @@ class PortexBuiltinType(PortexType):
 
         super().__init__(**kwargs)
 
+    def _get_pyarrow_type(self) -> "paDataType":
+        raise NotImplementedError
 
-class PortexNumericType(PortexBuiltinType):
+    def to_pyarrow(self) -> BuiltinExtension:
+        """Convert the instance to a ``BuiltinExtension`` instance.
+
+        Returns:
+            A ``BuiltinExtension`` instance representing the Portex type.
+
+        """
+        return BuiltinExtension(
+            self.__class__.__name__, self._get_pyarrow_type(), **self._get_pyarrow_arguments()
+        )
+
+
+class PortexNumericType(PortexBuiltinType):  # pylint: disable=abstract-method
     """The base class of the Portex numeric types.
 
     Arguments:
@@ -80,6 +122,9 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
 
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.string()
+
 
 class binary(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``binary``.
@@ -98,6 +143,9 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
 
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.binary()
 
 
 class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
@@ -118,6 +166,9 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
 
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.bool_()
+
 
 class int32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int32``.
@@ -131,6 +182,9 @@ class int32(PortexNumericType):  # pylint: disable=invalid-name
         )
 
     """
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.int32()
 
 
 class int64(PortexNumericType):  # pylint: disable=invalid-name
@@ -146,6 +200,9 @@ class int64(PortexNumericType):  # pylint: disable=invalid-name
 
     """
 
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.int64()
+
 
 class float32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float32``.
@@ -160,6 +217,9 @@ class float32(PortexNumericType):  # pylint: disable=invalid-name
 
     """
 
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.float32()
+
 
 class float64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float64``.
@@ -173,6 +233,9 @@ class float64(PortexNumericType):  # pylint: disable=invalid-name
         )
 
     """
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.float64()
 
 
 class record(PortexBuiltinType):  # pylint: disable=invalid-name
@@ -258,6 +321,12 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
 
         return self.fields[index].type
 
+    def _get_pyarrow_arguments(self) -> Dict[str, Any]:
+        return {"nullable": self.nullable}
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member
+
 
 class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``enum``.
@@ -280,6 +349,22 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
 
     def __init__(self, values: List[Any], nullable: bool = False) -> None:
         super().__init__(values=values, nullable=nullable)
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        pytypes = {type(value) for value in self.values}
+
+        patype = (
+            _PYTHON_TYPE_TO_PYARROW_TYPE[pytypes.pop()]
+            if len(pytypes) == 1
+            else pa.union(
+                (
+                    pa.field(str(index), _PYTHON_TYPE_TO_PYARROW_TYPE[pytype])
+                    for index, pytype in enumerate(pytypes)
+                ),
+                "sparse",
+            )
+        )
+        return pa.dictionary(pa.int32(), patype)
 
 
 class array(PortexBuiltinType):  # pylint: disable=invalid-name
@@ -311,6 +396,13 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
     ) -> None:
         super().__init__(items=items, length=length, nullable=nullable)
 
+    def _get_pyarrow_arguments(self) -> Dict[str, Any]:
+        return {"nullable": self.nullable}
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        list_size = self.length if self.length else -1
+        return pa.list_(self.items.to_pyarrow(), list_size)  # pylint: disable=no-member
+
 
 class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``tensor``.
@@ -337,3 +429,10 @@ class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
     def __init__(self, shape: Iterable[Optional[int]], dtype: str, nullable: bool = False) -> None:
         super().__init__(shape=shape, dtype=dtype, nullable=nullable)
         self.shape = tuple(shape)
+
+    def _get_pyarrow_type(self) -> "paDataType":
+        try:
+            list_size = reduce(mul, self.shape)
+        except TypeError:
+            list_size = -1
+        return pa.list_(self.imports[self.dtype]().to_pyarrow(), list_size=list_size)

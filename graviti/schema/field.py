@@ -7,6 +7,7 @@
 
 from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Tuple, Union
 
+import pyarrow as pa
 from tensorbay.utility import UserSequence
 
 from graviti.schema.base import _INDENT, PortexType
@@ -108,3 +109,12 @@ class Fields(UserSequence[Field]):
 
         """
         return [field.to_pyobj() for field in self._data]
+
+    def to_pyarrow(self) -> List[pa.Field]:
+        """Convert the fields to a list of PyArrow fields.
+
+        Returns:
+            A list of PyArrow fields representing the fields of Portex record.
+
+        """
+        return [pa.field(field.name, field.type.to_pyarrow()) for field in self]
