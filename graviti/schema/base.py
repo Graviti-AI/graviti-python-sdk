@@ -68,8 +68,16 @@ class PortexType:
         bound_arguments.apply_defaults()
         return bound_arguments.arguments
 
-    def _get_pyarrow_arguments(self) -> Dict[str, Any]:
-        return {key: getattr(self, key, value.default) for key, value in self.params.items()}
+    def _dump_arguments(self) -> Dict[str, Any]:
+        arguments = {}
+        for key, value in self.params.items():
+            argument = getattr(self, key)
+            if argument == value.default:
+                continue
+
+            arguments[key] = value.dump(argument)
+
+        return arguments
 
     @classmethod
     def from_pyobj(

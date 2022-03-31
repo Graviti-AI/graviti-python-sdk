@@ -87,9 +87,9 @@ class ExternalExtension(ExtensionBase):  # pylint: disable=too-few-public-method
         nullable: bool = False,
         **kwargs: Any,
     ):
-        super().__init__(name, storage_type, nullable=nullable, **kwargs)
         self._url = url
         self._revision = revision
+        super().__init__(name, storage_type, nullable=nullable, **kwargs)
 
     def _to_pyobj(self) -> Dict[str, Any]:
         return {**super()._to_pyobj(), "url": self._url, "revision": self._revision}
