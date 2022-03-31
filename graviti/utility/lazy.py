@@ -8,26 +8,23 @@
 from itertools import chain
 from math import ceil
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Generic,
     Iterable,
     Iterator,
     List,
+    Optional,
     Sequence,
     TypeVar,
     Union,
     overload,
 )
 
-import numpy as np
+import pyarrow as pa
 from tensorbay.utility import ReprMixin, ReprType
 
-if TYPE_CHECKING:
-    from numpy.typing import DTypeLike, NDArray
-
-_T = TypeVar("_T", bound=np.generic, covariant=True)
+_T = TypeVar("_T")
 
 
 class LazyList(Sequence[_T], ReprMixin):
@@ -38,10 +35,10 @@ class LazyList(Sequence[_T], ReprMixin):
         limit: The size of each lazy load page.
         fetcher: A callable object to fetch the data and load it to the lazy list.
         extractor: A callable object to make the source data to an iterable object.
-        dtype: The numpy data type of the elements in the lazy list.
+        dtype: The pyarrow data type of the elements in the lazy list.
 
     Attributes:
-        pages: A list of numpy arrays that contains the data in the lazy list.
+        pages: A list of pyarrow arrays that contains the data in the lazy list.
 
     """
 
@@ -54,30 +51,30 @@ class LazyList(Sequence[_T], ReprMixin):
         fetcher: Callable[[int], None],
         extractor: Callable[[Any], Iterable[Any]],
         *,
-        dtype: "DTypeLike",
+        dtype: Optional[pa.DataType] = None,
     ) -> None:
-        self.pages: List[Union[LazyPage[_T], "NDArray[_T]"]] = [
+        self.pages: List[Union[LazyPage[_T], pa.Array]] = [
             LazyPage(i, fetcher, self) for i in range(ceil(total_count / limit))
         ]
         self._limit = limit
         self._total_count = total_count
         self._extractor = extractor
-        self._dtype = np.dtype(dtype)
+        self._dtype = dtype
 
     def __len__(self) -> int:
         return self._total_count
 
-    @overload  # type: ignore[override]
+    @overload
     def __getitem__(self, index: int) -> _T:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> "NDArray[_T]":
+    def __getitem__(self, index: slice) -> pa.Array:
         ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[_T, "NDArray[_T]"]:
+    def __getitem__(self, index: Union[int, slice]) -> Union[_T, pa.Array]:
         if isinstance(index, slice):
-            return np.array([self._getitem(i) for i in range(*index.indices(self._total_count))])
+            return pa.array([self._getitem(i) for i in range(*index.indices(self._total_count))])
 
         index = index if index >= 0 else self._total_count + index
         return self._getitem(index)
@@ -106,7 +103,7 @@ class LazyList(Sequence[_T], ReprMixin):
             data: The source data which needs to be input to the extractor.
 
         """
-        self.pages[pos] = np.array(list(self._extractor(data)), self._dtype)
+        self.pages[pos] = pa.array(list(self._extractor(data)))
 
 
 class LazyPage(Generic[_T]):
@@ -215,13 +212,13 @@ class LazyFactory:
         self._lists: List[LazyList[Any]] = []
 
     def create_list(
-        self, extractor: Callable[[Any], Iterable[Any]], dtype: "DTypeLike"
+        self, extractor: Callable[[Any], Iterable[Any]], dtype: Optional[pa.DataType] = None
     ) -> LazyList[Any]:
         """Create a lazy list from the factory.
 
         Arguments:
             extractor: A callable object to make the source data to an iterable object.
-            dtype: The numpy data type of the elements in the lazy list.
+            dtype: The pyarrow data type of the elements in the lazy list.
 
         Returns:
             A lazy list created by the given extractor and dtype.

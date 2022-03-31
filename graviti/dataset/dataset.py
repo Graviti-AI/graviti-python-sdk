@@ -78,11 +78,11 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
 
     def _get_lazy_lists(self, factory: LazyFactory, extractors: Extractors) -> LazyLists:
         lazy_lists: LazyLists = {}
-        for key, arguments in extractors.items():
-            if isinstance(arguments, tuple):
-                lazy_lists[key] = factory.create_list(*arguments)
+        for key, argument in extractors.items():
+            if callable(argument):
+                lazy_lists[key] = factory.create_list(argument)
             else:
-                lazy_lists[key] = self._get_lazy_lists(factory, arguments)
+                lazy_lists[key] = self._get_lazy_lists(factory, argument)
         return lazy_lists
 
     def _init_data(self) -> None:

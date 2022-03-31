@@ -9,22 +9,12 @@
 from functools import partial
 from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
-from graviti import DataFrame
-from graviti.utility.file import File
 from graviti.utility.typing import NestedDict
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
-_Extractor = Tuple[Callable[[Dict[str, Any]], Iterator[_T]], str]
+_Extractor = Callable[[Dict[str, Any]], Iterator[_T]]
 Extractors = NestedDict[str, _Extractor[Any]]
-
-
-_PORTEX_TYPE_TO_NUMPY_DTYPE = {
-    "boolean": "bool",
-    "binary": "object",
-    "string": "object",
-    "enum": "object",
-}
 
 
 def _get_filename(*_: Any) -> _Extractor[str]:
@@ -32,15 +22,15 @@ def _get_filename(*_: Any) -> _Extractor[str]:
         for item in data["dataDetails"]:
             yield item["remotePath"]
 
-    return extractor, "object"
+    return extractor
 
 
-def _get_file(*_: Any) -> _Extractor[File]:
-    def extractor(data: Dict[str, Any]) -> Iterator[File]:
+def _get_file(*_: Any) -> _Extractor[str]:
+    def extractor(data: Dict[str, Any]) -> Iterator[str]:
         for item in data["dataDetails"]:
-            yield File(item["url"], item["checksum"])
+            yield item["url"]
 
-    return extractor, "object"
+    return extractor
 
 
 def _get_category(*_: Any) -> _Extractor[Any]:
@@ -48,7 +38,7 @@ def _get_category(*_: Any) -> _Extractor[Any]:
         for item in data["dataDetails"]:
             yield item["label"]["CLASSIFICATION"]["category"]
 
-    return extractor, "object"
+    return extractor
 
 
 def _attribute_extractor(data: Dict[str, Any], name: str) -> Iterator[Any]:
@@ -60,9 +50,7 @@ def _get_attribute(schema: Dict[str, Any]) -> Extractors:
     attributes: Extractors = {}
     for attribute_info in schema["attributes"]:
         name = attribute_info["name"]
-        type_ = attribute_info["type"]
-        dtype = _PORTEX_TYPE_TO_NUMPY_DTYPE.get(type_, type_)
-        attributes[name] = partial(_attribute_extractor, name=name), dtype
+        attributes[name] = partial(_attribute_extractor, name=name)
     return attributes
 
 
@@ -85,8 +73,8 @@ def _extract_category_and_attribute(
     return results
 
 
-def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
-    def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
+def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
+    def extractor(data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         for item in data["dataDetails"]:
             labels = item["label"]["BOX2D"]
             box2d: Dict[str, Any] = {
@@ -96,9 +84,9 @@ def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
                 "ymax": [label["box2d"]["ymax"] for label in labels],
             }
             box2d.update(_extract_category_and_attribute(schema["items"], labels))
-            yield DataFrame(box2d)
+            yield box2d
 
-    return extractor, "object"
+    return extractor
 
 
 def _extract_vetices(
@@ -107,47 +95,45 @@ def _extract_vetices(
     return {key: [point[key] for point in pointlist] for key in vertices_keys}
 
 
-def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[DataFrame]:
-    def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
+def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[Dict[str, Any]]:
+    def extractor(data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         for item in data["dataDetails"]:
             labels = item["label"][key.upper()]
             pointlists: Dict[str, Any] = {
-                "vertices": [
-                    DataFrame(_extract_vetices(label[key], ("x", "y"))) for label in labels
-                ]
+                "vertices": [_extract_vetices(label[key], ("x", "y")) for label in labels]
             }
             pointlists.update(_extract_category_and_attribute(schema["items"], labels))
-            yield DataFrame(pointlists)
+            yield pointlists
 
-    return extractor, "object"
+    return extractor
 
 
-def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
+def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
     keypoints2d_schema = schema["items"]
     vertices_keys = ("x", "y", "v") if keypoints2d_schema.get("visible") else ("x", "y")
     vertices_extractor = partial(_extract_vetices, vertices_keys=vertices_keys)
 
-    def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
+    def extractor(data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         for item in data["dataDetails"]:
             labels = item["label"]["KEYPOINTS2D"]
             keypoints2d: Dict[str, Any] = {
-                "vertices": [
-                    DataFrame(vertices_extractor(label["keypoints2d"])) for label in labels
-                ]
+                "vertices": [vertices_extractor(label["keypoints2d"]) for label in labels]
             }
             keypoints2d.update(_extract_category_and_attribute(keypoints2d_schema, labels))
-            yield DataFrame(keypoints2d)
+            yield keypoints2d
 
-    return extractor, "object"
+    return extractor
 
 
 def _mask_extractor(data: Dict[str, Any], key: str) -> Iterator[Any]:
     for item in data["dataDetails"]:
         label = item["label"][key]
-        yield File(label["url"], label["checksum"])
+        yield label["url"]
 
 
-def _info_extractor(data: Dict[str, Any], schema: Dict[str, Any], key: str) -> Iterator[DataFrame]:
+def _info_extractor(
+    data: Dict[str, Any], schema: Dict[str, Any], key: str
+) -> Iterator[Dict[str, Any]]:
     id_key = "categoryId" if key == "SEMANTIC_MASK" else "instanceId"
     for item in data["dataDetails"]:
         all_info = item["label"][key]["info"]
@@ -157,7 +143,7 @@ def _info_extractor(data: Dict[str, Any], schema: Dict[str, Any], key: str) -> I
         }
         if key == "PANOPTIC_MASK":
             mask_info["categoryId"] = [info["categoryId"] for info in all_info]
-        yield DataFrame(mask_info)
+        yield mask_info
 
 
 def _get_mask(schema: Dict[str, Any], key: str) -> Extractors:
@@ -167,34 +153,34 @@ def _get_mask(schema: Dict[str, Any], key: str) -> Extractors:
     return mask
 
 
-def _get_multi_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[DataFrame]:
-    def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
+def _get_multi_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[Dict[str, Any]]:
+    def extractor(data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         for item in data["dataDetails"]:
             labels = item["label"][f"MULTI_{key.upper()}"]
             multi_pointlists: Dict[str, Any] = {
                 f"{key}s": [
                     [
-                        DataFrame(_extract_vetices(pointlist, ("x", "y")))
+                        _extract_vetices(pointlist, ("x", "y"))
                         for pointlist in label[f"multi{key.capitalize()}"]
                     ]
                     for label in labels
                 ]
             }
             multi_pointlists.update(_extract_category_and_attribute(schema["items"], labels))
-            yield DataFrame(multi_pointlists)
+            yield multi_pointlists
 
-    return extractor, "object"
+    return extractor
 
 
-def _get_rle(schema: Dict[str, Any]) -> _Extractor[DataFrame]:
-    def extractor(data: Dict[str, Any]) -> Iterator[DataFrame]:
+def _get_rle(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
+    def extractor(data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         for item in data["dataDetails"]:
             labels = item["label"]["RLE"]
             rle: Dict[str, Any] = {"code": [label["rle"] for label in labels]}
             rle.update(_extract_category_and_attribute(schema["items"], labels))
-            yield DataFrame(rle)
+            yield rle
 
-    return extractor, "object"
+    return extractor
 
 
 _EXTRACTORS_GETTER: Dict[
