@@ -79,7 +79,7 @@ def template(
         ...             },
         ...             {
         ...                 "name": "z",
-        ...                 "existIf": "$params.dimension == '3D'",
+        ...                 "exist_if": "$params.dimension == '3D'",
         ...                 "type": "$params.dtype",
         ...             }
         ...         ]
