@@ -413,7 +413,7 @@ class FieldFactory(Factory):
         dependences = set()
         keys = {}
 
-        expression = expression_creator(item.pop("existIf", None))
+        expression = expression_creator(item.pop("exist_if", None))
         keys.update(expression.keys)
 
         name_factory = string_factory_creator(item.pop("name"), PTYPE.String)
