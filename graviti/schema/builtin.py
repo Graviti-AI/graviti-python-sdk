@@ -10,7 +10,6 @@ from operator import mul
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Iterable,
     List,
     Mapping,
@@ -77,7 +76,7 @@ class PortexBuiltinType(PortexType):
 
         """
         return BuiltinExtension(
-            self.__class__.__name__, self._get_pyarrow_type(), **self._get_pyarrow_arguments()
+            self.__class__.__name__, self._get_pyarrow_type(), **self._dump_arguments()
         )
 
 
@@ -321,9 +320,6 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
 
         return self.fields[index].type
 
-    def _get_pyarrow_arguments(self) -> Dict[str, Any]:
-        return {"nullable": self.nullable}
-
     def _get_pyarrow_type(self) -> "paDataType":
         return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member
 
@@ -395,9 +391,6 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         self, items: PortexType, length: Optional[int] = None, nullable: bool = False
     ) -> None:
         super().__init__(items=items, length=length, nullable=nullable)
-
-    def _get_pyarrow_arguments(self) -> Dict[str, Any]:
-        return {"nullable": self.nullable}
 
     def _get_pyarrow_type(self) -> "paDataType":
         list_size = self.length if self.length else -1
