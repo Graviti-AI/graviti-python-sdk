@@ -24,6 +24,8 @@ from typing import (
 import pyarrow as pa
 from tensorbay.utility import ReprMixin, ReprType
 
+from graviti.schema.pyarrow import GravitiExtension
+
 _T = TypeVar("_T")
 
 
@@ -103,7 +105,11 @@ class LazyList(Sequence[_T], ReprMixin):
             data: The source data which needs to be input to the extractor.
 
         """
-        self.pages[pos] = pa.array(list(self._extractor(data)))
+        if isinstance(self._dtype, GravitiExtension):
+            storage_array = pa.array(self._extractor(data), type=self._dtype.storage_type)
+            self.pages[pos] = pa.ExtensionArray.from_storage(self._dtype, storage_array)
+        else:
+            self.pages[pos] = pa.array(self._extractor(data))
 
 
 class LazyPage(Generic[_T]):

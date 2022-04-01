@@ -9,12 +9,22 @@
 from functools import partial
 from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
+import pyarrow as pa
+
+from graviti.schema.pyarrow import FileType
 from graviti.utility.typing import NestedDict
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
-_Extractor = Callable[[Dict[str, Any]], Iterator[_T]]
+_Extractor = Tuple[Callable[[Dict[str, Any]], Iterator[Any]], _T]
 Extractors = NestedDict[str, _Extractor[Any]]
+
+_PORTEX_TYPE_TO_PYARROW_DTYPE = {
+    "boolean": pa.bool_(),
+    "binary": pa.binary(),
+    "string": pa.string(),
+    "enum": pa.string(),
+}
 
 
 def _get_filename(*_: Any) -> _Extractor[str]:
@@ -22,15 +32,15 @@ def _get_filename(*_: Any) -> _Extractor[str]:
         for item in data["dataDetails"]:
             yield item["remotePath"]
 
-    return extractor
+    return extractor, pa.string()
 
 
 def _get_file(*_: Any) -> _Extractor[str]:
-    def extractor(data: Dict[str, Any]) -> Iterator[str]:
+    def extractor(data: Dict[str, Any]) -> Iterator[Tuple[str, str]]:
         for item in data["dataDetails"]:
-            yield item["url"]
+            yield item["url"], item["checksum"]
 
-    return extractor
+    return extractor, FileType()
 
 
 def _get_category(*_: Any) -> _Extractor[Any]:
@@ -38,7 +48,7 @@ def _get_category(*_: Any) -> _Extractor[Any]:
         for item in data["dataDetails"]:
             yield item["label"]["CLASSIFICATION"]["category"]
 
-    return extractor
+    return extractor, pa.string()
 
 
 def _attribute_extractor(data: Dict[str, Any], name: str) -> Iterator[Any]:
@@ -50,7 +60,9 @@ def _get_attribute(schema: Dict[str, Any]) -> Extractors:
     attributes: Extractors = {}
     for attribute_info in schema["attributes"]:
         name = attribute_info["name"]
-        attributes[name] = partial(_attribute_extractor, name=name)
+        type_ = attribute_info["type"]
+        dtype = _PORTEX_TYPE_TO_PYARROW_DTYPE.get(type_, type_)
+        attributes[name] = partial(_attribute_extractor, name=name), dtype
     return attributes
 
 
@@ -86,7 +98,7 @@ def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
             box2d.update(_extract_category_and_attribute(schema["items"], labels))
             yield box2d
 
-    return extractor
+    return extractor, pa.string()
 
 
 def _extract_vetices(
@@ -105,7 +117,7 @@ def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[Dict[str, An
             pointlists.update(_extract_category_and_attribute(schema["items"], labels))
             yield pointlists
 
-    return extractor
+    return extractor, pa.string()
 
 
 def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
@@ -122,7 +134,7 @@ def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
             keypoints2d.update(_extract_category_and_attribute(keypoints2d_schema, labels))
             yield keypoints2d
 
-    return extractor
+    return extractor, pa.string()
 
 
 def _mask_extractor(data: Dict[str, Any], key: str) -> Iterator[Any]:
@@ -169,7 +181,7 @@ def _get_multi_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[Dict[s
             multi_pointlists.update(_extract_category_and_attribute(schema["items"], labels))
             yield multi_pointlists
 
-    return extractor
+    return extractor, pa.string()
 
 
 def _get_rle(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
@@ -180,7 +192,7 @@ def _get_rle(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
             rle.update(_extract_category_and_attribute(schema["items"], labels))
             yield rle
 
-    return extractor
+    return extractor, pa.string()
 
 
 _EXTRACTORS_GETTER: Dict[
