@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T", int, str)
 
 
-class SeriesILocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
+class SeriesILocIndexer(Generic[_T]):
     """Index class for Series.iloc."""
 
     def __init__(self, obj: "SeriesBase[_T]") -> None:
@@ -37,7 +37,7 @@ class SeriesILocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
         return self.obj._getitem_by_location(key)
 
 
-class SeriesLocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
+class SeriesLocIndexer(Generic[_T]):
     """Index class for Series.loc."""
 
     def __init__(self, obj: "SeriesBase[_T]") -> None:
@@ -59,7 +59,7 @@ class SeriesLocIndexer(Generic[_T]):  # pylint: disable=too-few-public-methods
         return self.obj[key]
 
 
-class DataFrameILocIndexer:  # pylint: disable=too-few-public-methods
+class DataFrameILocIndexer:
     """Index class for DataFrame.iloc."""
 
     def __init__(self, obj: "DataFrame") -> None:
@@ -81,7 +81,7 @@ class DataFrameILocIndexer:  # pylint: disable=too-few-public-methods
         return self.obj._getitem_by_location(key)
 
 
-class DataFrameLocIndexer:  # pylint: disable=too-few-public-methods
+class DataFrameLocIndexer:
     """Index class for DataFrame.loc."""
 
     def __init__(self, obj: "DataFrame") -> None:

@@ -14,9 +14,7 @@ if TYPE_CHECKING:
     from pyarrow.lib import DataType
 
 
-class ExtensionBase(  # pylint: disable=too-few-public-methods
-    pa.ExtensionType  # type: ignore[misc]
-):
+class ExtensionBase(pa.ExtensionType):  # type: ignore[misc]
     """The base class for the PyArrow representation of PortexType types.
 
     Arguments:
@@ -56,13 +54,13 @@ class ExtensionBase(  # pylint: disable=too-few-public-methods
         return {"name": self._name, "nullable": self._nullable, **self._kwargs}
 
 
-class BuiltinExtension(ExtensionBase):  # pylint: disable=too-few-public-methods
+class BuiltinExtension(ExtensionBase):
     """This class defines the PyArrow representation of PortexBuiltinType type."""
 
     _PYARROW_PACKAGE_NAME = "builtin"
 
 
-class ExternalExtension(ExtensionBase):  # pylint: disable=too-few-public-methods
+class ExternalExtension(ExtensionBase):
     """This class defines the PyArrow representation of PortexExternalType type.
 
     Arguments:
