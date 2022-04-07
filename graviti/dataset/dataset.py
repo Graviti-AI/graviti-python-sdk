@@ -8,7 +8,6 @@
 from typing import Any, Dict, Iterator, KeysView, Mapping, Optional
 
 from tensorbay.dataset import Notes, RemoteData
-from tensorbay.exception import ResourceNotExistError
 from tensorbay.label import Catalog
 
 from graviti.client.catalog import get_catalog
@@ -17,6 +16,7 @@ from graviti.client.dataset import get_dataset
 from graviti.client.notes import get_notes
 from graviti.client.segment import list_segments
 from graviti.dataframe.frame import DataFrame
+from graviti.exception import ResourceNotExistError
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
