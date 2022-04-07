@@ -106,7 +106,7 @@ def _get_dtype(value: float, default_type: str = "int32") -> Dict[str, str]:
     return {"dtype": dtype} if dtype != default_type else {}
 
 
-class _ConverterBase:  # pylint: disable=too-few-public-methods
+class _ConverterBase:
     import_types: Any
 
     def __init__(self, label_type: str) -> None:
@@ -118,7 +118,7 @@ class _ConverterBase:  # pylint: disable=too-few-public-methods
         ...
 
 
-class _ConverterClassification(_ConverterBase):  # pylint: disable=too-few-public-methods
+class _ConverterClassification(_ConverterBase):
     _PROCESSORS: Dict[
         Tuple[str, str],
         Union[
@@ -148,14 +148,14 @@ class _ConverterClassification(_ConverterBase):  # pylint: disable=too-few-publi
         return fields
 
 
-class _ConverterCommon(_ConverterBase):  # pylint: disable=too-few-public-methods
+class _ConverterCommon(_ConverterBase):
     def __init__(self, label_type: str, portex_type: str) -> None:
         super().__init__(label_type)
         self._portex_type = portex_type
         self.import_types = {"name": portex_type}
 
 
-class _ConverterSingleLabel(_ConverterCommon):  # pylint: disable=too-few-public-methods
+class _ConverterSingleLabel(_ConverterCommon):
     def __init__(self, label_type: str, portex_type: str) -> None:
         super().__init__(label_type, portex_type)
         self._field_name = label_type
@@ -170,7 +170,7 @@ class _ConverterSingleLabel(_ConverterCommon):  # pylint: disable=too-few-public
         }
 
 
-class _ConverterInstanceMask(_ConverterSingleLabel):  # pylint: disable=too-few-public-methods
+class _ConverterInstanceMask(_ConverterSingleLabel):
     def __call__(  # type: ignore[override]
         self, subcatalog: InstanceMaskSubcatalog, labels: _LabelBase
     ) -> Dict[str, Any]:
@@ -181,7 +181,7 @@ class _ConverterInstanceMask(_ConverterSingleLabel):  # pylint: disable=too-few-
         return field
 
 
-class _ConverterPanopticMask(_ConverterSingleLabel):  # pylint: disable=too-few-public-methods
+class _ConverterPanopticMask(_ConverterSingleLabel):
     def __call__(  # type: ignore[override]
         self, subcatalog: PanopticMaskSubcatalog, labels: _LabelBase
     ) -> Dict[str, Any]:
@@ -190,7 +190,7 @@ class _ConverterPanopticMask(_ConverterSingleLabel):  # pylint: disable=too-few-
         return field
 
 
-class _ConverterMultiLabel(_ConverterCommon):  # pylint: disable=too-few-public-methods
+class _ConverterMultiLabel(_ConverterCommon):
     def __init__(self, label_type: str, portex_type: str) -> None:
         super().__init__(label_type, portex_type)
         self._field_name = label_type.upper() if label_type == "rle" else f"{label_type}s"
@@ -202,7 +202,7 @@ class _ConverterMultiLabel(_ConverterCommon):  # pylint: disable=too-few-public-
         return {"name": self._field_name, "type": "array", "items": items}
 
 
-class _ConverterMultiGeometryLabel(_ConverterMultiLabel):  # pylint: disable=too-few-public-methods
+class _ConverterMultiGeometryLabel(_ConverterMultiLabel):
     def __init__(self, label_type: str, portex_type: str, label_value_level: int) -> None:
         super().__init__(label_type, portex_type)
         self._label_value_level = label_value_level
@@ -221,9 +221,7 @@ class _ConverterMultiGeometryLabel(_ConverterMultiLabel):  # pylint: disable=too
         return field
 
 
-class _ConverterMultiKeypoints2D(
-    _ConverterMultiGeometryLabel
-):  # pylint: disable=too-few-public-methods
+class _ConverterMultiKeypoints2D(_ConverterMultiGeometryLabel):
     def __call__(  # type: ignore[override]
         self, subcatalog: Keypoints2DSubcatalog, labels: List[LabeledKeypoints2D]
     ) -> Dict[str, Any]:
