@@ -19,6 +19,7 @@ from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
 from graviti.utility.request import URL_PATH_PREFIX, open_api_do
 from graviti.utility.requests import config, get_session
 from graviti.utility.typing import NestedDict
+from graviti.utility.user import UserMapping, UserMutableMapping, UserMutableSequence, UserSequence
 
 __all__ = [
     "READ_ONLY_URL",
@@ -40,4 +41,8 @@ __all__ = [
     "NestedDict",
     "ReprType",
     "ReprMixin",
+    "UserMapping",
+    "UserMutableMapping",
+    "UserMutableSequence",
+    "UserSequence",
 ]

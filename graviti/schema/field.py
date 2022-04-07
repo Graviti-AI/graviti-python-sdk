@@ -8,10 +8,10 @@
 from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Tuple, Union
 
 import pyarrow as pa
-from tensorbay.utility import UserSequence
 
 from graviti.schema.base import _INDENT, PortexType
 from graviti.schema.package import Imports
+from graviti.utility import UserSequence
 
 
 class Field(NamedTuple):
