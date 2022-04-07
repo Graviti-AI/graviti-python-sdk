@@ -9,11 +9,10 @@ from collections import OrderedDict
 from inspect import Parameter, Signature
 from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
 
-from tensorbay.utility.user import UserMapping
-
 import graviti.schema.ptype as PTYPE
 from graviti.schema.factory import Dynamic
 from graviti.schema.package import Imports
+from graviti.utility import UserMapping
 
 
 def param(
