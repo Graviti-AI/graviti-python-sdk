@@ -9,10 +9,10 @@ from typing import Any
 from uuid import uuid4
 
 from requests.models import Response
-from tensorbay.exception import ResponseError, ResponseErrorDistributor
 from tensorbay.utility import config, get_session
 
 from graviti.__version__ import __version__
+from graviti.exception import RESPONSE_ERROR_DISTRIBUTOR, ResponseError
 
 URL_PATH_PREFIX = "api/v1"
 
@@ -43,4 +43,4 @@ def open_api_do(method: str, access_key: str, url: str, **kwargs: Any) -> Respon
     except ResponseError as error:
         response = error.response
         error_code = response.json()["code"]
-        raise ResponseErrorDistributor.get(error_code, ResponseError)(response=response) from None
+        raise RESPONSE_ERROR_DISTRIBUTOR.get(error_code, ResponseError)(response=response) from None
