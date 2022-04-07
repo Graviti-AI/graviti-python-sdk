@@ -12,9 +12,9 @@ from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar
 
 import yaml
-from tensorbay.utility import ReprMixin, ReprType, UserMapping
+from tensorbay.utility import UserMapping
 
-from graviti.utility import AttrDict
+from graviti.utility import AttrDict, ReprMixin, ReprType
 
 if TYPE_CHECKING:
     from graviti.schema.base import PortexType

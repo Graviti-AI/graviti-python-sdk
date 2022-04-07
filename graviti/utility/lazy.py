@@ -22,9 +22,9 @@ from typing import (
 )
 
 import pyarrow as pa
-from tensorbay.utility import ReprMixin, ReprType
 
 from graviti.utility.pyarrow import GravitiExtension
+from graviti.utility.repr import ReprMixin, ReprType
 
 _T = TypeVar("_T")
 
