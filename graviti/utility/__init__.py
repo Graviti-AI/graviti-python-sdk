@@ -15,7 +15,7 @@ from graviti.utility.pyarrow import (
     FileType,
     GravitiExtension,
 )
-from graviti.utility.repr import MAX_REPR_ROWS
+from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
 from graviti.utility.request import URL_PATH_PREFIX, open_api_do
 from graviti.utility.requests import config, get_session
 from graviti.utility.typing import NestedDict
@@ -38,4 +38,6 @@ __all__ = [
     "FileArray",
     "FileType",
     "NestedDict",
+    "ReprType",
+    "ReprMixin",
 ]

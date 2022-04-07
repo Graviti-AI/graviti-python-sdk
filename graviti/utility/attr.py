@@ -18,7 +18,7 @@ from typing import (
     overload,
 )
 
-from tensorbay.utility import ReprMixin, ReprType
+from graviti.utility.repr import ReprMixin, ReprType
 
 _T = TypeVar("_T")
 _D = TypeVar("_D")
