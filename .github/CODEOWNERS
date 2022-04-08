@@ -8,5 +8,6 @@
 /.pre-commit-config.yaml @AChenQ
 
 /graviti/client/ @graczhual
+/graviti/openapi/ @graczhual
 /graviti/dataframe/ @AChenQ
 /graviti/schema/ @Lee-000
