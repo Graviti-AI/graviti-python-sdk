@@ -44,7 +44,7 @@ def create_dataset(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{name}")
+    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets")
     post_data = {
         "name": name,
         "alias": alias,
