@@ -9,10 +9,10 @@ from typing import Any
 from uuid import uuid4
 
 from requests.models import Response
-from tensorbay.utility import config, get_session
 
 from graviti.__version__ import __version__
 from graviti.exception import RESPONSE_ERROR_DISTRIBUTOR, ResponseError
+from graviti.utility.requests import config, get_session
 
 URL_PATH_PREFIX = "gatewayv2/tensorbay-open-api/v1"
 

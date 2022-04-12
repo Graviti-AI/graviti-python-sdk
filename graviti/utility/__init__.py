@@ -8,5 +8,14 @@ from graviti.utility.attr import AttrDict
 from graviti.utility.file import File
 from graviti.utility.lazy import LazyFactory
 from graviti.utility.request import URL_PATH_PREFIX, open_api_do
+from graviti.utility.requests import config, get_session
 
-__all__ = ["File", "LazyFactory", "open_api_do", "URL_PATH_PREFIX", "AttrDict"]
+__all__ = [
+    "File",
+    "LazyFactory",
+    "open_api_do",
+    "URL_PATH_PREFIX",
+    "AttrDict",
+    "config",
+    "get_session",
+]
