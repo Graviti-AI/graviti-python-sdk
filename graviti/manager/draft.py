@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Optional
 
 from tensorbay.client.lazy import PagingList
 
-from graviti.dataset.struct import Draft
+from graviti.dataset import Draft
 
 if TYPE_CHECKING:
-    from graviti.dataset.dataset import Dataset
+    from graviti.dataset import Dataset
 
 
 class DraftManager:

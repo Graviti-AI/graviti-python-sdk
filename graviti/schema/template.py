@@ -12,7 +12,7 @@ from graviti.schema.base import PortexType
 from graviti.schema.factory import Dynamic, Factory, type_factory_creator
 from graviti.schema.package import ExternalPackage, Imports, Package, packages
 from graviti.schema.param import Param, Params
-from graviti.schema.pyarrow import ExternalExtension
+from graviti.utility import ExternalExtension
 
 
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method

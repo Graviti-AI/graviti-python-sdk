@@ -27,7 +27,7 @@ from graviti.schema.base import PortexType
 from graviti.schema.field import Field, Fields
 from graviti.schema.package import packages
 from graviti.schema.param import Param, Params, param
-from graviti.schema.pyarrow import BuiltinExtension
+from graviti.utility import BuiltinExtension
 
 if TYPE_CHECKING:
     from pyarrow.lib import DataType as paDataType

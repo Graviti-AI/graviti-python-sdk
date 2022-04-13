@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Optional
 from tensorbay.client.struct import User
 
 if TYPE_CHECKING:
-    from graviti.dataset.dataset import Dataset
+    from graviti.dataset import Dataset
 
 
 class Draft:

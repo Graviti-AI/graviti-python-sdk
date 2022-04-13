@@ -8,7 +8,7 @@
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from graviti.utility.request import URL_PATH_PREFIX, open_api_do
+from graviti.utility import URL_PATH_PREFIX, open_api_do
 
 
 def commit_draft(

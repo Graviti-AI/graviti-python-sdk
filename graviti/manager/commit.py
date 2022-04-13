@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Generator, Optional
 from tensorbay.client.lazy import PagingList
 from tensorbay.client.struct import Commit
 
-from graviti.client.commit import list_commits
+from graviti.client import list_commits
 from graviti.exception import ResourceNotExistError
 
 if TYPE_CHECKING:
-    from graviti.dataset.dataset import Dataset
+    from graviti.dataset import Dataset
 
 
 class CommitManager:

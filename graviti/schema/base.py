@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 import yaml
 
 from graviti.schema.package import Imports, Package
-from graviti.schema.pyarrow import ExtensionBase
+from graviti.utility import ExtensionBase
 
 if TYPE_CHECKING:
     from graviti.schema.param import Params

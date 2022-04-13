@@ -9,8 +9,8 @@ from typing import Generator, Optional
 
 from tensorbay.client.lazy import PagingList
 
-from graviti.client.dataset import list_datasets
-from graviti.dataset.dataset import Dataset
+from graviti.client import list_datasets
+from graviti.dataset import Dataset
 from graviti.exception import ResourceNotExistError
 
 

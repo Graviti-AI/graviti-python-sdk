@@ -9,7 +9,7 @@ from itertools import chain, zip_longest
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
 
 from graviti.dataframe.series import SeriesBase
-from graviti.utility.repr import _MAX_REPR_ROWS
+from graviti.utility import MAX_REPR_ROWS
 
 
 class Series(SeriesBase[str]):
@@ -72,7 +72,7 @@ class Series(SeriesBase[str]):
             "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
             for line in zip_longest(*header, body)
         ]
-        if self.__len__() > _MAX_REPR_ROWS:
+        if self.__len__() > MAX_REPR_ROWS:
             lines.append(f"...({self.__len__()})")
         if self.name:
             lines.append(f"Name: {self.name}")

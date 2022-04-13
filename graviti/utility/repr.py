@@ -5,4 +5,4 @@
 
 """Repr related methods."""
 
-_MAX_REPR_ROWS = 10
+MAX_REPR_ROWS = 10
