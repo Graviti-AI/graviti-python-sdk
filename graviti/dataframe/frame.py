@@ -25,7 +25,7 @@ from typing import (
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.utility.repr import _MAX_REPR_ROWS
+from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.dataset.dataset import LazyLists
@@ -131,7 +131,7 @@ class DataFrame:
             "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
             for line in chain(header, body)
         ]
-        if self.__len__() > _MAX_REPR_ROWS:
+        if self.__len__() > MAX_REPR_ROWS:
             lines.append(f"...({self.__len__()})")
         return "\n".join(lines)
 
@@ -198,10 +198,10 @@ class DataFrame:
         length = self.__len__()
         # pylint: disable=protected-access
         if self._index._indices is None:
-            return range(min(length, _MAX_REPR_ROWS))
+            return range(min(length, MAX_REPR_ROWS))
 
-        if length >= _MAX_REPR_ROWS:
-            return islice(self._index._indices, _MAX_REPR_ROWS)
+        if length >= MAX_REPR_ROWS:
+            return islice(self._index._indices, MAX_REPR_ROWS)
 
         return self._index._indices
 

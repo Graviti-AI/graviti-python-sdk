@@ -10,22 +10,12 @@ from typing import Any, Dict, Iterator, KeysView, Mapping, Optional
 from tensorbay.dataset import Notes, RemoteData
 from tensorbay.label import Catalog
 
-from graviti.client.catalog import get_catalog
-from graviti.client.data import list_data_details
-from graviti.client.dataset import get_dataset
-from graviti.client.notes import get_notes
-from graviti.client.segment import list_segments
-from graviti.dataframe.frame import DataFrame
+from graviti.client import get_catalog, get_dataset, get_notes, list_data_details, list_segments
+from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNotExistError
-from graviti.manager.branch import BranchManager
-from graviti.manager.commit import CommitManager
-from graviti.manager.draft import DraftManager
-from graviti.manager.tag import TagManager
-from graviti.schema.catalog_to_schema import catalog_to_schema
-from graviti.schema.extractors import Extractors, get_extractors
-from graviti.utility.file import READ_ONLY_URL
-from graviti.utility.lazy import LazyFactory, LazyList
-from graviti.utility.typing import NestedDict
+from graviti.manager import BranchManager, CommitManager, DraftManager, TagManager
+from graviti.schema import Extractors, catalog_to_schema, get_extractors
+from graviti.utility import READ_ONLY_URL, LazyFactory, LazyList, NestedDict
 
 LazyLists = NestedDict[str, LazyList[Any]]
 

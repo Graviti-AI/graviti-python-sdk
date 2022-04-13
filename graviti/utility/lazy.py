@@ -24,7 +24,7 @@ from typing import (
 import pyarrow as pa
 from tensorbay.utility import ReprMixin, ReprType
 
-from graviti.schema.pyarrow import GravitiExtension
+from graviti.utility.pyarrow import GravitiExtension
 
 _T = TypeVar("_T")
 

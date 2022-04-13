@@ -18,7 +18,7 @@ from graviti.schema.builtin import (
     tensor,
 )
 from graviti.schema.catalog_to_schema import catalog_to_schema
-from graviti.schema.extractors import get_extractors
+from graviti.schema.extractors import Extractors, get_extractors
 
 __all__ = [
     "array",
@@ -34,4 +34,5 @@ __all__ = [
     "record",
     "string",
     "tensor",
+    "Extractors",
 ]

@@ -5,7 +5,7 @@
 
 """The implementation of the Graviti."""
 
-from graviti.manager.dataset import DatasetManager
+from graviti.manager import DatasetManager
 
 
 class Graviti:

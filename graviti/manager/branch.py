@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Generator, Optional
 from tensorbay.client.lazy import PagingList
 from tensorbay.client.struct import Branch
 
-from graviti.client.branch import list_branches
+from graviti.client import list_branches
 from graviti.exception import ResourceNotExistError
 
 if TYPE_CHECKING:
-    from graviti.dataset.dataset import Dataset
+    from graviti.dataset import Dataset
 
 
 class BranchManager:

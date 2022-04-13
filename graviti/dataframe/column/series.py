@@ -10,7 +10,7 @@ from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Union, overload
 
 from graviti.dataframe.series import SeriesBase
-from graviti.utility.repr import _MAX_REPR_ROWS
+from graviti.utility import MAX_REPR_ROWS
 
 
 class Series(SeriesBase[int]):
@@ -101,7 +101,7 @@ class Series(SeriesBase[int]):
         lines = []
         for indice, value in zip(indices, body):
             lines.append(f"{indice:<{indice_width+2}}{value:<{body_item_width+2}}")
-        if self.__len__() > _MAX_REPR_ROWS:
+        if self.__len__() > MAX_REPR_ROWS:
             lines.append(f"...({self.__len__()})")
         if self.name:
             lines.append(f"Name: {self.name}")
@@ -111,10 +111,10 @@ class Series(SeriesBase[int]):
         length = self.__len__()
         # pylint: disable=protected-access
         if self._indices is None:
-            return range(min(length, _MAX_REPR_ROWS))
+            return range(min(length, MAX_REPR_ROWS))
 
-        if length >= _MAX_REPR_ROWS:
-            return islice(self._indices, _MAX_REPR_ROWS)
+        if length >= MAX_REPR_ROWS:
+            return islice(self._indices, MAX_REPR_ROWS)
 
         return self._indices
 

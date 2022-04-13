@@ -11,8 +11,7 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
 import pyarrow as pa
 
-from graviti.schema.pyarrow import FileType
-from graviti.utility.typing import NestedDict
+from graviti.utility import FileType, NestedDict
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]

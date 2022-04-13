@@ -11,7 +11,7 @@ from tensorbay.client.lazy import PagingList
 from tensorbay.client.struct import Tag
 
 if TYPE_CHECKING:
-    from graviti.dataset.dataset import Dataset
+    from graviti.dataset import Dataset
 
 
 class TagManager:
