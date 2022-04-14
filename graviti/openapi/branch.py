@@ -8,7 +8,7 @@
 from typing import Any, Dict
 from urllib.parse import urljoin
 
-from graviti.openapi.request import URL_PATH_PREFIX, open_api_do
+from graviti.openapi.request import open_api_do
 
 
 def create_branch(
@@ -18,7 +18,7 @@ def create_branch(
     name: str,
     revision: str,
 ) -> None:
-    """Execute the OpenAPI `POST /v1/datasets/{dataset_name}/branches`.
+    """Execute the OpenAPI `POST /v2/datasets/{dataset_name}/branches`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -30,7 +30,7 @@ def create_branch(
 
     Examples:
         >>> create_branch(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "branch-1",
@@ -38,7 +38,7 @@ def create_branch(
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/branches")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/branches")
     post_data = {"name": name, "revision": revision}
     open_api_do("POST", access_key, url, json=post_data)
 
@@ -51,7 +51,7 @@ def list_branches(
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/branches`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/branches`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -65,7 +65,7 @@ def list_branches(
 
     Examples:
         >>> list_branches(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST"
         ... )
@@ -87,7 +87,7 @@ def list_branches(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/branches")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/branches")
     params = {"offset": offset, "limit": limit}
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -98,7 +98,7 @@ def get_branch(
     dataset_name: str,
     branch_name: str,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/branches/{branch_name}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/branches/{branch_name}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -111,7 +111,7 @@ def get_branch(
 
     Examples:
         >>> get_branch(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "main",
@@ -127,7 +127,7 @@ def get_branch(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/branches/{branch_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/branches/{branch_name}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -137,7 +137,7 @@ def delete_branch(
     dataset_name: str,
     branch_name: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v1/datasets/{dataset_name}/branches/{branch_name}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{dataset_name}/branches/{branch_name}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -147,12 +147,12 @@ def delete_branch(
 
     Examples:
         >>> delete_branch(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "branch-1",
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/branches/{branch_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/branches/{branch_name}")
     open_api_do("DELETE", access_key, url)

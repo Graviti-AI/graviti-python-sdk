@@ -8,7 +8,7 @@
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from graviti.openapi.request import URL_PATH_PREFIX, open_api_do
+from graviti.openapi.request import open_api_do
 
 
 def create_draft(
@@ -20,7 +20,7 @@ def create_draft(
     branch_name: Optional[str] = None,
     description: Optional[str] = None,
 ) -> Dict[str, int]:
-    """Execute the OpenAPI `POST /v1/datasets/{dataset_name}/drafts`.
+    """Execute the OpenAPI `POST /v2/datasets/{dataset_name}/drafts`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -35,7 +35,7 @@ def create_draft(
 
     Examples:
         >>> create_draft(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "draft-2",
@@ -46,7 +46,7 @@ def create_draft(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/drafts")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts")
     post_data = {"title": title}
 
     if description:
@@ -69,7 +69,7 @@ def list_drafts(
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/drafts`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/drafts`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -86,7 +86,7 @@ def list_drafts(
 
     Examples:
         >>> list_drafts(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ... )
@@ -110,7 +110,7 @@ def list_drafts(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/drafts")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts")
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
     if state:
@@ -122,7 +122,7 @@ def list_drafts(
 
 
 def get_draft(url: str, access_key: str, dataset_name: str, draft_number: int) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/drafts/{draft_number}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/drafts/{draft_number}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -135,7 +135,7 @@ def get_draft(url: str, access_key: str, dataset_name: str, draft_number: int) -
 
     Examples:
         >>> get_draft(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     2,
@@ -153,7 +153,7 @@ def get_draft(url: str, access_key: str, dataset_name: str, draft_number: int) -
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/drafts/{draft_number}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts/{draft_number}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -167,7 +167,7 @@ def update_draft(
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> None:
-    """Execute the OpenAPI `PATCH /v1/datasets/{dataset_name}/drafts/{draft_number}`.
+    """Execute the OpenAPI `PATCH /v2/datasets/{dataset_name}/drafts/{draft_number}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -183,7 +183,7 @@ def update_draft(
         Update the title or description of the draft:
 
         >>> update_draft(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     2,
@@ -193,7 +193,7 @@ def update_draft(
         Close the draft:
 
         >>> update_draft(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     2,
@@ -201,7 +201,7 @@ def update_draft(
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/drafts/{draft_number}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts/{draft_number}")
     patch_data: Dict[str, Any] = {"draft_number": draft_number}
 
     if state:

@@ -8,7 +8,7 @@
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from graviti.openapi.request import URL_PATH_PREFIX, open_api_do
+from graviti.openapi.request import open_api_do
 
 
 def commit_draft(
@@ -20,7 +20,7 @@ def commit_draft(
     *,
     description: Optional[str] = None,
 ) -> Dict[str, str]:
-    """Execute the OpenAPI `POST /v1/datasets/{dataset_name}/commits`.
+    """Execute the OpenAPI `POST /v2/datasets/{dataset_name}/commits`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -35,7 +35,7 @@ def commit_draft(
 
     Examples:
         >>> commit_draft(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     2,
@@ -46,7 +46,7 @@ def commit_draft(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/commits")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/commits")
     post_data: Dict[str, Any] = {"draft_number": draft_number, "title": title}
 
     if description:
@@ -66,7 +66,7 @@ def list_commits(
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/commits`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/commits`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -82,7 +82,7 @@ def list_commits(
 
     Examples:
         >>> list_commits(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ... )
@@ -103,7 +103,7 @@ def list_commits(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/commits")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/commits")
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
     if revision:
@@ -113,7 +113,7 @@ def list_commits(
 
 
 def get_commit(url: str, access_key: str, dataset_name: str, commit_id: str) -> Dict[str, str]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/commits/{commit_id}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/commits/{commit_id}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -126,7 +126,7 @@ def get_commit(url: str, access_key: str, dataset_name: str, commit_id: str) -> 
 
     Examples:
         >>> get_commit(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "85c57a7f03804ccc906632248dc8c359"
@@ -141,12 +141,12 @@ def get_commit(url: str, access_key: str, dataset_name: str, commit_id: str) -> 
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/commits/{commit_id}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/commits/{commit_id}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def get_revision(url: str, access_key: str, dataset_name: str, revision: str) -> Dict[str, str]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/revisions/{revision}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/revisions/{revision}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -160,7 +160,7 @@ def get_revision(url: str, access_key: str, dataset_name: str, revision: str) ->
 
     Examples:
         >>> get_revision(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "branch-1"
@@ -171,5 +171,5 @@ def get_revision(url: str, access_key: str, dataset_name: str, revision: str) ->
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/revisions/{revision}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/revisions/{revision}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]

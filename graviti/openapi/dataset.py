@@ -8,7 +8,7 @@
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from graviti.openapi.request import URL_PATH_PREFIX, open_api_do
+from graviti.openapi.request import open_api_do
 
 
 def create_dataset(
@@ -20,7 +20,7 @@ def create_dataset(
     is_public: bool = False,
     config_name: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v1/datasets`.
+    """Execute the OpenAPI `POST /v2/datasets`.
 
     Arguments:
         access_key: User's access key.
@@ -36,7 +36,7 @@ def create_dataset(
     Examples:
         >>> create_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "MNIST",
         ... )
         {
@@ -44,7 +44,7 @@ def create_dataset(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets")
+    url = urljoin(url, "v2/datasets")
     post_data = {
         "name": name,
         "alias": alias,
@@ -59,7 +59,7 @@ def create_dataset(
 
 
 def get_dataset(access_key: str, url: str, dataset_name: str) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}`.
 
     Arguments:
         access_key: User's access key.
@@ -72,7 +72,7 @@ def get_dataset(access_key: str, url: str, dataset_name: str) -> Dict[str, Any]:
     Examples:
         >>> get_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "OxfordIIITPet"
         ... )
         {
@@ -90,7 +90,7 @@ def get_dataset(access_key: str, url: str, dataset_name: str) -> Dict[str, Any]:
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -101,7 +101,7 @@ def list_datasets(
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets`.
+    """Execute the OpenAPI `GET /v2/datasets`.
 
     Arguments:
         access_key: User's access key.
@@ -113,7 +113,7 @@ def list_datasets(
         The response of OpenAPI.
 
     Examples:
-        >>> list_datasets("ACCESSKEY-********", "https://graviti.com/")
+        >>> list_datasets("ACCESSKEY-********", "https://api.graviti.com/")
         {
            "datasets": [
                {
@@ -136,7 +136,7 @@ def list_datasets(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets")
+    url = urljoin(url, "v2/datasets")
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
@@ -152,7 +152,7 @@ def update_dataset(
     is_public: Optional[bool] = None,
     default_branch: Optional[str] = None,
 ) -> None:
-    """Execute the OpenAPI `PATCH /v1/datasets/{dataset_name}`.
+    """Execute the OpenAPI `PATCH /v2/datasets/{dataset_name}`.
 
     Arguments:
         access_key: User's access key.
@@ -166,7 +166,7 @@ def update_dataset(
     Examples:
         >>> update_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "OxfordIIITPet",
         ...     name="OxfordIIITPets",
         ...     alias="Oxford-IIIT Pet",
@@ -175,7 +175,7 @@ def update_dataset(
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}")
     patch_data: Dict[str, Any] = {}
 
     if name is not None:
@@ -198,7 +198,7 @@ def delete_dataset(
     url: str,
     dataset_name: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v1/datasets/{dataset_name}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{dataset_name}`.
 
     Arguments:
         access_key: User's access key.
@@ -208,10 +208,10 @@ def delete_dataset(
     Examples:
         >>> delete_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "OxfordIIITPet",
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}")
     open_api_do("DELETE", access_key, url)

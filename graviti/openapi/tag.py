@@ -8,11 +8,11 @@
 from typing import Any, Dict
 from urllib.parse import urljoin
 
-from graviti.openapi.request import URL_PATH_PREFIX, open_api_do
+from graviti.openapi.request import open_api_do
 
 
 def create_tag(url: str, access_key: str, dataset_name: str, name: str, revision: str) -> None:
-    """Execute the OpenAPI `POST /v1/datasets/{dataset_name}/tags`.
+    """Execute the OpenAPI `POST /v2/datasets/{dataset_name}/tags`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -24,7 +24,7 @@ def create_tag(url: str, access_key: str, dataset_name: str, name: str, revision
 
     Examples:
         >>> create_tag(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "tag-2",
@@ -32,7 +32,7 @@ def create_tag(url: str, access_key: str, dataset_name: str, name: str, revision
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/tags")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/tags")
     post_data = {"name": name, "revision": revision}
     open_api_do("POST", access_key, url, json=post_data)
 
@@ -45,7 +45,7 @@ def list_tags(
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/tags`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/tags`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -59,7 +59,7 @@ def list_tags(
 
     Examples:
         >>> list_tags(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST"
         ... )
@@ -81,13 +81,13 @@ def list_tags(
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/tags")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/tags")
     params = {"offset": offset, "limit": limit}
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
 def get_tag(url: str, access_key: str, dataset_name: str, tag_name: str) -> Dict[str, str]:
-    """Execute the OpenAPI `GET /v1/datasets/{dataset_name}/tags/{tag_name}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/tags/{tag_name}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -100,7 +100,7 @@ def get_tag(url: str, access_key: str, dataset_name: str, tag_name: str) -> Dict
 
     Examples:
         >>> get_tag(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "tag-2"
@@ -116,7 +116,7 @@ def get_tag(url: str, access_key: str, dataset_name: str, tag_name: str) -> Dict
         }
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/tags/{tag_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/tags/{tag_name}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -126,7 +126,7 @@ def delete_tag(
     dataset_name: str,
     tag_name: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v1/datasets/{dataset_name}/tags/{tag_name}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{dataset_name}/tags/{tag_name}`.
 
     Arguments:
         url: The URL of the graviti website.
@@ -136,12 +136,12 @@ def delete_tag(
 
     Examples:
         >>> delete_tag(
-        ...     "https://graviti.com/",
+        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "tag-2"
         ... )
 
     """
-    url = urljoin(url, f"{URL_PATH_PREFIX}/datasets/{dataset_name}/tags/{tag_name}")
+    url = urljoin(url, f"v2/datasets/{dataset_name}/tags/{tag_name}")
     open_api_do("DELETE", access_key, url)
