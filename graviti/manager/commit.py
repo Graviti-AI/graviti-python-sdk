@@ -8,14 +8,17 @@
 from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, TypeVar
 
 from tensorbay.client.struct import Commit as TensorbayCommit
-from tensorbay.utility import AttrsMixin, ReprMixin, attr, common_loads
+from tensorbay.utility import AttrsMixin, attr, common_loads
 
 from graviti.client import list_commits
 from graviti.exception import ResourceNotExistError
 from graviti.manager.lazy import PagingList
+from graviti.utility import ReprMixin
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
+
+ROOT_COMMIT_ID = "00000000000000000000000000000000"
 
 
 class Commit(AttrsMixin, ReprMixin):
@@ -90,6 +93,88 @@ class Commit(AttrsMixin, ReprMixin):
             A python dict containing all the information of the commit::
 
                 {
+                    "commit_id": <str>
+                    "parent_commit_id": <str>
+                    "title": <str>
+                    "description": <str>
+                    "committer":  <str>
+                    "committed_at": <str>
+                }
+
+        """
+        return self._dumps()
+
+
+class NamedCommit(Commit):
+    """This class defines the structure of a named commit.
+
+    :class:`NamedCommit` is the base class of :class:`~graviti.manager.branch.Branch`
+    and :class:`~graviti.manager.tag.Tag`.
+
+    Arguments:
+        name: The name of the named commit.
+        commit_id: The commit id.
+        parent_commit_id: The parent commit id.
+        title: The commit title.
+        description: The commit description.
+        committer: The commit user.
+        committed_at: The time when the draft is committed.
+
+    """
+
+    _T = TypeVar("_T", bound="NamedCommit")
+
+    _repr_attrs = ("commit_id",) + Commit._repr_attrs
+
+    name: str = attr()
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        name: str,
+        commit_id: str,
+        parent_commit_id: str,
+        title: str,
+        description: str,
+        committer: str,
+        committed_at: str,
+    ) -> None:
+        super().__init__(commit_id, parent_commit_id, title, description, committer, committed_at)
+        self.name = name
+
+    def _repr_head(self) -> str:
+        return f'{self.__class__.__name__}("{self.name}")'
+
+    @classmethod
+    def from_pyobj(cls: Type[_T], contents: Dict[str, str]) -> _T:
+        """Create a :class:`NamedCommit` instance from python dict.
+
+        Arguments:
+            contents: A python dict containing all the information of the named commit::
+
+                    {
+                        "name": <str>
+                        "commit_id": <str>
+                        "parent_commit_id": <str>
+                        "title": <str>
+                        "description": <str>
+                        "committer":  <str>
+                        "committed_at": <str>
+                    }
+
+        Returns:
+            A :class:`NamedCommit` instance created from the input python dict.
+
+        """
+        return common_loads(cls, contents)
+
+    def to_pyobj(self) -> Dict[str, str]:
+        """Dump the instance to a python dict.
+
+        Returns:
+            A python dict containing all the information of the named commit::
+
+                {
+                    "name": <str>
                     "commit_id": <str>
                     "parent_commit_id": <str>
                     "title": <str>
