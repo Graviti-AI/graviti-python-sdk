@@ -14,8 +14,6 @@ from graviti.__version__ import __version__
 from graviti.exception import RESPONSE_ERROR_DISTRIBUTOR, ResponseError
 from graviti.utility import config, get_session
 
-URL_PATH_PREFIX = "api/v1"
-
 
 def open_api_do(method: str, access_key: str, url: str, **kwargs: Any) -> Response:
     """Send a request to the Graviti OpenAPI.
