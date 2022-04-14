@@ -11,7 +11,8 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
 import pyarrow as pa
 
-from graviti.utility import FileType, NestedDict
+from graviti.utility.extension import DataFrameType, FileType
+from graviti.utility.typing import NestedDict
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
@@ -84,6 +85,23 @@ def _extract_category_and_attribute(
     return results
 
 
+def _get_attribute_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
+    attributes = {}
+    for attribute_info in schema["attributes"]:
+        name = attribute_info["name"]
+        attributes[name] = pa.list_(pa.string())
+    return attributes
+
+
+def _get_category_and_attribute_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
+    results: Dict[str, Any] = {}
+    if "categories" in schema:
+        results["category"] = pa.list_(pa.string())
+    if "attribute" in schema:
+        results["attribute"] = pa.struct(_get_attribute_schema(schema))
+    return results
+
+
 def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
     def extractor(data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         for item in data["dataDetails"]:
@@ -97,7 +115,14 @@ def _get_box2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
             box2d.update(_extract_category_and_attribute(schema["items"], labels))
             yield box2d
 
-    return extractor, pa.string()
+    pyarrow_storage_pyobj = {
+        "xmin": pa.list_(pa.int32()),
+        "xmax": pa.list_(pa.int32()),
+        "ymin": pa.list_(pa.int32()),
+        "ymax": pa.list_(pa.int32()),
+    }
+    pyarrow_storage_pyobj.update(_get_category_and_attribute_schema(schema["items"]))
+    return extractor, DataFrameType(pa.struct(pyarrow_storage_pyobj))
 
 
 def _extract_vetices(
@@ -116,7 +141,9 @@ def _get_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[Dict[str, An
             pointlists.update(_extract_category_and_attribute(schema["items"], labels))
             yield pointlists
 
-    return extractor, pa.string()
+    pyarrow_storage_pyobj = {"vertices": {key: pa.list_(pa.float32()) for key in ("x", "y")}}
+    pyarrow_storage_pyobj.update(_get_category_and_attribute_schema(schema["items"]))
+    return extractor, DataFrameType(pa.struct(pyarrow_storage_pyobj))
 
 
 def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
@@ -133,13 +160,17 @@ def _get_keypoints2ds(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
             keypoints2d.update(_extract_category_and_attribute(keypoints2d_schema, labels))
             yield keypoints2d
 
-    return extractor, pa.string()
+    pyarrow_storage = {
+        "vertices": pa.list_(pa.struct({key: pa.list_(pa.float32()) for key in vertices_keys}))
+    }
+    pyarrow_storage.update(_get_category_and_attribute_schema(keypoints2d_schema))
+    return extractor, DataFrameType(pa.struct(pyarrow_storage))
 
 
 def _mask_extractor(data: Dict[str, Any], key: str) -> Iterator[Any]:
     for item in data["dataDetails"]:
         label = item["label"][key]
-        yield label["url"]
+        yield label["url"], label["checksum"]
 
 
 def _info_extractor(
@@ -158,9 +189,9 @@ def _info_extractor(
 
 
 def _get_mask(schema: Dict[str, Any], key: str) -> Extractors:
-    mask: Dict[str, Any] = {"mask": (partial(_mask_extractor, key=key), "object")}
+    mask: Dict[str, Any] = {"mask": (partial(_mask_extractor, key=key), FileType())}
     if "attributes" in schema:
-        mask["info"] = partial(_info_extractor, schema=schema, key=key), "object"
+        mask["info"] = partial(_info_extractor, schema=schema, key=key), pa.string()
     return mask
 
 
@@ -180,7 +211,13 @@ def _get_multi_pointlists(schema: Dict[str, Any], key: str) -> _Extractor[Dict[s
             multi_pointlists.update(_extract_category_and_attribute(schema["items"], labels))
             yield multi_pointlists
 
-    return extractor, pa.string()
+    pyarrow_storage_pyobj = {
+        "polygons": pa.list_(
+            pa.list_(pa.struct({key: pa.list_(pa.float32()) for key in ("x", "y")}))
+        )
+    }
+    pyarrow_storage_pyobj.update(_get_category_and_attribute_schema(schema["items"]))
+    return extractor, DataFrameType(pa.struct(pyarrow_storage_pyobj))
 
 
 def _get_rle(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
@@ -191,7 +228,9 @@ def _get_rle(schema: Dict[str, Any]) -> _Extractor[Dict[str, Any]]:
             rle.update(_extract_category_and_attribute(schema["items"], labels))
             yield rle
 
-    return extractor, pa.string()
+    pyarrow_storage_pyobj = {"code": pa.list_(pa.list_(pa.float32()))}
+    pyarrow_storage_pyobj.update(_get_category_and_attribute_schema(schema["items"]))
+    return extractor, DataFrameType(pa.struct(pyarrow_storage_pyobj))
 
 
 _EXTRACTORS_GETTER: Dict[
