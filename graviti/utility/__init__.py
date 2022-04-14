@@ -5,7 +5,7 @@
 """Utility module."""
 
 from graviti.utility.attr import AttrDict
-from graviti.utility.file import READ_ONLY_URL, File
+from graviti.utility.file import File
 from graviti.utility.lazy import LazyFactory, LazyList
 from graviti.utility.pyarrow import (
     BuiltinExtension,
@@ -22,7 +22,6 @@ from graviti.utility.typing import NestedDict
 from graviti.utility.user import UserMapping, UserMutableMapping, UserMutableSequence, UserSequence
 
 __all__ = [
-    "READ_ONLY_URL",
     "MAX_REPR_ROWS",
     "File",
     "LazyFactory",

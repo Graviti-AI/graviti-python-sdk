@@ -10,6 +10,7 @@ from typing import Any, Dict, Generator, Iterator, KeysView, Mapping, Optional
 from tensorbay.client.lazy import PagingList
 from tensorbay.dataset import Notes, RemoteData
 from tensorbay.label import Catalog
+from tensorbay.utility import URL
 
 from graviti.client import (
     get_catalog,
@@ -26,7 +27,7 @@ from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.tag import TagManager
 from graviti.schema import Extractors, catalog_to_schema, get_extractors
-from graviti.utility import READ_ONLY_URL, LazyFactory, LazyList, NestedDict
+from graviti.utility import LazyFactory, LazyList, NestedDict
 
 LazyLists = NestedDict[str, LazyList[Any]]
 
@@ -132,7 +133,9 @@ class Dataset(Mapping[str, DataFrame]):  # pylint: disable=too-many-instance-att
             first_data_details = data_details["dataDetails"][0]
             remote_data = RemoteData.from_response_body(
                 first_data_details,
-                url=READ_ONLY_URL(first_data_details["url"]),
+                url=URL(
+                    first_data_details["url"], updater=lambda: "update is not supported currently"
+                ),
             )
             notes = get_notes(
                 self._url,
