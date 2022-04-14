@@ -14,7 +14,7 @@ from graviti.client import list_branches
 from graviti.exception import ResourceNotExistError
 
 if TYPE_CHECKING:
-    from graviti.dataset import Dataset
+    from graviti.manager.dataset import Dataset
 
 
 class BranchManager:

@@ -28,7 +28,7 @@ from graviti.dataframe.row.series import Series as RowSeries
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
-    from graviti.dataset.dataset import LazyLists
+    from graviti.manager import LazyLists
 
 
 class DataFrame:
