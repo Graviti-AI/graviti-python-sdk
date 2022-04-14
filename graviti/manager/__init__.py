@@ -5,9 +5,19 @@
 """Manager module."""
 
 from graviti.manager.branch import BranchManager
-from graviti.manager.commit import CommitManager
-from graviti.manager.dataset import DatasetManager
-from graviti.manager.draft import DraftManager
+from graviti.manager.commit import Commit, CommitManager
+from graviti.manager.dataset import Dataset, DatasetManager, LazyLists
+from graviti.manager.draft import Draft, DraftManager
 from graviti.manager.tag import TagManager
 
-__all__ = ["BranchManager", "CommitManager", "DatasetManager", "DraftManager", "TagManager"]
+__all__ = [
+    "BranchManager",
+    "Commit",
+    "CommitManager",
+    "Dataset",
+    "DatasetManager",
+    "Draft",
+    "DraftManager",
+    "LazyLists",
+    "TagManager",
+]

@@ -3,18 +3,103 @@
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
 
-"""The implementation of the CommitManager."""
+"""The implementation of the Commit and CommitManager."""
 
-from typing import TYPE_CHECKING, Generator, Optional
+from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, TypeVar
 
 from tensorbay.client.lazy import PagingList
-from tensorbay.client.struct import Commit
+from tensorbay.client.struct import Commit as TensorbayCommit
+from tensorbay.utility import AttrsMixin, ReprMixin, attr, common_loads
 
 from graviti.client import list_commits
 from graviti.exception import ResourceNotExistError
 
 if TYPE_CHECKING:
-    from graviti.dataset import Dataset
+    from graviti.manager.dataset import Dataset
+
+
+class Commit(AttrsMixin, ReprMixin):
+    """This class defines the structure of a commit.
+
+    Arguments:
+        commit_id: The commit id.
+        parent_commit_id: The parent commit id.
+        title: The commit title.
+        description: The commit description.
+        committer: The commit user.
+        committed_at: The time when the draft is committed.
+
+    """
+
+    _T = TypeVar("_T", bound="Commit")
+
+    _repr_attrs: Tuple[str, ...] = ("parent_commit_id", "title", "committer", "committed_at")
+
+    commit_id: str = attr()
+    parent_commit_id: str = attr(default="")
+    title: str = attr()
+    description: str = attr(default="")
+    committer: str = attr()
+    committed_at: str = attr()
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        commit_id: str,
+        parent_commit_id: str,
+        title: str,
+        description: str,
+        committer: str,
+        committed_at: str,
+    ) -> None:
+        self.commit_id = commit_id
+        self.parent_commit_id = parent_commit_id
+        self.title = title
+        self.description = description
+        self.committer = committer
+        self.committed_at = committed_at
+
+    def _repr_head(self) -> str:
+        return f'{self.__class__.__name__}("{self.commit_id}")'
+
+    @classmethod
+    def from_pyobj(cls: Type[_T], contents: Dict[str, str]) -> _T:
+        """Create a :class:`Commit` instance from python dict.
+
+        Arguments:
+            contents: A python dict containing all the information of the commit::
+
+                    {
+                        "commit_id": <str>
+                        "parent_commit_id": <str>
+                        "title": <str>
+                        "description": <str>
+                        "committer":  <str>
+                        "committed_at": <str>
+                    }
+
+        Returns:
+            A :class:`Commit` instance created from the input python dict.
+
+        """
+        return common_loads(cls, contents)
+
+    def to_pyobj(self) -> Dict[str, str]:
+        """Dump the instance to a python dict.
+
+        Returns:
+            A python dict containing all the information of the commit::
+
+                {
+                    "commit_id": <str>
+                    "parent_commit_id": <str>
+                    "title": <str>
+                    "description": <str>
+                    "committer":  <str>
+                    "committed_at": <str>
+                }
+
+        """
+        return self._dumps()
 
 
 class CommitManager:
@@ -30,7 +115,7 @@ class CommitManager:
 
     def _generate(
         self, revision: Optional[str], offset: int = 0, limit: int = 128
-    ) -> Generator[Commit, None, int]:
+    ) -> Generator[TensorbayCommit, None, int]:
         if revision is None:
             revision = self._dataset.commit_id
 
@@ -47,11 +132,11 @@ class CommitManager:
         )
 
         for item in response["commits"]:
-            yield Commit.loads(item)
+            yield TensorbayCommit.loads(item)
 
         return response["totalCount"]  # type: ignore[no-any-return]
 
-    def get(self, revision: Optional[str] = None) -> Commit:
+    def get(self, revision: Optional[str] = None) -> TensorbayCommit:
         """Get the certain commit with the given revision.
 
         Arguments:
@@ -62,7 +147,7 @@ class CommitManager:
             ResourceNotExistError: When the required commit does not exist.
 
         Returns:
-            The :class:`.Commit` instance with the given revision.
+            The :class:`.TensorbayCommit` instance with the given revision.
 
         """
         try:
@@ -72,7 +157,7 @@ class CommitManager:
 
         return commit
 
-    def list(self, revision: Optional[str] = None) -> PagingList[Commit]:
+    def list(self, revision: Optional[str] = None) -> PagingList[TensorbayCommit]:
         """List the commits.
 
         Arguments:
@@ -82,7 +167,7 @@ class CommitManager:
                 If it is not given, list the commits before the current commit.
 
         Returns:
-            The PagingList of :class:`commits<.Commit>` instances.
+            The PagingList of :class:`commits<.TensorbayCommit>` instances.
 
         """
         return PagingList(
