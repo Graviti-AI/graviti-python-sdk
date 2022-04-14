@@ -5,15 +5,16 @@
 
 """Graviti file related class."""
 
-from functools import partial
+from typing import Union
 
+from _io import BufferedReader
 from tensorbay.cli.utility import shorten
-from tensorbay.utility.file import URL, RemoteFileMixin
+from tensorbay.utility.repr import ReprMixin
 
-READ_ONLY_URL = partial(URL, updater=lambda: "update is not supported currently")
+from graviti.utility.requests import UserResponse, config, get_session
 
 
-class File(RemoteFileMixin):
+class File(ReprMixin):
     """This class represents the file on Graviti platform.
 
     Arguments:
@@ -25,16 +26,28 @@ class File(RemoteFileMixin):
     __slots__ = ("url", "_checksum")
 
     def __init__(self, url: str, checksum: str) -> None:
-        super().__init__("")
-        self.url = READ_ONLY_URL(url)
+        self.url = url
         self._checksum = checksum
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{shorten(self._checksum)}")'
 
+    def _urlopen(self) -> UserResponse:
+        session = get_session()
+        return UserResponse(session.request("GET", self.url, timeout=config.timeout, stream=True))
+
+    def open(self) -> Union[UserResponse, BufferedReader]:
+        """Return the binary file pointer of this file.
+
+        Returns:
+            The remote file pointer.
+
+        """
+        return self._urlopen()
+
     @property
     def checksum(self) -> str:
-        """Get the checksum fo the file.
+        """Get the checksum of the file.
 
         Returns:
             The checksum of the file.
