@@ -7,12 +7,12 @@
 
 from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, TypeVar
 
-from tensorbay.client.lazy import PagingList
 from tensorbay.client.struct import Commit as TensorbayCommit
 from tensorbay.utility import AttrsMixin, ReprMixin, attr, common_loads
 
 from graviti.client import list_commits
 from graviti.exception import ResourceNotExistError
+from graviti.manager.lazy import PagingList
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset

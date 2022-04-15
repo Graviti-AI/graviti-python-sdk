@@ -7,7 +7,6 @@
 
 from typing import Any, Dict, Generator, Iterator, KeysView, Mapping, Optional
 
-from tensorbay.client.lazy import PagingList
 from tensorbay.dataset import Notes, RemoteData
 from tensorbay.label import Catalog
 from tensorbay.utility import URL
@@ -25,6 +24,7 @@ from graviti.exception import ResourceNotExistError
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
+from graviti.manager.lazy import PagingList
 from graviti.manager.tag import TagManager
 from graviti.schema import Extractors, catalog_to_schema, get_extractors
 from graviti.utility import LazyFactory, LazyList, NestedDict
