@@ -5,6 +5,7 @@
 """Utility module."""
 
 from graviti.utility.attr import AttrDict
+from graviti.utility.common import locked, shorten
 from graviti.utility.file import File
 from graviti.utility.lazy import LazyFactory, LazyList
 from graviti.utility.pyarrow import (
@@ -44,4 +45,6 @@ __all__ = [
     "UserMutableMapping",
     "UserMutableSequence",
     "UserSequence",
+    "shorten",
+    "locked",
 ]

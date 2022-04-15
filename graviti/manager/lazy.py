@@ -22,9 +22,7 @@ from typing import (
     overload,
 )
 
-from tensorbay.utility import locked
-
-from graviti.utility import ReprMixin, ReprType
+from graviti.utility import ReprMixin, ReprType, locked
 
 _T = TypeVar("_T")
 PagingGenerator = Callable[[int, int], Generator[_T, None, int]]
