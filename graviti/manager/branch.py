@@ -8,13 +8,13 @@
 from functools import partial
 from typing import TYPE_CHECKING, Dict, Generator, Optional
 
-from tensorbay.client.struct import Branch as TensorbayBranch
 from tensorbay.utility import attr
 
 from graviti.client import list_branches
 from graviti.exception import ResourceNotExistError
 from graviti.manager.commit import ROOT_COMMIT_ID, NamedCommit
 from graviti.manager.lazy import PagingList
+from graviti.manager.struct import Branch as TensorbayBranch
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset

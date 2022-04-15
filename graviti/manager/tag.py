@@ -7,9 +7,8 @@
 
 from typing import TYPE_CHECKING, Optional
 
-from tensorbay.client.struct import Tag
-
 from graviti.manager.lazy import PagingList
+from graviti.manager.struct import Tag
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
