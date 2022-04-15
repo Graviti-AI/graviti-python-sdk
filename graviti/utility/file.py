@@ -9,8 +9,8 @@ from typing import Union
 
 from _io import BufferedReader
 from tensorbay.cli.utility import shorten
-from tensorbay.utility.repr import ReprMixin
 
+from graviti.utility.repr import ReprMixin
 from graviti.utility.requests import UserResponse, config, get_session
 
 
