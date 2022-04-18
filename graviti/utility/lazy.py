@@ -5,6 +5,7 @@
 
 """Lazy list related class."""
 
+from bisect import bisect_right
 from itertools import chain
 from math import ceil
 from typing import (
@@ -97,6 +98,13 @@ class LazyList(Sequence[_T], ReprMixin):
         div, mod = divmod(index, self._limit)
         return self.pages[div][mod]
 
+    def _create_array(self, values: Iterable[_T]) -> pa.Array:
+        if isinstance(self._dtype, GravitiExtension):
+            storage_array = pa.array(values, type=self._dtype.storage_type)
+            return pa.ExtensionArray.from_storage(self._dtype, storage_array)
+
+        return pa.array(values, type=self._dtype)
+
     def update(self, pos: int, data: Any) -> None:
         """Update one page by the given data.
 
@@ -105,11 +113,65 @@ class LazyList(Sequence[_T], ReprMixin):
             data: The source data which needs to be input to the extractor.
 
         """
-        if isinstance(self._dtype, GravitiExtension):
-            storage_array = pa.array(self._extractor(data), type=self._dtype.storage_type)
-            self.pages[pos] = pa.ExtensionArray.from_storage(self._dtype, storage_array)
-        else:
-            self.pages[pos] = pa.array(self._extractor(data))
+        self.pages[pos] = self._create_array(self._extractor(data))
+
+
+class MutableLazyList(LazyList[_T]):
+    """MutableLazyList is a lazy load list which follows Sequence protocol.
+
+    It supports extend method to add items into the list.
+
+    Arguments:
+        total_count: The total count of the elements in the lazy list.
+        limit: The size of each lazy load page.
+        fetcher: A callable object to fetch the data and load it to the lazy list.
+        extractor: A callable object to make the source data to an iterable object.
+        dtype: The pyarrow data type of the elements in the lazy list.
+
+    Attributes:
+        pages: A list of pyarrow arrays that contains the data in the lazy list.
+
+    """
+
+    _repr_type = ReprType.SEQUENCE
+
+    def __init__(
+        self,
+        total_count: int,
+        limit: int,
+        fetcher: Callable[[int], None],
+        extractor: Callable[[Any], Iterable[Any]],
+        *,
+        dtype: Optional[pa.DataType] = None,
+    ) -> None:
+        super().__init__(total_count, limit, fetcher, extractor, dtype=dtype)
+        self._offsets = list(range(0, total_count, limit))
+
+    def _getitem(self, index: int) -> _T:
+        """Get item from the lazy list.
+
+        Arguments:
+            index: The index of the item which needs to be non-negative.
+
+        Returns:
+            The item at the index position.
+
+        """
+        page_number = bisect_right(self._offsets, index) - 1
+        offset = self._offsets[page_number]
+        return self.pages[page_number][index - offset]
+
+    def extend(self, values: Iterable[_T]) -> None:
+        """Extend mutable sequence by appending elements from the iterable.
+
+        Arguments:
+            values: Elements to be Extended into the mutable sequence.
+
+        """
+        page = self._create_array(values)
+        self._offsets.append(self._total_count)
+        self._total_count += len(page)
+        self.pages.append(page)
 
 
 class LazyPage(Generic[_T]):
@@ -231,6 +293,25 @@ class LazyFactory:
 
         """
         lazy_list: LazyList[Any] = LazyList(
+            self._total_count, self._limit, self.fetch, extractor, dtype=dtype
+        )
+        self._lists.append(lazy_list)
+        return lazy_list
+
+    def create_mutable_list(
+        self, extractor: Callable[[Any], Iterable[Any]], dtype: Optional[pa.DataType] = None
+    ) -> LazyList[Any]:
+        """Create a mutable lazy list from the factory.
+
+        Arguments:
+            extractor: A callable object to make the source data to an iterable object.
+            dtype: The pyarrow data type of the elements in the lazy list.
+
+        Returns:
+            A lazy list created by the given extractor and dtype.
+
+        """
+        lazy_list: LazyList[Any] = MutableLazyList(
             self._total_count, self._limit, self.fetch, extractor, dtype=dtype
         )
         self._lists.append(lazy_list)
