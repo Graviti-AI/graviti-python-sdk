@@ -11,12 +11,15 @@ from urllib.parse import urljoin
 from graviti.openapi.request import open_api_do
 
 
-def create_tag(url: str, access_key: str, dataset: str, name: str, revision: str) -> None:
-    """Execute the OpenAPI `POST /v2/datasets/{dataset}/tags`.
+def create_tag(
+    url: str, access_key: str, owner: str, dataset: str, *, name: str, revision: str
+) -> None:
+    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/tags`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         name: The tag name to be created for the specific commit.
         revision: The information to locate the specific commit, which can be the commit id,
@@ -26,13 +29,14 @@ def create_tag(url: str, access_key: str, dataset: str, name: str, revision: str
         >>> create_tag(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST",
-        ...     "tag-2",
-        ...     "986d8ea00da842ed85dd5d5cd14b5aef"
+        ...     name="tag-2",
+        ...     revision="986d8ea00da842ed85dd5d5cd14b5aef"
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/tags")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags")
     post_data = {"name": name, "revision": revision}
     open_api_do("POST", access_key, url, json=post_data)
 
@@ -40,16 +44,18 @@ def create_tag(url: str, access_key: str, dataset: str, name: str, revision: str
 def list_tags(
     url: str,
     access_key: str,
+    owner: str,
     dataset: str,
     *,
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset}/tags`.
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         offset: The offset of the page.
         limit: The limit of the page.
@@ -61,6 +67,7 @@ def list_tags(
         >>> list_tags(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST"
         ... )
         {
@@ -81,17 +88,18 @@ def list_tags(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/tags")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags")
     params = {"offset": offset, "limit": limit}
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
-def get_tag(url: str, access_key: str, dataset: str, tag: str) -> Dict[str, str]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset}/tags/{tag}`.
+def get_tag(url: str, access_key: str, dataset: str, owner: str, *, tag: str) -> Dict[str, str]:
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags/{tag}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         tag: The name of the tag to be got.
 
@@ -102,8 +110,9 @@ def get_tag(url: str, access_key: str, dataset: str, tag: str) -> Dict[str, str]
         >>> get_tag(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST",
-        ...     "tag-2"
+        ...     tag="tag-2"
         ... )
         {
            "name": "tag-2",
@@ -116,21 +125,24 @@ def get_tag(url: str, access_key: str, dataset: str, tag: str) -> Dict[str, str]
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/tags/{tag}")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags/{tag}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def delete_tag(
     url: str,
     access_key: str,
+    owner: str,
     dataset: str,
+    *,
     tag: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{dataset}/tags/{tag}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}/tags/{tag}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         tag: The name of the tag to be deleted.
 
@@ -138,10 +150,11 @@ def delete_tag(
         >>> delete_tag(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST",
-        ...     "tag-2"
+        ...     tag="tag-2"
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/tags/{tag}")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags/{tag}")
     open_api_do("DELETE", access_key, url)
