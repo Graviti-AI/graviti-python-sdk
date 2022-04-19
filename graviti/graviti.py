@@ -6,6 +6,7 @@
 """The implementation of the Graviti."""
 
 from graviti.manager import DatasetManager
+from graviti.openapi import get_current_user
 
 
 class Graviti:
@@ -37,7 +38,8 @@ class Graviti:
 
         self._access_key = access_key
         self._url = url
-        self._dataset_manager = DatasetManager(access_key, url)
+        response = get_current_user(self._access_key, self._url)
+        self._dataset_manager = DatasetManager(access_key, url, response["name"])
 
     @property
     def access_key(self) -> str:

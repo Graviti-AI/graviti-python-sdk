@@ -12,11 +12,13 @@ from graviti.openapi.dataset import (
     list_datasets,
     update_dataset,
 )
+from graviti.openapi.user import get_current_user
 
 __all__ = [
     "create_dataset",
     "delete_dataset",
     "get_dataset",
+    "get_current_user",
     "list_datasets",
     "update_dataset",
 ]
