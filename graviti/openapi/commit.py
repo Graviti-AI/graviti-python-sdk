@@ -14,17 +14,19 @@ from graviti.openapi.request import open_api_do
 def commit_draft(
     url: str,
     access_key: str,
+    owner: str,
     dataset: str,
+    *,
     draft_number: int,
     title: str,
-    *,
     description: Optional[str] = None,
 ) -> Dict[str, str]:
-    """Execute the OpenAPI `POST /v2/datasets/{dataset}/commits`.
+    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         title: The draft title.
@@ -37,16 +39,17 @@ def commit_draft(
         >>> commit_draft(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST",
-        ...     2,
-        ...     "commit-2",
+        ...     draft_number=2,
+        ...     title="commit-2",
         ... )
         {
             "commitId": "a0d4065872f245e4ad1d0d1186e3d397"
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/commits")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits")
     post_data: Dict[str, Any] = {"draft_number": draft_number, "title": title}
 
     if description:
@@ -60,17 +63,19 @@ def commit_draft(
 def list_commits(
     url: str,
     access_key: str,
+    owner: str,
     dataset: str,
     *,
     revision: Optional[str] = None,
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset}/commits`.
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
@@ -84,6 +89,7 @@ def list_commits(
         >>> list_commits(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST",
         ... )
         {
@@ -103,7 +109,7 @@ def list_commits(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/commits")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits")
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
     if revision:
@@ -112,12 +118,15 @@ def list_commits(
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
-def get_commit(url: str, access_key: str, dataset: str, commit_id: str) -> Dict[str, str]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset}/commits/{commit_id}`.
+def get_commit(
+    url: str, access_key: str, owner: str, dataset: str, *, commit_id: str
+) -> Dict[str, str]:
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit ID.
 
@@ -128,8 +137,9 @@ def get_commit(url: str, access_key: str, dataset: str, commit_id: str) -> Dict[
         >>> get_commit(
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "czhual",
         ...     "MNIST",
-        ...     "85c57a7f03804ccc906632248dc8c359"
+        ...     commit_id="85c57a7f03804ccc906632248dc8c359"
         ... )
         {
             "commit_id": "85c57a7f03804ccc906632248dc8c359",
@@ -141,16 +151,19 @@ def get_commit(url: str, access_key: str, dataset: str, commit_id: str) -> Dict[
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/commits/{commit_id}")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
-def get_revision(url: str, access_key: str, dataset: str, revision: str) -> Dict[str, str]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset}/revisions/{revision}`.
+def get_revision(
+    url: str, access_key: str, owner: str, dataset: str, *, revision: str
+) -> Dict[str, str]:
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/revisions/{revision}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
+        owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
@@ -163,7 +176,7 @@ def get_revision(url: str, access_key: str, dataset: str, revision: str) -> Dict
         ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
         ...     "MNIST",
-        ...     "branch-1"
+        ...     revision="branch-1"
         ... )
         {
            "commit_id": "85c57a7f03804ccc906632248dc8c359",
@@ -171,5 +184,5 @@ def get_revision(url: str, access_key: str, dataset: str, revision: str) -> Dict
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset}/revisions/{revision}")
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/revisions/{revision}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
