@@ -5,11 +5,60 @@
 
 """Lazy list related class."""
 
+from bisect import bisect_right
 from itertools import chain
 from math import ceil
-from typing import Any, Callable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Union
 
 import pyarrow as pa
+
+
+class Offsets:
+    """The offsets manager of the lazy list.
+
+    Arguments:
+        total_count: The total count of the elements in the lazy list.
+        limit: The size of each lazy load page.
+
+    """
+
+    _offsets: List[int]
+
+    def __init__(self, total_count: int, limit: int) -> None:
+        self.total_count = total_count
+        self._limit = limit
+
+    def _init_offsets(self) -> None:
+        self._offsets = list(range(0, self.total_count, self._limit))
+
+    def get_coordinate(self, index: int) -> Tuple[int, int]:
+        """Get the lazy page coordinate of the elements.
+
+        Arguments:
+            index: The index of the element in lazy list.
+
+        Returns:
+            The page number and the index of the page.
+
+        """
+        if not hasattr(self, "_offsets"):
+            return divmod(index, self._limit)
+
+        i = bisect_right(self._offsets, index) - 1
+        return i, index - self._offsets[i]
+
+    def extend(self, length: int) -> None:
+        """Update the offsets when extending the lazy list.
+
+        Arguments:
+            length: The length of the extended values.
+
+        """
+        if not hasattr(self, "_offsets"):
+            self._init_offsets()
+
+        self._offsets.append(self.total_count)
+        self.total_count += length
 
 
 class LazyList:
@@ -26,27 +75,37 @@ class LazyList:
         factory: "LazyFactory",
         keys: Tuple[str, ...],
     ) -> None:
-        self._total_count = factory._total_count
         self._keys = keys
-        self._limit = factory._limit
         self._pages: List[Union[LazyPage, pa.Array]] = [
             LazyPage(pos, self) for pos in range(factory._page_number)
         ]
         self._factory = factory
+        self._offsets = Offsets(factory._total_count, factory._limit)
 
     def __len__(self) -> int:
-        return self._total_count
+        return self._offsets.total_count
 
     def __iter__(self) -> Iterator[Any]:
         return chain(*self._pages)
 
     def __getitem__(self, index: int) -> Any:
-        index = index if index >= 0 else self._total_count + index
+        index = index if index >= 0 else self._offsets.total_count + index
         return self._getitem(index)
 
     def _getitem(self, index: int) -> Any:
-        div, mod = divmod(index, self._limit)
-        return self._pages[div][mod]
+        i, j = self._offsets.get_coordinate(index)
+        return self._pages[i][j]
+
+    def extend(self, values: Iterable[Any]) -> None:
+        """Extend LazyList by appending elements from the iterable.
+
+        Arguments:
+            values: Elements to be extended into the LazyList.
+
+        """
+        page = pa.array(values)
+        self._offsets.extend(len(page))
+        self._pages.append(page)
 
 
 class LazyPage:
