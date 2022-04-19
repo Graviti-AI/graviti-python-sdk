@@ -9,8 +9,10 @@ from sys import maxsize
 from typing import (
     AbstractSet,
     Any,
+    Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     MutableMapping,
     MutableSequence,
@@ -355,3 +357,86 @@ class UserMutableMapping(MutableMapping[_K, _V], UserMapping[_K, _V]):
 
         """
         self._data.update(__m, **kwargs)
+
+
+class NameOrderedDict(MutableMapping[str, _V]):
+    """This class is a dict of ordered elements, supports searching the element by its index.
+
+    Arguments:
+        items: The items need to be stored into the NameOrderedDict.
+
+    """
+
+    def __init__(
+        self, items: Union[Iterable[Tuple[str, _V]], Mapping[str, _V], None] = None
+    ) -> None:
+        self._keys: List[str] = []
+        self._data: Dict[str, _V] = {}
+
+        if not items:
+            return
+
+        iterable = items.items() if isinstance(items, Mapping) else items
+        for key, value in iterable:
+            self._keys.append(key)
+            self._data[key] = value
+
+    def __len__(self) -> int:
+        return self._data.__len__()
+
+    def __getitem__(self, key: Union[int, str]) -> _V:
+        if isinstance(key, int):
+            key = self._keys.__getitem__(key)
+
+        return self._data.__getitem__(key)
+
+    def __setitem__(self, key: Union[int, str], value: _V) -> None:
+        if isinstance(key, int):
+            key = self._keys.__getitem__(key)
+
+        if not self._data.__contains__(key):
+            self._keys.append(key)
+
+        self._data.__setitem__(key, value)
+
+    def __delitem__(self, key: Union[int, str]) -> None:
+        try:
+            if isinstance(key, int):
+                key = self._keys.pop(key)
+            else:
+                self._keys.remove(key)
+        except ValueError:
+            raise KeyError(key) from None
+
+        self._data.__delitem__(key)
+
+    def __contains__(self, key: Any) -> bool:
+        return self._data.__contains__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        return self._keys.__iter__()
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self._keys.__eq__(other._keys) and self._data.__eq__(other._data)
+
+    def popitem(self) -> Tuple[str, _V]:
+        """Remove and return a (key, value) pair as a tuple.
+
+        Pairs are returned in LIFO (last-in, first-out) order.
+
+        Raises:
+            KeyError: When the dict is empty.
+
+        Returns:
+            A (key, value) pair as a tuple.
+
+        """
+        try:
+            key = self._keys[-1]
+        except IndexError:
+            raise KeyError("popitem(): dictionary is empty") from None
+
+        return key, self.pop(key)
