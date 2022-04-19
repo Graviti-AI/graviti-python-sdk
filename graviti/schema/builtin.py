@@ -7,18 +7,7 @@
 
 from functools import reduce
 from operator import mul
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import pyarrow as pa
 
@@ -298,27 +287,6 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
         nullable: bool = False,
     ) -> None:
         super().__init__(fields=fields, nullable=nullable)
-
-    @overload
-    def __getitem__(self, index: Union[int, str]) -> PortexType:
-        ...
-
-    @overload
-    def __getitem__(self, index: slice) -> List[PortexType]:
-        ...
-
-    def __getitem__(self, index: Union[int, str, slice]) -> Union[PortexType, List[PortexType]]:
-        if isinstance(index, slice):
-            return [field.type for field in self.fields[index]]
-
-        if isinstance(index, str):
-            for field in self.fields:
-                if index == field.name:
-                    return field.type
-
-            raise KeyError(index)
-
-        return self.fields[index].type
 
     def _get_pyarrow_type(self) -> "paDataType":
         return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member
