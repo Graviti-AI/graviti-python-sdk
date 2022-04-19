@@ -14,20 +14,20 @@ from graviti.openapi.request import open_api_do
 def create_draft(
     url: str,
     access_key: str,
-    dataset_name: str,
+    dataset: str,
     title: str,
     *,
-    branch_name: Optional[str] = None,
+    branch: Optional[str] = None,
     description: Optional[str] = None,
 ) -> Dict[str, int]:
-    """Execute the OpenAPI `POST /v2/datasets/{dataset_name}/drafts`.
+    """Execute the OpenAPI `POST /v2/datasets/{dataset}/drafts`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         title: The draft title.
-        branch_name: The specified branch name. None means the default branch of the dataset.
+        branch: The specified branch name. None means the default branch of the dataset.
         description: The draft description.
 
     Returns:
@@ -39,20 +39,20 @@ def create_draft(
         ...     "ACCESSKEY-********",
         ...     "MNIST",
         ...     "draft-2",
-        ...     branch_name="main",
+        ...     branch="main",
         ... )
         {
             "draftNumber": 2
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts")
+    url = urljoin(url, f"v2/datasets/{dataset}/drafts")
     post_data = {"title": title}
 
     if description:
         post_data["description"] = description
-    if branch_name:
-        post_data["branch_name"] = branch_name
+    if branch:
+        post_data["branch"] = branch
 
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
@@ -62,22 +62,22 @@ def create_draft(
 def list_drafts(
     url: str,
     access_key: str,
-    dataset_name: str,
+    dataset: str,
     *,
     state: Optional[str] = None,
-    branch_name: Optional[str] = None,
+    branch: Optional[str] = None,
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/drafts`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset}/drafts`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL" and None.
             None means listing open drafts.
-        branch_name: The branch name.
+        branch: The branch name.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -96,7 +96,7 @@ def list_drafts(
                    "number": 2,
                    "title": "branch-2",
                    "description": "",
-                   "branch_name": "main",
+                   "branch": "main",
                    "state": "OPEN",
                    "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
                    "creator": "czhual",
@@ -110,24 +110,24 @@ def list_drafts(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts")
+    url = urljoin(url, f"v2/datasets/{dataset}/drafts")
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
     if state:
         params["state"] = state
-    if branch_name:
-        params["branch_name"] = branch_name
+    if branch:
+        params["branch"] = branch
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
-def get_draft(url: str, access_key: str, dataset_name: str, draft_number: int) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/drafts/{draft_number}`.
+def get_draft(url: str, access_key: str, dataset: str, draft_number: int) -> Dict[str, Any]:
+    """Execute the OpenAPI `GET /v2/datasets/{dataset}/drafts/{draft_number}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         draft_number: Number of the draft.
 
     Returns:
@@ -144,7 +144,7 @@ def get_draft(url: str, access_key: str, dataset_name: str, draft_number: int) -
            "number": 2,
            "title": "branch-2",
            "description": "",
-           "branch_name": "main",
+           "branch": "main",
            "state": "OPEN",
            "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
            "creator": "czhual",
@@ -153,26 +153,26 @@ def get_draft(url: str, access_key: str, dataset_name: str, draft_number: int) -
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts/{draft_number}")
+    url = urljoin(url, f"v2/datasets/{dataset}/drafts/{draft_number}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def update_draft(
     url: str,
     access_key: str,
-    dataset_name: str,
+    dataset: str,
     draft_number: int,
     *,
     state: Optional[str] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> None:
-    """Execute the OpenAPI `PATCH /v2/datasets/{dataset_name}/drafts/{draft_number}`.
+    """Execute the OpenAPI `PATCH /v2/datasets/{dataset}/drafts/{draft_number}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         draft_number: The updated draft number.
         state: The updated draft state which could be "CLOSED" or None.
             Where None means no change in state.
@@ -201,7 +201,7 @@ def update_draft(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/drafts/{draft_number}")
+    url = urljoin(url, f"v2/datasets/{dataset}/drafts/{draft_number}")
     patch_data: Dict[str, Any] = {"draft_number": draft_number}
 
     if state:

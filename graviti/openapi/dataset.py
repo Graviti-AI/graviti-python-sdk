@@ -18,7 +18,7 @@ def create_dataset(
     *,
     alias: str = "",
     is_public: bool = False,
-    config_name: Optional[str] = None,
+    config: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets`.
 
@@ -28,7 +28,7 @@ def create_dataset(
         name: Name of the dataset, unique for a user.
         alias: Alias of the dataset, default is "".
         is_public: Whether the dataset is a public dataset.
-        config_name: The auth storage config name.
+        config: The auth storage config name.
 
     Returns:
         The response of OpenAPI.
@@ -50,21 +50,21 @@ def create_dataset(
         "alias": alias,
         "is_public": is_public,
     }
-    if config_name is not None:
-        post_data["config_name"] = config_name
+    if config is not None:
+        post_data["config"] = config
 
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
     ).json()
 
 
-def get_dataset(access_key: str, url: str, dataset_name: str) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}`.
+def get_dataset(access_key: str, url: str, dataset: str) -> Dict[str, Any]:
+    """Execute the OpenAPI `GET /v2/datasets/{dataset}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
 
     Returns:
         The response of OpenAPI.
@@ -86,11 +86,11 @@ def get_dataset(access_key: str, url: str, dataset_name: str) -> Dict[str, Any]:
            "updated_at": "2021-03-03T18:58:10Z",
            "owner": "czhual",
            "is_public": false,
-           "config_name": "exampleConfigName"
+           "config": "exampleConfigName"
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}")
+    url = urljoin(url, f"v2/datasets/{dataset}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -127,7 +127,7 @@ def list_datasets(
                    "updated_at": "2021-03-03T18:58:10Z",
                    "owner": "czhual",
                    "is_public": false,
-                   "config_name": "exampleConfigName"
+                   "config": "exampleConfigName"
                }
             ],
            "offset": 0,
@@ -145,19 +145,19 @@ def list_datasets(
 def update_dataset(
     access_key: str,
     url: str,
-    dataset_name: str,
+    dataset: str,
     *,
     name: Optional[str] = None,
     alias: Optional[str] = None,
     is_public: Optional[bool] = None,
     default_branch: Optional[str] = None,
 ) -> None:
-    """Execute the OpenAPI `PATCH /v2/datasets/{dataset_name}`.
+    """Execute the OpenAPI `PATCH /v2/datasets/{dataset}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         name: New name of the dataset, unique for a user.
         alias: New alias of the dataset.
         is_public: Whether the dataset is public.
@@ -175,7 +175,7 @@ def update_dataset(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}")
+    url = urljoin(url, f"v2/datasets/{dataset}")
     patch_data: Dict[str, Any] = {}
 
     if name is not None:
@@ -196,14 +196,14 @@ def update_dataset(
 def delete_dataset(
     access_key: str,
     url: str,
-    dataset_name: str,
+    dataset: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{dataset_name}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{dataset}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
 
     Examples:
         >>> delete_dataset(
@@ -213,5 +213,5 @@ def delete_dataset(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}")
+    url = urljoin(url, f"v2/datasets/{dataset}")
     open_api_do("DELETE", access_key, url)
