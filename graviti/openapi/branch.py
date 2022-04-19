@@ -14,16 +14,16 @@ from graviti.openapi.request import open_api_do
 def create_branch(
     url: str,
     access_key: str,
-    dataset_name: str,
+    dataset: str,
     name: str,
     revision: str,
 ) -> None:
-    """Execute the OpenAPI `POST /v2/datasets/{dataset_name}/branches`.
+    """Execute the OpenAPI `POST /v2/datasets/{dataset}/branches`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         name: The name of the branch.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
@@ -38,7 +38,7 @@ def create_branch(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/branches")
+    url = urljoin(url, f"v2/datasets/{dataset}/branches")
     post_data = {"name": name, "revision": revision}
     open_api_do("POST", access_key, url, json=post_data)
 
@@ -46,17 +46,17 @@ def create_branch(
 def list_branches(
     url: str,
     access_key: str,
-    dataset_name: str,
+    dataset: str,
     *,
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/branches`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset}/branches`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
+        dataset: Name of the dataset, unique for a user.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -87,7 +87,7 @@ def list_branches(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/branches")
+    url = urljoin(url, f"v2/datasets/{dataset}/branches")
     params = {"offset": offset, "limit": limit}
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -95,16 +95,16 @@ def list_branches(
 def get_branch(
     url: str,
     access_key: str,
-    dataset_name: str,
-    branch_name: str,
+    dataset: str,
+    branch: str,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{dataset_name}/branches/{branch_name}`.
+    """Execute the OpenAPI `GET /v2/datasets/{dataset}/branches/{branch}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
-        branch_name: The name of the branch.
+        dataset: Name of the dataset, unique for a user.
+        branch: The name of the branch.
 
     Returns:
         The response of OpenAPI.
@@ -127,23 +127,23 @@ def get_branch(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/branches/{branch_name}")
+    url = urljoin(url, f"v2/datasets/{dataset}/branches/{branch}")
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def delete_branch(
     url: str,
     access_key: str,
-    dataset_name: str,
-    branch_name: str,
+    dataset: str,
+    branch: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{dataset_name}/branches/{branch_name}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{dataset}/branches/{branch}`.
 
     Arguments:
         url: The URL of the graviti website.
         access_key: User's access key.
-        dataset_name: Name of the dataset, unique for a user.
-        branch_name: The name of the branch.
+        dataset: Name of the dataset, unique for a user.
+        branch: The name of the branch.
 
     Examples:
         >>> delete_branch(
@@ -154,5 +154,5 @@ def delete_branch(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{dataset_name}/branches/{branch_name}")
+    url = urljoin(url, f"v2/datasets/{dataset}/branches/{branch}")
     open_api_do("DELETE", access_key, url)
