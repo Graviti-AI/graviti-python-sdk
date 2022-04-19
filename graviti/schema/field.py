@@ -11,7 +11,7 @@ import pyarrow as pa
 
 from graviti.schema.base import _INDENT, PortexType
 from graviti.schema.package import Imports
-from graviti.utility import UserSequence
+from graviti.utility import NameOrderedDict
 
 
 class Field(NamedTuple):
@@ -56,19 +56,15 @@ class Field(NamedTuple):
         return {"name": self.name, **self.type.to_pyobj(False)}
 
 
-class Fields(UserSequence[Field]):
-    """Represents a Portex ``record`` field list."""
+class Fields(NameOrderedDict[PortexType]):
+    """Represents a Portex ``record`` fields dict."""
 
-    def __init__(
-        self,
-        fields: Union[Iterable[Tuple[str, PortexType]], Mapping[str, PortexType]],
-    ):
-        iterable = fields.items() if isinstance(fields, Mapping) else fields
-        self._data = [Field(*field) for field in iterable]
+    def __init__(self, fields: Union[Iterable[Tuple[str, PortexType]], Mapping[str, PortexType]]):
+        super().__init__(fields)
 
         imports = Imports()
-        for field in self._data:
-            imports.update_from_type(field.type)
+        for portex_type in self._data.values():
+            imports.update_from_type(portex_type)
 
         self.imports = imports
 
@@ -78,10 +74,10 @@ class Fields(UserSequence[Field]):
     def _repr1(self, level: int) -> str:
         indent = level * _INDENT
         lines = ["{"]
-        for field in self._data:
+        for name, portex_type in self.items():
             lines.append(
-                f"{_INDENT}'{field.name}': "  # pylint: disable=protected-access
-                f"{field.type._repr1(level + 1)},"
+                f"{_INDENT}'{name}': "  # pylint: disable=protected-access
+                f"{portex_type._repr1(level + 1)},"
             )
 
         lines.append("}")
@@ -89,26 +85,26 @@ class Fields(UserSequence[Field]):
 
     @classmethod
     def from_pyobj(cls, content: List[Dict[str, Any]], imports: Imports) -> "Fields":
-        """Create Portex field list instance from python list.
+        """Create Portex fields dict instance from python list.
 
         Arguments:
-            content: A python list representing a Portex field list.
-            imports: The imports of the Portex field list.
+            content: A python list representing a Portex fields dict.
+            imports: The imports of the Portex fields dict.
 
         Returns:
-            A Portex field list instance created from the input python list.
+            A Portex fields dict instance created from the input python list.
 
         """
-        return Fields(Field.from_pyobj(item, imports) for item in content)
+        return Fields((item["name"], PortexType.from_pyobj(item, imports)) for item in content)
 
     def to_pyobj(self) -> List[Dict[str, Any]]:
         """Dump the instance to a python list.
 
         Returns:
-            A Python List representation of the field list.
+            A Python List representation of the fields dict.
 
         """
-        return [field.to_pyobj() for field in self._data]
+        return [{"name": name, **portex_type.to_pyobj(False)} for name, portex_type in self.items()]
 
     def to_pyarrow(self) -> List[pa.Field]:
         """Convert the fields to a list of PyArrow fields.
@@ -117,4 +113,4 @@ class Fields(UserSequence[Field]):
             A list of PyArrow fields representing the fields of Portex record.
 
         """
-        return [pa.field(field.name, field.type.to_pyarrow()) for field in self]
+        return [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self.items()]
