@@ -210,7 +210,7 @@ class CommitManager:
         response = list_commits(
             self._dataset.url,
             self._dataset.access_key,
-            self._dataset.dataset_id,
+            self._dataset._dataset_id,  # pylint: disable=protected-access
             commit=revision,
             offset=offset,
             limit=limit,

@@ -74,7 +74,7 @@ class BranchManager:
         response = list_branches(
             self._dataset.url,
             self._dataset.access_key,
-            self._dataset.dataset_id,
+            self._dataset._dataset_id,  # pylint: disable=protected-access
             name=name,
             offset=offset,
             limit=limit,
