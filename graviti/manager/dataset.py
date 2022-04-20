@@ -26,8 +26,45 @@ from graviti.utility import LazyFactory, LazyList, NestedDict, ReprMixin, ReprTy
 LazyLists = NestedDict[str, LazyList[Any]]
 
 
+class DatasetAccessInfo(Mapping[str, str], ReprMixin):
+    """This class defines the basic structure of the dataset access info.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        dataset: The name of the dataset, unique for a user.
+
+    """
+
+    _repr_attrs: Tuple[str, ...] = (
+        "access_key",
+        "url",
+        "owner",
+        "dataset",
+    )
+
+    def __init__(self, access_key: str, url: str, owner: str, dataset: str) -> None:
+        self.access_key = access_key
+        self.url = url
+        self.owner = owner
+        self.dataset = dataset
+
+    def __len__(self) -> int:
+        return len(self._repr_attrs)
+
+    def __getitem__(self, key: str) -> str:
+        try:
+            return getattr(self, key)  # type: ignore[no-any-return]
+        except AttributeError:
+            raise KeyError(key) from None
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self._repr_attrs
+
+
 class Dataset(  # pylint: disable=too-many-instance-attributes
-    AttrsMixin, ReprMixin, Mapping[str, DataFrame]
+    Mapping[str, DataFrame], AttrsMixin, ReprMixin
 ):
     """This class defines the basic concept of the dataset on Graviti.
 
@@ -63,15 +100,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
 
     _dataset_id: str = attr(key="id")
 
-    access_key: str = attr()
-    url: str = attr()
-    name: str = attr()
     alias: str = attr()
     default_branch: str = attr()
     commit_id: str = attr()
     created_at: str = attr()
     updated_at: str = attr()
-    owner: str = attr()
     is_public: bool = attr()
     config: str = attr()
 
@@ -93,19 +126,16 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         is_public: bool,
         config: str,
     ) -> None:
-        self.access_key = access_key
-        self.url = url
         self._dataset_id = dataset_id
-        self.name = name
         self.alias = alias
         self.default_branch = default_branch
         self.commit_id = commit_id
         self.created_at = created_at
         self.updated_at = updated_at
-        self.owner = owner
         self.is_public = is_public
         self.config = config
         self.branch: Optional[str] = default_branch
+        self._access_info = DatasetAccessInfo(access_key, url, owner, name)
 
     def __len__(self) -> int:
         return self._get_data().__len__()
@@ -234,7 +264,50 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         """
         dataset = common_loads(cls, contents)
         dataset.branch = dataset.default_branch
+        dataset._access_info = DatasetAccessInfo(
+            contents["access_key"], contents["url"], contents["owner"], contents["name"]
+        )
         return dataset
+
+    @property
+    def access_key(self) -> str:
+        """Return the access key of the user.
+
+        Returns:
+            The access key of the user.
+
+        """
+        return self._access_info.access_key
+
+    @property
+    def url(self) -> str:
+        """Return the url of the graviti website.
+
+        Returns:
+            The url of the graviti website.
+
+        """
+        return self._access_info.url
+
+    @property
+    def owner(self) -> str:
+        """Return the owner of the dataset.
+
+        Returns:
+            The owner of the dataset.
+
+        """
+        return self._access_info.owner
+
+    @property
+    def name(self) -> str:
+        """Return the name of the dataset.
+
+        Returns:
+            The name of the dataset.
+
+        """
+        return self._access_info.dataset
 
     @property
     def branches(self) -> BranchManager:
@@ -244,7 +317,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
             Required :class:`~graviti.manager.branch.BranchManager` instance.
 
         """
-        return BranchManager(self)
+        return BranchManager(self._access_info, self.commit_id)
 
     @property
     def drafts(self) -> DraftManager:
