@@ -17,7 +17,6 @@ from graviti.utility.pyarrow import (
     GravitiExtension,
 )
 from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
-from graviti.utility.request import URL_PATH_PREFIX, open_api_do
 from graviti.utility.requests import config, get_session
 from graviti.utility.typing import NestedDict
 from graviti.utility.user import UserMapping, UserMutableMapping, UserMutableSequence, UserSequence
@@ -27,8 +26,6 @@ __all__ = [
     "File",
     "LazyFactory",
     "LazyList",
-    "open_api_do",
-    "URL_PATH_PREFIX",
     "AttrDict",
     "config",
     "get_session",

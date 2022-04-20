@@ -8,7 +8,7 @@
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from graviti.utility import URL_PATH_PREFIX, open_api_do
+from graviti.client.requests import URL_PATH_PREFIX, open_api_do
 
 
 def get_dataset(url: str, access_key: str, dataset_id: str) -> Dict[str, Any]:

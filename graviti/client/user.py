@@ -8,7 +8,7 @@
 from typing import Any, Dict
 from urllib.parse import urljoin
 
-from graviti.utility import URL_PATH_PREFIX, open_api_do
+from graviti.client.requests import URL_PATH_PREFIX, open_api_do
 
 
 def get_user(url: str, access_key: str) -> Dict[str, Any]:  # pylint: disable=unused-argument
