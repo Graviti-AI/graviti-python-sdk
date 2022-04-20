@@ -8,7 +8,7 @@
 from typing import Any, Dict
 from urllib.parse import urljoin
 
-from graviti.openapi.request import open_api_do
+from graviti.openapi.requests import open_api_do
 
 
 def create_branch(
