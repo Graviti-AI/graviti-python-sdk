@@ -92,6 +92,7 @@ class LazyList:
     Arguments:
         factory: The parent :class:`LazyFactory` instance.
         keys: The keys to access the array from factory.
+        patype: The pyarrow DataType of the elements in the list.
 
     """
 
@@ -99,6 +100,7 @@ class LazyList:
         self,
         factory: "LazyFactory",
         keys: Tuple[str, ...],
+        patype: pa.DataType,
     ) -> None:
         self._keys = keys
         self._pages: List[Union[LazyPage, pa.Array]] = [
@@ -106,6 +108,7 @@ class LazyList:
         ]
         self._factory = factory
         self._offsets = Offsets(factory._total_count, factory._limit)
+        self._patype = patype
 
     def __len__(self) -> int:
         return self._offsets.total_count
@@ -126,7 +129,7 @@ class LazyList:
             start, stop, step = index.indices(self.__len__())
 
             if step == 1:
-                array = pa.array(value)
+                array = pa.array(value, self._patype)
             elif step == -1:
                 start, stop = stop + 1, start + 1
                 try:
@@ -134,14 +137,14 @@ class LazyList:
                 except TypeError:
                     reversed_values = reversed(list(value))
 
-                array = pa.array(reversed_values)
+                array = pa.array(reversed_values, self._patype)
                 if len(array) != stop - start:
                     raise ValueError(
                         f"attempt to assign sequence of size {len(array)} "
                         f"to extended slice of size {stop - start}"
                     )
             else:
-                array = pa.array(value)
+                array = pa.array(value, self._patype)
                 ranging: Any = range(start, stop, step)
                 indices: Any = range(len(array))
                 if len(array) != len(ranging):
@@ -163,7 +166,7 @@ class LazyList:
             index = self._make_index_nonnegative(index)
             start = index
             stop = index + 1
-            array = pa.array((value,))
+            array = pa.array((value,), self._patype)
 
         if len(array) == 0:
             return
@@ -250,7 +253,7 @@ class LazyList:
             values: Elements to be extended into the LazyList.
 
         """
-        page = pa.array(values)
+        page = pa.array(values, self._patype)
         self._offsets.extend(len(page))
         self._pages.append(page)
 
@@ -319,8 +322,16 @@ class LazyFactory:
         total_count: The total count of the elements in the lazy lists.
         limit: The size of each lazy load page.
         getter: A callable object to get the source data.
+        patype: The pyarrow DataType of the data in the factory.
 
     Examples:
+        >>> import pyarrow as pa
+        >>> patype = pa.struct(
+        ...     {
+        ...         "remotePath": pa.string(),
+        ...         "label": pa.struct({"CLASSIFICATION": pa.struct({"category": pa.string()})}),
+        ...     }
+        ... )
         >>> TOTAL_COUNT = 1000
         >>> def getter(offset: int, limit: int) -> List[Dict[str, Any]]:
         ...     stop = min(offset + limit, TOTAL_COUNT)
@@ -332,7 +343,7 @@ class LazyFactory:
         ...         for i in range(offset, stop)
         ...     ]
         ...
-        >>> factory = LazyFactory(TOTAL_COUNT, 128, getter)
+        >>> factory = LazyFactory(TOTAL_COUNT, 128, getter, patype)
         >>> paths = factory.create_list(("remotePath",))
         >>> categories = factory.create_list(("label", "CLASSIFICATION", "category"))
         >>> len(paths)
@@ -361,10 +372,13 @@ class LazyFactory:
 
     """
 
-    def __init__(self, total_count: int, limit: int, getter: Callable[[int, int], Any]) -> None:
+    def __init__(
+        self, total_count: int, limit: int, getter: Callable[[int, int], Any], patype: pa.DataType
+    ) -> None:
         self._getter = getter
         self._total_count = total_count
         self._limit = limit
+        self._patype = patype
 
         page_number = ceil(total_count / limit)
         self._pages: List[Optional[pa.StructArray]] = [None] * page_number
@@ -383,7 +397,7 @@ class LazyFactory:
         """
         array = self._pages[pos]
         if array is None:
-            array = pa.array(self._getter(pos * self._limit, self._limit))
+            array = pa.array(self._getter(pos * self._limit, self._limit), type=self._patype)
             self._pages[pos] = array
 
         for key in keys:
@@ -401,7 +415,11 @@ class LazyFactory:
             A lazy list created by the given keys.
 
         """
-        return LazyList(self, keys)
+        patype = self._patype
+        for key in keys:
+            patype = patype[key].type
+
+        return LazyList(self, keys, patype)
 
     def get_page_sizes(self) -> Iterator[int]:
         """A Generator which generates the size of the pages in the factory.
