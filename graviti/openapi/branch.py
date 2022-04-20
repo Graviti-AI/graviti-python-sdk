@@ -12,44 +12,58 @@ from graviti.openapi.requests import open_api_do
 
 
 def create_branch(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
     name: str,
     revision: str,
-) -> None:
+) -> Dict[str, str]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/branches`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         name: The name of the branch.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
 
+    Returns:
+        The response of OpenAPI.
+
     Examples:
         >>> create_branch(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ...     name="branch-1",
         ...     revision="main"
         ... )
+        {
+            "name": "main",
+            "commit_id": "fde63f357daf46088639e9f57fd81cad",
+            "parent_commit_id": "f68b1375454f459b8a486b8d1f4d9ddb",
+            "title": "first commit",
+            "description": "desc",
+            "committer": "graviti",
+            "committed_at": "2021-03-03T18:58:10Z"
+        }
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/branches")
     post_data = {"name": name, "revision": revision}
-    open_api_do("POST", access_key, url, json=post_data)
+    return open_api_do(  # type: ignore[no-any-return]
+        "POST", access_key, url, json=post_data
+    ).json()
 
 
 def list_branches(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
@@ -59,8 +73,8 @@ def list_branches(
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/branches`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         offset: The offset of the page.
@@ -71,8 +85,8 @@ def list_branches(
 
     Examples:
         >>> list_branches(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST"
         ... )
@@ -100,18 +114,18 @@ def list_branches(
 
 
 def get_branch(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
     branch: str,
-) -> Dict[str, Any]:
+) -> Dict[str, str]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/branches/{branch}`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         branch: The name of the branch.
@@ -121,8 +135,8 @@ def get_branch(
 
     Examples:
         >>> get_branch(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ...     branch="main",
@@ -143,8 +157,8 @@ def get_branch(
 
 
 def delete_branch(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
@@ -153,16 +167,16 @@ def delete_branch(
     """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}/branches/{branch}`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         branch: The name of the branch.
 
     Examples:
         >>> delete_branch(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ...     branch="branch-1",
