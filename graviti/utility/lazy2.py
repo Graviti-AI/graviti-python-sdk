@@ -34,8 +34,8 @@ class Offsets:
 
         return self._offsets
 
-    def setitem(self, start: int, stop: int, lengths: Iterable[int]) -> None:
-        """Update the offsets when setting items to the lazy list.
+    def update(self, start: int, stop: int, lengths: Iterable[int]) -> None:
+        """Update the offsets when setting or deleting lazy list items.
 
         Arguments:
             start: The start index.
@@ -134,7 +134,19 @@ class LazyList:
         if len(array) == 0:
             return
 
-        self._setitem(start, stop, array)
+        self._update_pages(start, stop, array)
+
+    def __delitem__(self, index: Union[int, slice]) -> None:
+        if isinstance(index, slice):
+            start, stop, step = index.indices(self.__len__())
+            assert step == 1
+            if start == stop:
+                return
+        else:
+            start = index
+            stop = index + 1
+
+        self._update_pages(start, stop)
 
     def __getitem__(self, index: int) -> Any:
         index = index if index >= 0 else self._offsets.total_count + index
@@ -144,7 +156,7 @@ class LazyList:
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i][j]
 
-    def _setitem(self, start: int, stop: int, array: pa.Array) -> None:
+    def _update_pages(self, start: int, stop: int, array: Optional[pa.Array] = None) -> None:
         start_i, start_j = self._offsets.get_coordinate(start)
         stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
 
@@ -157,8 +169,9 @@ class LazyList:
             pages.append(left_page)
             lengths.append(left_length)
 
-        pages.append(array)
-        lengths.append(len(array))
+        if array is not None:
+            pages.append(array)
+            lengths.append(len(array))
 
         right_page = self._pages[stop_i][stop_j + 1 :]
         right_length = len(right_page)
@@ -166,18 +179,17 @@ class LazyList:
             pages.append(right_page)
             lengths.append(right_length)
 
+        old_pages_length = len(self._pages)
         self._pages[start_i : stop_i + 1] = pages
-        self._offsets.setitem(start_i, stop_i, lengths)
+        self._offsets.update(start_i, stop_i, lengths)
 
-        self._update_parent_pos(start_i + 1, stop_i - start_i + len(pages) - 1)
+        if old_pages_length != len(self._pages):
+            self._update_parent_pos(start_i + 1)
 
-    def _update_parent_pos(self, start: int, pos_offset: int) -> None:
-        if pos_offset == 0:
-            return
-
-        for page in self._pages[start:]:
+    def _update_parent_pos(self, start: int) -> None:
+        for i, page in enumerate(self._pages[start:], start):
             if isinstance(page, LazyPage):
-                page._parent_pos += pos_offset
+                page._parent_pos = i  # pylint: disable=protected-access
 
     def extend(self, values: Iterable[Any]) -> None:
         """Extend LazyList by appending elements from the iterable.
