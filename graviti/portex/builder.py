@@ -251,10 +251,7 @@ class TypeBuilder:
         factory = TypeFactory(decl, imports)
 
         keys = factory.keys
-        params = Params.from_pyobj(params_pyobj)
-
-        for key, value in params.items():
-            value.ptype = keys.get(key, PTYPE.Any)
+        params = Params.from_pyobj(params_pyobj, keys)
 
         params.add(Param("nullable", False, ptype=PTYPE.Boolean))
 

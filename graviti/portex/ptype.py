@@ -225,7 +225,7 @@ class Fields(ParameterType):
         return ClassFields(arg)
 
     @staticmethod
-    def load(content: List[TypingAny], imports: Optional[Imports] = None) -> ClassFields:
+    def load(content: Optional[List[TypingAny]], imports: Optional[Imports] = None) -> ClassFields:
         """Create Portex field list instance from python list.
 
         Arguments:
@@ -236,7 +236,10 @@ class Fields(ParameterType):
             A Portex field list instance created from the input python list.
 
         """
-        return ClassFields.from_pyobj(content, imports)
+        if content is not None:
+            return ClassFields.from_pyobj(content, imports)
+
+        return ClassFields()
 
     @staticmethod
     def dump(arg: ClassFields) -> List[TypingAny]:
@@ -275,7 +278,9 @@ class PortexType(ParameterType):
         return arg
 
     @staticmethod
-    def load(content: Dict[str, TypingAny], imports: Optional[Imports] = None) -> ClassPortexType:
+    def load(
+        content: Optional[Dict[str, TypingAny]], imports: Optional[Imports] = None
+    ) -> Optional[ClassPortexType]:
         """Create Portex type instance from python dict.
 
         Arguments:
@@ -286,7 +291,9 @@ class PortexType(ParameterType):
             A Portex type instance created from the input python dict.
 
         """
-        return ClassPortexType.from_pyobj(content, imports)
+        if content is not None:
+            return ClassPortexType.from_pyobj(content, imports)
+        return None
 
     @staticmethod
     def dump(arg: ClassPortexType) -> Dict[str, TypingAny]:
