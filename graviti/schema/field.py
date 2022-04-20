@@ -117,6 +117,17 @@ class Fields(NameOrderedDict[PortexType]):
 
         self._data.__setitem__(name, portex_type)
 
+    def rename(self, old_name: str, new_name: str) -> None:
+        """Rename the name of a field.
+
+        Arguments:
+            old_name: The current name of the field to be renamed.
+            new_name: The new name of the field to assign.
+
+        """
+        self._data.__setitem__(new_name, self._data.pop(old_name))
+        self._keys.__setitem__(self._keys.index(old_name), new_name)
+
     @classmethod
     def from_pyobj(cls, content: List[Dict[str, Any]], imports: Imports) -> "Fields":
         """Create Portex fields dict instance from python list.
