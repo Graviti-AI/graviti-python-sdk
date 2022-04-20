@@ -19,7 +19,6 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex external type."""
 
     nullable: bool
-    internal_type: PortexType
     dependences: ClassVar[Set[PortexType]]
     package: ClassVar[ExternalPackage]
     factory: ClassVar[Factory]
@@ -37,7 +36,16 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         super().__init__(**arguments)
 
-        self.internal_type = self.factory(**arguments)
+    @property
+    def internal_type(self) -> PortexType:
+        """Get the internal type of the PortexExternalType.
+
+        Returns:
+            The internal type of the PortexExternalType.
+
+        """
+        arguments = {name: getattr(self, name) for name in self.params}
+        return self.factory(**arguments)  # type: ignore[no-any-return]
 
     def to_pyarrow(self) -> ExternalExtension:
         """Convert the instance to an ``ExternalExtension`` instance.
