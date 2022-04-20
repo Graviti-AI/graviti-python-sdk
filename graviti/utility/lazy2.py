@@ -124,9 +124,43 @@ class LazyList:
     def __setitem__(self, index: Union[int, slice], value: Union[Any, Iterable[Any]]) -> None:
         if isinstance(index, slice):
             start, stop, step = index.indices(self.__len__())
-            assert step == 1
-            array = pa.array(value)
+
+            if step == 1:
+                array = pa.array(value)
+            elif step == -1:
+                start, stop = stop + 1, start + 1
+                try:
+                    reversed_values = reversed(value)  # type: ignore[arg-type]
+                except TypeError:
+                    reversed_values = reversed(list(value))
+
+                array = pa.array(reversed_values)
+                if len(array) != stop - start:
+                    raise ValueError(
+                        f"attempt to assign sequence of size {len(array)} "
+                        f"to extended slice of size {stop - start}"
+                    )
+            else:
+                array = pa.array(value)
+                ranging: Any = range(start, stop, step)
+                indices: Any = range(len(array))
+                if len(array) != len(ranging):
+                    raise ValueError(
+                        f"attempt to assign sequence of size {len(array)} "
+                        f"to extended slice of size {len(ranging)}"
+                    )
+
+                if step > 0:
+                    ranging = reversed(ranging)
+                    indices = reversed(indices)
+
+                for i, j in zip(ranging, indices):
+                    self._update_pages(i, i + 1, array[j : j + 1])
+
+                return
+
         else:
+            index = self._make_index_nonnegative(index)
             start = index
             stop = index + 1
             array = pa.array((value,))
@@ -139,18 +173,36 @@ class LazyList:
     def __delitem__(self, index: Union[int, slice]) -> None:
         if isinstance(index, slice):
             start, stop, step = index.indices(self.__len__())
-            assert step == 1
             if start == stop:
                 return
+
+            if step == 1:
+                pass
+            elif step == -1:
+                start, stop = stop + 1, start + 1
+            else:
+                ranging: Any = range(start, stop, step)
+                if step > 0:
+                    ranging = reversed(ranging)
+
+                for i in ranging:
+                    self._update_pages(i, i + 1)
+
+                return
+
         else:
+            index = self._make_index_nonnegative(index)
             start = index
             stop = index + 1
 
         self._update_pages(start, stop)
 
     def __getitem__(self, index: int) -> Any:
-        index = index if index >= 0 else self._offsets.total_count + index
+        index = self._make_index_nonnegative(index)
         return self._getitem(index)
+
+    def _make_index_nonnegative(self, index: int) -> int:
+        return index if index >= 0 else self.__len__() + index
 
     def _getitem(self, index: int) -> Any:
         i, j = self._offsets.get_coordinate(index)
