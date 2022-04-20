@@ -109,7 +109,9 @@ class FrozenFields(FrozenNameOrderedDict[PortexType]):
 class Fields(NameOrderedDict[PortexType], FrozenFields):  # type: ignore[misc]
     """Represents a Portex ``record`` fields dict."""
 
-    def __init__(self, fields: Union[Iterable[Tuple[str, PortexType]], Mapping[str, PortexType]]):
+    def __init__(
+        self, fields: Union[Iterable[Tuple[str, PortexType]], Mapping[str, PortexType], None] = None
+    ):
         super().__init__(fields)
 
     @property

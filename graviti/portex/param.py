@@ -53,16 +53,19 @@ class Param(Parameter):
         options: Optional[Iterable[Any]] = None,
         ptype: PTYPE.PType = PTYPE.Any,
     ) -> None:
+        if default is not self._empty:
+            default = ptype.load(default)
         super().__init__(name, Parameter.POSITIONAL_OR_KEYWORD, default=default)
         self.options = set(options) if options else None
         self.ptype = ptype
 
     @classmethod
-    def from_pyobj(cls, pyobj: Dict[str, Any]) -> "Param":
+    def from_pyobj(cls, pyobj: Dict[str, Any], ptype: PTYPE.PType = PTYPE.Any) -> "Param":
         """Create Param instance from python dict.
 
         Arguments:
             pyobj: A python dict representing a parameter.
+            ptype: The parameter type.
 
         Returns:
             A Param instance created from the input python dict.
@@ -72,6 +75,7 @@ class Param(Parameter):
             pyobj["name"],
             pyobj.get("default", cls._empty),
             pyobj.get("options"),
+            ptype,
         )
 
     @property
@@ -167,11 +171,12 @@ class Params(UserMapping[str, Param]):
         self._data: MutableMapping[str, Param] = OrderedDict(values if values else {})
 
     @classmethod
-    def from_pyobj(cls, pyobj: List[Dict[str, Any]]) -> "Params":
+    def from_pyobj(cls, pyobj: List[Dict[str, Any]], keys: Dict[str, Any]) -> "Params":
         """Create Params instance from python list.
 
         Arguments:
             pyobj: A python dict representing parameters.
+            keys: A python dict containing parameter types.
 
         Returns:
             A Params instance created from the input python list.
@@ -179,7 +184,7 @@ class Params(UserMapping[str, Param]):
         """
         params = cls()
         for item in pyobj:
-            params.add(Param.from_pyobj(item))
+            params.add(Param.from_pyobj(item, keys.get(item["name"], PTYPE.Any)))
 
         return params
 
