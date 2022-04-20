@@ -83,6 +83,24 @@ class Fields(NameOrderedDict[PortexType]):
         lines.append("}")
         return f"\n{indent}".join(lines)
 
+    def insert(self, index: int, name: str, portex_type: PortexType) -> None:
+        """Insert the name and portex_type at the index.
+
+        Arguments:
+            index: The index to insert the field.
+            name: The name of the field to be inserted.
+            portex_type: The portex_type of the field to be inserted.
+
+        Raises:
+            KeyError: When the name already exists in the Fields.
+
+        """
+        if self.__contains__(name):
+            raise KeyError(f'"{name}" already exists in the Fields')
+
+        self._keys.insert(index, name)
+        self._data.__setitem__(name, portex_type)
+
     @classmethod
     def from_pyobj(cls, content: List[Dict[str, Any]], imports: Imports) -> "Fields":
         """Create Portex fields dict instance from python list.
