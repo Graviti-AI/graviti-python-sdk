@@ -257,6 +257,18 @@ class LazyList:
         self._offsets.extend(len(page))
         self._pages.append(page)
 
+    def to_pyarrow(self) -> pa.ChunkedArray:
+        """Convert the lazy list to pyarrow ChunkedArray.
+
+        Returns:
+            The pyarrow ChunkedArray.
+
+        """
+        # pylint: disable=protected-access
+        return pa.chunked_array(
+            page._get_page() if isinstance(page, LazyPage) else page for page in self._pages
+        )
+
 
 class LazyPage:
     """LazyPage is a placeholder when the lazy list page is not loaded yet.
