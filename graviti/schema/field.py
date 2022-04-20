@@ -101,6 +101,22 @@ class Fields(NameOrderedDict[PortexType]):
         self._keys.insert(index, name)
         self._data.__setitem__(name, portex_type)
 
+    def astype(self, name: str, portex_type: PortexType) -> None:
+        """Convert the type of the field with the given name to the new PortexType.
+
+        Arguments:
+            name: The name of the field to convert.
+            portex_type: The new PortexType of the field to convert to.
+
+        Raises:
+            KeyError: When the name does not exist in the Fields.
+
+        """
+        if not self.__contains__(name):
+            raise KeyError(f'"{name}" does not exist in the Fields')
+
+        self._data.__setitem__(name, portex_type)
+
     @classmethod
     def from_pyobj(cls, content: List[Dict[str, Any]], imports: Imports) -> "Fields":
         """Create Portex fields dict instance from python list.
