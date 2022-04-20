@@ -6,9 +6,9 @@
 """Lazy list related class."""
 
 from bisect import bisect_right
-from itertools import chain
+from itertools import accumulate, chain, repeat
 from math import ceil
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Union, overload
 
 import pyarrow as pa
 
@@ -28,8 +28,35 @@ class Offsets:
         self.total_count = total_count
         self._limit = limit
 
-    def _init_offsets(self) -> None:
-        self._offsets = list(range(0, self.total_count, self._limit))
+    def _get_offsets(self) -> List[int]:
+        if not hasattr(self, "_offsets"):
+            self._offsets = list(range(0, self.total_count, self._limit))
+
+        return self._offsets
+
+    def setitem(self, start: int, stop: int, lengths: Iterable[int]) -> None:
+        """Update the offsets when setting items to the lazy list.
+
+        Arguments:
+            start: The start index.
+            stop: The stop index.
+            lengths: The length of the set values.
+
+        """
+        offsets = self._get_offsets()
+        partial_offsets = list(accumulate(lengths, initial=offsets[start]))
+        try:
+            last_offset = offsets[stop + 1]
+        except IndexError:
+            last_offset = self.total_count
+
+        diff = partial_offsets.pop() - last_offset
+        if diff != 0:
+            self.total_count += diff
+            for i in range(start + 1, len(offsets)):
+                offsets[i] += diff
+
+        offsets[start : stop + 1] = partial_offsets
 
     def get_coordinate(self, index: int) -> Tuple[int, int]:
         """Get the lazy page coordinate of the elements.
@@ -54,10 +81,8 @@ class Offsets:
             length: The length of the extended values.
 
         """
-        if not hasattr(self, "_offsets"):
-            self._init_offsets()
-
-        self._offsets.append(self.total_count)
+        offsets = self._get_offsets()
+        offsets.append(self.total_count)
         self.total_count += length
 
 
@@ -77,7 +102,7 @@ class LazyList:
     ) -> None:
         self._keys = keys
         self._pages: List[Union[LazyPage, pa.Array]] = [
-            LazyPage(pos, self) for pos in range(factory._page_number)
+            LazyPage(pos, range(size), self) for pos, size in enumerate(factory.get_page_sizes())
         ]
         self._factory = factory
         self._offsets = Offsets(factory._total_count, factory._limit)
@@ -88,6 +113,29 @@ class LazyList:
     def __iter__(self) -> Iterator[Any]:
         return chain(*self._pages)
 
+    @overload
+    def __setitem__(self, index: int, value: Any) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[Any]) -> None:
+        ...
+
+    def __setitem__(self, index: Union[int, slice], value: Union[Any, Iterable[Any]]) -> None:
+        if isinstance(index, slice):
+            start, stop, step = index.indices(self.__len__())
+            assert step == 1
+            array = pa.array(value)
+        else:
+            start = index
+            stop = index + 1
+            array = pa.array((value,))
+
+        if len(array) == 0:
+            return
+
+        self._setitem(start, stop, array)
+
     def __getitem__(self, index: int) -> Any:
         index = index if index >= 0 else self._offsets.total_count + index
         return self._getitem(index)
@@ -95,6 +143,41 @@ class LazyList:
     def _getitem(self, index: int) -> Any:
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i][j]
+
+    def _setitem(self, start: int, stop: int, array: pa.Array) -> None:
+        start_i, start_j = self._offsets.get_coordinate(start)
+        stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
+
+        pages = []
+        lengths = []
+
+        left_page = self._pages[start_i][:start_j]
+        left_length = len(left_page)
+        if left_length:
+            pages.append(left_page)
+            lengths.append(left_length)
+
+        pages.append(array)
+        lengths.append(len(array))
+
+        right_page = self._pages[stop_i][stop_j + 1 :]
+        right_length = len(right_page)
+        if right_length:
+            pages.append(right_page)
+            lengths.append(right_length)
+
+        self._pages[start_i : stop_i + 1] = pages
+        self._offsets.setitem(start_i, stop_i, lengths)
+
+        self._update_parent_pos(start_i + 1, stop_i - start_i + len(pages) - 1)
+
+    def _update_parent_pos(self, start: int, pos_offset: int) -> None:
+        if pos_offset == 0:
+            return
+
+        for page in self._pages[start:]:
+            if isinstance(page, LazyPage):
+                page._parent_pos += pos_offset
 
     def extend(self, values: Iterable[Any]) -> None:
         """Extend LazyList by appending elements from the iterable.
@@ -109,29 +192,60 @@ class LazyList:
 
 
 class LazyPage:
-    """LazyPage is a placeholder of the pages in the lazy list when the page is not loaded yet.
+    """LazyPage is a placeholder when the lazy list page is not loaded yet.
 
     Arguments:
         pos: The page number.
+        ranging: The range instance of this page.
         parent: The parent lazy list.
 
     """
 
-    def __init__(self, pos: int, parent: LazyList) -> None:
-        self._pos = pos
+    def __init__(self, pos: int, ranging: range, parent: LazyList) -> None:
+        self._factory_pos = pos
+        self._parent_pos = pos
         self._parent = parent
+        self._ranging = ranging
 
     def _get_page(self) -> pa.Array:
         # pylint: disable=protected-access
-        array = self._parent._factory.get_array(self._pos, self._parent._keys)
-        self._parent._pages[self._pos] = array
+        array = self._parent._factory.get_array(self._factory_pos, self._parent._keys)
+        self._parent._pages[self._parent_pos] = array
         return array
 
+    def __len__(self) -> int:
+        return self._ranging.__len__()
+
+    @overload
     def __getitem__(self, index: int) -> Any:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> "LazySlicedPage":
+        ...
+
+    def __getitem__(self, index: Union[int, slice]) -> Union[Any, "LazySlicedPage"]:
+        if isinstance(index, slice):
+            return LazySlicedPage(self._factory_pos, self._ranging[index], self._parent)
+
         return self._get_page().__getitem__(index)
 
     def __iter__(self) -> Iterator[Any]:
         return self._get_page().__iter__()  # type: ignore[no-any-return]
+
+
+class LazySlicedPage(LazyPage):
+    """LazySlicedPage is a placeholder when the sliced lazy list page is not loaded yet."""
+
+    def _get_page(self) -> pa.Array:
+        # pylint: disable=protected-access
+        array = self._parent._factory.get_array(self._factory_pos, self._parent._keys)
+
+        ranging = self._ranging
+        array = array[ranging.start : ranging.stop : ranging.step]
+
+        self._parent._pages[self._parent_pos] = array
+        return array
 
 
 class LazyFactory:
@@ -224,3 +338,13 @@ class LazyFactory:
 
         """
         return LazyList(self, keys)
+
+    def get_page_sizes(self) -> Iterator[int]:
+        """A Generator which generates the size of the pages in the factory.
+
+        Yields:
+            The page sizes.
+
+        """
+        div, mod = divmod(self._total_count, self._limit)
+        yield from chain(repeat(self._limit, div), (mod,))
