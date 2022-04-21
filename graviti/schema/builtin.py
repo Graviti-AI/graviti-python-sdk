@@ -13,7 +13,7 @@ import pyarrow as pa
 
 import graviti.schema.ptype as PTYPE
 from graviti.schema.base import PortexType
-from graviti.schema.field import Field, Fields
+from graviti.schema.field import Fields
 from graviti.schema.package import packages
 from graviti.schema.param import Param, Params, param
 from graviti.utility import BuiltinExtension
@@ -261,21 +261,6 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
           },
         )
 
-        Create a record by :class:`Field` list:
-
-        >>> t = record([Field("f0", float64(0)), Field("f1", array(int64()))])
-        >>> t
-        record(
-          fields={
-            'f0': float64(
-              minimum=0,
-            ),
-            'f1': array(
-              items=int64(),
-            ),
-          },
-        )
-
     """
 
     fields: Fields = param(ptype=PTYPE.Fields)
@@ -283,7 +268,7 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
 
     def __init__(
         self,
-        fields: Union[Sequence[Union[Field, Tuple[str, PortexType]]], Mapping[str, PortexType]],
+        fields: Union[Sequence[Union[Tuple[str, PortexType]]], Mapping[str, PortexType]],
         nullable: bool = False,
     ) -> None:
         super().__init__(fields=fields, nullable=nullable)

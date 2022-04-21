@@ -7,10 +7,9 @@
 
 from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Dict, List, Sequence, Type, Union
+from typing import Dict, List, Sequence, Tuple, Type, Union
 
 from graviti.schema.base import PortexType as ClassPortexType
-from graviti.schema.field import Field as ClassField
 from graviti.schema.field import Fields as ClassFields
 from graviti.schema.package import Imports
 
@@ -132,20 +131,27 @@ class Field(ParameterType):
     """Parameter type for Portex record field."""
 
     @staticmethod
-    def check(arg: TypingAny) -> ClassField:
+    def check(arg: TypingAny) -> Tuple[str, ClassPortexType]:
         """Check and transfer the parameter type.
 
         Arguments:
             arg: The argument which needs to be checked.
 
+        Raises:
+            TypeError: When the input argument is not a tuple of a str and a PortexType.
+
         Returns:
-            A :class:`Field` instance created by the input argument.
+            A tuple of str and PortexType created by the input argument.
 
         """
-        return ClassField(*arg)
+        name, portex_type = arg
+        if isinstance(name, str) and isinstance(portex_type, ClassPortexType):
+            return name, portex_type
+
+        raise TypeError("Argument should be a tuple of a str and a PortexType")
 
     @staticmethod
-    def load(content: Dict[str, TypingAny], imports: Imports) -> ClassField:
+    def load(content: Dict[str, TypingAny], imports: Imports) -> Tuple[str, ClassPortexType]:
         """Create Portex field instance from python dict.
 
         Arguments:
@@ -153,23 +159,24 @@ class Field(ParameterType):
             imports: The imports of the Portex field.
 
         Returns:
-            A Portex field instance created from the input python dict.
+            A tuple of name and PortexType created from the input python dict.
 
         """
-        return ClassField.from_pyobj(content, imports)
+        return content["name"], ClassPortexType.from_pyobj(content, imports)
 
     @staticmethod
-    def dump(arg: ClassField) -> Dict[str, TypingAny]:
+    def dump(arg: Tuple[str, ClassPortexType]) -> Dict[str, TypingAny]:
         """Dump the input Portex field instance to a python dict.
 
         Arguments:
-            arg: A Portex field instance.
+            arg: A tuple of name and PortexType.
 
         Returns:
             A Python dict representation of the Portex field.
 
         """
-        return arg.to_pyobj()
+        name, portex_type = arg
+        return {"name": name, **portex_type.to_pyobj(False)}
 
 
 class Fields(ParameterType):
