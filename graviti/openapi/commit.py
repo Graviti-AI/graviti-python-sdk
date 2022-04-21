@@ -12,8 +12,8 @@ from graviti.openapi.requests import open_api_do
 
 
 def commit_draft(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
@@ -24,8 +24,8 @@ def commit_draft(
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
@@ -37,8 +37,8 @@ def commit_draft(
 
     Examples:
         >>> commit_draft(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number=2,
@@ -61,8 +61,8 @@ def commit_draft(
 
 
 def list_commits(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
@@ -73,8 +73,8 @@ def list_commits(
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
@@ -87,8 +87,8 @@ def list_commits(
 
     Examples:
         >>> list_commits(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ... )
@@ -112,20 +112,20 @@ def list_commits(
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits")
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
-    if revision:
+    if revision is not None:
         params["revision"] = revision
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
 def get_commit(
-    url: str, access_key: str, owner: str, dataset: str, *, commit_id: str
+    access_key: str, url: str, owner: str, dataset: str, *, commit_id: str
 ) -> Dict[str, str]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit ID.
@@ -135,8 +135,8 @@ def get_commit(
 
     Examples:
         >>> get_commit(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id="85c57a7f03804ccc906632248dc8c359"
@@ -156,13 +156,13 @@ def get_commit(
 
 
 def get_revision(
-    url: str, access_key: str, owner: str, dataset: str, *, revision: str
+    access_key: str, url: str, owner: str, dataset: str, *, revision: str
 ) -> Dict[str, str]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/revisions/{revision}`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
@@ -173,14 +173,19 @@ def get_revision(
 
     Examples:
         >>> get_revision(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "MNIST",
         ...     revision="branch-1"
         ... )
         {
+           "type": "BRANCH",
            "commit_id": "85c57a7f03804ccc906632248dc8c359",
-           "type": "branch"
+           "parent_commit_id": "784ba0d3bf0a41f6a7bfd771d8c00fcb",
+           "title": "upload data",
+           "description": "",
+           "committer": "czhual",
+           "committed_at": "2021-03-03T18:58:10Z"
         }
 
     """
