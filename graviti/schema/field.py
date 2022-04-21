@@ -71,6 +71,11 @@ class Fields(NameOrderedDict[PortexType]):
     def __repr__(self) -> str:
         return self._repr1(0)
 
+    @classmethod
+    def _check_value(cls, value: PortexType) -> None:
+        if not isinstance(value, PortexType):
+            raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
+
     def _repr1(self, level: int) -> str:
         indent = level * _INDENT
         lines = ["{"]
@@ -82,6 +87,10 @@ class Fields(NameOrderedDict[PortexType]):
 
         lines.append("}")
         return f"\n{indent}".join(lines)
+
+    def _setitem(self, key: str, value: PortexType) -> None:
+        self._check_value(value)
+        super()._setitem(key, value)
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
@@ -95,6 +104,9 @@ class Fields(NameOrderedDict[PortexType]):
             KeyError: When the name already exists in the Fields.
 
         """
+        self._check_key(name)
+        self._check_value(portex_type)
+
         if self.__contains__(name):
             raise KeyError(f'"{name}" already exists in the Fields')
 
@@ -112,6 +124,8 @@ class Fields(NameOrderedDict[PortexType]):
             KeyError: When the name does not exist in the Fields.
 
         """
+        self._check_value(portex_type)
+
         if not self.__contains__(name):
             raise KeyError(f'"{name}" does not exist in the Fields')
 
@@ -125,6 +139,8 @@ class Fields(NameOrderedDict[PortexType]):
             new_name: The new name of the field to assign.
 
         """
+        self._check_key(new_name)
+
         self._data.__setitem__(new_name, self._data.pop(old_name))
         self._keys.__setitem__(self._keys.index(old_name), new_name)
 
