@@ -378,8 +378,7 @@ class NameOrderedDict(MutableMapping[str, _V]):
 
         iterable = items.items() if isinstance(items, Mapping) else items
         for key, value in iterable:
-            self._keys.append(key)
-            self._data[key] = value
+            self._setitem(key, value)
 
     def __len__(self) -> int:
         return self._data.__len__()
@@ -394,10 +393,7 @@ class NameOrderedDict(MutableMapping[str, _V]):
         if isinstance(key, int):
             key = self._keys.__getitem__(key)
 
-        if not self._data.__contains__(key):
-            self._keys.append(key)
-
-        self._data.__setitem__(key, value)
+        self._setitem(key, value)
 
     def __delitem__(self, key: Union[int, str]) -> None:
         try:
@@ -421,6 +417,18 @@ class NameOrderedDict(MutableMapping[str, _V]):
             return False
 
         return self._keys.__eq__(other._keys) and self._data.__eq__(other._data)
+
+    @classmethod
+    def _check_key(cls, key: str) -> None:
+        if not isinstance(key, str):
+            raise TypeError(f'The key in "{cls.__name__}" should be a string')
+
+    def _setitem(self, key: str, value: _V) -> None:
+        self._check_key(key)
+
+        if not self._data.__contains__(key):
+            self._keys.append(key)
+        self._data.__setitem__(key, value)
 
     def popitem(self) -> Tuple[str, _V]:
         """Remove and return a (key, value) pair as a tuple.
