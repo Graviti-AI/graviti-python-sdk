@@ -7,16 +7,14 @@
 
 from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, TypeVar
 
-from tensorbay.client.struct import Commit as TensorbayCommit
 from tensorbay.utility import AttrsMixin, attr, common_loads
 
-from graviti.client import list_commits
-from graviti.exception import ResourceNotExistError
 from graviti.manager.lazy import PagingList
+from graviti.openapi import get_revision, list_commits
 from graviti.utility import ReprMixin
 
 if TYPE_CHECKING:
-    from graviti.manager.dataset import Dataset
+    from graviti.manager.dataset import DatasetAccessInfo
 
 ROOT_COMMIT_ID = "00000000000000000000000000000000"
 
@@ -191,58 +189,51 @@ class CommitManager:
     """This class defines the operations on the commit in Graviti.
 
     Arguments:
-        dataset: :class:`~graviti.dataset.dataset.Dataset` instance.
+        access_info: :class:`~graviti.manager.dataset.DatasetAccessInfo` instance.
+        commit_id: The commit id.
 
     """
 
-    def __init__(self, dataset: "Dataset") -> None:
-        self._dataset = dataset
+    def __init__(self, access_info: "DatasetAccessInfo", commit_id: str) -> None:
+        self._access_info = access_info
+        self._commit_id = commit_id
 
     def _generate(
         self, revision: Optional[str], offset: int = 0, limit: int = 128
-    ) -> Generator[TensorbayCommit, None, int]:
+    ) -> Generator[Commit, None, int]:
         if revision is None:
-            revision = self._dataset.commit_id
-
-        if not revision:
-            raise TypeError("The given revision is illegal")
+            revision = self._commit_id
 
         response = list_commits(
-            self._dataset.url,
-            self._dataset.access_key,
-            self._dataset._dataset_id,  # pylint: disable=protected-access
-            commit=revision,
+            **self._access_info,
+            revision=revision,
             offset=offset,
             limit=limit,
         )
 
         for item in response["commits"]:
-            yield TensorbayCommit.loads(item)
+            yield Commit.from_pyobj(item)
 
         return response["totalCount"]  # type: ignore[no-any-return]
 
-    def get(self, revision: Optional[str] = None) -> TensorbayCommit:
+    def get(self, revision: Optional[str] = None) -> Commit:
         """Get the certain commit with the given revision.
 
         Arguments:
             revision: The information to locate the specific commit, which can be the commit id,
                 the branch name, or the tag name. If it is not given, get the current commit.
 
-        Raises:
-            ResourceNotExistError: When the required commit does not exist.
-
         Returns:
-            The :class:`.TensorbayCommit` instance with the given revision.
+            The :class:`.Commit` instance with the given revision.
 
         """
-        try:
-            commit = next(self._generate(revision))
-        except StopIteration as error:
-            raise ResourceNotExistError(resource="commit", identification=revision) from error
+        if revision is None:
+            revision = self._commit_id
 
-        return commit
+        response = get_revision(**self._access_info, revision=revision)
+        return Commit.from_pyobj(response)
 
-    def list(self, revision: Optional[str] = None) -> PagingList[TensorbayCommit]:
+    def list(self, revision: Optional[str] = None) -> PagingList[Commit]:
         """List the commits.
 
         Arguments:
@@ -252,7 +243,7 @@ class CommitManager:
                 If it is not given, list the commits before the current commit.
 
         Returns:
-            The PagingList of :class:`commits<.TensorbayCommit>` instances.
+            The PagingList of :class:`commits<.Commit>` instances.
 
         """
         return PagingList(

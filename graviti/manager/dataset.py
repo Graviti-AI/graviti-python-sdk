@@ -336,7 +336,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
             Required :class:`~graviti.manager.commit.CommitManager` instance.
 
         """
-        return CommitManager(self)
+        return CommitManager(self._access_info, self.commit_id)
 
     @property
     def tags(self) -> TagManager:
