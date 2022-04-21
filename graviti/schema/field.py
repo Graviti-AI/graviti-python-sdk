@@ -5,55 +5,13 @@
 """Portex record field releated classes."""
 
 
-from typing import Any, Dict, Iterable, List, Mapping, NamedTuple, Tuple, Union
+from typing import Any, Dict, Iterable, List, Mapping, Tuple, Union
 
 import pyarrow as pa
 
 from graviti.schema.base import _INDENT, PortexType
 from graviti.schema.package import Imports
 from graviti.utility import NameOrderedDict
-
-
-class Field(NamedTuple):
-    """Represents a Portex ``record`` field which contains the field name and type."""
-
-    name: str
-    type: PortexType
-
-    @property
-    def imports(self) -> Imports:
-        """Property imports to indicate the imports of this field.
-
-        Returns:
-            The imports of this field.
-
-        """
-        imports = Imports()
-        imports.update_from_type(self.type)
-        return imports
-
-    @classmethod
-    def from_pyobj(cls, content: Dict[str, Any], imports: Imports) -> "Field":
-        """Create Portex field instance from python dict.
-
-        Arguments:
-            content: A python dict representing a Portex field.
-            imports: The imports of the Portex field.
-
-        Returns:
-            A Portex field instance created from the input python dict.
-
-        """
-        return cls(content["name"], PortexType.from_pyobj(content, imports))
-
-    def to_pyobj(self) -> Dict[str, Any]:
-        """Dump the instance to a python dict.
-
-        Returns:
-            A Python dict representation of the field.
-
-        """
-        return {"name": self.name, **self.type.to_pyobj(False)}
 
 
 class Fields(NameOrderedDict[PortexType]):

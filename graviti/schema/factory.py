@@ -6,13 +6,26 @@
 
 
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Generic, List, Mapping, Optional, Set, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import yaml
 
 import graviti.schema.ptype as PTYPE
 from graviti.schema.base import PortexType
-from graviti.schema.field import Field, Fields
+from graviti.schema.field import Fields
 from graviti.schema.package import Imports, packages
 
 _C = TypeVar("_C", str, float, bool, None)
@@ -399,15 +412,15 @@ class DictFactory(Factory):
 
 
 class FieldFactory(Factory):
-    """The template factory for a ``Field``.
+    """The template factory for a tuple of name and PortexType.
 
     Arguments:
-        decl: A dict which indicates a ``Field``.
+        decl: A dict which indicates a tuple of name and PortexType.
 
     """
 
     def __init__(self, decl: Dict[str, Any], imports: Imports) -> None:
-        self.creator: Callable[..., Field]
+        self.creator: Callable[..., Tuple[str, PortexType]]
 
         item = decl.copy()
         dependences = set()
@@ -429,20 +442,20 @@ class FieldFactory(Factory):
         self.dependences = dependences
         self.keys = keys
 
-    def __call__(self, **kwargs: Any) -> Optional[Field]:
-        """Apply the input arguments to the ``Field`` template.
+    def __call__(self, **kwargs: Any) -> Optional[Tuple[str, PortexType]]:
+        """Apply the input arguments to the template.
 
         Arguments:
             kwargs: The input arguments.
 
         Returns:
-            The applied ``Field``.
+            The applied tuple of name and PortexType.
 
         """
         if not self._expression(**kwargs):
             return None
 
-        return Field(self._name_factory(**kwargs), self._type_factory(**kwargs))
+        return self._name_factory(**kwargs), self._type_factory(**kwargs)
 
 
 class FieldsFactory(Factory):
