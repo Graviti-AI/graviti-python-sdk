@@ -8,7 +8,20 @@
 from bisect import bisect_right
 from itertools import accumulate, chain, repeat
 from math import ceil
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    List,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import pyarrow as pa
 
@@ -337,6 +350,8 @@ class LazyFactory:
         patype: The pyarrow DataType of the data in the factory.
 
     Examples:
+        Create LazyList from data getter:
+
         >>> import pyarrow as pa
         >>> patype = pa.struct(
         ...     {
@@ -382,7 +397,46 @@ class LazyFactory:
          ...
          <pyarrow.StringScalar: 'cat'>]
 
+        Create LazyList from existing pyarrow StructArray:
+        >>> import pyarrow as pa
+        >>> data = [
+        ...     {
+        ...         "remotePath": f"{i:06}.jpg",
+        ...         "label": {"CLASSIFICATION": {"category": "cat" if i % 2 else "dog"}},
+        ...     }
+        ...     for i in range(100)
+        ... ]
+        >>> array = pa.array(data)
+        >>> factory = LazyFactory.from_array(array)
+        >>> paths = factory.create_list(("remotePath",))
+        >>> categories = factory.create_list(("label", "CLASSIFICATION", "category"))
+        >>> len(paths)
+        100
+        >>> list(paths)
+        [<pyarrow.StringScalar: '000000.jpg'>,
+         <pyarrow.StringScalar: '000001.jpg'>,
+         <pyarrow.StringScalar: '000002.jpg'>,
+         <pyarrow.StringScalar: '000003.jpg'>,
+         <pyarrow.StringScalar: '000004.jpg'>,
+         <pyarrow.StringScalar: '000005.jpg'>,
+         ...
+         ...
+         <pyarrow.StringScalar: '000099.jpg'>]
+        >>> len(categories)
+        100
+        >>> list(categories)
+        [<pyarrow.StringScalar: 'dog'>,
+         <pyarrow.StringScalar: 'cat'>,
+         <pyarrow.StringScalar: 'dog'>,
+         <pyarrow.StringScalar: 'cat'>,
+         <pyarrow.StringScalar: 'dog'>,
+         ...
+         ...
+         <pyarrow.StringScalar: 'cat'>]
+
     """
+
+    _S = TypeVar("_S", bound="LazyFactory")
 
     def __init__(
         self, total_count: int, limit: int, getter: Callable[[int, int], Any], patype: pa.DataType
@@ -391,10 +445,27 @@ class LazyFactory:
         self._total_count = total_count
         self._limit = limit
         self._patype = patype
+        self._pages: List[Optional[pa.StructArray]] = [None] * ceil(total_count / limit)
 
-        page_number = ceil(total_count / limit)
-        self._pages: List[Optional[pa.StructArray]] = [None] * page_number
-        self._page_number = page_number
+    @staticmethod
+    def _invalid_getter(*_: Any) -> NoReturn:
+        raise NotImplementedError("The data getter is not provided.")
+
+    @classmethod
+    def from_array(cls: Type[_S], array: pa.StructArray) -> _S:
+        """Create a LazyFactory from an existing pyarrow array.
+
+        Arguments:
+            array: The input pyarrow StructArray.
+
+        Returns:
+            The LazyFactory created by the input pyarrow StructArray.
+
+        """
+        length = len(array)
+        factory = cls(length, length, cls._invalid_getter, array.type)
+        factory._pages = [array]
+        return factory
 
     def get_array(self, pos: int, keys: Tuple[str, ...]) -> pa.Array:
         """Get the array from the factory.
@@ -441,4 +512,6 @@ class LazyFactory:
 
         """
         div, mod = divmod(self._total_count, self._limit)
-        yield from chain(repeat(self._limit, div), (mod,))
+        yield from repeat(self._limit, div)
+        if mod != 0:
+            yield mod
