@@ -5,7 +5,7 @@
 
 """Interfaces about the data."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
@@ -53,10 +53,11 @@ def list_draft_data(
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The sheet name.
-        columns: The string of column names separated by commas.
+        columns: The string of column names separated by ``|``.
             Multiple indexes can be expressed using dots. None means to get all columns.
-        order_by: The string determine the order of sorting by the order in
-            which column names appear.
+        order_by: The string determine the order of sorting by the order in which column
+            names appear. If None or incomplete, the remainder is sorted by the primary key
+            of the sheet.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -78,8 +79,7 @@ def list_draft_data(
                     "filename": "0000f77c-6257be58.jpg",
                     "image": {
                         "url": "https://content-store-prod-vers",
-                        "checksum": "dcc197970e607f7576d978972f6fb312911ce005",
-                        "type": "remoteFile"
+                        "checksum": "dcc197970e607f7576d978972f6fb312911ce005"
                     },
                     "attribute": {
                         "weather": "clear",
@@ -151,10 +151,11 @@ def list_commit_data(
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit id.
         sheet: The sheet name.
-        columns: The string of column names separated by commas.
+        columns: The string of column names separated by ``|``.
             Multiple indexes can be expressed using dots. None means to get all columns.
-        order_by: The string determine the order of sorting by  the order in
-            which column names appear.
+        order_by: The string determine the order of sorting by the order in which column
+            names appear. If None or incomplete, the remainder is sorted by the primary key
+            of the sheet.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -177,3 +178,76 @@ def list_commit_data(
     return _list_data(
         access_key, url, columns=columns, order_by=order_by, offset=offset, limit=limit
     )
+
+
+def update_data(
+    access_key: str,
+    url: str,
+    owner: str,
+    dataset: str,
+    *,
+    draft_number: int,
+    sheet: str,
+    data: List[Dict[str, Any]],
+    offset: int = 0,
+    order_by: Optional[str] = None,
+) -> None:
+    """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
+    /sheets/{sheet}/data`.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        dataset: Name of the dataset, unique for a user.
+        draft_number: The draft number.
+        sheet: The sheet name.
+        data: The update data.
+        offset: The starting position of the update data.
+        order_by: The string determine the order of sorting by the order in which column names
+            appear. Column names are seperated by ``|``. Multiple indexes can be expressed using
+            dots. If None or incomplete, the remainder is sorted by the primary key of the sheet.
+
+    Examples:
+        >>> update_dataset(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
+        ...     "czhual",
+        ...     "OxfordIIITPet",
+        ...     draft_number = 1,
+        ...     sheet = "train",
+        ...     data = [
+        ...                 {
+        ...                     "filename": "0000f77c-6257be58.jpg",
+        ...                     "image": {
+        ...                         "checksum": "dcc197970e607f7576d978972f6fb312911ce005"
+        ...                     },
+        ...                     "attribute": {
+        ...                         "weather": "clear",
+        ...                         "scene": "city street",
+        ...                         "timeofday": "daytime"
+        ...                     },
+        ...                 },
+        ...                 {
+        ...                     "filename": "0000f77c-62c2a288.jpg",
+        ...                     "image": {
+        ...                         "checksum": "dcc197970e607f7576d978972f6fb2a2881ce004"
+        ...                     },
+        ...                     "attribute": {
+        ...                         "weather": "clear",
+        ...                         "scene": "highway",
+        ...                         "timeofday": "dawn/dusk"
+        ...                     },
+        ...                 }
+        ...            ],
+        ...     offset = 10,
+        ...     order_by = "filename|attribute.weather",
+        ... )
+
+    """
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data")
+    patch_data: Dict[str, Any] = {"data": data, "offset": offset}
+    if order_by is not None:
+        patch_data["order_by"] = order_by
+
+    open_api_do("PATCH", access_key, url, json=patch_data)
