@@ -7,12 +7,13 @@
 
 from typing import Any, ClassVar, Dict, Set, Type
 
+import pyarrow as pa
+
 import graviti.schema.ptype as PTYPE
 from graviti.schema.base import PortexType
 from graviti.schema.factory import Dynamic, Factory, type_factory_creator
 from graviti.schema.package import ExternalPackage, Imports, Package, packages
 from graviti.schema.param import Param, Params
-from graviti.utility import ExternalExtension
 
 
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method
@@ -47,21 +48,14 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
         arguments = {name: getattr(self, name) for name in self.params}
         return self.factory(**arguments)  # type: ignore[no-any-return]
 
-    def to_pyarrow(self) -> ExternalExtension:
-        """Convert the instance to an ``ExternalExtension`` instance.
+    def to_pyarrow(self) -> pa.DataType:
+        """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
-            An ``ExternalExtension`` instance representing the Portex type.
+            The corresponding builtin PyArrow DataType.
 
         """
-        package = self.package
-        return ExternalExtension(
-            self.__class__.__name__,
-            self.internal_type.to_pyarrow(),
-            package.url,
-            package.revision,
-            **self._dump_arguments()
-        )
+        return self.internal_type.to_pyarrow()
 
 
 def template(
