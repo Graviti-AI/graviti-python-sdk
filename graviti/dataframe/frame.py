@@ -35,29 +35,22 @@ class DataFrame:
     """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
 
     Arguments:
-        data: The data that needs to be stored in DataFrame. Could be ndarray, Iterable or dict.
-            If data is a dict, column order follows insertion-order.
+        data: The data that needs to be stored in DataFrame.
         schema: The schema of the DataFrame. If None, will be inferred from `data`.
         columns: Column labels to use for resulting frame when data does not have them,
             defaulting to RangeIndex(0, 1, 2, ..., n). If data contains column labels,
             will perform column selection instead.
 
     Examples:
-        Constructing DataFrame from a dictionary.
-
-        >>> data = {"col1": [1, 2], "col2": [3, 4]}
-        >>> df = DataFrame(data=data)
-        >>> df
-            col1 col2
-        0   1    3
-        1   2    4
+        Constructing DataFrame from list.
 
         >>> df = DataFrame(
-                {
-                    "filename": ["a.jpg", "b.jpg", "c.jpg"],
-                    "box2ds": {"x": [1, 2, 3], "y": [1, 2, 3]},
-                }
-            )
+        ...     [
+        ...         {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
+        ...         {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
+        ...         {"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}},
+        ...     ]
+        ... )
         >>> df
             filename box2ds
                      x      y
@@ -283,11 +276,12 @@ class DataFrame:
 
         Examples:
             >>> df = DataFrame(
-                    {
-                        "filename": ["a.jpg", "b.jpg", "c.jpg"],
-                        "box2ds": {"x": [1, 2, 3], "y": [1, 2, 3]},
-                    }
-                )
+            ...     [
+            ...         {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
+            ...         {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
+            ...         {"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}},
+            ...     ]
+            ... )
             >>> df
                 filename box2ds
                          x      y
@@ -476,3 +470,36 @@ class DataFrame:
 
     def info(self) -> None:
         """Print a concise summary of a DataFrame."""
+
+    def extend(self, objs: Union[Iterable[Dict[str, Any]], "DataFrame"]) -> None:
+        """Extend Sequence object or DataFrame to itself row by row.
+
+        Arguments:
+            objs: A sequence object or DataFrame.
+
+        Raises:  # noqa: DAR402
+            ValueError: When the key or column name of objs not exists in self dataframe.
+
+        Examples:
+        >>> df = DataFrame([
+        ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
+        ...     {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
+        ... ])
+        >>> df.extend([{"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}])
+        >>> df
+            filename box2ds
+                     x      y
+        0   a.jpg    1      1
+        1   b.jpg    2      2
+        2   c.jpg    3      3
+
+        >>> df2 = DataFrame([{"filename": "d.jpg", "box2ds": {"x": 4 "y": 4}}])
+        >>> df.extend(df2)
+        >>> df
+            filename box2ds
+                     x      y
+        0   a.jpg    1      1
+        1   b.jpg    2      2
+        2   d.jpg    4      4
+
+        """

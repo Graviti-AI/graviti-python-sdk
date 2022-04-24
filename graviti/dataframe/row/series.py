@@ -8,11 +8,11 @@
 from itertools import chain, zip_longest
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
 
-from graviti.dataframe.series import SeriesBase
+from graviti.dataframe.row.indexing import RowSeriesILocIndexer, RowSeriesLocIndexer
 from graviti.utility import MAX_REPR_ROWS
 
 
-class Series(SeriesBase[str]):
+class Series:
     """One-dimensional array.
 
     Arguments:
@@ -97,6 +97,9 @@ class Series(SeriesBase[str]):
         new_data = {name: self._indices_data[name] for name in key}
         return Series(new_data, name=self.name)
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        pass
+
     def __len__(self) -> int:
         return self._indices.__len__()
 
@@ -158,3 +161,53 @@ class Series(SeriesBase[str]):
             self._indices[index]: self._indices_data[self._indices[index]] for index in key
         }
         return self._construct(indices_data, self.name)
+
+    @property
+    def iloc(self) -> RowSeriesILocIndexer:
+        """Purely integer-location based indexing for selection by position.
+
+        Allowed inputs are:
+
+        - An integer, e.g. ``5``.
+        - A list or array of integers, e.g. ``[4, 3, 0]``.
+        - A slice object with ints, e.g. ``1:7``.
+        - A boolean array of the same length as the axis being sliced.
+
+        Returns:
+            The instance of the ILocIndexer.
+
+        Examples:
+            >>> series = Series([1, 2, 3])
+            >>> series.loc[0]
+            1
+            >>> df.loc[[0]]
+            0    1
+            dtype: int64
+
+        """
+        return RowSeriesILocIndexer(self)
+
+    @property
+    def loc(self) -> RowSeriesLocIndexer:
+        """Access a group of rows and columns by indexes or a boolean array.
+
+        Allowed inputs are:
+
+        - A single index, e.g. ``5``.
+        - A list or array of indexes, e.g. ``[4, 3, 0]``.
+        - A slice object with indexes, e.g. ``1:7``.
+        - A boolean array of the same length as the axis being sliced.
+
+        Returns:
+            The instance of the LocIndexer.
+
+        Examples:
+            >>> series = Series([1, 2, 3])
+            >>> series.loc[0]
+            1
+            >>> df.loc[[0]]
+            0    1
+            dtype: int64
+
+        """
+        return RowSeriesLocIndexer(self)
