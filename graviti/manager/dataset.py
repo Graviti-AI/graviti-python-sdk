@@ -342,10 +342,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     def tags(self) -> TagManager:
         """Get class :class:`~graviti.manager.tag.TagManager` instance.
 
-        Return:
+        Returns:
             Required :class:`~graviti.manager.tag.TagManager` instance.
 
         """
+        return TagManager(self._access_info, self.commit_id)
 
     def checkout(self, revision: str) -> None:
         """Checkout to a commit.

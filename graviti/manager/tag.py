@@ -5,15 +5,15 @@
 
 """The implementation of the Tag and TagManager."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
-from tensorbay.client.struct import Tag as TensorbayTag
-
+from graviti.exception import ResourceNotExistError
 from graviti.manager.commit import NamedCommit
 from graviti.manager.lazy import PagingList
+from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
 
 if TYPE_CHECKING:
-    from graviti.manager.dataset import Dataset
+    from graviti.manager.dataset import DatasetAccessInfo
 
 
 class Tag(NamedCommit):
@@ -35,14 +35,28 @@ class TagManager:
     """This class defines the operations on the tag in Graviti.
 
     Arguments:
-        dataset: :class:`~graviti.dataset.dataset.Dataset` instance.
+        access_info: :class:`~graviti.manager.dataset.DatasetAccessInfo` instance.
+        commit_id: The commit id.
 
     """
 
-    def __init__(self, dataset: "Dataset") -> None:
-        pass
+    def __init__(self, access_info: "DatasetAccessInfo", commit_id: str) -> None:
+        self._access_info = access_info
+        self._commit_id = commit_id
 
-    def create(self, name: str, revision: Optional[str] = None) -> TensorbayTag:
+    def _generate(self, offset: int = 0, limit: int = 128) -> Generator[Tag, None, int]:
+        response = list_tags(
+            **self._access_info,
+            offset=offset,
+            limit=limit,
+        )
+
+        for item in response["tags"]:
+            yield Tag.from_pyobj(item)
+
+        return response["totalCount"]  # type: ignore[no-any-return]
+
+    def create(self, name: str, revision: Optional[str] = None) -> Tag:
         """Create a tag for a commit.
 
         Arguments:
@@ -51,29 +65,43 @@ class TagManager:
                 the branch name, or the tag name.
                 If the revision is not given, create the tag for the current commit.
 
-        Return:
-            The :class:`.TensorbayTag` instance with the given name.
+        Returns:
+            The :class:`.Tag` instance with the given name.
 
         """
+        if not revision:
+            revision = self._commit_id
 
-    def get(self, name: str) -> TensorbayTag:
+        response = create_tag(**self._access_info, name=name, revision=revision)
+        return Tag.from_pyobj(response)
+
+    def get(self, name: str) -> Tag:
         """Get the certain tag with the given name.
 
         Arguments:
             name: The required tag name.
 
-        Return:
-            The :class:`.TensorbayTag` instance with the given name.
+        Raises:
+            ResourceNotExistError: When the name is an empty string.
+
+        Returns:
+            The :class:`.Tag` instance with the given name.
 
         """
+        if not name:
+            raise ResourceNotExistError(resource="tag", identification=name)
 
-    def list(self) -> PagingList[TensorbayTag]:
+        response = get_tag(**self._access_info, tag=name)
+        return Tag.from_pyobj(response)
+
+    def list(self) -> PagingList[Tag]:
         """List the information of tags.
 
-        Return:
-            The PagingList of :class:`tags<.TensorbayTag>` instances.
+        Returns:
+            The PagingList of :class:`tags<.Tag>` instances.
 
         """
+        return PagingList(self._generate, 128)
 
     def delete(self, name: str) -> None:
         """Delete a tag.
@@ -81,4 +109,11 @@ class TagManager:
         Arguments:
             name: The tag name to be deleted for the specific commit.
 
+        Raises:
+            ResourceNotExistError: When the name is an empty string.
+
         """
+        if not name:
+            raise ResourceNotExistError(resource="tag", identification=name)
+
+        delete_tag(**self._access_info, tag=name)
