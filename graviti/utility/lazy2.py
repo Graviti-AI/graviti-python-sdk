@@ -283,6 +283,112 @@ class LazyList:
         )
 
 
+class Page:
+    """Page is an array wrapper and represents a page in lazy list.
+
+    Arguments:
+        array: The pyarrow array.
+
+    """
+
+    def __init__(self, array: pa.Array):
+        self._ranging = range(len(array))
+        self._patch(array)
+
+    def __len__(self) -> int:
+        return len(self._ranging)
+
+    def __iter__(self) -> Iterator[Any]:
+        return self._iter()
+
+    @overload
+    def __getitem__(self, index: int) -> Any:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> "SlicedPage":
+        ...
+
+    def __getitem__(self, index: Union[int, slice]) -> Union[Any, "SlicedPage"]:
+        if isinstance(index, slice):
+            return self.get_slice(index.start, index.stop)
+
+        return self.get_item(index)
+
+    def _patch(self, array: pa.Array) -> None:
+        self._array = array
+        self._iter = array.__iter__  # type: ignore[assignment]
+        self.get_item = array.__getitem__  # type: ignore[assignment]
+
+    def _iter(self) -> Iterator[Any]:  # pylint: disable=method-hidden
+        return self.get_array().__iter__()  # type: ignore[no-any-return]
+
+    def get_item(self, index: int) -> Any:  # pylint: disable=method-hidden
+        """Return the item at the given index.
+
+        Arguments:
+            index: Position of the mutable sequence.
+
+        Returns:
+            The item at the given index.
+
+        """
+        return self.get_array().__getitem__(index)
+
+    def get_slice(self, start: Optional[int] = None, stop: Optional[int] = None) -> "Page":
+        """Return a sliced page according to the given start and stop index.
+
+        Arguments:
+            start: The start index.
+            stop: The stop index.
+
+        Returns:
+            A sliced page according to the given start and stop index.
+
+        """
+        return SlicedPage(self._ranging[start:stop], self._array)
+
+    def get_array(self) -> pa.array:
+        """Get the array inside the page.
+
+        Returns:
+            The array inside the page.
+
+        """
+        return self._array
+
+
+class SlicedPage(Page):
+    """SlicedPage is an array wrapper and represents a sliced page in lazy list.
+
+    Arguments:
+        ranging: The range instance of this page.
+        array: The pyarrow array.
+
+    """
+
+    def __init__(  # pylint: disable=super-init-not-called
+        self, ranging: range, array: pa.Array
+    ) -> None:
+        self._ranging = ranging
+        self._array = None
+        self._source_array = array
+
+    def get_array(self) -> pa.array:
+        """Get the array inside the page.
+
+        Returns:
+            The array inside the page.
+
+        """
+        if self._array is None:
+            ranging = self._ranging
+            array = self._source_array[ranging.start : ranging.stop : ranging.step]
+            self._patch(array)
+
+        return self._array
+
+
 class LazyPage:
     """LazyPage is a placeholder when the lazy list page is not loaded yet.
 
