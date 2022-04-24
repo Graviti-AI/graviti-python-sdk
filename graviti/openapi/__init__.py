@@ -13,17 +13,22 @@ from graviti.openapi.dataset import (
     list_datasets,
     update_dataset,
 )
+from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 
 __all__ = [
     "create_branch",
     "create_dataset",
+    "create_tag",
     "delete_branch",
     "delete_dataset",
+    "delete_tag",
     "get_branch",
     "get_current_user",
     "get_dataset",
+    "get_tag",
     "list_branches",
     "list_datasets",
+    "list_tags",
     "update_dataset",
 ]
