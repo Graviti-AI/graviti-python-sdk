@@ -12,20 +12,20 @@ from graviti.openapi.requests import open_api_do
 
 
 def create_draft(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
     title: str,
     branch: Optional[str] = None,
     description: Optional[str] = None,
-) -> Dict[str, int]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         title: The draft title.
@@ -37,15 +37,23 @@ def create_draft(
 
     Examples:
         >>> create_draft(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ...     title="draft-2",
         ...     branch="main",
         ... )
         {
-            "draftNumber": 2
+           "number": 2,
+           "title": "draft-2",
+           "description": "",
+           "branch": "main",
+           "state": "OPEN",
+           "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
+           "creator": "czhual",
+           "created_at": "2021-03-03T18:58:10Z",
+           "updated_at": "2021-03-03T18:58:10Z"
         }
 
     """
@@ -63,8 +71,8 @@ def create_draft(
 
 
 def list_drafts(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
@@ -76,13 +84,13 @@ def list_drafts(
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL" and None.
             None means listing open drafts.
-        branch: The branch name.
+        branch: The branch name. None means listing drafts from all branches.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -91,8 +99,8 @@ def list_drafts(
 
     Examples:
         >>> list_drafts(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "czhual",
         ...     "MNIST",
         ... )
@@ -100,7 +108,7 @@ def list_drafts(
            "drafts": [
                {
                    "number": 2,
-                   "title": "branch-2",
+                   "title": "draft-2",
                    "description": "",
                    "branch": "main",
                    "state": "OPEN",
@@ -128,13 +136,13 @@ def list_drafts(
 
 
 def get_draft(
-    url: str, access_key: str, owner: str, dataset: str, *, draft_number: int
+    access_key: str, url: str, owner: str, dataset: str, *, draft_number: int
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: Number of the draft.
@@ -144,15 +152,15 @@ def get_draft(
 
     Examples:
         >>> get_draft(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "MNIST",
         ...     "czhual",
         ...     draft_number=2,
         ... )
         {
            "number": 2,
-           "title": "branch-2",
+           "title": "draft-2",
            "description": "",
            "branch": "main",
            "state": "OPEN",
@@ -168,8 +176,8 @@ def get_draft(
 
 
 def update_draft(
-    url: str,
     access_key: str,
+    url: str,
     owner: str,
     dataset: str,
     *,
@@ -181,8 +189,8 @@ def update_draft(
     """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}/drafts/{draft_number}`.
 
     Arguments:
-        url: The URL of the graviti website.
         access_key: User's access key.
+        url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The updated draft number.
@@ -195,8 +203,8 @@ def update_draft(
         Update the title or description of the draft:
 
         >>> update_draft(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "MNIST",
         ...     draft_number=2,
         ...     title="draft-3"
@@ -205,8 +213,8 @@ def update_draft(
         Close the draft:
 
         >>> update_draft(
-        ...     "https://api.graviti.com/",
         ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
         ...     "MNIST",
         ...     draft_number=2,
         ...     state="CLOSED"

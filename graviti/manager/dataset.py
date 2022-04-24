@@ -250,10 +250,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     def drafts(self) -> DraftManager:
         """Get class :class:`~graviti.manager.draft.DraftManager` instance.
 
-        Return:
+        Returns:
             Required :class:`~graviti.manager.draft.DraftManager` instance.
 
         """
+        return DraftManager(self)
 
     @property
     def commits(self) -> CommitManager:
