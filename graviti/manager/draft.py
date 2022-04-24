@@ -5,10 +5,11 @@
 
 """The implementation of the Draft and DraftManager."""
 
-from typing import TYPE_CHECKING, Iterator, KeysView, MutableMapping, Optional
+from typing import TYPE_CHECKING, Generator, Iterator, KeysView, MutableMapping, Optional
 
 from graviti.dataframe import DataFrame
 from graviti.manager.lazy import PagingList
+from graviti.openapi import create_draft, get_draft, list_drafts
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -37,7 +38,7 @@ class Draft(MutableMapping[str, DataFrame]):
         number: int,
         *,
         title: str,
-        branch_name: str,
+        branch: str,
         state: str,
         parent_commit_id: str,
         creator: str,
@@ -104,48 +105,93 @@ class DraftManager:
     """This class defines the operations on the draft in Graviti.
 
     Arguments:
-        dataset: :class:`~graviti.dataset.dataset.Dataset` instance.
+        dataset: :class:`~graviti.manager.dataset.Dataset` instance.
 
     """
 
     def __init__(self, dataset: "Dataset") -> None:
-        pass
+        self._dataset = dataset
 
-    def create(self, title: str, description: str = "", branch_name: Optional[str] = None) -> Draft:
+    def _generate(
+        self,
+        state: Optional[str] = None,
+        branch: Optional[str] = None,
+        offset: int = 0,
+        limit: int = 128,
+    ) -> Generator[Draft, None, int]:
+        response = list_drafts(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            state=state,
+            branch=branch,
+            offset=offset,
+            limit=limit,
+        )
+
+        for item in response["drafts"]:
+            yield Draft(self._dataset, **item)
+
+        return response["totalCount"]  # type: ignore[no-any-return]
+
+    def create(
+        self, title: str, description: Optional[str] = None, branch: Optional[str] = None
+    ) -> Draft:
         """Create a draft.
 
         Arguments:
             title: The draft title.
             description: The draft description.
-            branch_name: The branch name.
+            branch: The branch name.
 
-        Return:
+        Returns:
             The :class:`.Draft` instance with the given title and description.
 
         """
+        response = create_draft(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            title=title,
+            branch=branch,
+            description=description,
+        )
+        return Draft(self._dataset, **response)
 
-    def get(self, draft_number: Optional[int] = None) -> Draft:
+    def get(self, draft_number: int) -> Draft:
         """Get the certain draft with the given draft number.
 
         Arguments:
-            draft_number: The required draft number. If it is not given, get the current draft.
+            draft_number: The required draft number.
 
-        Return:
+        Returns:
             The :class:`.Draft` instance with the given number.
 
         """
+        response = get_draft(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            draft_number=draft_number,
+        )
+        return Draft(self._dataset, **response)
 
-    def list(
-        self, state: Optional[str] = "OPEN", branch_name: Optional[str] = None
-    ) -> PagingList[Draft]:
+    def list(self, state: Optional[str] = None, branch: Optional[str] = None) -> PagingList[Draft]:
         """List all the drafts.
 
         Arguments:
             state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL" and None.
-                    where None means listing open drafts.
-            branch_name: The branch name.
+                    None means listing open drafts.
+            branch: The branch name. None means listing drafts from all branches.
 
-        Return:
+        Returns:
             The PagingList of :class:`drafts<.Draft>` instances.
 
         """
+        return PagingList(
+            lambda offset, limit: self._generate(state, branch, offset, limit),
+            128,
+        )
