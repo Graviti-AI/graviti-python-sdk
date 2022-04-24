@@ -8,10 +8,10 @@
 import json
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 
+import pyarrow as pa
 import yaml
 
 from graviti.schema.package import Imports, Package
-from graviti.utility import ExtensionBase
 
 if TYPE_CHECKING:
     from graviti.schema.param import Params
@@ -172,14 +172,14 @@ class PortexType:
         """
         return yaml.dump(self.to_pyobj(), sort_keys=False)  # type: ignore[no-any-return]
 
-    def to_pyarrow(self) -> ExtensionBase:
-        """Convert the instance to an ``ExtensionBase`` instance.
+    def to_pyarrow(self) -> pa.DataType:
+        """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Raises:
-            NotImplementedError: When calling ``PortexType.to_pyarrow``.
+            NotImplementedError: The method of the base class should not be called.
 
         Return:
-            An ``ExtensionBase`` instance representing the Portex type.
+            The corresponding builtin PyArrow DataType.
 
         """
         raise NotImplementedError

@@ -126,10 +126,10 @@ class Fields(NameOrderedDict[PortexType]):
         return [{"name": name, **portex_type.to_pyobj(False)} for name, portex_type in self.items()]
 
     def to_pyarrow(self) -> List[pa.Field]:
-        """Convert the fields to a list of PyArrow fields.
+        """Convert the fields to a list of PyArrow Field.
 
         Returns:
-            A list of PyArrow fields representing the fields of Portex record.
+            A list of PyArrow Field representing the fields of Portex record.
 
         """
         return [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self.items()]
