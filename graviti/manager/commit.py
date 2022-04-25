@@ -14,7 +14,7 @@ from graviti.openapi import get_revision, list_commits
 from graviti.utility import ReprMixin
 
 if TYPE_CHECKING:
-    from graviti.manager.dataset import DatasetAccessInfo
+    from graviti.manager.dataset import Dataset
 
 ROOT_COMMIT_ID = "00000000000000000000000000000000"
 
@@ -189,23 +189,24 @@ class CommitManager:
     """This class defines the operations on the commit in Graviti.
 
     Arguments:
-        access_info: :class:`~graviti.manager.dataset.DatasetAccessInfo` instance.
-        commit_id: The commit id.
+        dataset: :class:`~graviti.manager.dataset.Dataset` instance.
 
     """
 
-    def __init__(self, access_info: "DatasetAccessInfo", commit_id: str) -> None:
-        self._access_info = access_info
-        self._commit_id = commit_id
+    def __init__(self, dataset: "Dataset") -> None:
+        self._dataset = dataset
 
     def _generate(
         self, revision: Optional[str], offset: int = 0, limit: int = 128
     ) -> Generator[Commit, None, int]:
         if revision is None:
-            revision = self._commit_id
+            revision = self._dataset.commit_id
 
         response = list_commits(
-            **self._access_info,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
             revision=revision,
             offset=offset,
             limit=limit,
@@ -228,9 +229,15 @@ class CommitManager:
 
         """
         if revision is None:
-            revision = self._commit_id
+            revision = self._dataset.commit_id
 
-        response = get_revision(**self._access_info, revision=revision)
+        response = get_revision(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            revision=revision,
+        )
         return Commit.from_pyobj(response)
 
     def list(self, revision: Optional[str] = None) -> PagingList[Commit]:
