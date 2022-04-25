@@ -5,7 +5,7 @@
 
 """Interfaces about the sheet."""
 
-from typing import Any, Dict, Optional
+from typing import Any, ByteString, Dict, Optional
 from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
@@ -44,7 +44,7 @@ def create_sheet(
     name: str,
     schema: str,
     _avro_schema: str,
-    _arrow_schema: Optional[str] = None,
+    _arrow_schema: Optional[ByteString] = None,
     record_key_strategy: Optional[str] = None,
 ) -> None:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.

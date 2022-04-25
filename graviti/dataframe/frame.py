@@ -29,6 +29,7 @@ from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
+from graviti.operation import AddData, DataFrameOperation
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
@@ -99,6 +100,8 @@ class DataFrame(Container):
                 self._column_names.append(key)
         else:
             raise ValueError("DataFrame only supports generating from dictionary now")
+
+        self.operations: List[DataFrameOperation] = [AddData(self.copy())]
 
     @overload
     def __getitem__(self, key: str) -> Union[ColumnSeries, "DataFrame"]:  # type: ignore[misc]
@@ -173,6 +176,7 @@ class DataFrame(Container):
 
             obj._column_names.append(key)
 
+        obj.operations = [AddData(obj.copy())]
         return obj
 
     @classmethod
@@ -192,6 +196,7 @@ class DataFrame(Container):
         obj.schema = schema
         obj._columns = {}
         obj._column_names = []
+        obj.operations = []
 
         # In this case schema.to_builtin always returns record.
         for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
@@ -587,8 +592,11 @@ class DataFrame(Container):
             )
         elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
             raise TypeError("The schema of the given DataFrame is mismatched.")
+        else:
+            values = values.copy()
 
         self._extend(values)
+        self.operations.append(AddData(values))
 
     def to_pylist(self) -> List[Dict[str, Any]]:
         """Convert the DataFrame to a python list.

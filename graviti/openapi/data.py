@@ -5,7 +5,7 @@
 
 """Interfaces about the data."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
@@ -240,7 +240,7 @@ def update_data(
     *,
     draft_number: int,
     sheet: str,
-    data: List[Dict[str, Any]],
+    data: Union[List[Dict[str, Any]], Tuple[Dict[str, Any], ...]],
 ) -> None:
     """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
     /sheets/{sheet}/data`.
@@ -305,7 +305,7 @@ def add_data(
     *,
     draft_number: int,
     sheet: str,
-    data: List[Dict[str, Any]],
+    data: Union[List[Dict[str, Any]], Tuple[Dict[str, Any], ...]],
     strategy_arguments: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
