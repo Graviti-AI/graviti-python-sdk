@@ -3,7 +3,7 @@
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
 
-"""Lazy list related class."""
+"""Paging list related class."""
 
 from bisect import bisect_right
 from functools import partial
@@ -15,7 +15,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    NoReturn,
     Optional,
     Tuple,
     Type,
@@ -26,13 +25,15 @@ from typing import (
 
 import pyarrow as pa
 
+_S = TypeVar("_S", bound="PagingList")
+
 
 class Offsets:
-    """The offsets manager of the lazy list.
+    """The offsets manager of the paging list.
 
     Arguments:
-        total_count: The total count of the elements in the lazy list.
-        limit: The size of each lazy load page.
+        total_count: The total count of the elements in the paging list.
+        limit: The size of each page.
 
     """
 
@@ -49,7 +50,7 @@ class Offsets:
         return self._offsets
 
     def update(self, start: int, stop: int, lengths: Iterable[int]) -> None:
-        """Update the offsets when setting or deleting lazy list items.
+        """Update the offsets when setting or deleting paging list items.
 
         Arguments:
             start: The start index.
@@ -73,10 +74,10 @@ class Offsets:
         offsets[start : stop + 1] = partial_offsets
 
     def get_coordinate(self, index: int) -> Tuple[int, int]:
-        """Get the lazy page coordinate of the elements.
+        """Get the page coordinate of the elements.
 
         Arguments:
-            index: The index of the element in lazy list.
+            index: The index of the element in paging list.
 
         Returns:
             The page number and the index of the page.
@@ -89,7 +90,7 @@ class Offsets:
         return i, index - self._offsets[i]
 
     def extend(self, length: int) -> None:
-        """Update the offsets when extending the lazy list.
+        """Update the offsets when extending the paging list.
 
         Arguments:
             length: The length of the extended values.
@@ -100,29 +101,19 @@ class Offsets:
         self.total_count += length
 
 
-class LazyList:
-    """LazyList is a lazy load list.
+class PagingList:
+    """PagingList is a list composed of multiple lists (pages).
 
     Arguments:
-        factory: The parent :class:`LazyFactory` instance.
-        keys: The keys to access the array from factory.
-        patype: The pyarrow DataType of the elements in the list.
+        array: The input pyarrow array.
 
     """
 
-    def __init__(
-        self,
-        factory: "LazyFactory",
-        keys: Tuple[str, ...],
-        patype: pa.DataType,
-    ) -> None:
-        array_getter = partial(factory.get_array, keys=keys)
-        self._pages: List[Page] = [
-            LazyPage(ranging, pos, array_getter)
-            for pos, ranging in enumerate(factory.get_page_ranges())
-        ]
-        self._offsets = Offsets(factory._total_count, factory._limit)
-        self._patype = patype
+    def __init__(self, array: pa.Array) -> None:
+        length = len(array)
+        self._pages = [Page(array)] if length != 0 else []
+        self._offsets = Offsets(length, length)
+        self._patype = array.type
 
     def __len__(self) -> int:
         return self._offsets.total_count
@@ -251,11 +242,39 @@ class LazyList:
         self._pages[start_i : stop_i + 1] = pages
         self._offsets.update(start_i, stop_i, lengths)
 
-    def extend(self, values: Iterable[Any]) -> None:
-        """Extend LazyList by appending elements from the iterable.
+    @classmethod
+    def from_factory(
+        cls: Type[_S], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
+    ) -> _S:
+        """Create PagingList from LazyFactory.
 
         Arguments:
-            values: Elements to be extended into the LazyList.
+            factory: The parent :class:`LazyFactory` instance.
+            keys: The keys to access the array from factory.
+            patype: The pyarrow DataType of the elements in the list.
+
+        Returns:
+            The PagingList instance created from given factory.
+
+        """
+        obj: _S = object.__new__(cls)
+        array_getter = partial(factory.get_array, keys=keys)
+        obj._pages = [
+            LazyPage(ranging, pos, array_getter)
+            for pos, ranging in enumerate(factory.get_page_ranges())
+        ]
+        obj._offsets = Offsets(
+            factory._total_count, factory._limit  # pylint: disable=protected-access
+        )
+        obj._patype = patype
+
+        return obj
+
+    def extend(self, values: Iterable[Any]) -> None:
+        """Extend PagingList by appending elements from the iterable.
+
+        Arguments:
+            values: Elements to be extended into the PagingList.
 
         """
         page = Page(pa.array(values, self._patype))
@@ -263,7 +282,7 @@ class LazyList:
         self._pages.append(page)
 
     def to_pyarrow(self) -> pa.ChunkedArray:
-        """Convert the lazy list to pyarrow ChunkedArray.
+        """Convert the paging list to pyarrow ChunkedArray.
 
         Returns:
             The pyarrow ChunkedArray.
@@ -273,7 +292,7 @@ class LazyList:
 
 
 class Page:
-    """Page is an array wrapper and represents a page in lazy list.
+    """Page is an array wrapper and represents a page in paging list.
 
     Arguments:
         array: The pyarrow array.
@@ -353,7 +372,7 @@ class Page:
 
 
 class SlicedPage(Page):
-    """SlicedPage is an array wrapper and represents a sliced page in lazy list.
+    """SlicedPage is an array wrapper and represents a sliced page in paging list.
 
     Arguments:
         ranging: The range instance of this page.
@@ -384,12 +403,12 @@ class SlicedPage(Page):
 
 
 class LazyPage(Page):
-    """LazyPage is a placeholder when the lazy list page is not loaded yet.
+    """LazyPage is a placeholder when the paging list page is not loaded yet.
 
     Arguments:
         pos: The page number.
         ranging: The range instance of this page.
-        parent: The parent lazy list.
+        parent: The parent paging list.
 
     """
 
@@ -431,7 +450,7 @@ class LazyPage(Page):
 
 
 class LazySlicedPage(LazyPage):
-    """LazySlicedPage is a placeholder when the sliced lazy list page is not loaded yet."""
+    """LazySlicedPage is a placeholder when the sliced paging list page is not loaded yet."""
 
     def get_array(self) -> pa.Array:
         """Get the array inside the page.
@@ -450,17 +469,15 @@ class LazySlicedPage(LazyPage):
 
 
 class LazyFactory:
-    """LazyFactory is a factory for creating lazy lists.
+    """LazyFactory is a factory for creating paging lists.
 
     Arguments:
-        total_count: The total count of the elements in the lazy lists.
+        total_count: The total count of the elements in the paging lists.
         limit: The size of each lazy load page.
         getter: A callable object to get the source data.
         patype: The pyarrow DataType of the data in the factory.
 
     Examples:
-        Create LazyList from data getter:
-
         >>> import pyarrow as pa
         >>> patype = pa.struct(
         ...     {
@@ -506,46 +523,8 @@ class LazyFactory:
          ...
          <pyarrow.StringScalar: 'cat'>]
 
-        Create LazyList from existing pyarrow StructArray:
-        >>> import pyarrow as pa
-        >>> data = [
-        ...     {
-        ...         "remotePath": f"{i:06}.jpg",
-        ...         "label": {"CLASSIFICATION": {"category": "cat" if i % 2 else "dog"}},
-        ...     }
-        ...     for i in range(100)
-        ... ]
-        >>> array = pa.array(data)
-        >>> factory = LazyFactory.from_array(array)
-        >>> paths = factory.create_list(("remotePath",))
-        >>> categories = factory.create_list(("label", "CLASSIFICATION", "category"))
-        >>> len(paths)
-        100
-        >>> list(paths)
-        [<pyarrow.StringScalar: '000000.jpg'>,
-         <pyarrow.StringScalar: '000001.jpg'>,
-         <pyarrow.StringScalar: '000002.jpg'>,
-         <pyarrow.StringScalar: '000003.jpg'>,
-         <pyarrow.StringScalar: '000004.jpg'>,
-         <pyarrow.StringScalar: '000005.jpg'>,
-         ...
-         ...
-         <pyarrow.StringScalar: '000099.jpg'>]
-        >>> len(categories)
-        100
-        >>> list(categories)
-        [<pyarrow.StringScalar: 'dog'>,
-         <pyarrow.StringScalar: 'cat'>,
-         <pyarrow.StringScalar: 'dog'>,
-         <pyarrow.StringScalar: 'cat'>,
-         <pyarrow.StringScalar: 'dog'>,
-         ...
-         ...
-         <pyarrow.StringScalar: 'cat'>]
 
     """
-
-    _S = TypeVar("_S", bound="LazyFactory")
 
     def __init__(
         self, total_count: int, limit: int, getter: Callable[[int, int], Any], patype: pa.DataType
@@ -555,26 +534,6 @@ class LazyFactory:
         self._limit = limit
         self._patype = patype
         self._pages: List[Optional[pa.StructArray]] = [None] * ceil(total_count / limit)
-
-    @staticmethod
-    def _invalid_getter(*_: Any) -> NoReturn:
-        raise NotImplementedError("The data getter is not provided.")
-
-    @classmethod
-    def from_array(cls: Type[_S], array: pa.StructArray) -> _S:
-        """Create a LazyFactory from an existing pyarrow array.
-
-        Arguments:
-            array: The input pyarrow StructArray.
-
-        Returns:
-            The LazyFactory created by the input pyarrow StructArray.
-
-        """
-        length = len(array)
-        factory = cls(length, length, cls._invalid_getter, array.type)
-        factory._pages = [array]
-        return factory
 
     def get_array(self, pos: int, keys: Tuple[str, ...]) -> pa.Array:
         """Get the array from the factory.
@@ -597,21 +556,21 @@ class LazyFactory:
 
         return array
 
-    def create_list(self, keys: Tuple[str, ...]) -> LazyList:
-        """Create a lazy list from the factory.
+    def create_list(self, keys: Tuple[str, ...]) -> PagingList:
+        """Create a paging list from the factory.
 
         Arguments:
             keys: The keys to access the array from factory.
 
         Returns:
-            A lazy list created by the given keys.
+            A paging list created by the given keys.
 
         """
         patype = self._patype
         for key in keys:
             patype = patype[key].type
 
-        return LazyList(self, keys, patype)
+        return PagingList.from_factory(self, keys, patype)
 
     def get_page_ranges(self) -> Iterator[range]:
         """A Generator which generates the range of the pages in the factory.
