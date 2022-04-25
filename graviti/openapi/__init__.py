@@ -7,6 +7,7 @@
 
 from graviti.openapi.branch import create_branch, delete_branch, get_branch, list_branches
 from graviti.openapi.commit import commit_draft, get_revision, list_commits
+from graviti.openapi.data import list_commit_data, list_draft_data
 from graviti.openapi.dataset import (
     create_dataset,
     delete_dataset,
@@ -15,6 +16,12 @@ from graviti.openapi.dataset import (
     update_dataset,
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
+from graviti.openapi.sheet import (
+    get_commit_sheet,
+    get_draft_sheet,
+    list_commit_sheets,
+    list_draft_sheets,
+)
 from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 
@@ -32,12 +39,18 @@ __all__ = [
     "get_dataset",
     "get_draft",
     "get_revision",
+    "get_commit_sheet",
     "get_tag",
     "list_branches",
     "list_commits",
+    "list_commit_data",
     "list_datasets",
     "list_drafts",
+    "list_commit_sheets",
     "list_tags",
     "update_dataset",
     "update_draft",
+    "list_draft_data",
+    "get_draft_sheet",
+    "list_draft_sheets",
 ]

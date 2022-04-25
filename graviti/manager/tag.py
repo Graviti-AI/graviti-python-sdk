@@ -20,6 +20,7 @@ class Tag(NamedCommit):
     """This class defines the structure of the tag of a commit.
 
     Arguments:
+        dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         name: The name of the tag.
         commit_id: The commit id.
         parent_commit_id: The parent commit id.
@@ -53,7 +54,7 @@ class TagManager:
         )
 
         for item in response["tags"]:
-            yield Tag.from_pyobj(item)
+            yield Tag(self._dataset, **item)
 
         return response["totalCount"]  # type: ignore[no-any-return]
 
@@ -71,7 +72,7 @@ class TagManager:
 
         """
         if not revision:
-            revision = self._dataset.commit_id
+            revision = self._dataset.HEAD.commit_id
 
         response = create_tag(
             self._dataset.access_key,
@@ -81,7 +82,7 @@ class TagManager:
             name=name,
             revision=revision,
         )
-        return Tag.from_pyobj(response)
+        return Tag(self._dataset, **response)
 
     def get(self, name: str) -> Tag:
         """Get the certain tag with the given name.
@@ -106,7 +107,7 @@ class TagManager:
             self._dataset.name,
             tag=name,
         )
-        return Tag.from_pyobj(response)
+        return Tag(self._dataset, **response)
 
     def list(self) -> LazyPagingList[Tag]:
         """List the information of tags.

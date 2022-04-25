@@ -5,28 +5,24 @@
 
 """The implementation of the Sheets."""
 
-from typing import Any, Dict, Iterator, MutableMapping
+from functools import partial
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, MutableMapping, Tuple
 
-from tensorbay.dataset import Notes, RemoteData
-from tensorbay.label import Catalog
-from tensorbay.utility import URL
-
-from graviti.client import get_catalog, get_notes, list_data_details, list_segments
 from graviti.dataframe import DataFrame
-from graviti.portex import Extractors, catalog_to_schema, get_extractors
-from graviti.utility import LazyFactory, LazyList, NestedDict
+from graviti.portex import PortexType
+from graviti.utility import LazyFactory, NestedDict, PagingList, ReprMixin
 
-LazyLists = NestedDict[str, LazyList[Any]]
+if TYPE_CHECKING:
+    from graviti.manager.dataset import Dataset
+
+PagingLists = NestedDict[str, PagingList]
 
 
-class Sheets(MutableMapping[str, DataFrame]):
+class Sheets(MutableMapping[str, DataFrame], ReprMixin):
     """The basic structure of the Graviti sheets."""
 
     _data: Dict[str, DataFrame]
-    _dataset_id: str
-    access_key: str
-    url: str
-    commit_id: str
+    _dataset: "Dataset"
 
     def __len__(self) -> int:
         return self._get_data().__len__()
@@ -43,77 +39,45 @@ class Sheets(MutableMapping[str, DataFrame]):
     def __iter__(self) -> Iterator[str]:
         return self._get_data().__iter__()
 
-    def _get_lazy_lists(self, factory: LazyFactory, extractors: Extractors) -> LazyLists:
-        lazy_lists: LazyLists = {}
-        for key, arguments in extractors.items():
-            if isinstance(arguments, tuple):
-                lazy_lists[key] = factory.create_list(*arguments)
-            else:
-                lazy_lists[key] = self._get_lazy_lists(factory, arguments)
-        return lazy_lists
+    @staticmethod
+    def _get_paging_lists(factory: LazyFactory, keys: List[Tuple[str, ...]]) -> PagingLists:
+        paging_lists: PagingLists = {}
+        for key in keys:
+            position = paging_lists
+            for subkey in key[:-1]:
+                position = position.setdefault(subkey, {})  # type: ignore[assignment]
+            position[key[-1]] = factory.create_list(key)
+
+        return paging_lists
+
+    def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    def _list_sheets(self) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
+        raise NotImplementedError
 
     def _init_data(self) -> None:
         self._data = {}
-        response = list_segments(
-            self.url,
-            self.access_key,
-            self._dataset_id,
-            commit=self.commit_id,
-        )
-        for sheet in response["segments"]:
-            sheet_name = sheet["name"]
-            data_details = list_data_details(
-                self.url,
-                self.access_key,
-                self._dataset_id,
-                sheet_name,
-                commit=self.commit_id,
-            )
+        sheets_info = self._list_sheets()["sheets"]
 
-            def factory_getter(
-                offset: int, limit: int, sheet_name: str = sheet_name
-            ) -> Dict[str, Any]:
-                return list_data_details(
-                    self.url,
-                    self.access_key,
-                    self._dataset_id,
-                    sheet_name,
-                    commit=self.commit_id,
-                    offset=offset,
-                    limit=limit,
-                )
+        for sheet_info in sheets_info:
+            sheet_name = sheet_info["name"]
+            sheet = self._get_sheet(sheet_name)
+            schema = PortexType.from_yaml(sheet["schema"])
 
             factory = LazyFactory(
-                data_details["totalCount"],
+                sheet["data_volume"],
                 128,
-                factory_getter,
+                partial(self._list_data, sheet_name=sheet_name),
+                schema.to_pyarrow(),
             )
-            catalog = get_catalog(
-                self.url,
-                self.access_key,
-                self._dataset_id,
-                commit=self.commit_id,
+            paging_lists = self._get_paging_lists(
+                factory, schema.get_keys()  # type: ignore[attr-defined]
             )
-
-            first_data_details = data_details["dataDetails"][0]
-            remote_data = RemoteData.from_response_body(
-                first_data_details,
-                url=URL(
-                    first_data_details["url"], updater=lambda: "update is not supported currently"
-                ),
-            )
-            notes = get_notes(
-                self.url,
-                self.access_key,
-                self._dataset_id,
-                commit=self.commit_id,
-            )
-
-            schema = catalog_to_schema(
-                Catalog.loads(catalog["catalog"]), remote_data, Notes.loads(notes)
-            )
-            lazy_lists = self._get_lazy_lists(factory, get_extractors(schema))
-            self._data[sheet_name] = DataFrame.from_lazy_lists(lazy_lists)
+            self._data[sheet_name] = DataFrame.from_paging_lists(paging_lists)
 
     def _get_data(self) -> Dict[str, DataFrame]:
         if not hasattr(self, "_data"):

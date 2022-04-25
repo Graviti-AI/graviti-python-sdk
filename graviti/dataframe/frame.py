@@ -31,7 +31,7 @@ from graviti.portex import PortexExternalType, PortexType, record
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
-    from graviti.manager import LazyLists
+    from graviti.manager import PagingLists
 
 _T = TypeVar("_T", bound="DataFrame")
 _S = Union[record, PortexExternalType]
@@ -72,7 +72,9 @@ class DataFrame:
 
     def __init__(
         self,
-        data: Union[Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", "LazyLists", None] = None,
+        data: Union[
+            Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", "PagingLists", None
+        ] = None,
         schema: Any = None,
         columns: Optional[Iterable[str]] = None,
     ) -> None:
@@ -189,18 +191,18 @@ class DataFrame:
         return obj
 
     @classmethod
-    def from_lazy_lists(cls: Type[_T], lazy_lists: "LazyLists") -> _T:
-        """Create DataFrame with lazy lists.
+    def from_paging_lists(cls: Type[_T], paging_lists: "PagingLists") -> _T:
+        """Create DataFrame with paging lists.
 
         Arguments:
-            lazy_lists: A dict used to initialize dataframe whose data is stored in
+            paging_lists: A dict used to initialize dataframe whose data is stored in
                 lazy-loaded form.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
 
         """
-        return cls(lazy_lists)
+        return cls(paging_lists)
 
     @classmethod
     def from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: Optional[_S] = None) -> _T:

@@ -5,12 +5,21 @@
 
 """The implementation of the Draft and DraftManager."""
 
-from typing import TYPE_CHECKING, Generator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple
 
 from graviti.manager.commit import Commit
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
-from graviti.openapi import commit_draft, create_draft, get_draft, list_drafts, update_draft
+from graviti.openapi import (
+    commit_draft,
+    create_draft,
+    get_draft,
+    get_draft_sheet,
+    list_draft_data,
+    list_draft_sheets,
+    list_drafts,
+    update_draft,
+)
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -32,6 +41,8 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         description: The draft description.
 
     """
+
+    _repr_attrs: Tuple[str, ...] = ("title", "state", "branch")
 
     def __init__(
         self,
@@ -57,6 +68,40 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.created_at = created_at
         self.updated_at = updated_at
         self.description = description
+
+    def _repr_head(self) -> str:
+        return f'{self.__class__.__name__}("{self.number}")'
+
+    def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+        return list_draft_data(  # type: ignore[no-any-return]
+            access_key=self._dataset.access_key,
+            url=self._dataset.url,
+            owner=self._dataset.owner,
+            dataset=self._dataset.name,
+            draft_number=self.number,
+            sheet=sheet_name,
+            offset=offset,
+            limit=limit,
+        )["data"]
+
+    def _list_sheets(self) -> Dict[str, Any]:
+        return list_draft_sheets(
+            access_key=self._dataset.access_key,
+            url=self._dataset.url,
+            owner=self._dataset.owner,
+            dataset=self._dataset.name,
+            draft_number=self.number,
+        )
+
+    def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
+        return get_draft_sheet(
+            access_key=self._dataset.access_key,
+            url=self._dataset.url,
+            owner=self._dataset.owner,
+            dataset=self._dataset.name,
+            draft_number=self.number,
+            sheet=sheet_name,
+        )
 
     def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:
         """Update title and description of the draft.
@@ -116,7 +161,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         )
         self.state = "COMMITTED"
         # TODO: update the draft.updated_at
-        return Commit.from_pyobj(response)
+        return Commit(self._dataset, **response)
 
     def upload(self, jobs: int = 1) -> None:
         """Upload the local dataset to Graviti.
