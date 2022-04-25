@@ -6,6 +6,7 @@
 """Lazy list related class."""
 
 from bisect import bisect_right
+from functools import partial
 from itertools import accumulate, chain, repeat
 from math import ceil
 from typing import (
@@ -115,11 +116,11 @@ class LazyList:
         keys: Tuple[str, ...],
         patype: pa.DataType,
     ) -> None:
-        self._keys = keys
-        self._pages: List[Union[LazyPage, pa.Array]] = [
-            LazyPage(pos, range(size), self) for pos, size in enumerate(factory.get_page_sizes())
+        array_getter = partial(factory.get_array, keys=keys)
+        self._pages: List[Page] = [
+            LazyPage(ranging, pos, array_getter)
+            for pos, ranging in enumerate(factory.get_page_ranges())
         ]
-        self._factory = factory
         self._offsets = Offsets(factory._total_count, factory._limit)
         self._patype = patype
 
@@ -222,7 +223,7 @@ class LazyList:
 
     def _getitem(self, index: int) -> Any:
         i, j = self._offsets.get_coordinate(index)
-        return self._pages[i][j]
+        return self._pages[i].get_item(j)
 
     def _update_pages(self, start: int, stop: int, array: Optional[pa.Array] = None) -> None:
         start_i, start_j = self._offsets.get_coordinate(start)
@@ -231,33 +232,24 @@ class LazyList:
         pages = []
         lengths = []
 
-        left_page = self._pages[start_i][:start_j]
+        left_page = self._pages[start_i].get_slice(stop=start_j)
         left_length = len(left_page)
         if left_length:
             pages.append(left_page)
             lengths.append(left_length)
 
         if array is not None:
-            pages.append(array)
+            pages.append(Page(array))
             lengths.append(len(array))
 
-        right_page = self._pages[stop_i][stop_j + 1 :]
+        right_page = self._pages[stop_i].get_slice(stop_j + 1)
         right_length = len(right_page)
         if right_length:
             pages.append(right_page)
             lengths.append(right_length)
 
-        old_pages_length = len(self._pages)
         self._pages[start_i : stop_i + 1] = pages
         self._offsets.update(start_i, stop_i, lengths)
-
-        if old_pages_length != len(self._pages):
-            self._update_parent_pos(start_i + 1)
-
-    def _update_parent_pos(self, start: int) -> None:
-        for i, page in enumerate(self._pages[start:], start):
-            if isinstance(page, LazyPage):
-                page._parent_pos = i  # pylint: disable=protected-access
 
     def extend(self, values: Iterable[Any]) -> None:
         """Extend LazyList by appending elements from the iterable.
@@ -266,7 +258,7 @@ class LazyList:
             values: Elements to be extended into the LazyList.
 
         """
-        page = pa.array(values, self._patype)
+        page = Page(pa.array(values, self._patype))
         self._offsets.extend(len(page))
         self._pages.append(page)
 
@@ -277,10 +269,7 @@ class LazyList:
             The pyarrow ChunkedArray.
 
         """
-        # pylint: disable=protected-access
-        return pa.chunked_array(
-            page._get_page() if isinstance(page, LazyPage) else page for page in self._pages
-        )
+        return pa.chunked_array(page.get_array() for page in self._pages)
 
 
 class Page:
@@ -295,6 +284,9 @@ class Page:
         self._ranging = range(len(array))
         self._patch(array)
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self._ranging})"
+
     def __len__(self) -> int:
         return len(self._ranging)
 
@@ -306,10 +298,10 @@ class Page:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> "SlicedPage":
+    def __getitem__(self, index: slice) -> "Page":
         ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[Any, "SlicedPage"]:
+    def __getitem__(self, index: Union[int, slice]) -> Union[Any, "Page"]:
         if isinstance(index, slice):
             return self.get_slice(index.start, index.stop)
 
@@ -317,6 +309,8 @@ class Page:
 
     def _patch(self, array: pa.Array) -> None:
         self._array = array
+        # https://github.com/python/mypy/issues/708
+        # https://github.com/python/mypy/issues/2427
         self._iter = array.__iter__  # type: ignore[assignment]
         self.get_item = array.__getitem__  # type: ignore[assignment]
 
@@ -389,7 +383,7 @@ class SlicedPage(Page):
         return self._array
 
 
-class LazyPage:
+class LazyPage(Page):
     """LazyPage is a placeholder when the lazy list page is not loaded yet.
 
     Arguments:
@@ -399,51 +393,60 @@ class LazyPage:
 
     """
 
-    def __init__(self, pos: int, ranging: range, parent: LazyList) -> None:
-        self._factory_pos = pos
-        self._parent_pos = pos
-        self._parent = parent
+    def __init__(  # pylint: disable=super-init-not-called
+        self, ranging: range, pos: int, array_getter: Callable[[int], pa.Array]
+    ) -> None:
         self._ranging = ranging
+        self._pos = pos
+        self._array_getter = array_getter
+        self._array = None
 
-    def _get_page(self) -> pa.Array:
-        # pylint: disable=protected-access
-        array = self._parent._factory.get_array(self._factory_pos, self._parent._keys)
-        self._parent._pages[self._parent_pos] = array
-        return array
+    def get_slice(
+        self, start: Optional[int] = None, stop: Optional[int] = None
+    ) -> "LazySlicedPage":
+        """Return a lazy sliced page according to the given start and stop index.
 
-    def __len__(self) -> int:
-        return self._ranging.__len__()
+        Arguments:
+            start: The start index.
+            stop: The stop index.
 
-    @overload
-    def __getitem__(self, index: int) -> Any:
-        ...
+        Returns:
+            A sliced page according to the given start and stop index.
 
-    @overload
-    def __getitem__(self, index: slice) -> "LazySlicedPage":
-        ...
+        """
+        return LazySlicedPage(self._ranging[start:stop], self._pos, self._array_getter)
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[Any, "LazySlicedPage"]:
-        if isinstance(index, slice):
-            return LazySlicedPage(self._factory_pos, self._ranging[index], self._parent)
+    def get_array(self) -> pa.Array:
+        """Get the array inside the page.
 
-        return self._get_page().__getitem__(index)
+        Returns:
+            The array inside the page.
 
-    def __iter__(self) -> Iterator[Any]:
-        return self._get_page().__iter__()  # type: ignore[no-any-return]
+        """
+        if self._array is None:
+            array = self._array_getter(self._pos)
+            self._patch(array)
+
+        return self._array
 
 
 class LazySlicedPage(LazyPage):
     """LazySlicedPage is a placeholder when the sliced lazy list page is not loaded yet."""
 
-    def _get_page(self) -> pa.Array:
-        # pylint: disable=protected-access
-        array = self._parent._factory.get_array(self._factory_pos, self._parent._keys)
+    def get_array(self) -> pa.Array:
+        """Get the array inside the page.
 
-        ranging = self._ranging
-        array = array[ranging.start : ranging.stop : ranging.step]
+        Returns:
+            The array inside the page.
 
-        self._parent._pages[self._parent_pos] = array
-        return array
+        """
+        if self._array is None:
+            ranging = self._ranging
+            array = self._array_getter(self._pos)[ranging.start : ranging.stop : ranging.step]
+
+            self._patch(array)
+
+        return self._array
 
 
 class LazyFactory:
@@ -610,14 +613,14 @@ class LazyFactory:
 
         return LazyList(self, keys, patype)
 
-    def get_page_sizes(self) -> Iterator[int]:
-        """A Generator which generates the size of the pages in the factory.
+    def get_page_ranges(self) -> Iterator[range]:
+        """A Generator which generates the range of the pages in the factory.
 
         Yields:
-            The page sizes.
+            The page ranges.
 
         """
         div, mod = divmod(self._total_count, self._limit)
-        yield from repeat(self._limit, div)
+        yield from repeat(range(self._limit), div)
         if mod != 0:
-            yield mod
+            yield range(mod)
