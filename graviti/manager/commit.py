@@ -5,13 +5,19 @@
 
 """The implementation of the Commit and CommitManager."""
 
-from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, TypeVar
 
-from tensorbay.utility import AttrsMixin, attr, common_loads
+from tensorbay.utility import AttrsMixin, attr
 
 from graviti.manager.lazy import LazyPagingList
-from graviti.openapi import get_revision, list_commits
-from graviti.utility import ReprMixin
+from graviti.manager.sheets import Sheets
+from graviti.openapi import (
+    get_commit_sheet,
+    get_revision,
+    list_commit_data,
+    list_commit_sheets,
+    list_commits,
+)
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -19,10 +25,11 @@ if TYPE_CHECKING:
 ROOT_COMMIT_ID = "00000000000000000000000000000000"
 
 
-class Commit(AttrsMixin, ReprMixin):
+class Commit(Sheets, AttrsMixin):
     """This class defines the structure of a commit.
 
     Arguments:
+        dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         commit_id: The commit id.
         parent_commit_id: The parent commit id.
         title: The commit title.
@@ -45,6 +52,7 @@ class Commit(AttrsMixin, ReprMixin):
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
+        dataset: "Dataset",
         commit_id: str,
         parent_commit_id: str,
         title: str,
@@ -52,6 +60,7 @@ class Commit(AttrsMixin, ReprMixin):
         committer: str,
         committed_at: str,
     ) -> None:
+        self._dataset = dataset
         self.commit_id = commit_id
         self.parent_commit_id = parent_commit_id
         self.title = title
@@ -62,27 +71,36 @@ class Commit(AttrsMixin, ReprMixin):
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.commit_id}")'
 
-    @classmethod
-    def from_pyobj(cls: Type[_T], contents: Dict[str, str]) -> _T:
-        """Create a :class:`Commit` instance from python dict.
+    def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+        return list_commit_data(  # type: ignore[no-any-return]
+            access_key=self._dataset.access_key,
+            url=self._dataset.url,
+            owner=self._dataset.owner,
+            dataset=self._dataset.name,
+            commit_id=self.commit_id,
+            sheet=sheet_name,
+            offset=offset,
+            limit=limit,
+        )["data"]
 
-        Arguments:
-            contents: A python dict containing all the information of the commit::
+    def _list_sheets(self) -> Dict[str, Any]:
+        return list_commit_sheets(
+            access_key=self._dataset.access_key,
+            url=self._dataset.url,
+            owner=self._dataset.owner,
+            dataset=self._dataset.name,
+            commit_id=self.commit_id,
+        )
 
-                    {
-                        "commit_id": <str>
-                        "parent_commit_id": <str>
-                        "title": <str>
-                        "description": <str>
-                        "committer":  <str>
-                        "committed_at": <str>
-                    }
-
-        Returns:
-            A :class:`Commit` instance created from the input python dict.
-
-        """
-        return common_loads(cls, contents)
+    def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
+        return get_commit_sheet(
+            access_key=self._dataset.access_key,
+            url=self._dataset.url,
+            owner=self._dataset.owner,
+            dataset=self._dataset.name,
+            commit_id=self.commit_id,
+            sheet=sheet_name,
+        )
 
     def to_pyobj(self) -> Dict[str, str]:
         """Dump the instance to a python dict.
@@ -103,13 +121,14 @@ class Commit(AttrsMixin, ReprMixin):
         return self._dumps()
 
 
-class NamedCommit(Commit):
+class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
     """This class defines the structure of a named commit.
 
     :class:`NamedCommit` is the base class of :class:`~graviti.manager.branch.Branch`
     and :class:`~graviti.manager.tag.Tag`.
 
     Arguments:
+        dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         name: The name of the named commit.
         commit_id: The commit id.
         parent_commit_id: The parent commit id.
@@ -126,8 +145,9 @@ class NamedCommit(Commit):
 
     name: str = attr()
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, super-init-not-called
         self,
+        dataset: "Dataset",
         name: str,
         commit_id: str,
         parent_commit_id: str,
@@ -136,34 +156,20 @@ class NamedCommit(Commit):
         committer: str,
         committed_at: str,
     ) -> None:
-        super().__init__(commit_id, parent_commit_id, title, description, committer, committed_at)
+        self._dataset = dataset
         self.name = name
+        self.commit_id = commit_id
+        if self.commit_id == ROOT_COMMIT_ID:
+            return
+
+        self.parent_commit_id = parent_commit_id
+        self.title = title
+        self.description = description
+        self.committer = committer
+        self.committed_at = committed_at
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.name}")'
-
-    @classmethod
-    def from_pyobj(cls: Type[_T], contents: Dict[str, str]) -> _T:
-        """Create a :class:`NamedCommit` instance from python dict.
-
-        Arguments:
-            contents: A python dict containing all the information of the named commit::
-
-                    {
-                        "name": <str>
-                        "commit_id": <str>
-                        "parent_commit_id": <str>
-                        "title": <str>
-                        "description": <str>
-                        "committer":  <str>
-                        "committed_at": <str>
-                    }
-
-        Returns:
-            A :class:`NamedCommit` instance created from the input python dict.
-
-        """
-        return common_loads(cls, contents)
 
     def to_pyobj(self) -> Dict[str, str]:
         """Dump the instance to a python dict.
@@ -200,7 +206,7 @@ class CommitManager:
         self, revision: Optional[str], offset: int = 0, limit: int = 128
     ) -> Generator[Commit, None, int]:
         if revision is None:
-            revision = self._dataset.commit_id
+            revision = self._dataset.HEAD.commit_id
 
         response = list_commits(
             self._dataset.access_key,
@@ -213,7 +219,7 @@ class CommitManager:
         )
 
         for item in response["commits"]:
-            yield Commit.from_pyobj(item)
+            yield Commit(self._dataset, **item)
 
         return response["totalCount"]  # type: ignore[no-any-return]
 
@@ -229,7 +235,7 @@ class CommitManager:
 
         """
         if revision is None:
-            revision = self._dataset.commit_id
+            revision = self._dataset.HEAD.commit_id
 
         response = get_revision(
             self._dataset.access_key,
@@ -238,7 +244,7 @@ class CommitManager:
             self._dataset.name,
             revision=revision,
         )
-        return Commit.from_pyobj(response)
+        return Commit(self._dataset, **response)
 
     def list(self, revision: Optional[str] = None) -> LazyPagingList[Commit]:
         """List the commits.

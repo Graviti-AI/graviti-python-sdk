@@ -9,18 +9,20 @@ from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
 
 from tensorbay.utility import AttrsMixin, attr, common_loads
 
+from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNotExistError
 from graviti.manager.branch import BranchManager
-from graviti.manager.commit import CommitManager
+from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
-from graviti.manager.sheets import Sheets
 from graviti.manager.tag import TagManager
 from graviti.openapi import create_dataset, delete_dataset, get_dataset, list_datasets
-from graviti.utility import ReprMixin, ReprType
+from graviti.utility import ReprMixin, ReprType, UserMutableMapping
 
 
-class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instance-attributes
+class Dataset(  # pylint: disable=too-many-instance-attributes
+    UserMutableMapping[str, DataFrame], AttrsMixin, ReprMixin
+):
     """This class defines the basic concept of the dataset on Graviti.
 
     Arguments:
@@ -41,11 +43,11 @@ class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instan
 
     _T = TypeVar("_T", bound="Dataset")
 
-    _repr_type = ReprType.MAPPING
+    _repr_type = ReprType.INSTANCE
+
     _repr_attrs: Tuple[str, ...] = (
         "alias",
         "default_branch",
-        "commit_id",
         "created_at",
         "updated_at",
         "is_public",
@@ -60,7 +62,6 @@ class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instan
     name: str = attr()
     alias: str = attr()
     default_branch: str = attr()
-    commit_id: str = attr()
     created_at: str = attr()
     updated_at: str = attr()
     owner: str = attr()
@@ -89,13 +90,14 @@ class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instan
         self.name = name
         self.alias = alias
         self.default_branch = default_branch
-        self.commit_id = commit_id
         self.created_at = created_at
         self.updated_at = updated_at
         self.owner = owner
         self.is_public = is_public
         self.config = config
-        self.branch: Optional[str] = default_branch
+        self._data: Commit = self.branches.get(default_branch)
+        if commit_id != self._data.commit_id:
+            self._data = self.commits.get(commit_id)
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
@@ -127,8 +129,19 @@ class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instan
 
         """
         dataset = common_loads(cls, contents)
-        dataset.branch = dataset.default_branch
+        default_branch = dataset.default_branch
+        dataset._data = dataset.branches.get(default_branch)
         return dataset
+
+    @property
+    def HEAD(self) -> Commit:  # pylint: disable=invalid-name
+        """Return the current branch or commit.
+
+        Returns:
+            The current branch or commit.
+
+        """
+        return self._data
 
     @property
     def branches(self) -> BranchManager:
@@ -179,15 +192,9 @@ class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instan
 
         """
         try:
-            branch = self.branches.get(revision)
-            self.branch = branch.name
-            self.commit_id = branch.commit_id
+            self._data = self.branches.get(revision)
         except ResourceNotExistError:
-            self.commit_id = self.commits.get(revision).commit_id
-            self.branch = None
-
-        if hasattr(self, "_data"):
-            delattr(self, "_data")
+            self._data = self.commits.get(revision)
 
 
 class DatasetManager:

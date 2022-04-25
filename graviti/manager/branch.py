@@ -6,12 +6,12 @@
 """The implementation of the Branch and BranchManager."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
 from tensorbay.utility import attr
 
 from graviti.exception import ResourceNotExistError
-from graviti.manager.commit import ROOT_COMMIT_ID, NamedCommit
+from graviti.manager.commit import NamedCommit
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
 
@@ -26,6 +26,7 @@ class Branch(NamedCommit):
     """This class defines the structure of a branch.
 
     Arguments:
+        dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         name: The name of the branch.
         commit_id: The commit id.
         parent_commit_id: The parent commit id.
@@ -41,19 +42,6 @@ class Branch(NamedCommit):
     description: str = _attr()
     committer: str = _attr()
     committed_at: str = _attr()
-
-    def _loads(self, contents: Dict[str, str]) -> None:
-        self.name = contents["name"]
-        self.commit_id = contents["commit_id"]
-
-        if self.commit_id == ROOT_COMMIT_ID:
-            return
-
-        self.parent_commit_id = contents["parent_commit_id"]
-        self.title = contents["title"]
-        self.description = contents["description"]
-        self.committer = contents["committer"]
-        self.committed_at = contents["committed_at"]
 
 
 class BranchManager:
@@ -78,7 +66,7 @@ class BranchManager:
         )
 
         for item in response["branches"]:
-            yield Branch.from_pyobj(item)
+            yield Branch(self._dataset, **item)
 
         return response["totalCount"]  # type: ignore[no-any-return]
 
@@ -96,7 +84,7 @@ class BranchManager:
 
         """
         if not revision:
-            revision = self._dataset.commit_id
+            revision = self._dataset.HEAD.commit_id
 
         response = create_branch(
             self._dataset.access_key,
@@ -106,7 +94,7 @@ class BranchManager:
             name=name,
             revision=revision,
         )
-        return Branch.from_pyobj(response)
+        return Branch(self._dataset, **response)
 
     def get(self, name: str) -> Branch:
         """Get the branch with the given name.
@@ -131,7 +119,7 @@ class BranchManager:
             self._dataset.name,
             branch=name,
         )
-        return Branch.from_pyobj(response)
+        return Branch(self._dataset, **response)
 
     def list(self) -> LazyPagingList[Branch]:
         """List the information of branches.

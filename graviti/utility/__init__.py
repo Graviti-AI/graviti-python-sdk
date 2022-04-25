@@ -14,7 +14,7 @@ from graviti.utility.collections import (
 )
 from graviti.utility.common import locked, shorten
 from graviti.utility.file import File
-from graviti.utility.lazy import LazyFactory, LazyList
+from graviti.utility.paging import LazyFactory, PagingList
 from graviti.utility.pyarrow import (
     BuiltinExtension,
     ExtensionBase,
@@ -31,7 +31,7 @@ __all__ = [
     "MAX_REPR_ROWS",
     "File",
     "LazyFactory",
-    "LazyList",
+    "PagingList",
     "AttrDict",
     "config",
     "get_session",

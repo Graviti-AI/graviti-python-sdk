@@ -88,7 +88,7 @@ def create_sheet(
     open_api_do("POST", access_key, url, json=post_data)
 
 
-def list_draft_sheet(
+def list_draft_sheets(
     access_key: str,
     url: str,
     owner: str,
@@ -113,7 +113,7 @@ def list_draft_sheet(
         The response of OpenAPI.
 
     Examples:
-        >>> list_draft_sheet(
+        >>> list_draft_sheets(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com/",
         ...     "czhual",
@@ -144,7 +144,7 @@ def list_draft_sheet(
     return _list_sheet(access_key, url, offset=offset, limit=limit)
 
 
-def list_commit_sheet(
+def list_commit_sheets(
     access_key: str,
     url: str,
     owner: str,
@@ -169,7 +169,7 @@ def list_commit_sheet(
         The response of OpenAPI.
 
     Examples:
-        >>> list_commit_sheet(
+        >>> list_commit_sheets(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com/",
         ...     "czhual",
