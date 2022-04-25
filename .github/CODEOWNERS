@@ -10,5 +10,5 @@
 /graviti/client/ @graczhual
 /graviti/openapi/ @graczhual
 /graviti/dataframe/ @AChenQ
-/graviti/schema/ @Lee-000
+/graviti/portex/ @Lee-000
 /graviti/exception.py @Lee-000

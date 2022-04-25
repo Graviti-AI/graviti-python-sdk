@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING
 from typing import Any as TypingAny
 from typing import Dict, List, Sequence, Tuple, Type, Union
 
-from graviti.schema.base import PortexType as ClassPortexType
-from graviti.schema.field import Fields as ClassFields
-from graviti.schema.package import Imports
+from graviti.portex.base import PortexType as ClassPortexType
+from graviti.portex.field import Fields as ClassFields
+from graviti.portex.package import Imports
 
 if TYPE_CHECKING:
-    from graviti.schema.factory import Dynamic
+    from graviti.portex.factory import Dynamic
 
 
 class ParameterType:

@@ -232,7 +232,7 @@ def get_extractors(schema: Dict[str, Any]) -> Extractors:
         >>>
         >>> from graviti.client import list_data_details
         >>> from graviti.utility.lazy import LazyFactory, LazyList
-        >>> from graviti.schema import catalog_to_schema, get_extractors
+        >>> from graviti.portex import catalog_to_schema, get_extractors
         >>>
         >>> from tensorbay import GAS
         >>> from tensorbay.dataset import Dataset

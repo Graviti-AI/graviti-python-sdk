@@ -9,9 +9,9 @@ from collections import OrderedDict
 from inspect import Parameter, Signature
 from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
 
-import graviti.schema.ptype as PTYPE
-from graviti.schema.factory import Dynamic
-from graviti.schema.package import Imports
+import graviti.portex.ptype as PTYPE
+from graviti.portex.factory import Dynamic
+from graviti.portex.package import Imports
 from graviti.utility import UserMapping
 
 
