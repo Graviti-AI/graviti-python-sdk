@@ -9,11 +9,11 @@ from typing import Any, ClassVar, Dict, Set, Type
 
 import pyarrow as pa
 
-import graviti.schema.ptype as PTYPE
-from graviti.schema.base import PortexType
-from graviti.schema.factory import Dynamic, Factory, type_factory_creator
-from graviti.schema.package import ExternalPackage, Imports, Package, packages
-from graviti.schema.param import Param, Params
+import graviti.portex.ptype as PTYPE
+from graviti.portex.base import PortexType
+from graviti.portex.factory import Dynamic, Factory, type_factory_creator
+from graviti.portex.package import ExternalPackage, Imports, Package, packages
+from graviti.portex.param import Param, Params
 
 
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method

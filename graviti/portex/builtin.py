@@ -11,11 +11,11 @@ from typing import Any, Iterable, List, Mapping, Optional, Tuple, Union
 
 import pyarrow as pa
 
-import graviti.schema.ptype as PTYPE
-from graviti.schema.base import PortexType
-from graviti.schema.field import Fields
-from graviti.schema.package import packages
-from graviti.schema.param import Param, Params, param
+import graviti.portex.ptype as PTYPE
+from graviti.portex.base import PortexType
+from graviti.portex.field import Fields
+from graviti.portex.package import packages
+from graviti.portex.param import Param, Params, param
 
 builtins = packages.builtins
 

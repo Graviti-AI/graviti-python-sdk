@@ -7,6 +7,6 @@
 
 from graviti.__version__ import __version__
 from graviti.dataframe import DataFrame
-from graviti.graviti import Graviti
+from graviti.platform import Platform
 
-__all__ = ["__version__", "DataFrame", "Graviti"]
+__all__ = ["__version__", "DataFrame", "Platform"]

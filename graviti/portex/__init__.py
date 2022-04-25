@@ -4,7 +4,7 @@
 #
 """Schema module."""
 
-from graviti.schema.builtin import (
+from graviti.portex.builtin import (
     array,
     binary,
     boolean,
@@ -17,8 +17,8 @@ from graviti.schema.builtin import (
     string,
     tensor,
 )
-from graviti.schema.catalog_to_schema import catalog_to_schema
-from graviti.schema.extractors import Extractors, get_extractors
+from graviti.portex.catalog_to_schema import catalog_to_schema
+from graviti.portex.extractors import Extractors, get_extractors
 
 __all__ = [
     "array",

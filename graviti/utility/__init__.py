@@ -5,6 +5,13 @@
 """Utility module."""
 
 from graviti.utility.attr import AttrDict
+from graviti.utility.collections import (
+    NameOrderedDict,
+    UserMapping,
+    UserMutableMapping,
+    UserMutableSequence,
+    UserSequence,
+)
 from graviti.utility.common import locked, shorten
 from graviti.utility.file import File
 from graviti.utility.lazy import LazyFactory, LazyList
@@ -19,13 +26,6 @@ from graviti.utility.pyarrow import (
 from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
 from graviti.utility.requests import config, get_session
 from graviti.utility.typing import NestedDict
-from graviti.utility.user import (
-    NameOrderedDict,
-    UserMapping,
-    UserMutableMapping,
-    UserMutableSequence,
-    UserSequence,
-)
 
 __all__ = [
     "MAX_REPR_ROWS",

@@ -9,8 +9,8 @@ from typing import Any, Dict, Iterable, List, Mapping, Tuple, Union
 
 import pyarrow as pa
 
-from graviti.schema.base import _INDENT, PortexType
-from graviti.schema.package import Imports
+from graviti.portex.base import _INDENT, PortexType
+from graviti.portex.package import Imports
 from graviti.utility import NameOrderedDict
 
 

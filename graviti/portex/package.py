@@ -16,9 +16,9 @@ import yaml
 from graviti.utility import AttrDict, ReprMixin, ReprType, UserMapping
 
 if TYPE_CHECKING:
-    from graviti.schema.base import PortexType
-    from graviti.schema.builtin import PortexBuiltinType
-    from graviti.schema.template import PortexExternalType
+    from graviti.portex.base import PortexType
+    from graviti.portex.builtin import PortexBuiltinType
+    from graviti.portex.template import PortexExternalType
 
 _T = TypeVar("_T", bound=Type["PortexType"])
 
@@ -202,7 +202,7 @@ class TypeBuilder:
         """
         # TODO: Import "template" on toplevel will cause circular imports, wait to be solved.
         # pylint: disable=import-outside-toplevel
-        from graviti.schema.template import template
+        from graviti.portex.template import template
 
         if self.is_building:
             raise TypeError("Circular reference")
@@ -285,7 +285,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
         # TODO: Import "PortexExternalType" on toplevel will cause circular imports, to be solved.
         # pylint: disable=import-outside-toplevel
-        from graviti.schema.template import PortexExternalType
+        from graviti.portex.template import PortexExternalType
 
         if not issubclass(value, PortexExternalType):
             raise TypeError("Local portex type is not supported yet")

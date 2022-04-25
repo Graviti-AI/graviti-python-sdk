@@ -3,13 +3,13 @@
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
 
-"""The implementation of the Graviti."""
+"""The implementation of the Platform."""
 
 from graviti.manager import DatasetManager
 from graviti.openapi import get_current_user
 
 
-class Graviti:
+class Platform:
     """This class defines the initial client to interact between local and server.
 
     Arguments:
@@ -27,9 +27,9 @@ class Graviti:
         url: str = "",
     ) -> None:
         if access_key.startswith("Accesskey-"):
-            url = url if url else Graviti._DEFAULT_URL_CN
+            url = url if url else Platform._DEFAULT_URL_CN
         elif access_key.startswith("ACCESSKEY-"):
-            url = url if url else Graviti._DEFAULT_URL_COM
+            url = url if url else Platform._DEFAULT_URL_COM
         else:
             raise TypeError("Wrong accesskey format!")
 

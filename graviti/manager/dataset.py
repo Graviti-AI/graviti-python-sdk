@@ -20,7 +20,7 @@ from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import PagingList
 from graviti.manager.tag import TagManager
 from graviti.openapi import create_dataset, delete_dataset, get_dataset, list_datasets
-from graviti.schema import Extractors, catalog_to_schema, get_extractors
+from graviti.portex import Extractors, catalog_to_schema, get_extractors
 from graviti.utility import LazyFactory, LazyList, NestedDict, ReprMixin, ReprType
 
 LazyLists = NestedDict[str, LazyList[Any]]

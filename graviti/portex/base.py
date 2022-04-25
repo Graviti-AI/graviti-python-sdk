@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 import pyarrow as pa
 import yaml
 
-from graviti.schema.package import Imports, Package
+from graviti.portex.package import Imports, Package
 
 if TYPE_CHECKING:
-    from graviti.schema.param import Params
+    from graviti.portex.param import Params
 
 _INDENT = " " * 2
 

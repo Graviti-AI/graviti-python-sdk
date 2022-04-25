@@ -23,10 +23,10 @@ from typing import (
 
 import yaml
 
-import graviti.schema.ptype as PTYPE
-from graviti.schema.base import PortexType
-from graviti.schema.field import Fields
-from graviti.schema.package import Imports, packages
+import graviti.portex.ptype as PTYPE
+from graviti.portex.base import PortexType
+from graviti.portex.field import Fields
+from graviti.portex.package import Imports, packages
 
 _C = TypeVar("_C", str, float, bool, None)
 
