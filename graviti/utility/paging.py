@@ -25,7 +25,8 @@ from typing import (
 
 import pyarrow as pa
 
-_S = TypeVar("_S", bound="PagingList")
+_P = TypeVar("_P", bound="PagingList")
+_O = TypeVar("_O", bound="Offsets")
 
 
 class Offsets:
@@ -99,6 +100,19 @@ class Offsets:
         offsets = self._get_offsets()
         offsets.append(self.total_count)
         self.total_count += length
+
+    def copy(self: _O) -> _O:
+        """Return a copy of the Offsets.
+
+        Returns:
+            A copy of the Offsets.
+
+        """
+        obj = self.__class__(self.total_count, self._limit)
+        if hasattr(self, "_offsets"):
+            obj._offsets = self._offsets.copy()  # pylint: disable=protected-access
+
+        return obj
 
 
 class PagingList:
@@ -244,8 +258,8 @@ class PagingList:
 
     @classmethod
     def from_factory(
-        cls: Type[_S], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
-    ) -> _S:
+        cls: Type[_P], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
+    ) -> _P:
         """Create PagingList from LazyFactory.
 
         Arguments:
@@ -257,7 +271,7 @@ class PagingList:
             The PagingList instance created from given factory.
 
         """
-        obj: _S = object.__new__(cls)
+        obj: _P = object.__new__(cls)
         array_getter = partial(factory.get_array, keys=keys)
         obj._pages = [
             LazyPage(ranging, pos, array_getter)
@@ -280,6 +294,20 @@ class PagingList:
         page = Page(pa.array(values, self._patype))
         self._offsets.extend(len(page))
         self._pages.append(page)
+
+    def copy(self: _P) -> _P:
+        """Return a copy of the paging list.
+
+        Returns:
+            A copy of the paging list.
+
+        """
+        obj: _P = object.__new__(self.__class__)
+        # pylint: disable=protected-access
+        obj._pages = self._pages.copy()
+        obj._offsets = self._offsets.copy()
+        obj._patype = self._patype
+        return obj
 
     def to_pyarrow(self) -> pa.ChunkedArray:
         """Convert the paging list to pyarrow ChunkedArray.
