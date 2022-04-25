@@ -6,7 +6,7 @@
 
 
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 
 import pyarrow as pa
 import yaml
@@ -78,6 +78,9 @@ class PortexType:
             arguments[key] = value.dump(argument)
 
         return arguments
+
+    def _get_keys(self) -> List[Tuple[str, ...]]:  # pylint: disable=no-self-use
+        return []
 
     @classmethod
     def from_pyobj(

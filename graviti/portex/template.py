@@ -5,7 +5,7 @@
 """Template base class."""
 
 
-from typing import Any, ClassVar, Dict, Set, Type
+from typing import Any, ClassVar, Dict, List, Set, Tuple, Type
 
 import pyarrow as pa
 
@@ -36,6 +36,9 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
             arguments[key] = param.check(value)
 
         super().__init__(**arguments)
+
+    def _get_keys(self) -> List[Tuple[str, ...]]:
+        return self.internal_type._get_keys()  # pylint: disable=protected-access
 
     @property
     def internal_type(self) -> PortexType:
