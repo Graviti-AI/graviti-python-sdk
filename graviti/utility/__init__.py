@@ -17,6 +17,7 @@ from graviti.utility.collections import (
 )
 from graviti.utility.common import locked, shorten
 from graviti.utility.file import File, RemoteFile
+from graviti.utility.itertools import chunked
 from graviti.utility.paging import LazyFactory, PagingList
 from graviti.utility.pyarrow import (
     BuiltinExtension,
@@ -51,6 +52,7 @@ __all__ = [
     "UserMutableMapping",
     "UserMutableSequence",
     "UserSequence",
+    "chunked",
     "config",
     "convert_arrow_schema_to_avro",
     "get_session",

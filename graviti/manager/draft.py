@@ -5,8 +5,9 @@
 
 """The implementation of the Draft and DraftManager."""
 
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
+from graviti.dataframe import DataFrame
 from graviti.manager.commit import Commit
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
@@ -20,6 +21,7 @@ from graviti.openapi import (
     list_drafts,
     update_draft,
 )
+from graviti.operation import CreateSheet, DeleteSheet, SheetOperation
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -68,6 +70,22 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.created_at = created_at
         self.updated_at = updated_at
         self.description = description
+        self.operations: List[SheetOperation] = []
+
+    def __setitem__(self, key: str, value: DataFrame) -> None:
+        is_replace = False
+        if key in self:
+            is_replace = True
+
+        super().__setitem__(key, value)
+        if is_replace:
+            self.operations.append(DeleteSheet(key))
+
+        self.operations.append(CreateSheet(key, value.schema.copy()))
+
+    def __delitem__(self, key: str) -> None:
+        super().__delitem__(key)
+        self.operations.append(DeleteSheet(key))
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.number}")'
@@ -163,13 +181,34 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         # TODO: update the draft.updated_at
         return Commit(self._dataset, **response)
 
-    def upload(self, jobs: int = 1) -> None:
+    def upload(self, jobs: int = 1) -> None:  # pylint: disable=unused-argument
         """Upload the local dataset to Graviti.
 
         Arguments:
             jobs: The number of the max workers in multi-thread upload.
 
         """
+        for sheet_operation in self.operations:
+            sheet_operation.do(
+                self._dataset.access_key,
+                self._dataset.url,
+                self._dataset.owner,
+                self._dataset.name,
+                draft_number=self.number,
+            )
+
+        for sheet_name, dataframe in self.items():
+            for df_operation in dataframe.operations:
+                df_operation.do(
+                    self._dataset.access_key,
+                    self._dataset.url,
+                    self._dataset.owner,
+                    self._dataset.name,
+                    draft_number=self.number,
+                    sheet=sheet_name,
+                )
+
+        delattr(self, "_data")
 
 
 class DraftManager:
