@@ -5,17 +5,17 @@
 
 """The implementation of the Draft and DraftManager."""
 
-from typing import TYPE_CHECKING, Generator, Iterator, KeysView, MutableMapping, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
-from graviti.dataframe import DataFrame
 from graviti.manager.lazy import LazyPagingList
+from graviti.manager.sheets import Sheets
 from graviti.openapi import create_draft, get_draft, list_drafts
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
 
 
-class Draft(MutableMapping[str, DataFrame]):
+class Draft(Sheets):
     """The basic structure of the Graviti draft.
 
     Arguments:
@@ -47,29 +47,6 @@ class Draft(MutableMapping[str, DataFrame]):
         description: str = "",
     ) -> None:
         pass
-
-    def __len__(self) -> int:
-        pass
-
-    def __getitem__(self, key: str) -> DataFrame:
-        pass
-
-    def __iter__(self) -> Iterator[str]:
-        pass
-
-    def __setitem__(self, key: str, value: DataFrame) -> None:
-        pass
-
-    def __delitem__(self, key: str) -> None:
-        pass
-
-    def keys(self) -> KeysView[str]:
-        """Return a new view of the keys in dict.
-
-        Return:
-            The keys in dict.
-
-        """
 
     def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:
         """Update title and description of the draft.

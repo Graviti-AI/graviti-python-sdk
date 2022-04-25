@@ -5,30 +5,22 @@
 
 """The implementation of the Dataset and DatasetManager."""
 
-from typing import Any, Dict, Generator, Iterator, KeysView, Mapping, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
 
-from tensorbay.dataset import Notes, RemoteData
-from tensorbay.label import Catalog
-from tensorbay.utility import URL, AttrsMixin, attr, common_loads
+from tensorbay.utility import AttrsMixin, attr, common_loads
 
-from graviti.client import get_catalog, get_notes, list_data_details, list_segments
-from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNotExistError
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
+from graviti.manager.sheets import Sheets
 from graviti.manager.tag import TagManager
 from graviti.openapi import create_dataset, delete_dataset, get_dataset, list_datasets
-from graviti.portex import Extractors, catalog_to_schema, get_extractors
-from graviti.utility import LazyFactory, LazyList, NestedDict, ReprMixin, ReprType
-
-LazyLists = NestedDict[str, LazyList[Any]]
+from graviti.utility import ReprMixin, ReprType
 
 
-class Dataset(  # pylint: disable=too-many-instance-attributes
-    Mapping[str, DataFrame], AttrsMixin, ReprMixin
-):
+class Dataset(Sheets, AttrsMixin, ReprMixin):  # pylint: disable=too-many-instance-attributes
     """This class defines the basic concept of the dataset on Graviti.
 
     Arguments:
@@ -75,8 +67,6 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     is_public: bool = attr()
     config: str = attr()
 
-    _data: Dict[str, DataFrame]
-
     def __init__(
         self,
         access_key: str,
@@ -107,104 +97,8 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.config = config
         self.branch: Optional[str] = default_branch
 
-    def __len__(self) -> int:
-        return self._get_data().__len__()
-
-    def __getitem__(self, key: str) -> DataFrame:
-        return self._get_data().__getitem__(key)
-
-    def __iter__(self) -> Iterator[str]:
-        return self._get_data().__iter__()
-
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
-
-    def _get_lazy_lists(self, factory: LazyFactory, extractors: Extractors) -> LazyLists:
-        lazy_lists: LazyLists = {}
-        for key, arguments in extractors.items():
-            if isinstance(arguments, tuple):
-                lazy_lists[key] = factory.create_list(*arguments)
-            else:
-                lazy_lists[key] = self._get_lazy_lists(factory, arguments)
-        return lazy_lists
-
-    def _init_data(self) -> None:
-        self._data = {}
-        response = list_segments(
-            self.url,
-            self.access_key,
-            self._dataset_id,
-            commit=self.commit_id,
-        )
-        for sheet in response["segments"]:
-            sheet_name = sheet["name"]
-            data_details = list_data_details(
-                self.url,
-                self.access_key,
-                self._dataset_id,
-                sheet_name,
-                commit=self.commit_id,
-            )
-
-            def factory_getter(
-                offset: int, limit: int, sheet_name: str = sheet_name
-            ) -> Dict[str, Any]:
-                return list_data_details(
-                    self.url,
-                    self.access_key,
-                    self._dataset_id,
-                    sheet_name,
-                    commit=self.commit_id,
-                    offset=offset,
-                    limit=limit,
-                )
-
-            factory = LazyFactory(
-                data_details["totalCount"],
-                128,
-                factory_getter,
-            )
-            catalog = get_catalog(
-                self.url,
-                self.access_key,
-                self._dataset_id,
-                commit=self.commit_id,
-            )
-
-            first_data_details = data_details["dataDetails"][0]
-            remote_data = RemoteData.from_response_body(
-                first_data_details,
-                url=URL(
-                    first_data_details["url"], updater=lambda: "update is not supported currently"
-                ),
-            )
-            notes = get_notes(
-                self.url,
-                self.access_key,
-                self._dataset_id,
-                commit=self.commit_id,
-            )
-
-            schema = catalog_to_schema(
-                Catalog.loads(catalog["catalog"]), remote_data, Notes.loads(notes)
-            )
-            lazy_lists = self._get_lazy_lists(factory, get_extractors(schema))
-            self._data[sheet_name] = DataFrame.from_lazy_lists(lazy_lists)
-
-    def _get_data(self) -> Dict[str, DataFrame]:
-        if not hasattr(self, "_data"):
-            self._init_data()
-
-        return self._data
-
-    def keys(self) -> KeysView[str]:
-        """Return a new view of the keys in dict.
-
-        Returns:
-            The keys in dict.
-
-        """
-        return self._get_data().keys()
 
     @classmethod
     def from_pyobj(cls: Type[_T], contents: Dict[str, Any]) -> _T:
