@@ -217,29 +217,29 @@ def update_data(
         ...     draft_number = 1,
         ...     sheet = "train",
         ...     data = [
-        ...                 {
-        ...                     "filename": "0000f77c-6257be58.jpg",
-        ...                     "image": {
-        ...                         "checksum": "dcc197970e607f7576d978972f6fb312911ce005"
-        ...                     },
-        ...                     "attribute": {
-        ...                         "weather": "clear",
-        ...                         "scene": "city street",
-        ...                         "timeofday": "daytime"
-        ...                     },
-        ...                 },
-        ...                 {
-        ...                     "filename": "0000f77c-62c2a288.jpg",
-        ...                     "image": {
-        ...                         "checksum": "dcc197970e607f7576d978972f6fb2a2881ce004"
-        ...                     },
-        ...                     "attribute": {
-        ...                         "weather": "clear",
-        ...                         "scene": "highway",
-        ...                         "timeofday": "dawn/dusk"
-        ...                     },
-        ...                 }
-        ...            ],
+        ...         {
+        ...             "filename": "0000f77c-6257be58.jpg",
+        ...             "image": {
+        ...                 "checksum": "dcc197970e607f7576d978972f6fb312911ce005"
+        ...             },
+        ...             "attribute": {
+        ...                 "weather": "clear",
+        ...                 "scene": "city street",
+        ...                 "timeofday": "daytime"
+        ...             },
+        ...         },
+        ...         {
+        ...             "filename": "0000f77c-62c2a288.jpg",
+        ...             "image": {
+        ...                 "checksum": "dcc197970e607f7576d978972f6fb2a2881ce004"
+        ...             },
+        ...             "attribute": {
+        ...                 "weather": "clear",
+        ...                 "scene": "highway",
+        ...                 "timeofday": "dawn/dusk"
+        ...             },
+        ...         }
+        ...     ],
         ...     offset = 10,
         ...     order_by = "filename|attribute.weather",
         ... )
@@ -251,3 +251,71 @@ def update_data(
         patch_data["order_by"] = order_by
 
     open_api_do("PATCH", access_key, url, json=patch_data)
+
+
+def add_data(
+    access_key: str,
+    url: str,
+    owner: str,
+    dataset: str,
+    *,
+    draft_number: int,
+    sheet: str,
+    data: List[Dict[str, Any]],
+    strategy_argument: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
+    /sheets/{sheet}/data`.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        dataset: Name of the dataset, unique for a user.
+        draft_number: The draft number.
+        sheet: The sheet name.
+        data: The update data.
+        strategy_argument: The dict about the argument of the Primary
+            key generation strategy of the sheet.
+
+    Examples:
+        >>> update_dataset(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
+        ...     "czhual",
+        ...     "OxfordIIITPet",
+        ...     draft_number = 1,
+        ...     sheet = "train",
+        ...     data = [
+        ...         {
+        ...             "filename": "0000f77c-6257be58.jpg",
+        ...             "image": {
+        ...                 "checksum": "dcc197970e607f7576d978972f6fb312911ce005"
+        ...             },
+        ...             "attribute": {
+        ...                 "weather": "clear",
+        ...                 "scene": "city street",
+        ...                 "timeofday": "daytime"
+        ...             },
+        ...         },
+        ...         {
+        ...             "filename": "0000f77c-62c2a288.jpg",
+        ...             "image": {
+        ...                 "checksum": "dcc197970e607f7576d978972f6fb2a2881ce004"
+        ...             },
+        ...             "attribute": {
+        ...                 "weather": "clear",
+        ...                 "scene": "highway",
+        ...                 "timeofday": "dawn/dusk"
+        ...             },
+        ...         }
+        ...     ],
+        ... )
+
+    """
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data")
+    post_data: Dict[str, Any] = {"data": data}
+    if strategy_argument is not None:
+        post_data["strategy_argument"] = strategy_argument
+
+    open_api_do("POST", access_key, url, json=post_data)
