@@ -10,12 +10,13 @@ from typing import TYPE_CHECKING, Dict, Generator, Optional
 
 from tensorbay.utility import attr
 
+from graviti.exception import ResourceNotExistError
 from graviti.manager.commit import ROOT_COMMIT_ID, NamedCommit
 from graviti.manager.lazy import PagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
 
 if TYPE_CHECKING:
-    from graviti.manager.dataset import DatasetAccessInfo
+    from graviti.manager.dataset import Dataset
 
 _ERROR_MESSAGE = "The '{attr_name}' is not available due to this branch has no commit history."
 _attr = partial(attr, is_dynamic=True, error_message=_ERROR_MESSAGE)
@@ -59,18 +60,19 @@ class BranchManager:
     """This class defines the operations on the branch in Graviti.
 
     Arguments:
-        access_info: :class:`~graviti.manager.dataset.DatasetAccessInfo` instance.
-        commit_id: The commit id.
+        dataset: :class:`~graviti.manager.dataset.Dataset` instance.
 
     """
 
-    def __init__(self, access_info: "DatasetAccessInfo", commit_id: str) -> None:
-        self._access_info = access_info
-        self._commit_id = commit_id
+    def __init__(self, dataset: "Dataset") -> None:
+        self._dataset = dataset
 
     def _generate(self, offset: int = 0, limit: int = 128) -> Generator[Branch, None, int]:
         response = list_branches(
-            **self._access_info,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
             offset=offset,
             limit=limit,
         )
@@ -94,9 +96,16 @@ class BranchManager:
 
         """
         if not revision:
-            revision = self._commit_id
+            revision = self._dataset.commit_id
 
-        response = create_branch(**self._access_info, name=name, revision=revision)
+        response = create_branch(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            name=name,
+            revision=revision,
+        )
         return Branch.from_pyobj(response)
 
     def get(self, name: str) -> Branch:
@@ -106,16 +115,22 @@ class BranchManager:
             name: The required branch name.
 
         Raises:
-            TypeError: When the given branch name is illegal.
+            ResourceNotExistError: When the given name is an empty string.
 
         Returns:
             The :class:`.Branch` instance with the given name.
 
         """
         if not name:
-            raise TypeError("The given branch name is illegal")
+            raise ResourceNotExistError(resource="branch", identification=name)
 
-        response = get_branch(**self._access_info, branch=name)
+        response = get_branch(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            branch=name,
+        )
         return Branch.from_pyobj(response)
 
     def list(self) -> PagingList[Branch]:
@@ -133,5 +148,17 @@ class BranchManager:
         Arguments:
             name: The name of the branch to be deleted.
 
+        Raises:
+            ResourceNotExistError: When the given name is an empty string.
+
         """
-        delete_branch(**self._access_info, branch=name)
+        if not name:
+            raise ResourceNotExistError(resource="branch", identification=name)
+
+        delete_branch(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            branch=name,
+        )
