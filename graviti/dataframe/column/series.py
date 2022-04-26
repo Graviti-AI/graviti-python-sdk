@@ -7,10 +7,14 @@
 
 
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Union, overload
+from typing import Any, Dict, Iterable, List, Optional, Union, overload
+
+import pyarrow as pa
 
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
+from graviti.portex import PortexType
 from graviti.utility import MAX_REPR_ROWS
+from graviti.utility.paging import PagingList
 
 
 class Series:
@@ -40,16 +44,19 @@ class Series:
 
     def __init__(
         self,
-        data: Sequence[Any],
-        schema: Any = None,
+        data: Iterable[Any],
+        schema: Optional[PortexType] = None,
         name: Union[str, int, None] = None,
         index: Optional[Iterable[int]] = None,
     ) -> None:
-        if schema is not None:
-            # TODO: missing schema processing
-            pass
+        if schema is None:
+            raise NotImplementedError("Inferred schema from `data` is not support now.")
 
-        self._data = data
+        if not isinstance(data, pa.Array):
+            data = pa.array(data, schema.to_pyarrow())
+
+        self.schema = schema
+        self._data = PagingList(data)
         self.name = name
         if index is None:
             self._indices_data = index

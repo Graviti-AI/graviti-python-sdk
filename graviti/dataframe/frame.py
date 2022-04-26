@@ -14,7 +14,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -22,24 +21,22 @@ from typing import (
     overload,
 )
 
+import pyarrow as pa
+
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.utility import MAX_REPR_ROWS
+from graviti.portex import int32, record
+from graviti.utility import MAX_REPR_ROWS, NestedDict
 
 if TYPE_CHECKING:
     from graviti.manager import LazyLists
 
+_T = TypeVar("_T", bound="DataFrame")
+
 
 class DataFrame:
     """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
-
-    Arguments:
-        data: The data that needs to be stored in DataFrame.
-        schema: The schema of the DataFrame. If None, will be inferred from `data`.
-        columns: Column labels to use for resulting frame when data does not have them,
-            defaulting to RangeIndex(0, 1, 2, ..., n). If data contains column labels,
-            will perform column selection instead.
 
     Examples:
         Constructing DataFrame from list.
@@ -60,38 +57,46 @@ class DataFrame:
 
     """
 
-    _T = TypeVar("_T", bound="DataFrame")
     _columns: Dict[str, Union["DataFrame", ColumnSeries]]
     _column_names: List[str]
     _index: ColumnSeries
+    schema: record
 
-    def __init__(
-        self,
-        data: Union[Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", "LazyLists", None] = None,
-        schema: Any = None,
-        columns: Optional[Iterable[str]] = None,
-    ) -> None:
-        if data is None:
-            data = {}  # type: ignore[assignment]
-            # https://github.com/python/mypy/issues/6463
-        if schema is not None:
-            # TODO: missing schema processing
-            pass
-        if columns is not None:
-            # TODO: missing columns processing
-            pass
+    def __new__(
+        cls: Type[_T],
+        data: Union[Iterable[NestedDict[str, Any]], "DataFrame", None] = None,
+        schema: Optional[record] = None,
+    ) -> _T:
+        """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
 
-        self._columns = {}
-        self._column_names = []
-        if isinstance(data, dict):
-            for key, value in data.items():
-                self._columns[key] = (
-                    DataFrame(value) if isinstance(value, dict) else ColumnSeries(value, name=key)
-                )
-                self._column_names.append(key)
-            self._index = ColumnSeries(list(range(self.__len__())))
-        else:
-            raise ValueError("DataFrame only supports generating from dictionary now")
+        Arguments:
+            data: The data that needs to be stored in DataFrame.
+            schema: The schema of the DataFrame. If None, will be inferred from `data`.
+
+        Raises:
+            NotImplementedError: When needed infered schema from the data.
+            ValueError: When the given data is not iterable.
+
+        Returns:
+            The created :class:`~graviti.dataframe.DataFrame` object.
+
+        """
+        if schema is None:
+            if data is None:
+                obj: _T = object.__new__(cls)
+                obj._columns = {}
+                obj._column_names = []
+                obj._index = ColumnSeries([], schema=int32())  # schema has no null type.
+                obj.schema = record([])
+                return obj
+
+            raise NotImplementedError("Inferred schema from `data` is not support now.")
+
+        if not isinstance(data, DataFrame) and isinstance(data, Iterable):
+            # TODO: Check the schema is valid for pyarrow struct array.
+            return cls.from_pyarrow(pa.array(data, schema.to_pyarrow()), schema)
+
+        raise ValueError("DataFrame only supports generating from Iterable object now")
 
     @overload
     def __getitem__(self, key: str) -> Union[ColumnSeries, "DataFrame"]:  # type: ignore[misc]
@@ -129,6 +134,9 @@ class DataFrame:
         return "\n".join(lines)
 
     def __len__(self) -> int:
+        if not self._columns:
+            return 0
+
         return self._columns[self._column_names[0]].__len__()
 
     @staticmethod
@@ -168,7 +176,38 @@ class DataFrame:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
 
         """
-        return cls(lazy_lists)
+        # Not support loading tensorbay Dataset.
+        return cls(lazy_lists)  # type: ignore[arg-type]
+
+    @classmethod
+    def from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: record) -> _T:
+        """Create DataFrame with pyarrow struct array.
+
+        Arguments:
+            array: The input pyarrow struct array.
+            schema: Schema.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.DataFrame` object.
+
+        """
+        obj: _T = object.__new__(cls)
+        obj.schema = schema
+        obj._columns = {}
+        obj._column_names = []
+
+        for pafield in array.type:
+            column_name = pafield.name
+            column_value = array.field(column_name)
+            column_schema = schema.fields[column_name]
+            obj._columns[column_name] = (
+                DataFrame.from_pyarrow(column_value, schema=column_schema)
+                if isinstance(pafield.type, pa.StructType) and isinstance(column_schema, record)
+                else ColumnSeries(column_value, name=column_name, schema=column_schema)
+            )
+            obj._column_names.append(column_name)
+        obj._index = ColumnSeries(range(len(column_value)), schema=int32())
+        return obj
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
         header: List[Tuple[str, ...]] = []
