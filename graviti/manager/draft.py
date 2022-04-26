@@ -9,13 +9,13 @@ from typing import TYPE_CHECKING, Generator, Optional
 
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
-from graviti.openapi import create_draft, get_draft, list_drafts
+from graviti.openapi import create_draft, get_draft, list_drafts, update_draft
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
 
 
-class Draft(Sheets):
+class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
     """The basic structure of the Graviti draft.
 
     Arguments:
@@ -46,7 +46,16 @@ class Draft(Sheets):
         updated_at: str,
         description: str = "",
     ) -> None:
-        pass
+        self._dataset = dataset
+        self.number = number
+        self.title = title
+        self.branch = branch
+        self.state = state
+        self.parent_commit_id = parent_commit_id
+        self.creator = creator
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.description = description
 
     def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:
         """Update title and description of the draft.
@@ -56,9 +65,33 @@ class Draft(Sheets):
             description: The description of the draft.
 
         """
+        update_draft(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            draft_number=self.number,
+            title=title,
+            description=description,
+        )
+        if title is not None:
+            self.title = title
+        if description is not None:
+            self.description = description
+        # TODO: update the draft.updated_at
 
     def close(self) -> None:
         """Close the draft."""
+        update_draft(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            draft_number=self.number,
+            state="CLOSED",
+        )
+        self.state = "CLOSED"
+        # TODO: update the draft.updated_at
 
     def commit(self, title: str, description: str = "") -> None:
         """Commit the current draft.
