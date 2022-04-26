@@ -12,7 +12,7 @@ from tensorbay.utility import attr
 
 from graviti.exception import ResourceNotExistError
 from graviti.manager.commit import ROOT_COMMIT_ID, NamedCommit
-from graviti.manager.lazy import PagingList
+from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
 
 if TYPE_CHECKING:
@@ -133,14 +133,14 @@ class BranchManager:
         )
         return Branch.from_pyobj(response)
 
-    def list(self) -> PagingList[Branch]:
+    def list(self) -> LazyPagingList[Branch]:
         """List the information of branches.
 
         Returns:
-            The PagingList of :class:`branches<.Branch>` instances.
+            The LazyPagingList of :class:`branches<.Branch>` instances.
 
         """
-        return PagingList(self._generate, 128)
+        return LazyPagingList(self._generate, 128)
 
     def delete(self, name: str) -> None:
         """Delete a branch.

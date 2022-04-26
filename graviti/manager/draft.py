@@ -8,7 +8,7 @@
 from typing import TYPE_CHECKING, Generator, Iterator, KeysView, MutableMapping, Optional
 
 from graviti.dataframe import DataFrame
-from graviti.manager.lazy import PagingList
+from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_draft, get_draft, list_drafts
 
 if TYPE_CHECKING:
@@ -179,7 +179,9 @@ class DraftManager:
         )
         return Draft(self._dataset, **response)
 
-    def list(self, state: Optional[str] = None, branch: Optional[str] = None) -> PagingList[Draft]:
+    def list(
+        self, state: Optional[str] = None, branch: Optional[str] = None
+    ) -> LazyPagingList[Draft]:
         """List all the drafts.
 
         Arguments:
@@ -188,10 +190,10 @@ class DraftManager:
             branch: The branch name. None means listing drafts from all branches.
 
         Returns:
-            The PagingList of :class:`drafts<.Draft>` instances.
+            The LazyPagingList of :class:`drafts<.Draft>` instances.
 
         """
-        return PagingList(
+        return LazyPagingList(
             lambda offset, limit: self._generate(state, branch, offset, limit),
             128,
         )

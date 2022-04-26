@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, TypeVa
 
 from tensorbay.utility import AttrsMixin, attr, common_loads
 
-from graviti.manager.lazy import PagingList
+from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import get_revision, list_commits
 from graviti.utility import ReprMixin
 
@@ -240,7 +240,7 @@ class CommitManager:
         )
         return Commit.from_pyobj(response)
 
-    def list(self, revision: Optional[str] = None) -> PagingList[Commit]:
+    def list(self, revision: Optional[str] = None) -> LazyPagingList[Commit]:
         """List the commits.
 
         Arguments:
@@ -250,10 +250,10 @@ class CommitManager:
                 If it is not given, list the commits before the current commit.
 
         Returns:
-            The PagingList of :class:`commits<.Commit>` instances.
+            The LazyPagingList of :class:`commits<.Commit>` instances.
 
         """
-        return PagingList(
+        return LazyPagingList(
             lambda offset, limit: self._generate(revision, offset, limit),
             128,
         )

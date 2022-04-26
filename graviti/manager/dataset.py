@@ -17,7 +17,7 @@ from graviti.exception import ResourceNotExistError
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import CommitManager
 from graviti.manager.draft import DraftManager
-from graviti.manager.lazy import PagingList
+from graviti.manager.lazy import LazyPagingList
 from graviti.manager.tag import TagManager
 from graviti.openapi import create_dataset, delete_dataset, get_dataset, list_datasets
 from graviti.portex import Extractors, catalog_to_schema, get_extractors
@@ -378,14 +378,14 @@ class DatasetManager:
 
         return Dataset.from_pyobj(response)
 
-    def list(self) -> PagingList[Dataset]:
+    def list(self) -> LazyPagingList[Dataset]:
         """List Graviti datasets.
 
         Returns:
-            The PagingList of :class:`~graviti.manager.dataset.Dataset` instances.
+            The LazyPagingList of :class:`~graviti.manager.dataset.Dataset` instances.
 
         """
-        return PagingList(self._generate, 128)
+        return LazyPagingList(self._generate, 128)
 
     def delete(self, name: str) -> None:
         """Delete a Graviti dataset with given name.
