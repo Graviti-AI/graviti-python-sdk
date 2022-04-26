@@ -90,16 +90,16 @@ class Offsets:
         i = bisect_right(self._offsets, index) - 1
         return i, index - self._offsets[i]
 
-    def extend(self, length: int) -> None:
+    def extend(self, lengths: Iterable[int]) -> None:
         """Update the offsets when extending the paging list.
 
         Arguments:
-            length: The length of the extended values.
+            lengths: The lengths of the extended pages.
 
         """
         offsets = self._get_offsets()
-        offsets.append(self.total_count)
-        self.total_count += length
+        offsets.extend(accumulate(lengths, initial=self.total_count))
+        self.total_count = offsets.pop()
 
     def copy(self: _O) -> _O:
         """Return a copy of the Offsets.
@@ -148,7 +148,7 @@ class PagingList:
             start, stop, step = index.indices(self.__len__())
 
             if step == 1:
-                array = pa.array(value, self._patype)
+                page = Page(pa.array(value, self._patype))
             elif step == -1:
                 start, stop = stop + 1, start + 1
                 try:
@@ -156,19 +156,19 @@ class PagingList:
                 except TypeError:
                     reversed_values = reversed(list(value))
 
-                array = pa.array(reversed_values, self._patype)
-                if len(array) != stop - start:
+                page = Page(pa.array(reversed_values, self._patype))
+                if len(page) != stop - start:
                     raise ValueError(
-                        f"attempt to assign sequence of size {len(array)} "
+                        f"attempt to assign sequence of size {len(page)} "
                         f"to extended slice of size {stop - start}"
                     )
             else:
-                array = pa.array(value, self._patype)
+                page = Page(pa.array(value, self._patype))
                 ranging: Any = range(start, stop, step)
-                indices: Any = range(len(array))
-                if len(array) != len(ranging):
+                indices: Any = range(len(page))
+                if len(page) != len(ranging):
                     raise ValueError(
-                        f"attempt to assign sequence of size {len(array)} "
+                        f"attempt to assign sequence of size {len(page)} "
                         f"to extended slice of size {len(ranging)}"
                     )
 
@@ -177,7 +177,7 @@ class PagingList:
                     indices = reversed(indices)
 
                 for i, j in zip(ranging, indices):
-                    self._update_pages(i, i + 1, array[j : j + 1])
+                    self._update_pages(i, i + 1, [page[j : j + 1]])
 
                 return
 
@@ -185,12 +185,12 @@ class PagingList:
             index = self._make_index_nonnegative(index)
             start = index
             stop = index + 1
-            array = pa.array((value,), self._patype)
+            page = Page(pa.array((value,), self._patype))
 
-        if len(array) == 0:
+        if len(page) == 0:
             return
 
-        self._update_pages(start, stop, array)
+        self._update_pages(start, stop, [page])
 
     def __delitem__(self, index: Union[int, slice]) -> None:
         if isinstance(index, slice):
@@ -223,6 +223,14 @@ class PagingList:
         index = self._make_index_nonnegative(index)
         return self._getitem(index)
 
+    def __iadd__(self: _P, values: Union["PagingList", Iterable[Any]]) -> _P:
+        if isinstance(values, self.__class__):
+            self.extend(values)
+        else:
+            self.extend_iterable(values)
+
+        return self
+
     def _make_index_nonnegative(self, index: int) -> int:
         return index if index >= 0 else self.__len__() + index
 
@@ -230,30 +238,30 @@ class PagingList:
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i].get_item(j)
 
-    def _update_pages(self, start: int, stop: int, array: Optional[pa.Array] = None) -> None:
+    def _update_pages(self, start: int, stop: int, pages: Optional[List["Page"]] = None) -> None:
         start_i, start_j = self._offsets.get_coordinate(start)
         stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
 
-        pages = []
+        update_pages = []
         lengths = []
 
         left_page = self._pages[start_i].get_slice(stop=start_j)
         left_length = len(left_page)
         if left_length:
-            pages.append(left_page)
+            update_pages.append(left_page)
             lengths.append(left_length)
 
-        if array is not None:
-            pages.append(Page(array))
-            lengths.append(len(array))
+        if pages is not None:
+            update_pages.extend(pages)
+            lengths.extend(map(len, pages))
 
         right_page = self._pages[stop_i].get_slice(stop_j + 1)
         right_length = len(right_page)
         if right_length:
-            pages.append(right_page)
+            update_pages.append(right_page)
             lengths.append(right_length)
 
-        self._pages[start_i : stop_i + 1] = pages
+        self._pages[start_i : stop_i + 1] = update_pages
         self._offsets.update(start_i, stop_i, lengths)
 
     @classmethod
@@ -284,7 +292,27 @@ class PagingList:
 
         return obj
 
-    def extend(self, values: Iterable[Any]) -> None:
+    def extend(self, values: "PagingList") -> None:
+        """Extend PagingList by appending elements from another PagingList.
+
+        Arguments:
+            values: The PagingList which contains the elements to be extended.
+
+        Raises:
+            ArrowTypeError: When the pyarrow type mismatch.
+
+        """
+        # pylint: disable=protected-access
+        if values._patype != self._patype:
+            raise pa.ArrowTypeError(
+                f"Can not extend a '{self._patype}' list with a '{values._patype}' list"
+            )
+
+        pages = values._pages
+        self._offsets.extend(map(len, pages))
+        self._pages.extend(pages)
+
+    def extend_iterable(self, values: Iterable[Any]) -> None:
         """Extend PagingList by appending elements from the iterable.
 
         Arguments:
@@ -292,7 +320,7 @@ class PagingList:
 
         """
         page = Page(pa.array(values, self._patype))
-        self._offsets.extend(len(page))
+        self._offsets.extend((len(page),))
         self._pages.append(page)
 
     def copy(self: _P) -> _P:
