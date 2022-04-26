@@ -14,7 +14,7 @@ from graviti.openapi.dataset import (
     list_datasets,
     update_dataset,
 )
-from graviti.openapi.draft import create_draft, get_draft, list_drafts
+from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
 from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 
@@ -38,4 +38,5 @@ __all__ = [
     "list_drafts",
     "list_tags",
     "update_dataset",
+    "update_draft",
 ]
