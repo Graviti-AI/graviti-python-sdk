@@ -187,7 +187,7 @@ class LazyPage(Generic[_T]):
 
 
 class InitPage(LazyPage[_T]):
-    """In paging lazy evaluation system, InitPage is the page for initializing :class:`PagingList`.
+    """In paging lazy evaluation system, InitPage is the page to initialize :class:`LazyPagingList`.
 
     InitPage will send a paging request to pull a page of elements and storing them in different
     :class:`LazyItem` instances when construction. And the totalCount of the page will also be
@@ -219,8 +219,8 @@ class InitPage(LazyPage[_T]):
         self.total_count = generator.value
 
 
-class PagingList(MutableSequence[_T], ReprMixin):
-    """PagingList is a wrap of web paging request.
+class LazyPagingList(MutableSequence[_T], ReprMixin):
+    """LazyPagingList is a wrap of web paging request.
 
     It follows the python MutableSequence protocal, which means it can be used like a python builtin
     list. And it provides features like lazy evaluation and cache.
@@ -233,7 +233,7 @@ class PagingList(MutableSequence[_T], ReprMixin):
 
     """
 
-    _S = TypeVar("_S", bound="PagingList[_T]")
+    _S = TypeVar("_S", bound="LazyPagingList[_T]")
 
     _repr_type = ReprType.SEQUENCE
 
@@ -362,33 +362,33 @@ class PagingList(MutableSequence[_T], ReprMixin):
         """Insert object before index.
 
         Arguments:
-            index: Position of the PagingList.
-            value: Element to be inserted into the PagingList.
+            index: Position of the LazyPagingList.
+            value: Element to be inserted into the LazyPagingList.
 
         """
         self._get_items(index).insert(index, LazyItem.from_data(value))
 
     def append(self, value: _T) -> None:
-        """Append object to the end of the PagingList.
+        """Append object to the end of the LazyPagingList.
 
         Arguments:
-            value: Element to be appended to the PagingList.
+            value: Element to be appended to the LazyPagingList.
 
         """
         self._get_items().append(LazyItem.from_data(value))
 
     def reverse(self) -> None:
-        """Reverse the items of the PagingList in place."""
+        """Reverse the items of the LazyPagingList in place."""
         self._get_items().reverse()
 
     def pop(self, index: int = -1) -> _T:
-        """Return the item at index (default last) and remove it from the PagingList.
+        """Return the item at index (default last) and remove it from the LazyPagingList.
 
         Arguments:
-            index: Position of the PagingList.
+            index: Position of the LazyPagingList.
 
         Returns:
-            Element to be removed from the PagingList.
+            Element to be removed from the LazyPagingList.
 
         """
         return self._get_items(index).pop(index).get()
@@ -402,7 +402,7 @@ class PagingList(MutableSequence[_T], ReprMixin):
             stop: The end index of the subsequence.
 
         Raises:
-            ValueError: When the value is not in the PagingList
+            ValueError: When the value is not in the LazyPagingList
 
         Returns:
             The first index of the value.
@@ -418,7 +418,7 @@ class PagingList(MutableSequence[_T], ReprMixin):
             if items[i].get() == value:
                 return i
 
-        raise ValueError(f"{value} is not in PagingList")
+        raise ValueError(f"{value} is not in LazyPagingList")
 
     def count(self, value: Any) -> int:
         """Return the number of occurrences of value.
@@ -433,10 +433,10 @@ class PagingList(MutableSequence[_T], ReprMixin):
         return sum(1 for item in self._get_items() if item.get() == value)
 
     def extend(self, values: Iterable[_T]) -> None:
-        """Extend PagingList by appending elements from the iterable.
+        """Extend LazyPagingList by appending elements from the iterable.
 
         Arguments:
-            values: Elements to be extended into the PagingList.
+            values: Elements to be extended into the LazyPagingList.
 
         """
         self._get_items().extend(LazyItem.from_data(value) for value in values)

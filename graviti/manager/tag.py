@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Generator, Optional
 
 from graviti.exception import ResourceNotExistError
 from graviti.manager.commit import NamedCommit
-from graviti.manager.lazy import PagingList
+from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
 
 if TYPE_CHECKING:
@@ -108,14 +108,14 @@ class TagManager:
         )
         return Tag.from_pyobj(response)
 
-    def list(self) -> PagingList[Tag]:
+    def list(self) -> LazyPagingList[Tag]:
         """List the information of tags.
 
         Returns:
-            The PagingList of :class:`tags<.Tag>` instances.
+            The LazyPagingList of :class:`tags<.Tag>` instances.
 
         """
-        return PagingList(self._generate, 128)
+        return LazyPagingList(self._generate, 128)
 
     def delete(self, name: str) -> None:
         """Delete a tag.
