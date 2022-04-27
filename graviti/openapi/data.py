@@ -319,3 +319,68 @@ def add_data(
         post_data["strategy_argument"] = strategy_argument
 
     open_api_do("POST", access_key, url, json=post_data)
+
+
+def get_policy(
+    access_key: str,
+    url: str,
+    owner: str,
+    dataset: str,
+    *,
+    draft_number: int,
+    sheet: str,
+    is_internal: Optional[bool] = None,
+    expired: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/\
+    sheets/{sheet}/policy`.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        dataset: Name of the dataset, unique for a user.
+        draft_number: The draft number.
+        sheet: The sheet name.
+        is_internal: Whether to return the intranet upload address, the default value i
+            the OpenAPI is False.
+        expired: Token expiry time in seconds. It cannot be negative. The default value in
+            the OpenAPI is 60. If it is greater than 300, it will be processed as 300.
+
+    Returns:
+        The response of OpenAPI.
+
+    Examples:
+        >>> get_policy(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com/",
+        ...     "czhual",
+        ...     "MNIST",
+        ...     draft_number = 1,
+        ...     sheet = "train",
+        ... )
+        {
+            "result": {
+                "oss_access_key_id": "OSSACCESSKEYID",
+                "Signature": "QbkCDeZtX37gb2zoemel3VCxz3k=",
+                "policy": "eyJjb25kaXRpb25zIjpbWyJzdGFydHMtd2l0aCIsIiR",
+                "success_action_status": "200",
+                "multiple_upload_limit": 10
+            },
+            "extra": {
+                "backend_type": "oss",
+                "host": "https://content-store-fat-v",
+                "object_prefix": ""
+            },
+            "expire_at": "2022-03-03T18:58:10Z"
+        }
+
+    """
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/policy")
+    params: Dict[str, Any] = {}
+    if is_internal is not None:
+        params["is_internal"] = is_internal
+    if expired is not None:
+        params["expired"] = expired
+
+    return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
