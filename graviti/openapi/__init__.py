@@ -6,7 +6,7 @@
 """OpenAPI module."""
 
 from graviti.openapi.branch import create_branch, delete_branch, get_branch, list_branches
-from graviti.openapi.commit import get_revision, list_commits
+from graviti.openapi.commit import commit_draft, get_revision, list_commits
 from graviti.openapi.dataset import (
     create_dataset,
     delete_dataset,
@@ -19,6 +19,7 @@ from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 
 __all__ = [
+    "commit_draft",
     "create_branch",
     "create_dataset",
     "create_draft",
