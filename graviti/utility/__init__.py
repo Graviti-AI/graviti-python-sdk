@@ -5,6 +5,9 @@
 """Utility module."""
 
 from graviti.utility.attr import AttrDict
+
+# https://github.com/python/mypy/issues/9318
+from graviti.utility.avro import convert_arrow_schema_to_avro  # type: ignore[attr-defined]
 from graviti.utility.collections import (
     NameOrderedDict,
     UserMapping,
@@ -49,6 +52,7 @@ __all__ = [
     "UserMutableSequence",
     "UserSequence",
     "config",
+    "convert_arrow_schema_to_avro",
     "get_session",
     "locked",
     "shorten",

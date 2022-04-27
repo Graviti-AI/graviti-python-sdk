@@ -142,7 +142,10 @@ class Fields(NameOrderedDict[PortexType]):
             A list of PyArrow Field representing the fields of Portex record.
 
         """
-        return [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self.items()]
+        return [
+            pa.field(name, portex_type.to_pyarrow(), nullable=portex_type.nullable)
+            for name, portex_type in self.items()
+        ]
 
     def copy(self: _T) -> _T:
         """Get a copy of the fields.
