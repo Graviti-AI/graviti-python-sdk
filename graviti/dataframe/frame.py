@@ -22,13 +22,19 @@ from typing import (
     overload,
 )
 
+import pyarrow as pa
+
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
+from graviti.portex import PortexExternalType, PortexType, int32, record
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.manager import LazyLists
+
+_T = TypeVar("_T", bound="DataFrame")
+_S = Union[record, PortexExternalType]
 
 
 class DataFrame:
@@ -60,10 +66,10 @@ class DataFrame:
 
     """
 
-    _T = TypeVar("_T", bound="DataFrame")
     _columns: Dict[str, Union["DataFrame", ColumnSeries]]
     _column_names: List[str]
     _index: ColumnSeries
+    schema: _S
 
     def __init__(
         self,
@@ -157,6 +163,37 @@ class DataFrame:
         return obj
 
     @classmethod
+    def _from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: _S) -> _T:
+        obj: _T = object.__new__(cls)
+        obj.schema = schema
+        obj._columns = {}
+        obj._column_names = []
+
+        # In this case it's always record.
+        expanded_schema: record = schema.to_builtin()  # type:ignore[assignment]
+
+        for pafield in array.type:
+            column_name = pafield.name
+            column_value = array.field(column_name)
+            column_schema = expanded_schema.fields[column_name]
+            if isinstance(pafield.type, pa.StructType):
+                # if pafield.type is pa.StructType,
+                # the schema will always be record or PortexExternalType.
+                obj._columns[column_name] = DataFrame._from_pyarrow(
+                    column_value, schema=column_schema  # type:ignore[arg-type]
+                )
+            else:
+                obj._columns[
+                    column_name
+                ] = ColumnSeries._from_pyarrow(  # pylint: disable=protected-access
+                    column_value, schema=column_schema
+                )
+
+            obj._column_names.append(column_name)
+        obj._index = ColumnSeries(range(len(obj)), schema=int32())
+        return obj
+
+    @classmethod
     def from_lazy_lists(cls: Type[_T], lazy_lists: "LazyLists") -> _T:
         """Create DataFrame with lazy lists.
 
@@ -169,6 +206,32 @@ class DataFrame:
 
         """
         return cls(lazy_lists)
+
+    @classmethod
+    def from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: Optional[_S] = None) -> _T:
+        """Create DataFrame with pyarrow struct array.
+
+        Arguments:
+            array: The input pyarrow struct array.
+            schema: The schema of the DataFrame.
+
+        Raises:
+            TypeError: When the given schema is mismatched with the pyarrow array type.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.DataFrame` instance.
+
+        """
+        if schema is None:
+            portex_type = PortexType.from_pyarrow(array.type)
+
+        else:
+            if not array.type.equals(schema.to_pyarrow()):
+                raise TypeError("The schema is mismatched with the pyarrow array.")
+
+            portex_type = schema
+
+        return cls._from_pyarrow(array, portex_type)  # type:ignore[arg-type]
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
         header: List[Tuple[str, ...]] = []
