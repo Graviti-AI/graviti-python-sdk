@@ -7,10 +7,16 @@
 
 
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Union, overload
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, TypeVar, Union, overload
+
+import pyarrow as pa
 
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
+from graviti.portex import PortexType
 from graviti.utility import MAX_REPR_ROWS
+from graviti.utility.paging import PagingList
+
+_T = TypeVar("_T", bound="Series")
 
 
 class Series:
@@ -35,6 +41,7 @@ class Series:
 
     """
 
+    schema: PortexType
     _indices_data: Optional[Dict[int, int]]
     _indices: Optional[List[int]]
 
@@ -225,3 +232,38 @@ class Series:
 
         """
         return ColumnSeriesLocIndexer(self)
+
+    @classmethod
+    def _from_pyarrow(
+        cls: Type[_T], array: pa.Array, schema: PortexType, name: Optional[str] = None
+    ) -> _T:
+        obj: _T = object.__new__(cls)
+        obj._data = PagingList(array)  # type: ignore[assignment]
+        obj.schema = schema
+        obj.name = name
+        obj._indices_data = None
+        obj._indices = None
+        return obj
+
+    @classmethod
+    def from_pyarrow(
+        cls: Type[_T], array: pa.Array, schema: PortexType, name: Optional[str] = None
+    ) -> _T:
+        """Instantiate a Series backed by an pyarrow array.
+
+        Arguments:
+            array: The input pyarrow array.
+            schema: The schema of the series.
+            name: The name to the Series.
+
+        Raises:
+            TypeError: When the schema is mismatched with the pyarrow array type.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.column.Series` instance.
+
+        """
+        if not array.type.equals(schema.to_pyarrow()):
+            raise TypeError("The schema is mismatched with the pyarrow array.")
+
+        return cls._from_pyarrow(array, schema, name)
