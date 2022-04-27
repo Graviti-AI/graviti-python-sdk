@@ -7,9 +7,10 @@
 
 from typing import TYPE_CHECKING, Generator, Optional
 
+from graviti.manager.commit import Commit
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
-from graviti.openapi import create_draft, get_draft, list_drafts, update_draft
+from graviti.openapi import commit_draft, create_draft, get_draft, list_drafts, update_draft
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -93,14 +94,29 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = "CLOSED"
         # TODO: update the draft.updated_at
 
-    def commit(self, title: str, description: str = "") -> None:
+    def commit(self, title: str, description: Optional[str] = None) -> Commit:
         """Commit the current draft.
 
         Arguments:
             title: The commit title.
             description: The commit description.
 
+        Returns:
+            The :class:`~graviti.manager.commit.Commit` instance.
+
         """
+        response = commit_draft(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            draft_number=self.number,
+            title=title,
+            description=description,
+        )
+        self.state = "COMMITTED"
+        # TODO: update the draft.updated_at
+        return Commit.from_pyobj(response)
 
     def upload(self, jobs: int = 1) -> None:
         """Upload the local dataset to Graviti.

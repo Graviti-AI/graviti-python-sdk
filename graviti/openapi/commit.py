@@ -45,7 +45,12 @@ def commit_draft(
         ...     title="commit-2",
         ... )
         {
-            "commitId": "a0d4065872f245e4ad1d0d1186e3d397"
+           "commit_id": "85c57a7f03804ccc906632248dc8c359",
+           "parent_commit_id": "784ba0d3bf0a41f6a7bfd771d8c00fcb",
+           "title": "upload data",
+           "description": "",
+           "committer": "czhual",
+           "committed_at": "2021-03-03T18:58:10Z"
         }
 
     """
