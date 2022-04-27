@@ -16,6 +16,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -140,63 +141,22 @@ class PagingList:
         ...
 
     @overload
-    def __setitem__(self, index: slice, value: Iterable[Any]) -> None:
+    def __setitem__(self, index: slice, value: Union[Iterable[Any], "PagingList"]) -> None:
         ...
 
-    def __setitem__(self, index: Union[int, slice], value: Union[Any, Iterable[Any]]) -> None:
-        if isinstance(index, slice):
-            start, stop, step = index.indices(self.__len__())
-
-            if step == 1:
-                page = Page(pa.array(value, self._patype))
-            elif step == -1:
-                start, stop = stop + 1, start + 1
-                try:
-                    reversed_values = reversed(value)  # type: ignore[arg-type]
-                except TypeError:
-                    reversed_values = reversed(list(value))
-
-                page = Page(pa.array(reversed_values, self._patype))
-                if len(page) != stop - start:
-                    raise ValueError(
-                        f"attempt to assign sequence of size {len(page)} "
-                        f"to extended slice of size {stop - start}"
-                    )
-            else:
-                page = Page(pa.array(value, self._patype))
-                ranging: Any = range(start, stop, step)
-                indices: Any = range(len(page))
-                if len(page) != len(ranging):
-                    raise ValueError(
-                        f"attempt to assign sequence of size {len(page)} "
-                        f"to extended slice of size {len(ranging)}"
-                    )
-
-                if step > 0:
-                    ranging = reversed(ranging)
-                    indices = reversed(indices)
-
-                for i, j in zip(ranging, indices):
-                    self._update_pages(i, i + 1, [page[j : j + 1]])
-
-                return
-
+    def __setitem__(
+        self, index: Union[int, slice], value: Union[Any, Iterable[Any], "PagingList"]
+    ) -> None:
+        if isinstance(index, int):
+            self.set_item(index, value)
+        elif isinstance(value, PagingList):
+            self.set_slice(index, value)
         else:
-            index = self._make_index_nonnegative(index)
-            start = index
-            stop = index + 1
-            page = Page(pa.array((value,), self._patype))
-
-        if len(page) == 0:
-            return
-
-        self._update_pages(start, stop, [page])
+            self.set_slice_iterable(index, value)
 
     def __delitem__(self, index: Union[int, slice]) -> None:
         if isinstance(index, slice):
             start, stop, step = index.indices(self.__len__())
-            if start == stop:
-                return
 
             if step == 1:
                 pass
@@ -238,31 +198,62 @@ class PagingList:
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i].get_item(j)
 
-    def _update_pages(self, start: int, stop: int, pages: Optional[List["Page"]] = None) -> None:
+    def _update_pages(
+        self, start: int, stop: int, pages: Optional[Sequence["Page"]] = None
+    ) -> None:
+        if start >= stop and not pages:
+            return
+
+        stop = max(start, stop)
+
         start_i, start_j = self._offsets.get_coordinate(start)
         stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
 
         update_pages = []
-        lengths = []
+        update_lengths = []
 
         left_page = self._pages[start_i].get_slice(stop=start_j)
         left_length = len(left_page)
         if left_length:
             update_pages.append(left_page)
-            lengths.append(left_length)
+            update_lengths.append(left_length)
 
-        if pages is not None:
+        if pages:
             update_pages.extend(pages)
-            lengths.extend(map(len, pages))
+            update_lengths.extend(map(len, pages))
 
         right_page = self._pages[stop_i].get_slice(stop_j + 1)
         right_length = len(right_page)
         if right_length:
             update_pages.append(right_page)
-            lengths.append(right_length)
+            update_lengths.append(right_length)
 
         self._pages[start_i : stop_i + 1] = update_pages
-        self._offsets.update(start_i, stop_i, lengths)
+        self._offsets.update(start_i, stop_i, update_lengths)
+
+    def _update_pages_with_step(
+        self, start: int, stop: int, step: int, values: "PagingList"
+    ) -> None:
+        length = len(values)
+        ranging: Any = range(start, stop, step)
+        indices: Any = range(length)
+
+        if length != len(ranging):
+            raise ValueError(
+                f"attempt to assign sequence of size {length} "
+                f"to extended slice of size {len(ranging)}"
+            )
+
+        if step > 0:
+            ranging = reversed(ranging)
+            indices = reversed(indices)
+
+        offsets = values._offsets  # pylint: disable=protected-access
+        pages = values._pages  # pylint: disable=protected-access
+
+        for i, j in zip(ranging, indices):
+            x, y = offsets.get_coordinate(j)
+            self._update_pages(i, i + 1, [pages[x][y : y + 1]])
 
     @classmethod
     def from_factory(
@@ -292,6 +283,95 @@ class PagingList:
 
         return obj
 
+    def set_item(self, index: int, value: Any) -> None:
+        """Update the element value in PagingList at the given index.
+
+        Arguments:
+            index: The element index.
+            value: The value needs to be set into the PagingList.
+
+        """
+        index = self._make_index_nonnegative(index)
+        page = Page(pa.array((value,), self._patype))
+        self._update_pages(index, index + 1, [page])
+
+    def set_slice(self, index: slice, values: "PagingList") -> None:
+        """Update the element values in PagingList at the given slice with another PagingList.
+
+        Arguments:
+            index: The element slice.
+            values: The PagingList which contains the elements to be set.
+
+        Raises:
+            ArrowTypeError: When two pyarrow types mismatch.
+            ValueError: When the input size mismatches with the slice size (when step != 1).
+
+        """
+        # pylint: disable=protected-access
+        if values._patype != self._patype:
+            raise pa.ArrowTypeError(
+                f"Can not set a '{self._patype}' list with a '{values._patype}' list"
+            )
+
+        start, stop, step = index.indices(self.__len__())
+
+        if step == 1:
+            self._update_pages(start, stop, values._pages)
+            return
+
+        if step == -1:
+            start, stop = stop + 1, max(start, stop) + 1
+            if len(values) != stop - start:
+                raise ValueError(
+                    f"attempt to assign sequence of size {len(values)} "
+                    f"to extended slice of size {stop - start}"
+                )
+
+            self._update_pages(
+                start, stop, [page.get_slice(step=-1) for page in reversed(values._pages)]
+            )
+            return
+
+        self._update_pages_with_step(start, stop, step, values)
+
+    def set_slice_iterable(self, index: slice, values: Iterable[Any]) -> None:
+        """Update the element values in PagingList at the given slice with iterable object.
+
+        Arguments:
+            index: The element slice.
+            values: The iterable object which contains the elements to be set.
+
+        Raises:
+            ValueError: When the assign input size mismatches with the slice size (when step != 1).
+
+        """
+        start, stop, step = index.indices(self.__len__())
+
+        if step == 1:
+            array = pa.array(values, self._patype)
+            self._update_pages(start, stop, [Page(array)] if len(array) != 0 else None)
+            return
+
+        if step == -1:
+            try:
+                values = reversed(values)  # type: ignore[call-overload]
+            except TypeError:
+                values = reversed(list(values))
+
+            array = pa.array(values, self._patype)
+
+            start, stop = stop + 1, max(start, stop) + 1
+            if len(array) != stop - start:
+                raise ValueError(
+                    f"attempt to assign sequence of size {len(array)} "
+                    f"to extended slice of size {stop - start}"
+                )
+
+            self._update_pages(start, stop, [Page(array)] if len(array) != 0 else None)
+            return
+
+        self._update_pages_with_step(start, stop, step, PagingList(pa.array(values, self._patype)))
+
     def extend(self, values: "PagingList") -> None:
         """Extend PagingList by appending elements from another PagingList.
 
@@ -299,7 +379,7 @@ class PagingList:
             values: The PagingList which contains the elements to be extended.
 
         Raises:
-            ArrowTypeError: When the pyarrow type mismatch.
+            ArrowTypeError: When two pyarrow types mismatch.
 
         """
         # pylint: disable=protected-access
@@ -378,7 +458,7 @@ class Page:
 
     def __getitem__(self, index: Union[int, slice]) -> Union[Any, "Page"]:
         if isinstance(index, slice):
-            return self.get_slice(index.start, index.stop)
+            return self.get_slice(index.start, index.stop, index.step)
 
         return self.get_item(index)
 
@@ -404,18 +484,21 @@ class Page:
         """
         return self.get_array().__getitem__(index)
 
-    def get_slice(self, start: Optional[int] = None, stop: Optional[int] = None) -> "Page":
+    def get_slice(
+        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
+    ) -> "Page":
         """Return a sliced page according to the given start and stop index.
 
         Arguments:
             start: The start index.
             stop: The stop index.
+            step: The slice step.
 
         Returns:
             A sliced page according to the given start and stop index.
 
         """
-        return SlicedPage(self._ranging[start:stop], self._array)
+        return SlicedPage(self._ranging[start:stop:step], self._array)
 
     def get_array(self) -> pa.array:
         """Get the array inside the page.
@@ -477,19 +560,20 @@ class LazyPage(Page):
         self._array = None
 
     def get_slice(
-        self, start: Optional[int] = None, stop: Optional[int] = None
+        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
     ) -> "LazySlicedPage":
         """Return a lazy sliced page according to the given start and stop index.
 
         Arguments:
             start: The start index.
             stop: The stop index.
+            step: The slice step.
 
         Returns:
             A sliced page according to the given start and stop index.
 
         """
-        return LazySlicedPage(self._ranging[start:stop], self._pos, self._array_getter)
+        return LazySlicedPage(self._ranging[start:stop:step], self._pos, self._array_getter)
 
     def get_array(self) -> pa.Array:
         """Get the array inside the page.
