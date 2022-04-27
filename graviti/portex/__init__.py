@@ -20,6 +20,7 @@ from graviti.portex.builtin import (
 )
 from graviti.portex.catalog_to_schema import catalog_to_schema
 from graviti.portex.extractors import Extractors, get_extractors
+from graviti.portex.template import PortexExternalType
 
 __all__ = [
     "array",
@@ -37,4 +38,5 @@ __all__ = [
     "tensor",
     "Extractors",
     "PortexType",
+    "PortexExternalType",
 ]
