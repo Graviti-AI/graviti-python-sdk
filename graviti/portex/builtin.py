@@ -25,6 +25,7 @@ _PYTHON_TYPE_TO_PYARROW_TYPE = {
     bool: pa.bool_(),
     str: pa.string(),
     bytes: pa.binary(),
+    None: pa.null(),
 }
 
 
@@ -147,7 +148,9 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
         # To make the LazyFactory.get_array() work properly,
         # the PyArrow type of binary files should be consistent with the return value,
         # which is a dict containing "url" and "checksum".
-        return pa.struct([("url", pa.string()), ("checksum", pa.string())])
+        return pa.struct(
+            [pa.field("checksum", pa.string(), nullable=False), pa.field("url", pa.string())]
+        )
 
 
 @PyArrowConversionRegister(pa.lib.Type_BOOL)  # pylint: disable=c-extension-no-member
@@ -386,24 +389,26 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
+        Raises:
+            NotImplementedError: When the values have more than one types.
+
         Returns:
             The corresponding builtin PyArrow DataType.
 
         """
-        pytypes = {type(value) for value in self.values}
+        pytype = None
+        for value in self.values:
+            if value is None:
+                self.nullable = True
+                continue
 
-        patype = (
-            _PYTHON_TYPE_TO_PYARROW_TYPE[pytypes.pop()]
-            if len(pytypes) == 1
-            else pa.union(
-                (
-                    pa.field(str(index), _PYTHON_TYPE_TO_PYARROW_TYPE[pytype])
-                    for index, pytype in enumerate(pytypes)
-                ),
-                "sparse",
-            )
-        )
-        return pa.dictionary(pa.int32(), patype)
+            value_type = type(value)
+            if value_type != pytype and pytype is not None:
+                raise NotImplementedError("Values with more than one type is not supported yet")
+
+            pytype = value_type
+
+        return pa.dictionary(pa.int32(), _PYTHON_TYPE_TO_PYARROW_TYPE[pytype])
 
 
 @PyArrowConversionRegister(
