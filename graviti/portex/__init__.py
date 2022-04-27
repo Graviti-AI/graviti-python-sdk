@@ -4,6 +4,7 @@
 #
 """Schema module."""
 
+from graviti.portex.base import PortexType
 from graviti.portex.builtin import (
     array,
     binary,
@@ -35,4 +36,5 @@ __all__ = [
     "string",
     "tensor",
     "Extractors",
+    "PortexType",
 ]
