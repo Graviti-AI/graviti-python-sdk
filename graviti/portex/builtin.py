@@ -7,12 +7,12 @@
 
 from functools import reduce
 from operator import mul
-from typing import Any, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import Any, Iterable, List, Mapping, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
 
 import graviti.portex.ptype as PTYPE
-from graviti.portex.base import PortexType
+from graviti.portex.base import PortexType, PyArrowConversionRegister
 from graviti.portex.field import Fields
 from graviti.portex.package import packages
 from graviti.portex.param import Param, Params, param
@@ -30,6 +30,8 @@ _PYTHON_TYPE_TO_PYARROW_TYPE = {
 
 class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex builtin type."""
+
+    _T = TypeVar("_T", bound="PortexBuiltinType")
 
     params = Params()
 
@@ -49,6 +51,10 @@ class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
             kwargs[key] = self.params[key].check(value)
 
         super().__init__(**kwargs)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+        return cls()
 
 
 class PortexNumericType(PortexBuiltinType):  # pylint: disable=abstract-method
@@ -74,6 +80,7 @@ class PortexNumericType(PortexBuiltinType):  # pylint: disable=abstract-method
         super().__init__(minimum=minimum, maximum=maximum, nullable=nullable)
 
 
+@PyArrowConversionRegister(pa.lib.Type_STRING)  # pylint: disable=c-extension-no-member
 class string(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
 
@@ -102,6 +109,7 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.string()
 
 
+@PyArrowConversionRegister(pa.lib.Type_BINARY)  # pylint: disable=c-extension-no-member
 class binary(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``binary``.
 
@@ -130,6 +138,7 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.binary()
 
 
+@PyArrowConversionRegister(pa.lib.Type_BOOL)  # pylint: disable=c-extension-no-member
 class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``boolean``.
 
@@ -158,6 +167,7 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.bool_()
 
 
+@PyArrowConversionRegister(pa.lib.Type_INT32)  # pylint: disable=c-extension-no-member
 class int32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int32``.
 
@@ -181,6 +191,7 @@ class int32(PortexNumericType):  # pylint: disable=invalid-name
         return pa.int32()
 
 
+@PyArrowConversionRegister(pa.lib.Type_INT64)  # pylint: disable=c-extension-no-member
 class int64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``int64``.
 
@@ -204,6 +215,7 @@ class int64(PortexNumericType):  # pylint: disable=invalid-name
         return pa.int64()
 
 
+@PyArrowConversionRegister(pa.lib.Type_FLOAT)  # pylint: disable=c-extension-no-member
 class float32(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float32``.
 
@@ -227,6 +239,7 @@ class float32(PortexNumericType):  # pylint: disable=invalid-name
         return pa.float32()
 
 
+@PyArrowConversionRegister(pa.lib.Type_DOUBLE)  # pylint: disable=c-extension-no-member
 class float64(PortexNumericType):  # pylint: disable=invalid-name
     """Portex primitive type ``float64``.
 
@@ -250,6 +263,7 @@ class float64(PortexNumericType):  # pylint: disable=invalid-name
         return pa.float64()
 
 
+@PyArrowConversionRegister(pa.lib.Type_STRUCT)  # pylint: disable=c-extension-no-member
 class record(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``record``.
 
@@ -287,6 +301,8 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    _T = TypeVar("_T", bound="record")
+
     fields: Fields = param(ptype=PTYPE.Fields)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
@@ -296,6 +312,10 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
         nullable: bool = False,
     ) -> None:
         super().__init__(fields=fields, nullable=nullable)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.StructType) -> _T:
+        return cls((field.name, cls.from_pyarrow(field.type)) for field in pyarrow_type)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -374,6 +394,9 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.dictionary(pa.int32(), patype)
 
 
+@PyArrowConversionRegister(
+    pa.lib.Type_LIST, pa.lib.Type_FIXED_SIZE_LIST  # pylint: disable=c-extension-no-member
+)
 class array(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``array``.
 
@@ -394,6 +417,8 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    _T = TypeVar("_T", bound="array")
+
     items: PortexType = param(ptype=PTYPE.PortexType)
     length: Optional[int] = param(None, ptype=PTYPE.Integer)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
@@ -402,6 +427,13 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         self, items: PortexType, length: Optional[int] = None, nullable: bool = False
     ) -> None:
         super().__init__(items=items, length=length, nullable=nullable)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: Union[pa.ListType, pa.FixedSizeListType]) -> _T:
+        return cls(
+            cls.from_pyarrow(pyarrow_type.value_type),
+            getattr(pyarrow_type, "list_size", None),
+        )
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.

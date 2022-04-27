@@ -6,7 +6,7 @@
 
 
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 
 import pyarrow as pa
 import yaml
@@ -17,6 +17,36 @@ if TYPE_CHECKING:
     from graviti.portex.param import Params
 
 _INDENT = " " * 2
+
+_T = TypeVar("_T", bound="PortexType")
+
+PYARROW_TYPE_ID_TO_PORTEX_TYPE = {}
+
+
+class PyArrowConversionRegister:
+    """Register the Portex type to set the conversion from PyArrow to Portex.
+
+    Arguments:
+        pyarrow_type_ids: The id of the corresponding PyArrow types.
+
+    """
+
+    def __init__(self, *pyarrow_type_ids: int) -> None:
+        self._pyarrow_type_ids = pyarrow_type_ids
+
+    def __call__(self, portex_type: Type[_T]) -> Type[_T]:
+        """Register the Portex type and return it back.
+
+        Arguments:
+            portex_type: The Portex type to register.
+
+        Returns:
+            The original Portex type.
+
+        """
+        for pyarrow_type_id in self._pyarrow_type_ids:
+            PYARROW_TYPE_ID_TO_PORTEX_TYPE[pyarrow_type_id] = portex_type
+        return portex_type
 
 
 class PortexType:
@@ -42,6 +72,10 @@ class PortexType:
 
     def __repr__(self) -> str:
         return self._repr1(0)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+        raise NotImplementedError
 
     def _repr1(self, level: int) -> str:
         with_params = False
@@ -84,8 +118,8 @@ class PortexType:
 
     @classmethod
     def from_pyobj(
-        cls, content: Dict[str, Any], _imports: Optional["Imports"] = None
-    ) -> "PortexType":
+        cls: Type[_T], content: Dict[str, Any], _imports: Optional["Imports"] = None
+    ) -> _T:
         """Create Portex type instance from python dict.
 
         Arguments:
@@ -98,7 +132,7 @@ class PortexType:
         if _imports is None:
             _imports = Imports.from_pyobj(content.get("imports", []))
 
-        class_ = _imports[content["type"]]
+        class_: Type[_T] = _imports[content["type"]]  # type: ignore[assignment]
 
         assert issubclass(class_, cls)
         kwargs = {}
@@ -109,6 +143,33 @@ class PortexType:
 
         type_ = class_(**kwargs)
         return type_
+
+    @classmethod
+    def from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+        """Create Portex type instance from PyArrow type.
+
+        Arguments:
+            pyarrow_type: The PyArrow type.
+
+        Raises:
+            TypeError: When the PyArrow type is not supported.
+
+        Returns:
+            The created Portex type instance.
+
+        """
+        pyarrow_type_id = (
+            pyarrow_type.value_type.id
+            if pyarrow_type.id == pa.lib.Type_DICTIONARY  # pylint: disable=c-extension-no-member
+            else pyarrow_type.id
+        )
+
+        try:
+            portex_type = PYARROW_TYPE_ID_TO_PORTEX_TYPE[pyarrow_type_id]
+        except KeyError:
+            raise TypeError(f'Not supported PyArrow type "{pyarrow_type}"') from None
+
+        return portex_type._from_pyarrow(pyarrow_type)  # pylint: disable=protected-access
 
     @classmethod
     def from_json(cls, content: str) -> "PortexType":
