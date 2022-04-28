@@ -5,13 +5,15 @@
 """Portex record field releated classes."""
 
 
-from typing import Any, Dict, Iterable, List, Mapping, Tuple, Union
+from typing import Any, Dict, Iterable, List, Mapping, Tuple, TypeVar, Union
 
 import pyarrow as pa
 
 from graviti.portex.base import _INDENT, PortexType
 from graviti.portex.package import Imports
 from graviti.utility import NameOrderedDict
+
+_T = TypeVar("_T", bound="Fields")
 
 
 class Fields(NameOrderedDict[PortexType]):
@@ -141,3 +143,12 @@ class Fields(NameOrderedDict[PortexType]):
 
         """
         return [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self.items()]
+
+    def copy(self: _T) -> _T:
+        """Get a copy of the fields.
+
+        Returns:
+            A copy of the fields.
+
+        """
+        return self.__class__((name, portex_type.copy()) for name, portex_type in self.items())

@@ -5,9 +5,10 @@
 """Parameter type releated classes."""
 
 
+from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Dict, List, Sequence, Tuple, Type, Union
+from typing import Dict, List, Sequence, Tuple, Type, TypeVar, Union
 
 from graviti.portex.base import PortexType as ClassPortexType
 from graviti.portex.field import Fields as ClassFields
@@ -15,6 +16,11 @@ from graviti.portex.package import Imports
 
 if TYPE_CHECKING:
     from graviti.portex.factory import Dynamic
+
+
+_T = TypeVar("_T")
+_P = TypeVar("_P", bound=ClassPortexType)
+_F = TypeVar("_F", bound=ClassFields)
 
 
 class ParameterType:
@@ -60,6 +66,19 @@ class ParameterType:
         """
         return arg
 
+    @staticmethod
+    def copy(arg: TypingAny) -> TypingAny:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return arg
+
 
 PType = Union[Type[ParameterType], "Dynamic"]
 
@@ -79,6 +98,19 @@ class Any(ParameterType):
 
         """
         return arg
+
+    @staticmethod
+    def copy(arg: _T) -> _T:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return copy(arg)
 
 
 class Boolean(ParameterType):
@@ -125,6 +157,19 @@ class Array(ParameterType):
             raise TypeError("Argument should be a Sequence")
 
         return arg
+
+    @staticmethod
+    def copy(arg: _T) -> _T:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return copy(arg)
 
 
 class Field(ParameterType):
@@ -178,6 +223,19 @@ class Field(ParameterType):
         name, portex_type = arg
         return {"name": name, **portex_type.to_pyobj(False)}
 
+    @staticmethod
+    def copy(arg: Tuple[str, _P]) -> Tuple[str, _P]:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return arg[0], arg[1].copy()
+
 
 class Fields(ParameterType):
     """Parameter type for Portex record fields."""
@@ -221,6 +279,19 @@ class Fields(ParameterType):
 
         """
         return arg.to_pyobj()
+
+    @staticmethod
+    def copy(arg: _F) -> _F:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return arg.copy()
 
 
 class Number(ParameterType):
@@ -317,6 +388,19 @@ class PortexType(ParameterType):
 
         """
         return arg.to_pyobj(False)
+
+    @staticmethod
+    def copy(arg: _P) -> _P:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return arg.copy()
 
 
 class String(ParameterType):

@@ -257,3 +257,16 @@ class PortexType:
 
         """
         raise NotImplementedError
+
+    def copy(self: _T) -> _T:
+        """Get a copy of the portex type.
+
+        Returns:
+            A copy of the portex type.
+
+        """
+        obj: _T = object.__new__(self.__class__)
+        for name, param in self.params.items():
+            setattr(obj, name, param.copy(getattr(self, name)))
+
+        return obj

@@ -7,12 +7,14 @@
 
 from collections import OrderedDict
 from inspect import Parameter, Signature
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
+from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional, TypeVar
 
 import graviti.portex.ptype as PTYPE
 from graviti.portex.factory import Dynamic
 from graviti.portex.package import Imports
 from graviti.utility import UserMapping
+
+_T = TypeVar("_T")
 
 
 def param(
@@ -169,6 +171,25 @@ class Param(Parameter):
             raise TypeError("Dump for dynamic type is not supported yet")
 
         return self.ptype.dump(arg)
+
+    def copy(self, arg: _T) -> _T:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        Raises:
+            TypeError: When ptype is dynamic.
+
+        """
+        # TODO: Support copy for dynamic parameter types.
+        if isinstance(self.ptype, Dynamic):
+            raise TypeError("Copy for dynamic type is not supported yet")
+
+        return self.ptype.copy(arg)  # type: ignore[no-any-return]
 
 
 class Params(UserMapping[str, Param]):
