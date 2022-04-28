@@ -53,22 +53,11 @@ class PortexType:
     """The base class of portex type."""
 
     nullable: bool
-    imports: Imports = Imports()
     package: ClassVar[Package[Any]]
     params: ClassVar["Params"]
 
     def __init__(self, **kwargs: Any) -> None:
         self.__dict__.update(kwargs)
-        imports = Imports()
-        for kwarg in kwargs.values():
-            if hasattr(kwarg, "imports"):
-                imports.update(kwarg.imports)
-
-            if isinstance(kwarg, PortexType):
-                class_ = kwarg.__class__
-                imports[class_.__name__] = class_
-
-        self.imports = imports
 
     def __repr__(self) -> str:
         return self._repr1(0)
@@ -115,6 +104,27 @@ class PortexType:
 
     def _get_keys(self) -> List[Tuple[str, ...]]:  # pylint: disable=no-self-use
         return []
+
+    @property
+    def imports(self) -> Imports:
+        """Get the PortexType imports.
+
+        Returns:
+            The :class:`Imports` instance of this PortexType.
+
+        """
+        imports = Imports()
+
+        for name in self.params:
+            argument = getattr(self, name)
+            if hasattr(argument, "imports"):
+                imports.update(argument.imports)
+
+            if isinstance(argument, PortexType):
+                class_ = argument.__class__
+                imports[class_.__name__] = class_
+
+        return imports
 
     @classmethod
     def from_pyobj(
