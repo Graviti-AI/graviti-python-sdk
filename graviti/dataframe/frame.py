@@ -516,6 +516,27 @@ class DataFrame:
 
         """
 
+    def copy(self: _T) -> _T:
+        """Get a copy of the dataframe.
+
+        Returns:
+            A copy of the dataframe.
+
+        """
+        obj: _T = object.__new__(self.__class__)
+
+        obj.schema = self.schema.copy()
+
+        columns = {}
+        for key, value in self._columns.items():
+            columns[key] = value.copy()
+
+        # pylint: disable=protected-access
+        obj._columns = columns
+        obj._column_names = self._column_names.copy()
+        obj._index = self._index.copy()
+        return obj
+
     def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
         """Return a random sample of items from an axis of object.
 

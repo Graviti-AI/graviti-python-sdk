@@ -6,6 +6,7 @@
 """The implementation of the Graviti Series."""
 
 
+from copy import copy
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, TypeVar, Union, overload
 
@@ -58,6 +59,7 @@ class Series:
 
         self._data = data
         self.name = name
+        self.schema = schema
         if index is None:
             self._indices_data = index
             self._indices = index
@@ -267,3 +269,22 @@ class Series:
             raise TypeError("The schema is mismatched with the pyarrow array.")
 
         return cls._from_pyarrow(array, schema, name)
+
+    def copy(self: _T) -> _T:
+        """Get a copy of the series.
+
+        Returns:
+            A copy of the series.
+
+        """
+        obj: _T = object.__new__(self.__class__)
+
+        obj.name = self.name
+        obj.schema = self.schema.copy()
+
+        # pylint: disable=protected-access
+        obj._data = self._data.copy() if isinstance(self._data, PagingList) else copy(self._data)
+        obj._indices_data = copy(self._indices_data)
+        obj._indices = copy(self._indices)
+
+        return obj
