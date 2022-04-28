@@ -11,6 +11,7 @@ import pyarrow as pa
 
 import graviti.portex.ptype as PTYPE
 from graviti.portex.base import PortexType
+from graviti.portex.builtin import PortexBuiltinType
 from graviti.portex.factory import Dynamic, Factory, type_factory_creator
 from graviti.portex.package import ExternalPackage, Imports, Package, packages
 from graviti.portex.param import Param, Params
@@ -59,6 +60,15 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         """
         return self.internal_type.to_pyarrow()
+
+    def to_builtin(self) -> PortexBuiltinType:
+        """Expand the top level of the Portex external type to Portex builtin type.
+
+        Returns:
+            The expanded Portex builtin type.
+
+        """
+        return self.internal_type.to_builtin()  # type: ignore[attr-defined, no-any-return]
 
 
 def template(

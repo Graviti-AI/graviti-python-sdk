@@ -56,6 +56,15 @@ class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
     def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
         return cls()
 
+    def to_builtin(self: _T) -> _T:
+        """Expand the top level type to Portex builtin type.
+
+        Returns:
+            The expanded Portex builtin type.
+
+        """
+        return self
+
 
 class PortexNumericType(PortexBuiltinType):  # pylint: disable=abstract-method
     """The base class of the Portex numeric types.
