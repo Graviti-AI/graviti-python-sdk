@@ -20,12 +20,6 @@ class Fields(NameOrderedDict[PortexType]):
     def __init__(self, fields: Union[Iterable[Tuple[str, PortexType]], Mapping[str, PortexType]]):
         super().__init__(fields)
 
-        imports = Imports()
-        for portex_type in self._data.values():
-            imports.update_from_type(portex_type)
-
-        self.imports = imports
-
     def __repr__(self) -> str:
         return self._repr1(0)
 
@@ -49,6 +43,20 @@ class Fields(NameOrderedDict[PortexType]):
     def _setitem(self, key: str, value: PortexType) -> None:
         self._check_value(value)
         super()._setitem(key, value)
+
+    @property
+    def imports(self) -> Imports:
+        """Get the Fields imports.
+
+        Returns:
+            The :class:`Imports` instance of this Fields.
+
+        """
+        imports = Imports()
+        for portex_type in self._data.values():
+            imports.update_from_type(portex_type)
+
+        return imports
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
