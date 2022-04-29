@@ -362,34 +362,31 @@ class DataFrame:
     # def _getitem_by_location(self, key: slice) -> "DataFrame":
     #    ...
 
-    @overload
+    # @overload
+    # def _getitem_by_location(self, key: int) -> RowSeries:
+    #     ...
+
+    # @overload
+    # def _getitem_by_location(self, key: Iterable[int]) -> "DataFrame":
+    #     ...
+
     def _getitem_by_location(self, key: int) -> RowSeries:
-        ...
+        indices_data = {name: self._columns[name].iloc[key] for name in self._column_names}
+        return RowSeries._construct(indices_data, key)  # pylint: disable=protected-access
 
-    @overload
-    def _getitem_by_location(self, key: Iterable[int]) -> "DataFrame":
-        ...
+    # @overload
+    # @staticmethod
+    # def _get_location_by_index(key: Iterable[int]) -> Iterable[int]:
+    #     ...
 
-    def _getitem_by_location(self, key: Union[int, Iterable[int]]) -> Union["DataFrame", RowSeries]:
-        if isinstance(key, int):
-            indices_data = {name: self._columns[name].iloc[key] for name in self._column_names}
-            return RowSeries._construct(indices_data, key)  # pylint: disable=protected-access
+    # @overload
+    # @staticmethod
+    # def _get_location_by_index(key: int) -> int:
+    #     ...
 
-        return self._construct(self._columns)
-
-    @overload
-    @staticmethod
-    def _get_location_by_index(key: Iterable[int]) -> Iterable[int]:
-        ...
-
-    @overload
-    @staticmethod
-    def _get_location_by_index(key: int) -> int:
-        ...
-
-    @staticmethod
-    def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, Iterable[int]]:
-        return key
+    # @staticmethod
+    # def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, Iterable[int]]:
+    #     return key
 
     def head(self, n: int = 5) -> "DataFrame":
         """Return the first `n` rows.
