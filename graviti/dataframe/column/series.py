@@ -6,9 +6,8 @@
 """The implementation of the Graviti Series."""
 
 
-from copy import copy
 from itertools import islice
-from typing import Any, Iterable, Optional, Sequence, Type, TypeVar, Union, overload
+from typing import Any, Iterable, Optional, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -43,20 +42,16 @@ class Series:
     """
 
     schema: PortexType
+    _data: PagingList
+    name: Optional[str]
 
     def __init__(
         self,
-        data: Sequence[Any],
-        schema: Any = None,
-        name: Union[str, int, None] = None,
+        data: Iterable[Any],
+        schema: Optional[PortexType] = None,
+        name: Union[str, None] = None,
     ) -> None:
-        if schema is not None:
-            # TODO: missing schema processing
-            pass
-
-        self._data = data
-        self.name = name
-        self.schema = schema
+        raise NotImplementedError("Not support initializing Series by __init__.")
 
     # @overload
     # def __getitem__(self, key: slice) -> "Series":
@@ -202,7 +197,7 @@ class Series:
         cls: Type[_T], array: pa.Array, schema: PortexType, name: Optional[str] = None
     ) -> _T:
         obj: _T = object.__new__(cls)
-        obj._data = PagingList(array)  # type: ignore[assignment]
+        obj._data = PagingList(array)
         obj.schema = schema
         obj.name = name
         return obj
@@ -250,6 +245,6 @@ class Series:
         obj.schema = self.schema.copy()
 
         # pylint: disable=protected-access
-        obj._data = self._data.copy() if isinstance(self._data, PagingList) else copy(self._data)
+        obj._data = self._data.copy()
 
         return obj
