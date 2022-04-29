@@ -142,6 +142,35 @@ class Series:
     def _getitem_by_location(self, key: int) -> Any:
         return self._data[key]
 
+    def _extend(self, values: "Series") -> None:
+        """Extend Series to itself row by row.
+
+        Arguments:
+            values: A series that needs to be extended.
+
+        Examples:
+            >>> s1 = Series.from_pyarrow(pa.array([1,2,3]))
+            >>> s1
+            0  1
+            1  2
+            2  3
+            >>> s2 = Series.from_pyarrow(pa.array([4,5,6]))
+            >>> s2
+            0  4
+            1  5
+            2  6
+            >>> s1.extend(s2)
+            >>> s1
+            0  1
+            1  2
+            2  3
+            3  1
+            4  2
+            5  3
+
+        """
+        self._data.extend(values._data)  # pylint: disable=protected-access
+
     @property
     def iloc(self) -> ColumnSeriesILocIndexer:
         """Purely integer-location based indexing for selection by position.

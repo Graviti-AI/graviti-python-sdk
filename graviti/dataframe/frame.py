@@ -265,6 +265,10 @@ class DataFrame:
             lines.append(line)
         return lines
 
+    def _extend(self, values: "DataFrame") -> None:
+        for key, value in self._columns.items():
+            value._extend(values[key])  # type: ignore[arg-type]  # pylint: disable=protected-access
+
     @property
     def iloc(self) -> DataFrameILocIndexer:
         """Purely integer-location based indexing for selection by position.
@@ -543,21 +547,23 @@ class DataFrame:
     def info(self) -> None:
         """Print a concise summary of a DataFrame."""
 
-    def extend(self, objs: Union[Iterable[Dict[str, Any]], "DataFrame"]) -> None:
+    def extend(self, values: Union[Iterable[Dict[str, Any]], "DataFrame"]) -> None:
         """Extend Sequence object or DataFrame to itself row by row.
 
         Arguments:
-            objs: A sequence object or DataFrame.
+            values: A sequence object or DataFrame.
 
-        Raises:  # noqa: DAR402
-            ValueError: When the key or column name of objs not exists in self dataframe.
+        Raises:
+            TypeError: When the given Dataframe mismatched with the self schema.
 
         Examples:
         >>> df = DataFrame([
         ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
         ...     {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
         ... ])
-        >>> df.extend([{"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}])
+
+        Extended by another list.
+        >>> df.extend([{"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}}])
         >>> df
             filename box2ds
                      x      y
@@ -565,6 +571,7 @@ class DataFrame:
         1   b.jpg    2      2
         2   c.jpg    3      3
 
+        Extended by another DataFrame.
         >>> df2 = DataFrame([{"filename": "d.jpg", "box2ds": {"x": 4 "y": 4}}])
         >>> df.extend(df2)
         >>> df
@@ -575,6 +582,15 @@ class DataFrame:
         2   d.jpg    4      4
 
         """
+        if not isinstance(values, self.__class__):
+            values = self.__class__._from_pyarrow(  # pylint: disable=protected-access
+                pa.array(values, self.schema.to_pyarrow()), self.schema
+            )
+        else:
+            if self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
+                raise TypeError("The schema of the given DataFrame is mismatched.")
+
+        self._extend(values)
 
     def to_pylist(self) -> List[Dict[str, Any]]:
         """Convert the DataFrame to a python list.
