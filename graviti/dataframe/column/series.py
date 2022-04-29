@@ -249,13 +249,16 @@ class Series:
 
     @classmethod
     def from_pyarrow(
-        cls: Type[_T], array: pa.Array, schema: PortexType, name: Optional[str] = None
+        cls: Type[_T],
+        array: pa.Array,
+        schema: Optional[PortexType] = None,
+        name: Optional[str] = None,
     ) -> _T:
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
             array: The input pyarrow array.
-            schema: The schema of the series.
+            schema: The schema of the series. If None, will be inferred from `array`.
             name: The name to the Series.
 
         Raises:
@@ -265,10 +268,14 @@ class Series:
             The loaded :class:`~graviti.dataframe.column.Series` instance.
 
         """
-        if not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array.")
+        if schema is None:
+            portex_type = PortexType.from_pyarrow(array.type)
+        else:
+            if not array.type.equals(schema.to_pyarrow()):
+                raise TypeError("The schema is mismatched with the pyarrow array.")
 
-        return cls._from_pyarrow(array, schema, name)
+            portex_type = schema
+        return cls._from_pyarrow(array, portex_type, name)
 
     def copy(self: _T) -> _T:
         """Get a copy of the series.
