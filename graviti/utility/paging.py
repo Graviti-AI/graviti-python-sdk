@@ -61,7 +61,7 @@ class Offsets:
 
         """
         offsets = self._get_offsets()
-        partial_offsets = list(accumulate(lengths, initial=offsets[start]))
+        partial_offsets = list(accumulate(chain((offsets[start],), lengths)))
         try:
             last_offset = offsets[stop + 1]
         except IndexError:
@@ -99,7 +99,7 @@ class Offsets:
 
         """
         offsets = self._get_offsets()
-        offsets.extend(accumulate(lengths, initial=self.total_count))
+        offsets.extend(accumulate(chain((self.total_count,), lengths)))
         self.total_count = offsets.pop()
 
     def copy(self: _O) -> _O:
