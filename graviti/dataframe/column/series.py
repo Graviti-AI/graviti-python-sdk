@@ -7,7 +7,7 @@
 
 
 from itertools import islice
-from typing import Any, Iterable, Optional, Type, TypeVar, Union, overload
+from typing import Any, Iterable, List, Optional, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -231,6 +231,15 @@ class Series:
 
             portex_type = schema
         return cls._from_pyarrow(array, portex_type, name)
+
+    def to_pylist(self) -> List[Any]:
+        """Convert the Series to a python list.
+
+        Returns:
+            The python list representing the Series.
+
+        """
+        return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
     def copy(self: _T) -> _T:
         """Get a copy of the series.
