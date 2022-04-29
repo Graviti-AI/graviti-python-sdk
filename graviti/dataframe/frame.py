@@ -573,3 +573,15 @@ class DataFrame:
         2   d.jpg    4      4
 
         """
+
+    def to_pylist(self) -> List[Dict[str, Any]]:
+        """Convert the DataFrame to a python list.
+
+        Returns:
+            The python list representing the DataFrame.
+
+        """
+        return [
+            dict(zip(self._column_names, values))
+            for values in zip(*(column.to_pylist() for column in self._columns.values()))
+        ]
