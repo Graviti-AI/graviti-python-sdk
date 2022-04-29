@@ -21,15 +21,15 @@ class ColumnSeriesILocIndexer:
     # def __getitem__(self, key: Union[Iterable[bool], slice]) -> "ColumnSeries":
     #    ...
 
-    @overload
+    # @overload
+    # def __getitem__(self, key: int) -> Any:
+    #     ...
+
+    # @overload
+    # def __getitem__(self, key: Iterable[int]) -> "ColumnSeries":
+    #     ...
+
     def __getitem__(self, key: int) -> Any:
-        ...
-
-    @overload
-    def __getitem__(self, key: Iterable[int]) -> "ColumnSeries":
-        ...
-
-    def __getitem__(self, key: Union[int, Iterable[int]]) -> Any:
         return self.obj._getitem_by_location(key)
 
     @overload
@@ -58,15 +58,15 @@ class ColumnSeriesLocIndexer:
     # def __getitem__(self, key: Union[Iterable[bool], slice]) -> "ColumnSeries":
     #    ...
 
-    @overload
+    # @overload
+    # def __getitem__(self, key: int) -> Any:
+    #     ...
+
+    # @overload
+    # def __getitem__(self, key: Iterable[int]) -> "ColumnSeries":
+    #     ...
+
     def __getitem__(self, key: int) -> Any:
-        ...
-
-    @overload
-    def __getitem__(self, key: Iterable[int]) -> "ColumnSeries":
-        ...
-
-    def __getitem__(self, key: Union[int, Iterable[int]]) -> Any:
         return self.obj[key]
 
     @overload

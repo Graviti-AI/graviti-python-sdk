@@ -8,7 +8,7 @@
 
 from copy import copy
 from itertools import islice
-from typing import Any, Iterable, List, Optional, Sequence, Type, TypeVar, Union, overload
+from typing import Any, Iterable, Optional, Sequence, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -62,20 +62,15 @@ class Series:
     # def __getitem__(self, key: slice) -> "Series":
     #    ...
 
-    @overload
+    # @overload
+    # def __getitem__(self, key: int) -> Any:
+    #     ...
+
+    # @overload
+    # def __getitem__(self, key: Iterable[int]) -> "Series":
+    #     ...
+
     def __getitem__(self, key: int) -> Any:
-        ...
-
-    @overload
-    def __getitem__(self, key: Iterable[int]) -> "Series":
-        ...
-
-    def __getitem__(self, key: Union[int, Iterable[int]]) -> Any:
-        if isinstance(key, Iterable):
-            # https://github.com/PyCQA/pylint/issues/3105
-            new_data = [self._data[location] for location in key]  # pylint: disable=not-an-iterable
-            return Series(new_data, name=self.name)
-
         return self._data[key]
 
     @overload
@@ -120,41 +115,37 @@ class Series:
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
 
-    @overload
-    @staticmethod
-    def _get_location_by_index(key: Iterable[int]) -> List[int]:
-        ...
+    # @overload
+    # @staticmethod
+    # def _get_location_by_index(key: Iterable[int]) -> List[int]:
+    #     ...
 
-    @overload
-    @staticmethod
-    def _get_location_by_index(key: int) -> int:
-        ...
+    # @overload
+    # @staticmethod
+    # def _get_location_by_index(key: int) -> int:
+    #     ...
 
-    @staticmethod
-    def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
-        if isinstance(key, int):
-            return key
+    # @staticmethod
+    # def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
+    #     if isinstance(key, int):
+    #         return key
 
-        return list(key)
+    #     return list(key)
 
     # @overload
     # def _getitem_by_location(self, key: slice) -> "Series":
     #    ...
 
-    @overload
+    # @overload
+    # def _getitem_by_location(self, key: int) -> Any:
+    #     ...
+
+    # @overload
+    # def _getitem_by_location(self, key: Iterable[int]) -> "Series":
+    #     ...
+
     def _getitem_by_location(self, key: int) -> Any:
-        ...
-
-    @overload
-    def _getitem_by_location(self, key: Iterable[int]) -> "Series":
-        ...
-
-    def _getitem_by_location(self, key: Union[int, Iterable[int]]) -> Any:
-        if isinstance(key, int):
-            return self._data[key]
-
-        new_data = [self._data[index] for index in key]
-        return Series(new_data, name=self.name)
+        return self._data[key]
 
     @property
     def iloc(self) -> ColumnSeriesILocIndexer:

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Iterable, TypeVar, Union, overload
 from graviti.utility import NestedDict
 
 if TYPE_CHECKING:
-    from graviti.dataframe.dataframe import DataFrame
+    from graviti.dataframe import DataFrame
     from graviti.dataframe.row.series import Series as RowSeries
 
 _T = TypeVar("_T", int, str)
@@ -26,15 +26,15 @@ class DataFrameILocIndexer:
     # def __getitem__(self, key: Union[Tuple[int, str], Iterable[bool], slice]) -> Any:
     #     ...
 
-    @overload
+    # @overload
+    # def __getitem__(self, key: int) -> "RowSeries":
+    #     ...
+
+    # @overload
+    # def __getitem__(self, key: Iterable[int]) -> "DataFrame":
+    #     ...
+
     def __getitem__(self, key: int) -> "RowSeries":
-        ...
-
-    @overload
-    def __getitem__(self, key: Iterable[int]) -> "DataFrame":
-        ...
-
-    def __getitem__(self, key: Union[int, Iterable[int]]) -> Any:
         return self.obj._getitem_by_location(key)
 
     @overload
@@ -57,22 +57,22 @@ class DataFrameLocIndexer:
     """Index class for DataFrame.loc."""
 
     def __init__(self, obj: "DataFrame") -> None:
-        self.obj = obj
+        self.obj: "DataFrame" = obj
 
     # @overload
     # def __getitem__(self, key: Union[Tuple[int, str], Iterable[bool], slice]) -> Any:
     #     ...
 
-    @overload
+    # @overload
+    # def __getitem__(self, key: int) -> "RowSeries":
+    #     ...
+
+    # @overload
+    # def __getitem__(self, key: Iterable[int]) -> "DataFrame":
+    #     ...
+
     def __getitem__(self, key: int) -> "RowSeries":
-        ...
-
-    @overload
-    def __getitem__(self, key: Iterable[int]) -> "DataFrame":
-        ...
-
-    def __getitem__(self, key: Union[int, Iterable[int]]) -> Any:
-        return self.obj._getitem_by_location(self.obj._get_location_by_index(key))
+        return self.obj._getitem_by_location(key)
 
     @overload
     def __setitem__(self, key: _T, value: NestedDict[str, Any]) -> None:
