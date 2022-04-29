@@ -8,7 +8,7 @@
 
 from copy import copy
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, TypeVar, Union, overload
+from typing import Any, Iterable, List, Optional, Sequence, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -43,15 +43,12 @@ class Series:
     """
 
     schema: PortexType
-    _indices_data: Optional[Dict[int, int]]
-    _indices: Optional[List[int]]
 
     def __init__(
         self,
         data: Sequence[Any],
         schema: Any = None,
         name: Union[str, int, None] = None,
-        index: Optional[Iterable[int]] = None,
     ) -> None:
         if schema is not None:
             # TODO: missing schema processing
@@ -60,12 +57,6 @@ class Series:
         self._data = data
         self.name = name
         self.schema = schema
-        if index is None:
-            self._indices_data = index
-            self._indices = index
-        else:
-            self._indices_data = {raw_index: location for location, raw_index in enumerate(index)}
-            self._indices = list(index)
 
     # @overload
     # def __getitem__(self, key: slice) -> "Series":
@@ -80,17 +71,12 @@ class Series:
         ...
 
     def __getitem__(self, key: Union[int, Iterable[int]]) -> Any:
-        integer_location = self._get_location_by_index(key)
-
-        if isinstance(integer_location, list):
+        if isinstance(key, Iterable):
             # https://github.com/PyCQA/pylint/issues/3105
-            new_data = [
-                self._data[location]
-                for location in integer_location  # pylint: disable=not-an-iterable
-            ]
-            return Series(new_data, name=self.name, index=integer_location)
+            new_data = [self._data[location] for location in key]  # pylint: disable=not-an-iterable
+            return Series(new_data, name=self.name)
 
-        return self._data[integer_location]
+        return self._data[key]
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[Any]) -> None:
@@ -132,35 +118,24 @@ class Series:
         return "\n".join(lines)
 
     def _get_repr_indices(self) -> Iterable[int]:
-        length = self.__len__()
-        # pylint: disable=protected-access
-        if self._indices is None:
-            return range(min(length, MAX_REPR_ROWS))
-
-        if length >= MAX_REPR_ROWS:
-            return islice(self._indices, MAX_REPR_ROWS)
-
-        return self._indices
+        return islice(range(len(self)), MAX_REPR_ROWS)
 
     @overload
-    def _get_location_by_index(self, key: Iterable[int]) -> List[int]:
+    @staticmethod
+    def _get_location_by_index(key: Iterable[int]) -> List[int]:
         ...
 
     @overload
-    def _get_location_by_index(self, key: int) -> int:
+    @staticmethod
+    def _get_location_by_index(key: int) -> int:
         ...
 
-    def _get_location_by_index(self, key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
-        if self._indices_data is None:
-            if isinstance(key, Iterable):
-                return list(key)
-
+    @staticmethod
+    def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
+        if isinstance(key, int):
             return key
 
-        if isinstance(key, Iterable):
-            return [self._indices_data[index] for index in key]
-
-        return self._indices_data[key]
+        return list(key)
 
     # @overload
     # def _getitem_by_location(self, key: slice) -> "Series":
@@ -178,12 +153,8 @@ class Series:
         if isinstance(key, int):
             return self._data[key]
 
-        if self._indices is None:
-            indices = list(key)
-        else:
-            indices = [self._indices[index] for index in key]
         new_data = [self._data[index] for index in key]
-        return Series(new_data, name=self.name, index=indices)
+        return Series(new_data, name=self.name)
 
     @property
     def iloc(self) -> ColumnSeriesILocIndexer:
@@ -243,8 +214,6 @@ class Series:
         obj._data = PagingList(array)  # type: ignore[assignment]
         obj.schema = schema
         obj.name = name
-        obj._indices_data = None
-        obj._indices = None
         return obj
 
     @classmethod
@@ -291,7 +260,5 @@ class Series:
 
         # pylint: disable=protected-access
         obj._data = self._data.copy() if isinstance(self._data, PagingList) else copy(self._data)
-        obj._indices_data = copy(self._indices_data)
-        obj._indices = copy(self._indices)
 
         return obj

@@ -27,7 +27,7 @@ import pyarrow as pa
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.portex import PortexExternalType, PortexType, int32, record
+from graviti.portex import PortexExternalType, PortexType, record
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
@@ -68,7 +68,6 @@ class DataFrame:
 
     _columns: Dict[str, Union["DataFrame", ColumnSeries]]
     _column_names: List[str]
-    _index: ColumnSeries
     schema: _S
 
     def __init__(
@@ -95,7 +94,6 @@ class DataFrame:
                     DataFrame(value) if isinstance(value, dict) else ColumnSeries(value, name=key)
                 )
                 self._column_names.append(key)
-            self._index = ColumnSeries(list(range(self.__len__())))
         else:
             raise ValueError("DataFrame only supports generating from dictionary now")
 
@@ -114,7 +112,7 @@ class DataFrame:
 
         if isinstance(key, Iterable):
             new_columns = {name: self._columns[name] for name in key}
-            return self._construct(new_columns, self._index)
+            return self._construct(new_columns)
 
         raise KeyError(key)
 
@@ -154,12 +152,10 @@ class DataFrame:
     def _construct(
         cls,
         columns: Dict[str, Union["DataFrame", ColumnSeries]],
-        index: ColumnSeries,
     ) -> "DataFrame":
         obj: DataFrame = object.__new__(cls)
         obj._columns = columns
         obj._column_names = list(obj._columns.keys())
-        obj._index = index
         return obj
 
     @classmethod
@@ -190,7 +186,6 @@ class DataFrame:
                 )
 
             obj._column_names.append(column_name)
-        obj._index = ColumnSeries(range(len(obj)), schema=int32())
         return obj
 
     @classmethod
@@ -251,15 +246,7 @@ class DataFrame:
         return f"{self.__class__.__name__}{self.shape}"
 
     def _get_repr_indices(self) -> Iterable[int]:
-        length = self.__len__()
-        # pylint: disable=protected-access
-        if self._index._indices is None:
-            return range(min(length, MAX_REPR_ROWS))
-
-        if length >= MAX_REPR_ROWS:
-            return islice(self._index._indices, MAX_REPR_ROWS)
-
-        return self._index._indices
+        return islice(range(len(self)), MAX_REPR_ROWS)
 
     def _get_repr_body(self, flatten_data: List[ColumnSeries]) -> List[List[str]]:
         lines = []
@@ -388,18 +375,21 @@ class DataFrame:
             indices_data = {name: self._columns[name].iloc[key] for name in self._column_names}
             return RowSeries._construct(indices_data, key)  # pylint: disable=protected-access
 
-        return self._construct(self._columns, self._index[key])
+        return self._construct(self._columns)
 
     @overload
-    def _get_location_by_index(self, key: Iterable[int]) -> List[int]:
+    @staticmethod
+    def _get_location_by_index(key: Iterable[int]) -> Iterable[int]:
         ...
 
     @overload
-    def _get_location_by_index(self, key: int) -> int:
+    @staticmethod
+    def _get_location_by_index(key: int) -> int:
         ...
 
-    def _get_location_by_index(self, key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
-        return self._index._get_location_by_index(key)  # pylint: disable=protected-access
+    @staticmethod
+    def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, Iterable[int]]:
+        return key
 
     def head(self, n: int = 5) -> "DataFrame":
         """Return the first `n` rows.
@@ -534,7 +524,6 @@ class DataFrame:
         # pylint: disable=protected-access
         obj._columns = columns
         obj._column_names = self._column_names.copy()
-        obj._index = self._index.copy()
         return obj
 
     def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
