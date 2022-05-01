@@ -38,6 +38,8 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         super().__init__(**arguments)
 
+        self.container = self.internal_type.container
+
     def _get_keys(self) -> List[Tuple[str, ...]]:
         return self.internal_type._get_keys()  # pylint: disable=protected-access
 
