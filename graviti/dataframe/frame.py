@@ -24,20 +24,21 @@ from typing import (
 
 import pyarrow as pa
 
+import graviti.portex as pt
 from graviti.dataframe.column.series import Series as ColumnSeries
+from graviti.dataframe.container import Container, ContainerRegister
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.portex import PortexExternalType, PortexType, record
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.manager import PagingLists
 
 _T = TypeVar("_T", bound="DataFrame")
-_S = Union[record, PortexExternalType]
 
 
-class DataFrame:
+@ContainerRegister(pt.record)
+class DataFrame(Container):
     """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
 
     Arguments:
@@ -66,9 +67,9 @@ class DataFrame:
 
     """
 
-    _columns: Dict[str, Union["DataFrame", ColumnSeries]]
+    _columns: Dict[str, Container]
     _column_names: List[str]
-    schema: _S
+    schema: pt.PortexType
 
     def __init__(
         self,
@@ -108,7 +109,7 @@ class DataFrame:
     def __getitem__(self, key: Iterable[str]) -> "DataFrame":
         ...
 
-    def __getitem__(self, key: Union[str, Iterable[str]]) -> Union[ColumnSeries, "DataFrame"]:
+    def __getitem__(self, key: Union[str, Iterable[str]]) -> Container:
         if isinstance(key, str):
             return self._columns[key]
 
@@ -151,43 +152,27 @@ class DataFrame:
         return lines
 
     @classmethod
-    def _construct(
-        cls,
-        columns: Dict[str, Union["DataFrame", ColumnSeries]],
-    ) -> "DataFrame":
+    def _construct(cls, columns: Dict[str, Container]) -> "DataFrame":
         obj: DataFrame = object.__new__(cls)
         obj._columns = columns
         obj._column_names = list(obj._columns.keys())
         return obj
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: _S) -> _T:
+    def _from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: pt.PortexType) -> _T:
         obj: _T = object.__new__(cls)
         obj.schema = schema
         obj._columns = {}
         obj._column_names = []
 
-        # In this case it's always record.
-        expanded_schema: record = schema.to_builtin()  # type:ignore[assignment]
+        # In this case schema.to_builtin always returns record.
+        for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
+            obj._columns[key] = value.container._from_pyarrow(  # pylint: disable=protected-access
+                array.field(key), schema=value
+            )
 
-        for pafield in array.type:
-            column_name = pafield.name
-            column_value = array.field(column_name)
-            column_schema = expanded_schema.fields[column_name]
-            if isinstance(pafield.type, pa.StructType):
-                # if pafield.type is pa.StructType,
-                # the schema will always be record or PortexExternalType.
-                obj._columns[column_name] = DataFrame._from_pyarrow(
-                    column_value, schema=column_schema  # type:ignore[arg-type]
-                )
-            else:
-                obj._columns[
-                    column_name
-                ] = ColumnSeries._from_pyarrow(  # pylint: disable=protected-access
-                    column_value, schema=column_schema
-                )
+            obj._column_names.append(key)
 
-            obj._column_names.append(column_name)
         return obj
 
     @classmethod
@@ -205,7 +190,9 @@ class DataFrame:
         return cls(paging_lists)
 
     @classmethod
-    def from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: Optional[_S] = None) -> _T:
+    def from_pyarrow(
+        cls: Type[_T], array: pa.StructArray, schema: Optional[pt.PortexType] = None
+    ) -> _T:
         """Create DataFrame with pyarrow struct array.
 
         Arguments:
@@ -220,7 +207,7 @@ class DataFrame:
 
         """
         if schema is None:
-            portex_type = PortexType.from_pyarrow(array.type)
+            portex_type = pt.PortexType.from_pyarrow(array.type)
 
         else:
             if not array.type.equals(schema.to_pyarrow()):
@@ -228,7 +215,7 @@ class DataFrame:
 
             portex_type = schema
 
-        return cls._from_pyarrow(array, portex_type)  # type:ignore[arg-type]
+        return cls._from_pyarrow(array, portex_type)
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
         header: List[Tuple[str, ...]] = []
@@ -238,9 +225,11 @@ class DataFrame:
                 nested_header, nested_data = value._flatten()  # pylint: disable=protected-access
                 header.extend((key, *sub_column) for sub_column in nested_header)
                 data.extend(nested_data)
-            else:
+            elif isinstance(value, ColumnSeries):
                 data.append(value)
                 header.append((key,))
+            else:
+                raise TypeError(f"Unsupported column type: {value.__class__}")
 
         return header, data
 
@@ -267,7 +256,7 @@ class DataFrame:
 
     def _extend(self, values: "DataFrame") -> None:
         for key, value in self._columns.items():
-            value._extend(values[key])  # type: ignore[arg-type]  # pylint: disable=protected-access
+            value._extend(values[key])  # pylint: disable=protected-access
 
     @property
     def iloc(self) -> DataFrameILocIndexer:

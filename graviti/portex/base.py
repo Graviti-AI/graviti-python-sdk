@@ -14,6 +14,7 @@ import yaml
 from graviti.portex.package import Imports, Package
 
 if TYPE_CHECKING:
+    from graviti.dataframe import Container
     from graviti.portex.param import Params
 
 _INDENT = " " * 2
@@ -55,6 +56,7 @@ class PortexType:
     nullable: bool
     package: ClassVar[Package[Any]]
     params: ClassVar["Params"]
+    container: Type["Container"]
 
     def __init__(self, **kwargs: Any) -> None:
         self.__dict__.update(kwargs)

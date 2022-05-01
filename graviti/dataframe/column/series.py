@@ -11,15 +11,27 @@ from typing import Any, Iterable, List, Optional, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
+import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
-from graviti.portex import PortexType
+from graviti.dataframe.container import Container, ContainerRegister
 from graviti.utility import MAX_REPR_ROWS
 from graviti.utility.paging import PagingList
 
 _T = TypeVar("_T", bound="Series")
 
 
-class Series:
+@ContainerRegister(
+    pt.array,
+    pt.binary,
+    pt.boolean,
+    pt.enum,
+    pt.float32,
+    pt.float64,
+    pt.int32,
+    pt.int64,
+    pt.string,
+)
+class Series(Container):
     """One-dimensional array.
 
     Arguments:
@@ -41,14 +53,14 @@ class Series:
 
     """
 
-    schema: PortexType
+    schema: pt.PortexType
     _data: PagingList
     name: Optional[str]
 
     def __init__(
         self,
         data: Iterable[Any],
-        schema: Optional[PortexType] = None,
+        schema: Optional[pt.PortexType] = None,
         name: Union[str, None] = None,
     ) -> None:
         raise NotImplementedError("Not support initializing Series by __init__.")
@@ -222,8 +234,8 @@ class Series:
         return ColumnSeriesLocIndexer(self)
 
     @classmethod
-    def _from_pyarrow(
-        cls: Type[_T], array: pa.Array, schema: PortexType, name: Optional[str] = None
+    def _from_pyarrow(  # pylint: disable=arguments-differ
+        cls: Type[_T], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
     ) -> _T:
         obj: _T = object.__new__(cls)
         obj._data = PagingList(array)
@@ -235,7 +247,7 @@ class Series:
     def from_pyarrow(
         cls: Type[_T],
         array: pa.Array,
-        schema: Optional[PortexType] = None,
+        schema: Optional[pt.PortexType] = None,
         name: Optional[str] = None,
     ) -> _T:
         """Instantiate a Series backed by an pyarrow array.
@@ -253,7 +265,7 @@ class Series:
 
         """
         if schema is None:
-            portex_type = PortexType.from_pyarrow(array.type)
+            portex_type = pt.PortexType.from_pyarrow(array.type)
         else:
             if not array.type.equals(schema.to_pyarrow()):
                 raise TypeError("The schema is mismatched with the pyarrow array.")
