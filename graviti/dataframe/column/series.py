@@ -13,14 +13,14 @@ import pyarrow as pa
 
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
-from graviti.dataframe.container import Container, ContainerRegister
+from graviti.dataframe.container import Container
 from graviti.utility import MAX_REPR_ROWS
 from graviti.utility.paging import PagingList
 
 _T = TypeVar("_T", bound="Series")
 
 
-@ContainerRegister(
+@pt.ContainerRegister(
     pt.array,
     pt.binary,
     pt.boolean,

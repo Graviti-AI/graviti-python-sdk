@@ -12,6 +12,7 @@ import pyarrow as pa
 import yaml
 
 from graviti.portex.package import Imports, Package
+from graviti.portex.register import PyArrowConversionRegister
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
@@ -19,35 +20,9 @@ if TYPE_CHECKING:
 
 _INDENT = " " * 2
 
+PYARROW_TYPE_ID_TO_PORTEX_TYPE = PyArrowConversionRegister.PYARROW_TYPE_ID_TO_PORTEX_TYPE
+
 _T = TypeVar("_T", bound="PortexType")
-
-PYARROW_TYPE_ID_TO_PORTEX_TYPE = {}
-
-
-class PyArrowConversionRegister:
-    """Register the Portex type to set the conversion from PyArrow to Portex.
-
-    Arguments:
-        pyarrow_type_ids: The id of the corresponding PyArrow types.
-
-    """
-
-    def __init__(self, *pyarrow_type_ids: int) -> None:
-        self._pyarrow_type_ids = pyarrow_type_ids
-
-    def __call__(self, portex_type: Type[_T]) -> Type[_T]:
-        """Register the Portex type and return it back.
-
-        Arguments:
-            portex_type: The Portex type to register.
-
-        Returns:
-            The original Portex type.
-
-        """
-        for pyarrow_type_id in self._pyarrow_type_ids:
-            PYARROW_TYPE_ID_TO_PORTEX_TYPE[pyarrow_type_id] = portex_type
-        return portex_type
 
 
 class PortexType:
@@ -65,7 +40,7 @@ class PortexType:
         return self._repr1(0)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+    def _from_pyarrow(cls, pyarrow_type: pa.DataType) -> "PortexType":
         raise NotImplementedError
 
     def _repr1(self, level: int) -> str:
@@ -157,7 +132,7 @@ class PortexType:
         return type_
 
     @classmethod
-    def from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+    def from_pyarrow(cls, pyarrow_type: pa.DataType) -> "PortexType":
         """Create Portex type instance from PyArrow type.
 
         Arguments:

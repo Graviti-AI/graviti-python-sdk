@@ -12,10 +12,11 @@ from typing import Any, Iterable, List, Mapping, Optional, Tuple, Type, TypeVar,
 import pyarrow as pa
 
 import graviti.portex.ptype as PTYPE
-from graviti.portex.base import PortexType, PyArrowConversionRegister
+from graviti.portex.base import PortexType
 from graviti.portex.field import Fields
 from graviti.portex.package import packages
 from graviti.portex.param import Param, Params, param
+from graviti.portex.register import PyArrowConversionRegister
 
 builtins = packages.builtins
 

@@ -26,7 +26,7 @@ import pyarrow as pa
 
 import graviti.portex as pt
 from graviti.dataframe.column.series import Series as ColumnSeries
-from graviti.dataframe.container import Container, ContainerRegister
+from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.utility import MAX_REPR_ROWS
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T", bound="DataFrame")
 
 
-@ContainerRegister(pt.record)
+@pt.ContainerRegister(pt.record)
 class DataFrame(Container):
     """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
 
