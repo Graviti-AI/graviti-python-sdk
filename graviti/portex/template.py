@@ -5,7 +5,7 @@
 """Template base class."""
 
 
-from typing import Any, ClassVar, Dict, List, Set, Tuple, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Set, Tuple, Type
 
 import pyarrow as pa
 
@@ -15,6 +15,11 @@ from graviti.portex.builtin import PortexBuiltinType
 from graviti.portex.factory import Dynamic, Factory, type_factory_creator
 from graviti.portex.package import ExternalPackage, Imports, Package, packages
 from graviti.portex.param import Param, Params
+
+if TYPE_CHECKING:
+    from graviti.dataframe import Container
+
+EXTERNAL_TYPE_TO_CONTAINER: Dict[Tuple[str, str, str], Type["Container"]] = {}
 
 
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method
@@ -38,7 +43,8 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         super().__init__(**arguments)
 
-        self.container = self.internal_type.container
+        if not hasattr(self.__class__, "container"):
+            self.container = self.internal_type.container
 
     def _get_keys(self) -> List[Tuple[str, ...]]:
         return self.internal_type._get_keys()  # pylint: disable=protected-access
@@ -175,10 +181,17 @@ def template(
 
     params.add(Param("nullable", False, ptype=PTYPE.Boolean))
 
-    type_ = type(
+    type_: Type[PortexExternalType] = type(
         name,
         (PortexExternalType,),
         {"params": params, "dependences": factory.dependences, "factory": factory},
     )
+
+    if isinstance(package, ExternalPackage):
+        container = EXTERNAL_TYPE_TO_CONTAINER.get((package.url, package.revision, name))
+        if container:
+            type_.container = container
+
     package[name] = type_
+
     return type_

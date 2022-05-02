@@ -9,7 +9,7 @@ from typing import Any, List, Type, TypeVar
 
 import pyarrow as pa
 
-from graviti.portex.base import PortexType
+from graviti.portex import EXTERNAL_TYPE_TO_CONTAINER, PortexType, packages
 
 _T = TypeVar("_T", bound="Container")
 
@@ -84,5 +84,43 @@ class ContainerRegister:
         """
         for portex_type in self._portex_types:
             portex_type.container = container
+
+        return container
+
+
+class ExternalContainerRegister:
+    """The class decorator to connect portex external type and the data container.
+
+    Arguments:
+        url: The git repo url of the external package.
+        revision: The git repo revision (tag/commit) of the external package.
+        name: The portex external type name.
+
+    """
+
+    def __init__(self, url: str, revision: str, name: str) -> None:
+        self._url = url
+        self._revision = revision
+        self._name = name
+
+    def __call__(self, container: Type[_T]) -> Type[_T]:
+        """Connect data container with the portex external types.
+
+        Arguments:
+            container: The data container needs to be connected.
+
+        Returns:
+            The input container class unchanged.
+
+        """
+        EXTERNAL_TYPE_TO_CONTAINER[self._url, self._revision, self._name] = container
+
+        try:
+            package = packages.externals[self._url, self._revision]
+            class_ = package[self._name]
+        except KeyError:
+            pass
+        else:
+            class_.container = container
 
         return container
