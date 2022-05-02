@@ -45,7 +45,7 @@ def create_sheet(
     schema: str,
     _avro_schema: str,
     _arrow_schema: Optional[str] = None,
-    primary_key_strategy: Optional[str] = None,
+    record_key_strategy: Optional[str] = None,
 ) -> None:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
 
@@ -58,8 +58,8 @@ def create_sheet(
         name: The sheet name.
         schema: The portex schema of the sheet..
         _arrow_schema: The arrow schema of the sheet.
-        primary_key_strategy: The primary key generation strategy.
-            If None, it is batch auto-increment sorting primary key.
+        record_key_strategy: The ``__record_key`` generation strategy.
+            If None, it is batch auto-increment sorting record key.
 
     Examples:
         >>> create_sheet(
@@ -82,8 +82,8 @@ main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name"
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets")
     post_data = {"name": name, "schema": schema, "_arrow_schema": _arrow_schema}
 
-    if primary_key_strategy is not None:
-        post_data["primary_key_strategy"] = primary_key_strategy
+    if record_key_strategy is not None:
+        post_data["record_key_strategy"] = record_key_strategy
 
     open_api_do("POST", access_key, url, json=post_data)
 
