@@ -77,7 +77,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             paging_lists = self._get_paging_lists(
                 factory, schema.get_keys()  # type: ignore[attr-defined]
             )
-            self._data[sheet_name] = DataFrame.from_paging_lists(paging_lists)
+            self._data[sheet_name] = DataFrame._from_paging(  # pylint: disable=protected-access
+                paging_lists, schema
+            )
 
     def _get_data(self) -> Dict[str, DataFrame]:
         if not hasattr(self, "_data"):

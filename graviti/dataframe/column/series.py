@@ -234,6 +234,16 @@ class Series(Container):
         return ColumnSeriesLocIndexer(self)
 
     @classmethod
+    def _from_paging(  # pylint: disable=arguments-differ
+        cls: Type[_T], paging: PagingList, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _T:
+        obj: _T = object.__new__(cls)
+        obj._data = paging
+        obj.schema = schema
+        obj.name = name
+        return obj
+
+    @classmethod
     def _from_pyarrow(  # pylint: disable=arguments-differ
         cls: Type[_T], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
     ) -> _T:

@@ -21,6 +21,10 @@ class Container:
         raise NotImplementedError
 
     @classmethod
+    def _from_paging(cls: Type[_T], paging: pa.Array, schema: PortexType) -> _T:
+        raise NotImplementedError
+
+    @classmethod
     def _from_pyarrow(cls: Type[_T], array: pa.Array, schema: PortexType) -> _T:
         raise NotImplementedError
 
