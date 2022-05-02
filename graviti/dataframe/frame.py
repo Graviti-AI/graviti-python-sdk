@@ -586,9 +586,8 @@ class DataFrame:
             values = self.__class__._from_pyarrow(  # pylint: disable=protected-access
                 pa.array(values, self.schema.to_pyarrow()), self.schema
             )
-        else:
-            if self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
-                raise TypeError("The schema of the given DataFrame is mismatched.")
+        elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
+            raise TypeError("The schema of the given DataFrame is mismatched.")
 
         self._extend(values)
 
