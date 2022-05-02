@@ -176,18 +176,32 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def from_paging_lists(cls: Type[_T], paging_lists: "PagingLists") -> _T:
+    def _from_paging(cls: Type[_T], paging: "PagingLists", schema: pt.PortexType) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:
-            paging_lists: A dict used to initialize dataframe whose data is stored in
+            paging: A dict used to initialize dataframe whose data is stored in
                 lazy-loaded form.
+            schema: The schema of the DataFrame.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
 
         """
-        return cls(paging_lists)
+        obj: _T = object.__new__(cls)
+        obj.schema = schema
+        obj._columns = {}
+        obj._column_names = []
+
+        # In this case schema.to_builtin always returns record.
+        for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
+            obj._columns[key] = value.container._from_paging(  # pylint: disable=protected-access
+                paging[key], schema=value
+            )
+
+            obj._column_names.append(key)
+
+        return obj
 
     @classmethod
     def from_pyarrow(
