@@ -17,11 +17,11 @@ from graviti.dataframe.container import Container
 from graviti.utility import MAX_REPR_ROWS
 from graviti.utility.paging import PagingList
 
-_T = TypeVar("_T", bound="Series")
+_S = TypeVar("_S", bound="Series")
+_A = TypeVar("_A", bound="ArraySeries")
 
 
 @pt.ContainerRegister(
-    pt.array,
     pt.binary,
     pt.boolean,
     pt.enum,
@@ -152,7 +152,7 @@ class Series(Container):
     #     ...
 
     def _getitem_by_location(self, key: int) -> Any:
-        return self._data[key]
+        return self.__getitem__(key)
 
     def _extend(self, values: "Series") -> None:
         """Extend Series to itself row by row.
@@ -235,9 +235,9 @@ class Series(Container):
 
     @classmethod
     def _from_paging(  # pylint: disable=arguments-differ
-        cls: Type[_T], paging: PagingList, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _T:
-        obj: _T = object.__new__(cls)
+        cls: Type[_S], paging: PagingList, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _S:
+        obj: _S = object.__new__(cls)
         obj._data = paging
         obj.schema = schema
         obj.name = name
@@ -245,9 +245,9 @@ class Series(Container):
 
     @classmethod
     def _from_pyarrow(  # pylint: disable=arguments-differ
-        cls: Type[_T], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _T:
-        obj: _T = object.__new__(cls)
+        cls: Type[_S], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _S:
+        obj: _S = object.__new__(cls)
         obj._data = PagingList(array)
         obj.schema = schema
         obj.name = name
@@ -255,11 +255,11 @@ class Series(Container):
 
     @classmethod
     def from_pyarrow(
-        cls: Type[_T],
+        cls: Type[_S],
         array: pa.Array,
         schema: Optional[pt.PortexType] = None,
         name: Optional[str] = None,
-    ) -> _T:
+    ) -> _S:
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
@@ -292,19 +292,63 @@ class Series(Container):
         """
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
-    def copy(self: _T) -> _T:
+    def copy(self: _S) -> _S:
         """Get a copy of the series.
 
         Returns:
             A copy of the series.
 
         """
-        obj: _T = object.__new__(self.__class__)
+        obj: _S = object.__new__(self.__class__)
 
         obj.name = self.name
         obj.schema = self.schema.copy()
+        obj._data = self._data.copy()  # pylint: disable=protected-access
 
-        # pylint: disable=protected-access
-        obj._data = self._data.copy()
+        return obj
+
+
+@pt.ContainerRegister(pt.array)
+class ArraySeries(Series):  # pylint: disable=abstract-method
+    """One-dimensional array for portex builtin type array."""
+
+    _item_container: Type[Container]
+
+    def __getitem__(self, key: int) -> Any:
+        return self._item_container._from_pyarrow(
+            self._data[key].values, self.schema.to_builtin().items  # type: ignore[attr-defined]
+        )
+
+    @classmethod
+    def _from_paging(  # pylint: disable=arguments-differ
+        cls: Type[_A], paging: PagingList, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _A:
+        obj = super()._from_paging(paging, schema, name)
+
+        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
+        obj._item_container = builtin_schema.items.container  # pylint: disable=protected-access
+
+        return obj
+
+    @classmethod
+    def _from_pyarrow(  # pylint: disable=arguments-differ
+        cls: Type[_A], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _A:
+        obj = super()._from_pyarrow(array, schema, name)
+
+        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
+        obj._item_container = builtin_schema.items.container  # pylint: disable=protected-access
+
+        return obj
+
+    def copy(self: _A) -> _A:
+        """Get a copy of the series.
+
+        Returns:
+            A copy of the series.
+
+        """
+        obj = super().copy()
+        obj._item_container = self._item_container  # pylint: disable=protected-access
 
         return obj
