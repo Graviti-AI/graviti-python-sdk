@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, Type, TypeVar, Union, ove
 
 import pyarrow as pa
 
-from graviti.utility.file import File
+from graviti.utility.file import RemoteFile
 
 if TYPE_CHECKING:
     # https://pylint.pycqa.org/en/latest/technical_reference/c_extensions.html
@@ -101,30 +101,30 @@ class GravitiExtension(ExtensionBase):
     _PYARROW_PACKAGE_NAME = "graviti"
 
 
-class FileArray(pa.ExtensionArray):  # type: ignore[misc]
-    """This class defines the PyArrow representation of FileArray."""
+class RemoteFileArray(pa.ExtensionArray):  # type: ignore[misc]
+    """This class defines the PyArrow representation of RemoteFileArray."""
 
     @overload
-    def __getitem__(self, index: int) -> File:
+    def __getitem__(self, index: int) -> RemoteFile:
         pass
 
     @overload
-    def __getitem__(self, index: slice) -> "FileArray":
+    def __getitem__(self, index: slice) -> "RemoteFileArray":
         pass
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[File, "FileArray"]:
+    def __getitem__(self, index: Union[int, slice]) -> Union[RemoteFile, "RemoteFileArray"]:
         if isinstance(index, slice):
             return super().__getitem__(index)  # type: ignore[no-any-return]
 
         item = super().__getitem__(index).as_py()
-        return File(item["url"], item["checksum"])
+        return RemoteFile(item["url"], item["checksum"])
 
 
-class FileType(GravitiExtension):
-    """This class defines the PyArrow representation of FileType type."""
+class RemoteFileType(GravitiExtension):
+    """This class defines the PyArrow representation of RemoteFileType type."""
 
     def __init__(self) -> None:
         super().__init__("file", pa.struct({"url": pa.string(), "checksum": pa.string()}))
 
-    def __arrow_ext_class__(self) -> Type[FileArray]:  # pylint: disable=no-self-use
-        return FileArray
+    def __arrow_ext_class__(self) -> Type[RemoteFileArray]:  # pylint: disable=no-self-use
+        return RemoteFileArray
