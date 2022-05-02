@@ -5,7 +5,7 @@
 """Template base class."""
 
 
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Set, Tuple, Type
+from typing import Any, ClassVar, Dict, List, Set, Tuple, Type
 
 import pyarrow as pa
 
@@ -15,11 +15,9 @@ from graviti.portex.builtin import PortexBuiltinType
 from graviti.portex.factory import Dynamic, Factory, type_factory_creator
 from graviti.portex.package import ExternalPackage, Imports, Package, packages
 from graviti.portex.param import Param, Params
+from graviti.portex.register import ExternalContainerRegister
 
-if TYPE_CHECKING:
-    from graviti.dataframe import Container
-
-EXTERNAL_TYPE_TO_CONTAINER: Dict[Tuple[str, str, str], Type["Container"]] = {}
+EXTERNAL_TYPE_TO_CONTAINER = ExternalContainerRegister.EXTERNAL_TYPE_TO_CONTAINER
 
 
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method

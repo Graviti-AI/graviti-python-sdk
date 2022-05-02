@@ -21,10 +21,12 @@ from graviti.portex.builtin import (
 from graviti.portex.catalog_to_schema import catalog_to_schema
 from graviti.portex.extractors import Extractors, get_extractors
 from graviti.portex.package import packages
-from graviti.portex.template import EXTERNAL_TYPE_TO_CONTAINER, PortexExternalType
+from graviti.portex.register import ContainerRegister, ExternalContainerRegister
+from graviti.portex.template import PortexExternalType
 
 __all__ = [
-    "EXTERNAL_TYPE_TO_CONTAINER",
+    "ContainerRegister",
+    "ExternalContainerRegister",
     "Extractors",
     "PortexExternalType",
     "PortexType",
