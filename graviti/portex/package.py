@@ -220,10 +220,10 @@ class Packages:
 
     def __init__(self) -> None:
         self.builtins = BuiltinPackage()
-        self.externals: Dict[Tuple[str, str], "ExternalPackage"] = {}
+        self.externals: Dict[Tuple[str, str], ExternalPackage] = {}
         self.locals = LocalPackage()
 
-    def build_package(self, url: str, revision: str) -> "ExternalPackage":
+    def build_package(self, url: str, revision: str) -> ExternalPackage:
         """Build an external package.
 
         Arguments:
