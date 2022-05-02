@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, TypeVar, Union
 
 import pyarrow as pa
 
-from graviti.utility import FileType, NestedDict
+from graviti.utility import NestedDict, RemoteFileType
 
 _T = TypeVar("_T")
 _D = Dict[str, Tuple[Iterator[_T], str]]
@@ -39,7 +39,7 @@ def _get_file(*_: Any) -> _Extractor[str]:
         for item in data["dataDetails"]:
             yield item["url"], item["checksum"]
 
-    return extractor, FileType()
+    return extractor, RemoteFileType()
 
 
 def _get_category(*_: Any) -> _Extractor[Any]:
