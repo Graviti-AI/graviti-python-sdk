@@ -210,7 +210,7 @@ def get_draft_sheet(
     sheet: str,
     schema_format: Optional[str] = None,
 ) -> Dict[str, Any]:
-    r"""Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
 
     Arguments:
         access_key: User's access key.
@@ -239,12 +239,7 @@ def get_draft_sheet(
             "created_at": "2021-03-05T18:58:10Z",
             "updated_at": "2021-03-06T18:58:10Z",
             "data_volume": 10000,
-            "schema": "{\"imports\": [{\"repo\":
-        \"https://github.com/Project-OpenBytes/standard@main\",\"types\": [{\"name\":
-        \"label.Category\"}, {\"name\": \"tensor.Image\"}]}], \"type\": \"record\",
-        \"fields\": [{\"name\": \"image\", \"type\": \"tensor.Image\", \"dtype\":
-        \"uint8\", \"shape\": [28, 28]}, {\"name\": \"category\", \"type\":
-        \"label.Category\", \"categories\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}]}"
+            "schema": '{"imports": [{"repo": "https://github.com/Project-OpenBytes/...'
         }
 
     """
@@ -263,7 +258,7 @@ def get_commit_sheet(
     sheet: str,
     schema_format: Optional[str] = None,
 ) -> Dict[str, Any]:
-    r"""Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}`.
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}`.
 
     Arguments:
         access_key: User's access key.
@@ -292,12 +287,7 @@ def get_commit_sheet(
             "created_at": "2021-03-05T18:58:10Z",
             "updated_at": "2021-03-06T18:58:10Z",
             "data_volume": 10000,
-            "schema": "{\"imports\": [{\"repo\":
-        \"https://github.com/Project-OpenBytes/standard@main\",\"types\": [{\"name\":
-        \"label.Category\"}, {\"name\": \"tensor.Image\"}]}], \"type\": \"record\",
-        \"fields\": [{\"name\": \"image\", \"type\": \"tensor.Image\", \"dtype\":
-        \"uint8\", \"shape\": [28, 28]}, {\"name\": \"category\", \"type\":
-        \"label.Category\", \"categories\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}]}"
+            "schema": '{"imports": [{"repo": "https://github.com/Project-OpenBytes/...'
         }
 
     """
