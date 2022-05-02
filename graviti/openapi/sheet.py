@@ -43,10 +43,11 @@ def create_sheet(
     draft_number: int,
     name: str,
     schema: str,
-    _arrow_schema: str,
+    _avro_schema: str,
+    _arrow_schema: Optional[str] = None,
     primary_key_strategy: Optional[str] = None,
 ) -> None:
-    r"""Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
+    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
 
     Arguments:
         access_key: User's access key.
@@ -68,14 +69,13 @@ def create_sheet(
         ...     "MNIST",
         ...     draft_number = 1,
         ...     name = "val",
-        ...     schema = "{\"imports\": [{\"repo\":
-        ...         \"https://github.com/Project-OpenBytes/standard@main\", \"types\":
-        ...         [{\"name\": \"label.Category\"}, {\"name\": \"tensor.Image\"}]}],
-        ...         \"type\": \"record\", \"fields\": [{\"name\": \"image\", \"type\":
-        ...         \"tensor.Image\", \"dtype\": \"uint8\", \"shape\": [28, 28]}, {\"name\":
-        ...         \"category\", \"type\": \"label.Category\", \"categories\": [0, 1, 2, 3,
-        ...         4, 5, 6, 7, 8, 9]}]}",
-        ...     _arrow_schema = ""
+        ...     schema = '{"imports": [{"repo": "https://github.com/Project-OpenBytes/standard@\
+main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name": "filename", \
+"type": "string"}, {"name": "image", "type": "file.Image"}]}',
+        ...     _avro_schema = '{"type": "record", "name": "root", "namespace": "cn.graviti.portex"\
+, "aliases": [], "fields": [{"name": "filename", "type": "string"}, {"name": "image", "type": \
+{"type": "record", "name": "image", "namespace": "cn.graviti.portex.root", "aliases": [], \
+"fields": [{"name": "checksum", "type": [null, "string"]}]}}]}',
         ... )
 
     """
