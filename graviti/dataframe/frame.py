@@ -221,15 +221,11 @@ class DataFrame(Container):
 
         """
         if schema is None:
-            portex_type = pt.PortexType.from_pyarrow(array.type)
+            schema = pt.PortexType.from_pyarrow(array.type)
+        elif not array.type.equals(schema.to_pyarrow()):
+            raise TypeError("The schema is mismatched with the pyarrow array.")
 
-        else:
-            if not array.type.equals(schema.to_pyarrow()):
-                raise TypeError("The schema is mismatched with the pyarrow array.")
-
-            portex_type = schema
-
-        return cls._from_pyarrow(array, portex_type)
+        return cls._from_pyarrow(array, schema)
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
         header: List[Tuple[str, ...]] = []

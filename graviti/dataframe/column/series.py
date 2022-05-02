@@ -275,13 +275,11 @@ class Series(Container):
 
         """
         if schema is None:
-            portex_type = pt.PortexType.from_pyarrow(array.type)
-        else:
-            if not array.type.equals(schema.to_pyarrow()):
-                raise TypeError("The schema is mismatched with the pyarrow array.")
+            schema = pt.PortexType.from_pyarrow(array.type)
+        elif not array.type.equals(schema.to_pyarrow()):
+            raise TypeError("The schema is mismatched with the pyarrow array.")
 
-            portex_type = schema
-        return cls._from_pyarrow(array, portex_type, name)
+        return cls._from_pyarrow(array, schema, name)
 
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
