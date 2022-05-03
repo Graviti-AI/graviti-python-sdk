@@ -16,7 +16,7 @@ from graviti.utility.collections import (
     UserSequence,
 )
 from graviti.utility.common import locked, shorten
-from graviti.utility.file import File, RemoteFile
+from graviti.utility.file import File, FileBase, RemoteFile
 from graviti.utility.itertools import chunked
 from graviti.utility.paging import LazyFactory, PagingList
 from graviti.utility.pyarrow import (
@@ -37,6 +37,7 @@ __all__ = [
     "ExtensionBase",
     "ExternalExtension",
     "File",
+    "FileBase",
     "GravitiExtension",
     "LazyFactory",
     "MAX_REPR_ROWS",

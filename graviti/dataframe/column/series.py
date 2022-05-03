@@ -14,7 +14,7 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
-from graviti.utility import MAX_REPR_ROWS, PagingList, RemoteFile
+from graviti.utility import MAX_REPR_ROWS, FileBase, PagingList
 
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
@@ -364,6 +364,5 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
 class FileSeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
-    def __getitem__(self, key: int) -> RemoteFile:
-        item = self._data[key]
-        return RemoteFile(item["url"].as_py(), item["checksum"].as_py())
+    def __getitem__(self, key: int) -> FileBase:
+        return FileBase.from_pyarrow(self._data[key])
