@@ -41,12 +41,16 @@ def create_dataset(
         ... )
         {
            "id": "2bc95d506db2401b898067f1045d7f68",
+           "name": "OxfordIIITPet",
+           "alias": "Oxford-IIIT Pet",
            "default_branch": "main",
            "commit_id": "00000000000000000000000000000000",
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
-           "owner": "czhual"
+           "owner": "czhual",
+           "is_public": false,
+           "config": "exampleConfigName"
         }
 
     """
