@@ -10,6 +10,7 @@ from itertools import chain, islice, zip_longest
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -25,12 +26,13 @@ from typing import (
 import pyarrow as pa
 
 import graviti.portex as pt
+from graviti.dataframe.column.series import ArraySeries, FileSeries
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.utility import MAX_REPR_ROWS
+from graviti.utility import MAX_REPR_ROWS, File
 
 if TYPE_CHECKING:
     from graviti.manager import PagingLists
@@ -586,9 +588,9 @@ class DataFrame(Container):
         2   d.jpg    4      4
 
         """
-        if not isinstance(values, self.__class__):
-            values = self.__class__._from_pyarrow(  # pylint: disable=protected-access
-                pa.array(values, self.schema.to_pyarrow()), self.schema
+        if not isinstance(values, DataFrame):
+            values = DataFrame._from_pyarrow(  # pylint: disable=protected-access
+                self._pylist_to_pyarrow(values, self.schema), self.schema
             )
         elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
             raise TypeError("The schema of the given DataFrame is mismatched.")
@@ -597,6 +599,102 @@ class DataFrame(Container):
 
         self._extend(values)
         self.operations.append(AddData(values))
+
+    @staticmethod
+    def _process_array(
+        values: Iterable[Any], schema: pt.array
+    ) -> Tuple[Callable[[Any], Any], bool]:
+        item_schema = schema.items
+        container = item_schema.container
+        if container == DataFrame:
+            if isinstance(values, DataFrame):
+                return lambda x: x.to_pylist(), True
+
+            return DataFrame._process_record(
+                values, item_schema.to_builtin()  # type: ignore[arg-type, attr-defined]
+            )
+
+        if container == ArraySeries:
+            for value in values:
+                if value is None:
+                    continue
+
+                processor, need_process = DataFrame._process_array(
+                    value, item_schema  # type: ignore[arg-type]
+                )
+                return lambda x: list(map(processor, x)), need_process
+
+        elif container == FileSeries:
+            for value in values:
+                if value is None:
+                    continue
+
+                processor, need_process = DataFrame._process_file(value)
+                return lambda x: list(map(processor, x)), need_process
+
+        return lambda x: x, False
+
+    @staticmethod
+    def _process_file(values: Iterable[Any]) -> Tuple[Callable[[Any], Any], bool]:
+        if isinstance(values, File):
+            return lambda x: x.to_pyobj(), True
+
+        return lambda x: x, False
+
+    @staticmethod
+    def _process_record(
+        values: Iterable[Dict[str, Any]], schema: pt.record
+    ) -> Tuple[Callable[[Any], Any], bool]:
+        processors = {}
+        need_process, sub_need_process = False, False
+        for row in values:
+            for name, field in schema.fields.items():
+                if name in processors:
+                    continue
+
+                item = row[name]
+                if item is None:
+                    continue
+
+                container = field.container
+                if container == DataFrame:
+                    processors[name], sub_need_process = DataFrame._process_record(
+                        item, field.to_builtin()  # type: ignore[attr-defined]
+                    )
+                    need_process = need_process or sub_need_process
+                elif container == ArraySeries:
+                    processors[name], sub_need_process = DataFrame._process_array(
+                        item, field  # type: ignore[arg-type]
+                    )
+                    need_process = need_process or sub_need_process
+                elif container == FileSeries:
+                    processors[name], sub_need_process = DataFrame._process_file(item)
+                    need_process = need_process or sub_need_process
+                else:
+                    processors[name] = lambda x: x
+
+            if len(processors) == len(schema.fields):
+                break
+
+        for name in schema.fields:
+            # If all value in one column are None, add the default process function.
+            if name not in processors:
+                processors[name] = lambda x: x
+        return lambda x: [{k: processors[k](v) for k, v in r.items()} for r in x], need_process
+
+    @staticmethod
+    def _pylist_to_pyarrow(
+        values: Iterable[Dict[str, Any]], schema: pt.PortexType
+    ) -> pa.StructArray:
+
+        # In this case schema.to_builtin always returns record.
+        processor, need_process = DataFrame._process_record(
+            values, schema.to_builtin()  # type: ignore[attr-defined]
+        )
+        if not need_process:
+            return pa.array(values, schema.to_pyarrow())
+
+        return pa.array(processor(values), schema.to_pyarrow())
 
     def to_pylist(self) -> List[Dict[str, Any]]:
         """Convert the DataFrame to a python list.
