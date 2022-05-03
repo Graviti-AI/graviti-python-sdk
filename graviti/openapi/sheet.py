@@ -14,10 +14,13 @@ from graviti.openapi.requests import open_api_do
 def _list_sheet(
     access_key: str,
     url: str,
+    with_record_count: Optional[bool],
     offset: int,
     limit: int,
 ) -> Dict[str, Any]:
     params: Dict[str, Any] = {"offset": offset, "limit": limit}
+    if with_record_count is not None:
+        params["with_record_count"] = with_record_count
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -25,11 +28,15 @@ def _list_sheet(
 def _get_sheet(
     access_key: str,
     url: str,
+    with_record_count: Optional[bool],
     schema_format: Optional[str],
 ) -> Dict[str, Any]:
     params: Dict[str, Any] = {}
+
     if schema_format is not None:
-        params = {"schema_format": schema_format}
+        params["schema_format"] = schema_format
+    if with_record_count is not None:
+        params["with_record_count"] = with_record_count
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -95,6 +102,7 @@ def list_draft_sheets(
     dataset: str,
     *,
     draft_number: int,
+    with_record_count: Optional[bool] = None,
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
@@ -106,6 +114,8 @@ def list_draft_sheets(
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
+        with_record_count: Whether return the record count of each sheet. The default value of
+            this param in OpenAPI is False.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -141,7 +151,9 @@ def list_draft_sheets(
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets")
 
-    return _list_sheet(access_key, url, offset=offset, limit=limit)
+    return _list_sheet(
+        access_key, url, with_record_count=with_record_count, offset=offset, limit=limit
+    )
 
 
 def list_commit_sheets(
@@ -151,6 +163,7 @@ def list_commit_sheets(
     dataset: str,
     *,
     commit_id: str,
+    with_record_count: Optional[bool] = None,
     offset: int = 0,
     limit: int = 128,
 ) -> Dict[str, Any]:
@@ -162,6 +175,8 @@ def list_commit_sheets(
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit id.
+        with_record_count: Whether return the record count of each sheet. The default value of
+            this param in OpenAPI is False.
         offset: The offset of the page.
         limit: The limit of the page.
 
@@ -197,7 +212,9 @@ def list_commit_sheets(
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets")
 
-    return _list_sheet(access_key, url, offset=offset, limit=limit)
+    return _list_sheet(
+        access_key, url, with_record_count=with_record_count, offset=offset, limit=limit
+    )
 
 
 def get_draft_sheet(
@@ -208,6 +225,7 @@ def get_draft_sheet(
     *,
     draft_number: int,
     sheet: str,
+    with_record_count: Optional[bool] = None,
     schema_format: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
@@ -219,6 +237,8 @@ def get_draft_sheet(
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The sheet name.
+        with_record_count: Whether return the record count of each sheet. The default value of
+            this param in OpenAPI is False.
         schema_format: Fill "JSON"/"YAML" to determine whether the schema_format of the returned
             schema is json or yaml. None means "JSON" format.
 
@@ -232,20 +252,23 @@ def get_draft_sheet(
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
-        ...     sheet = "sheet-2"
+        ...     sheet = "sheet-2",
+        ...     with_record_count=True,
         ... )
         {
             "name": "trainval",
             "created_at": "2021-03-05T18:58:10Z",
             "updated_at": "2021-03-06T18:58:10Z",
-            "data_volume": 10000,
+            "record_count": 10000,
             "schema": '{"imports": [{"repo": "https://github.com/Project-OpenBytes/...'
         }
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}")
 
-    return _get_sheet(access_key, url, schema_format=schema_format)
+    return _get_sheet(
+        access_key, url, with_record_count=with_record_count, schema_format=schema_format
+    )
 
 
 def get_commit_sheet(
@@ -256,6 +279,7 @@ def get_commit_sheet(
     *,
     commit_id: str,
     sheet: str,
+    with_record_count: Optional[bool] = None,
     schema_format: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}`.
@@ -267,6 +291,8 @@ def get_commit_sheet(
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit id..
         sheet: The sheet name.
+        with_record_count: Whether return the record count of each sheet. The default value of
+            this param in OpenAPI is False.
         schema_format: Fill "JSON"/"YAML" to determine whether the schema_format of the returned
             schema is json or yaml. None means "JSON" format.
 
@@ -280,20 +306,23 @@ def get_commit_sheet(
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
-        ...     sheet = "sheet-2"
+        ...     sheet = "sheet-2",
+        ...     with_record_count=True,
         ... )
         {
             "name": "trainval",
             "created_at": "2021-03-05T18:58:10Z",
             "updated_at": "2021-03-06T18:58:10Z",
-            "data_volume": 10000,
+            "record_count": 10000,
             "schema": '{"imports": [{"repo": "https://github.com/Project-OpenBytes/...'
         }
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}")
 
-    return _get_sheet(access_key, url, schema_format=schema_format)
+    return _get_sheet(
+        access_key, url, with_record_count=with_record_count, schema_format=schema_format
+    )
 
 
 def delete_sheet(

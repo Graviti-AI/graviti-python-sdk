@@ -119,6 +119,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             dataset=self._dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
+            with_record_count=True,
         )
 
     def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:

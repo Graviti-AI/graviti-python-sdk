@@ -69,7 +69,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             schema = PortexType.from_yaml(sheet["schema"])
 
             factory = LazyFactory(
-                sheet["data_volume"],
+                sheet["record_count"],
                 128,
                 partial(self._list_data, sheet_name=sheet_name),
                 schema.to_pyarrow(),
