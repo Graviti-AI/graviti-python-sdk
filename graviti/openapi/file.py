@@ -8,14 +8,14 @@
 from copy import deepcopy
 from pathlib import Path
 from time import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Iterable, Tuple
 
 import filetype
 from requests_toolbelt import MultipartEncoder
 
 from graviti.openapi.data import get_policy
 from graviti.openapi.requests import do
-from graviti.utility import File, config, locked
+from graviti.utility import File, config, locked, submit_multithread_tasks
 
 _EXPIRED_IN_SECOND = 240
 
@@ -71,6 +71,45 @@ def _get_upload_permission(
     return deepcopy(_PERMISSIONS[key])
 
 
+def upload_files(
+    access_key: str,
+    url: str,
+    owner: str,
+    dataset: str,
+    *,
+    draft_number: int,
+    sheet: str,
+    files: Iterable[File],
+    jobs: int = 1,
+) -> None:
+    """Upload multiple local files with multithread.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        dataset: Name of the dataset, unique for a user.
+        draft_number: The draft number.
+        sheet: The sheet name.
+        files: The local files to upload.
+        jobs: The number of the max workers in multi-thread uploading procession.
+
+    """
+    submit_multithread_tasks(
+        lambda file: upload_file(
+            access_key=access_key,
+            url=url,
+            owner=owner,
+            dataset=dataset,
+            draft_number=draft_number,
+            sheet=sheet,
+            file=file,
+        ),
+        files,
+        jobs=jobs,
+    )
+
+
 def upload_file(
     access_key: str,
     url: str,
@@ -90,7 +129,7 @@ def upload_file(
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The sheet name.
-        file: The local file to be uploaded.
+        file: The local file to upload.
 
     """
     permission = _get_upload_permission(
