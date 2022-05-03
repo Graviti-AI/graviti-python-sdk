@@ -15,7 +15,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -73,37 +72,43 @@ class DataFrame(Container):
     _columns: Dict[str, Container]
     _column_names: List[str]
     schema: pt.PortexType
+    operations: List[DataFrameOperation]
 
-    def __init__(
-        self,
-        data: Union[
-            Sequence[Sequence[Any]], Dict[str, Any], "DataFrame", "PagingLists", None
-        ] = None,
-        schema: Any = None,
-        columns: Optional[Iterable[str]] = None,
-    ) -> None:
+    def __new__(
+        cls: Type[_T],
+        data: Union[List[Dict[str, Any]], _T, None] = None,
+        schema: Optional[pt.PortexType] = None,
+    ) -> _T:
+        """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
+
+        Arguments:
+            data: The data that needs to be stored in DataFrame.
+            schema: The schema of the DataFrame. If None, will be inferred from `data`.
+
+        Raises:
+            ValueError: When both given schema and DataFrame data.
+            ValueError: When the given data is not list.
+
+        Returns:
+            The created :class:`~graviti.dataframe.DataFrame` object.
+
+        """
         if data is None:
-            data = {}  # type: ignore[assignment]
-            # https://github.com/python/mypy/issues/6463
-        if schema is not None:
-            # TODO: missing schema processing
-            pass
-        if columns is not None:
-            # TODO: missing columns processing
-            pass
+            data = []
 
-        self._columns = {}
-        self._column_names = []
-        if isinstance(data, dict):
-            for key, value in data.items():
-                self._columns[key] = (
-                    DataFrame(value) if isinstance(value, dict) else ColumnSeries(value, name=key)
-                )
-                self._column_names.append(key)
-        else:
-            raise ValueError("DataFrame only supports generating from dictionary now")
+        if isinstance(data, cls):
+            if schema is not None:
+                raise ValueError("Only support the schema when data is not DataFrame.")
 
-        self.operations: List[DataFrameOperation] = [AddData(self.copy())]
+            return data.copy()
+
+        if schema is None:
+            return cls.from_pyarrow(pa.array(data))
+
+        if isinstance(data, list):
+            return cls._from_pyarrow(cls._pylist_to_pyarrow(data, schema), schema)
+
+        raise ValueError("DataFrame only supports creating from list object now")
 
     @overload
     def __getitem__(self, key: str) -> Union[ColumnSeries, "DataFrame"]:  # type: ignore[misc]
