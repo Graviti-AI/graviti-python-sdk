@@ -313,8 +313,12 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
     _item_container: Type[Container]
 
     def __getitem__(self, key: int) -> Any:
+        scalar = self._data[key]
+        if not scalar.is_valid:
+            return None
+
         return self._item_container._from_pyarrow(
-            self._data[key].values, self.schema.to_builtin().items  # type: ignore[attr-defined]
+            scalar.values, self.schema.to_builtin().items  # type: ignore[attr-defined]
         )
 
     @classmethod
@@ -364,5 +368,9 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
 class FileSeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
-    def __getitem__(self, key: int) -> FileBase:
-        return FileBase.from_pyarrow(self._data[key])
+    def __getitem__(self, key: int) -> Optional[FileBase]:
+        scalar = self._data[key]
+        if not scalar.is_valid:
+            return None
+
+        return FileBase.from_pyarrow(scalar)
