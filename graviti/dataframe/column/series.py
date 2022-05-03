@@ -14,11 +14,11 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
-from graviti.utility import MAX_REPR_ROWS
-from graviti.utility.paging import PagingList
+from graviti.utility import MAX_REPR_ROWS, PagingList, RemoteFile
 
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
+_F = TypeVar("_F", bound="FileSeries")
 
 
 @pt.ContainerRegister(
@@ -350,3 +350,20 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
         obj._item_container = self._item_container  # pylint: disable=protected-access
 
         return obj
+
+
+@pt.ExternalContainerRegister(
+    "https://github.com/Project-OpenBytes/standard",
+    "main",
+    "file.Audio",
+    "file.Image",
+    "file.PointCloud",
+    "file.PointCloudBin",
+    "file.RemoteFile",
+)
+class FileSeries(Series):  # pylint: disable=abstract-method
+    """One-dimensional array for file."""
+
+    def __getitem__(self, key: int) -> RemoteFile:
+        item = self._data[key]
+        return RemoteFile(item["url"].as_py(), item["checksum"].as_py())
