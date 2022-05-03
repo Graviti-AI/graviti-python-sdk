@@ -8,7 +8,8 @@
 import logging
 import os
 from collections import defaultdict
-from typing import Any, DefaultDict, Optional
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
+from typing import Any, Callable, DefaultDict, Iterable, Optional, TypeVar
 
 import urllib3
 from requests import Session
@@ -219,3 +220,27 @@ class UserResponse:
 
         except StopIteration:
             return b""
+
+
+_T = TypeVar("_T")
+
+
+def submit_multithread_tasks(
+    function: Callable[[_T], Any], arguments: Iterable[_T], *, jobs: int = 1
+) -> None:
+    """Multi-thread framework.
+
+    Arguments:
+        function: The function to call.
+        arguments: The arguments of the function.
+        jobs: The number of the max workers in multi-thread call procession.
+
+    """
+    with ThreadPoolExecutor(jobs) as executor:
+        futures = [executor.submit(function, argument) for argument in arguments]
+        done, not_done = wait(futures, return_when=FIRST_EXCEPTION)
+
+        for future in not_done:
+            future.cancel()
+        for future in done:
+            future.result()

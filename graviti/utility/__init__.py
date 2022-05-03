@@ -28,7 +28,7 @@ from graviti.utility.pyarrow import (
     RemoteFileType,
 )
 from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
-from graviti.utility.requests import config, get_session
+from graviti.utility.requests import config, get_session, submit_multithread_tasks
 from graviti.utility.typing import NestedDict
 
 __all__ = [
@@ -58,4 +58,5 @@ __all__ = [
     "get_session",
     "locked",
     "shorten",
+    "submit_multithread_tasks",
 ]
