@@ -240,15 +240,10 @@ class DatasetManager:
             The created :class:`~graviti.manager.dataset.Dataset` instance.
 
         """
-        arguments: Dict[str, Any] = {
-            "access_key": self.access_key,
-            "url": self.url,
-            "name": name,
-            "alias": alias,
-            "is_public": is_public,
-            "config": config,
-        }
-        response = create_dataset(**arguments)
+        arguments = {"access_key": self.access_key, "url": self.url}
+        response = create_dataset(
+            **arguments, name=name, alias=alias, is_public=is_public, config=config
+        )
         response.update(arguments)
 
         return Dataset.from_pyobj(response)
@@ -269,13 +264,9 @@ class DatasetManager:
         if not dataset:
             raise ResourceNotExistError(resource="dataset", identification=dataset)
 
-        arguments: Dict[str, Any] = {
-            "access_key": self.access_key,
-            "url": self.url,
-            "owner": self.owner,
-        }
-        response = get_dataset(**arguments, dataset=dataset)
-        response.update(arguments, name=dataset)
+        arguments = {"access_key": self.access_key, "url": self.url}
+        response = get_dataset(**arguments, owner=self.owner, dataset=dataset)
+        response.update(arguments)
 
         return Dataset.from_pyobj(response)
 
