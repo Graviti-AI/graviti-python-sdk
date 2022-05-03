@@ -87,10 +87,10 @@ class File(FileBase):
     _BUFFER_SIZE = 65536
 
     def __init__(self, path: str) -> None:
-        self._path = Path(path)
+        self.path = Path(path)
 
     def _repr_head(self) -> str:
-        return f'{self.__class__.__name__}("{self._path.name}")'
+        return f'{self.__class__.__name__}("{self.path.name}")'
 
     @property
     def checksum(self) -> str:
@@ -102,7 +102,7 @@ class File(FileBase):
         """
         if not hasattr(self, "_checksum"):
             sha1_object = sha1()
-            with self._path.open("rb", encoding="utf-8") as fp:
+            with self.path.open("rb", encoding="utf-8") as fp:
                 while True:
                     data = fp.read(self._BUFFER_SIZE)
                     if not data:
@@ -120,7 +120,7 @@ class File(FileBase):
             The local file pointer.
 
         """
-        return self._path.open("rb", encoding="utf-8")
+        return self.path.open("rb", encoding="utf-8")
 
     def to_pyobj(self) -> Dict[str, str]:
         """Dump the local file to a python dict.
