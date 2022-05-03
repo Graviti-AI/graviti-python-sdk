@@ -8,7 +8,6 @@
 
 from itertools import chain, islice, zip_longest
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -31,10 +30,7 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.utility import MAX_REPR_ROWS, File
-
-if TYPE_CHECKING:
-    from graviti.manager import PagingLists
+from graviti.utility import MAX_REPR_ROWS, File, PagingLists
 
 _T = TypeVar("_T", bound="DataFrame")
 
@@ -187,7 +183,7 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def _from_paging(cls: Type[_T], paging: "PagingLists", schema: pt.PortexType) -> _T:
+    def _from_paging(cls: Type[_T], paging: PagingLists, schema: pt.PortexType) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:

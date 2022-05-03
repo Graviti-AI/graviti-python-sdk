@@ -6,16 +6,14 @@
 """The implementation of the Sheets."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, MutableMapping, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, MutableMapping
 
 from graviti.dataframe import DataFrame
 from graviti.portex import PortexType
-from graviti.utility import LazyFactory, NestedDict, PagingList, ReprMixin
+from graviti.utility import LazyFactory, ReprMixin
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
-
-PagingLists = NestedDict[str, PagingList]
 
 
 class Sheets(MutableMapping[str, DataFrame], ReprMixin):
@@ -38,17 +36,6 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
     def __iter__(self) -> Iterator[str]:
         return self._get_data().__iter__()
-
-    @staticmethod
-    def _get_paging_lists(factory: LazyFactory, keys: List[Tuple[str, ...]]) -> PagingLists:
-        paging_lists: PagingLists = {}
-        for key in keys:
-            position = paging_lists
-            for subkey in key[:-1]:
-                position = position.setdefault(subkey, {})  # type: ignore[assignment]
-            position[key[-1]] = factory.create_list(key)
-
-        return paging_lists
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         raise NotImplementedError
@@ -74,7 +61,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                 partial(self._list_data, sheet_name=sheet_name),
                 schema.to_pyarrow(),
             )
-            paging_lists = self._get_paging_lists(factory, schema.get_keys())
+            paging_lists = factory.create_lists(schema.get_keys())
             self._data[sheet_name] = DataFrame._from_paging(  # pylint: disable=protected-access
                 paging_lists, schema
             )

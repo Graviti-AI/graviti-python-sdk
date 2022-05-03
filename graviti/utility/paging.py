@@ -26,6 +26,8 @@ from typing import (
 
 import pyarrow as pa
 
+from graviti.utility.typing import NestedDict
+
 _P = TypeVar("_P", bound="PagingList")
 _O = TypeVar("_O", bound="Offsets")
 
@@ -606,6 +608,9 @@ class PagingList:
         return pa.chunked_array(page.get_array() for page in self._pages)
 
 
+PagingLists = NestedDict[str, PagingList]
+
+
 class LazyFactory:
     """LazyFactory is a factory for creating paging lists.
 
@@ -709,6 +714,25 @@ class LazyFactory:
             patype = patype[key].type
 
         return PagingList.from_factory(self, keys, patype)
+
+    def create_lists(self, keys: List[Tuple[str, ...]]) -> PagingLists:
+        """Create a dict of PagingList from the given keys.
+
+        Arguments:
+            keys: A list of keys to create the paging lists.
+
+        Returns:
+            The created paging lists.
+
+        """
+        paging_lists: PagingLists = {}
+        for key in keys:
+            position = paging_lists
+            for subkey in key[:-1]:
+                position = position.setdefault(subkey, {})  # type: ignore[assignment]
+            position[key[-1]] = self.create_list(key)
+
+        return paging_lists
 
     def get_page_ranges(self) -> Iterator[range]:
         """A Generator which generates the range of the pages in the factory.
