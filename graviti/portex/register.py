@@ -56,10 +56,10 @@ class ExternalContainerRegister:
 
     EXTERNAL_TYPE_TO_CONTAINER: ClassVar[Dict[Tuple[str, str, str], Type["Container"]]] = {}
 
-    def __init__(self, url: str, revision: str, name: str) -> None:
+    def __init__(self, url: str, revision: str, *names: str) -> None:
         self._url = url
         self._revision = revision
-        self._name = name
+        self._names = names
 
     def __call__(self, container: Type[_C]) -> Type[_C]:
         """Connect data container with the portex external types.
@@ -71,15 +71,13 @@ class ExternalContainerRegister:
             The input container class unchanged.
 
         """
-        self.EXTERNAL_TYPE_TO_CONTAINER[self._url, self._revision, self._name] = container
+        package = packages.externals.get((self._url, self._revision))
 
-        try:
-            package = packages.externals[self._url, self._revision]
-            class_ = package[self._name]
-        except KeyError:
-            pass
-        else:
-            class_.container = container
+        for name in self._names:
+            self.EXTERNAL_TYPE_TO_CONTAINER[self._url, self._revision, name] = container
+
+            if package:
+                package[name].container = container
 
         return container
 
