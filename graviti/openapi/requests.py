@@ -15,6 +15,21 @@ from graviti.exception import RESPONSE_ERROR_DISTRIBUTOR, ResponseError
 from graviti.utility import config, get_session
 
 
+def do(method: str, url: str, **kwargs: Any) -> Response:  # pylint: disable=invalid-name
+    """Send a request.
+
+    Arguments:
+        method: The method of the request.
+        url: The URL of the request.
+        **kwargs: Extra keyword arguments to send in the GET request.
+
+    Returns:
+        Response of the request.
+
+    """
+    return get_session().request(method=method, url=url, **kwargs)
+
+
 def open_api_do(method: str, access_key: str, url: str, **kwargs: Any) -> Response:
     """Send a request to the Graviti OpenAPI.
 
@@ -37,7 +52,7 @@ def open_api_do(method: str, access_key: str, url: str, **kwargs: Any) -> Respon
     headers["request_id"] = uuid4().hex
 
     try:
-        return get_session().request(method=method, url=url, **kwargs)
+        return do(method=method, url=url, **kwargs)
     except ResponseError as error:
         response = error.response
         error_code = response.json()["code"]
