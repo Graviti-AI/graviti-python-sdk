@@ -49,7 +49,9 @@ class Offsets:
 
     def _get_offsets(self) -> List[int]:
         if not hasattr(self, "_offsets"):
-            self._offsets = list(range(0, self.total_count, self._limit))
+            self._offsets = (
+                list(range(0, self.total_count, self._limit)) if self._limit != 0 else []
+            )
 
         return self._offsets
 
