@@ -219,7 +219,7 @@ class DatasetManager:
             item.update(arguments)
             yield Dataset.from_pyobj(item)
 
-        return response["totalCount"]  # type: ignore[no-any-return]
+        return response["total_count"]  # type: ignore[no-any-return]
 
     def create(
         self,

@@ -221,7 +221,7 @@ class CommitManager:
         for item in response["commits"]:
             yield Commit(self._dataset, **item)
 
-        return response["totalCount"]  # type: ignore[no-any-return]
+        return response["total_count"]  # type: ignore[no-any-return]
 
     def get(self, revision: Optional[str] = None) -> Commit:
         """Get the certain commit with the given revision.
