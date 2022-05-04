@@ -146,12 +146,7 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
             The corresponding builtin PyArrow DataType.
 
         """
-        # To make the LazyFactory.get_array() work properly,
-        # the PyArrow type of binary files should be consistent with the return value,
-        # which is a dict containing "url" and "checksum".
-        return pa.struct(
-            [pa.field("checksum", pa.string(), nullable=False), pa.field("url", pa.string())]
-        )
+        return pa.binary()
 
 
 @PyArrowConversionRegister(pa.lib.Type_BOOL)  # pylint: disable=c-extension-no-member
