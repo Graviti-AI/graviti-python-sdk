@@ -9,6 +9,8 @@
 
 import pyarrow as pa
 
+_REMOTE_FILE_FIELD_NAMES = {"checksum", "url"}
+
 
 class AvroSchema:
     def __init__(self):
@@ -171,7 +173,15 @@ def _on_primitive(_filed: pa.DataType) -> AvroSchema:
 
 def _on_struct(names, namespace, name, _struct: pa.StructType) -> AvroRecordSchema:
     avro_record_fields = list()
-    for i in range(_struct.num_fields):
+
+    num_fields = _struct.num_fields
+    index_range = range(num_fields)
+
+    # remove "url" field in avro schema
+    if num_fields == 2 and {field.name for field in _struct} == _REMOTE_FILE_FIELD_NAMES:
+        index_range = [_struct.get_field_index("checksum")]
+
+    for i in index_range:
         ps_sub_filed = _struct[i]
         sub_name = ps_sub_filed.name
         sub_namespace = f"{namespace}.{sub_name}"
