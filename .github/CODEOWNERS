@@ -10,6 +10,7 @@
 /graviti/client/ @graczhual
 /graviti/openapi/ @graczhual
 /graviti/manager/ @graczhual
+/graviti/operation/ @graczhual
 /graviti/dataframe/ @AChenQ
 /graviti/portex/ @Lee-000
 /graviti/exception.py @Lee-000
