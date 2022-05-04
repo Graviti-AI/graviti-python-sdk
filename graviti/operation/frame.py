@@ -5,13 +5,13 @@
 
 """Definitions of different operations on a DataFrame."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-from graviti.openapi import add_data, update_data
+from graviti.openapi import add_data, update_data, upload_files
 from graviti.utility import chunked
 
 if TYPE_CHECKING:
-    from graviti.dataframe import DataFrame
+    from graviti.dataframe import Container, DataFrame
 
 _MAX_BATCH_SIZE = 2048
 
@@ -78,8 +78,22 @@ class AddData(DataFrameOperation):
             sheet: The sheet name.
 
         """
-        data = self.data.to_pylist()
-        for batch in chunked(data, _MAX_BATCH_SIZE):
+        dataframe = self.data
+        arrays = _get_arrays(dataframe, "file.RemoteFile")
+        data = dataframe.to_pylist()
+
+        for batch, *file_arrays in chunked(zip(data, *arrays), _MAX_BATCH_SIZE):
+            for file_array in file_arrays:
+                upload_files(
+                    access_key,
+                    url,
+                    owner,
+                    dataset,
+                    draft_number=draft_number,
+                    sheet=sheet,
+                    files=file_array,  # type: ignore[arg-type]
+                )
+
             add_data(
                 access_key,
                 url,
@@ -123,8 +137,22 @@ class UpdateData(DataFrameOperation):
             sheet: The sheet name.
 
         """
-        data = self.data.to_pylist()
-        for batch in chunked(data, _MAX_BATCH_SIZE):
+        dataframe = self.data
+        arrays = _get_arrays(dataframe, "file.RemoteFile")
+        data = dataframe.to_pylist()
+
+        for batch, *file_arrays in chunked(zip(data, *arrays), _MAX_BATCH_SIZE):
+            for file_array in file_arrays:
+                upload_files(
+                    access_key,
+                    url,
+                    owner,
+                    dataset,
+                    draft_number=draft_number,
+                    sheet=sheet,
+                    files=file_array,  # type: ignore[arg-type]
+                )
+
             update_data(
                 access_key,
                 url,
@@ -134,3 +162,13 @@ class UpdateData(DataFrameOperation):
                 sheet=sheet,
                 data=batch,
             )
+
+
+def _get_arrays(dataframe: "DataFrame", type_name: str) -> List["Container"]:
+    arrays = []
+    for key in dataframe.schema.get_keys(type_name):
+        array: "Container" = dataframe
+        for subkey in key:
+            array = array[subkey]  # type: ignore[index]
+        arrays.append(array)
+    return arrays

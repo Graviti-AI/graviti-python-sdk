@@ -5,7 +5,7 @@
 """Template base class."""
 
 
-from typing import Any, ClassVar, Dict, List, Set, Tuple, Type
+from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
 
 import pyarrow as pa
 
@@ -44,9 +44,6 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
         if not hasattr(self.__class__, "container"):
             self.container = self.internal_type.container
 
-    def _get_keys(self) -> List[Tuple[str, ...]]:
-        return self.internal_type._get_keys()  # pylint: disable=protected-access
-
     @property
     def internal_type(self) -> PortexType:
         """Get the internal type of the PortexExternalType.
@@ -75,6 +72,18 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         """
         return self.internal_type.to_builtin()  # type: ignore[attr-defined, no-any-return]
+
+    def get_keys(self, type_name: Optional[str] = None) -> List[Tuple[str, ...]]:
+        """Get the keys to locate all data, or only get keys of one type if type_name is given.
+
+        Arguments:
+            type_name: The name of the target PortexType.
+
+        Returns:
+            A list of keys to locate the data.
+
+        """
+        return self.to_builtin().get_keys(type_name)
 
 
 def template(

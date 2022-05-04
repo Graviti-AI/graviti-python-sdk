@@ -337,27 +337,33 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
         """
         return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member
 
-    def _get_keys(self) -> List[Tuple[str, ...]]:
-        keys = []
+    def get_keys(self, type_name: Optional[str] = None) -> List[Tuple[str, ...]]:
+        """Get the keys to locate all data, or only get keys of one type if type_name is given.
+
+        Arguments:
+            type_name: The name of the target PortexType.
+
+        Returns:
+            A list of keys to locate the data.
+
+        """
+        keys: List[Tuple[str, ...]] = []
         for name, portex_type in self.fields.items():  # pylint: disable=no-member
             key = (name,)
-            subkeys = portex_type._get_keys()  # pylint: disable=protected-access
+            if type_name and portex_type.__class__.__name__ == type_name:
+                keys.append(key)
+                continue
+
+            subkeys = portex_type.get_keys(type_name)
             if subkeys:
                 for subkey in subkeys:
                     keys.append(key + subkey)
-            else:
+                continue
+
+            if not type_name:
                 keys.append(key)
 
         return keys
-
-    def get_keys(self) -> List[Tuple[str, ...]]:
-        """Get the keys to locate the data of the type.
-
-        Returns:
-            The keys to locate the data of the type.
-
-        """
-        return self._get_keys()
 
 
 class enum(PortexBuiltinType):  # pylint: disable=invalid-name

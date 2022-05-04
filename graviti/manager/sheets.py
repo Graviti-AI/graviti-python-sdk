@@ -74,9 +74,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                 partial(self._list_data, sheet_name=sheet_name),
                 schema.to_pyarrow(),
             )
-            paging_lists = self._get_paging_lists(
-                factory, schema.get_keys()  # type: ignore[attr-defined]
-            )
+            paging_lists = self._get_paging_lists(factory, schema.get_keys())
             self._data[sheet_name] = DataFrame._from_paging(  # pylint: disable=protected-access
                 paging_lists, schema
             )

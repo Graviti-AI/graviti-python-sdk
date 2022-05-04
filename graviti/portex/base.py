@@ -79,7 +79,15 @@ class PortexType:
 
         return arguments
 
-    def _get_keys(self) -> List[Tuple[str, ...]]:  # pylint: disable=no-self-use
+    def get_keys(  # pylint: disable=no-self-use
+        self, _: Optional[str] = None
+    ) -> List[Tuple[str, ...]]:
+        """Get the keys to locate the data.
+
+        Returns:
+            The keys to locate the data.
+
+        """
         return []
 
     @property
