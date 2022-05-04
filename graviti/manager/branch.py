@@ -68,7 +68,7 @@ class BranchManager:
         for item in response["branches"]:
             yield Branch(self._dataset, **item)
 
-        return response["totalCount"]  # type: ignore[no-any-return]
+        return response["total_count"]  # type: ignore[no-any-return]
 
     def create(self, name: str, revision: Optional[str] = None) -> Branch:
         """Create a branch.

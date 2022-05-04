@@ -244,7 +244,7 @@ class DraftManager:
         for item in response["drafts"]:
             yield Draft(self._dataset, **item)
 
-        return response["totalCount"]  # type: ignore[no-any-return]
+        return response["total_count"]  # type: ignore[no-any-return]
 
     def create(
         self, title: str, description: Optional[str] = None, branch: Optional[str] = None

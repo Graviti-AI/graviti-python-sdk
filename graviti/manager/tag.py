@@ -56,7 +56,7 @@ class TagManager:
         for item in response["tags"]:
             yield Tag(self._dataset, **item)
 
-        return response["totalCount"]  # type: ignore[no-any-return]
+        return response["total_count"]  # type: ignore[no-any-return]
 
     def create(self, name: str, revision: Optional[str] = None) -> Tag:
         """Create a tag for a commit.
