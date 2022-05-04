@@ -405,11 +405,10 @@ def get_policy(
         ... )
         {
             "result": {
-                "oss_access_key_id": "OSSACCESSKEYID",
+                "OSSAccessKeyId": "OSSACCESSKEYID",
                 "Signature": "QbkCDeZtX37gb2zoemel3VCxz3k=",
                 "policy": "eyJjb25kaXRpb25zIjpbWyJzdGFydHMtd2l0aCIsIiR",
-                "success_action_status": "200",
-                "multiple_upload_limit": 10
+                "success_action_status": "200"
             },
             "extra": {
                 "backend_type": "oss",

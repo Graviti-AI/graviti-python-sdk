@@ -44,7 +44,6 @@ def _request_upload_permission(
         expired=_EXPIRED_IN_SECOND,
     )
 
-    # del permission["result"]["multiple_upload_limit"]
     _PERMISSIONS[access_key, dataset, draft_number] = permission
 
 
