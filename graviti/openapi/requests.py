@@ -47,9 +47,9 @@ def open_api_do(method: str, access_key: str, url: str, **kwargs: Any) -> Respon
 
     """
     headers = kwargs.setdefault("headers", {})
-    headers["access_key"] = access_key
-    headers["source"] = f"{config._x_source}/{__version__}"  # pylint: disable=protected-access
-    headers["request_id"] = uuid4().hex
+    headers["X-Token"] = access_key
+    headers["X-Source"] = f"{config._x_source}/{__version__}"  # pylint: disable=protected-access
+    headers["X-Request-Id"] = uuid4().hex
 
     try:
         return do(method=method, url=url, **kwargs)
