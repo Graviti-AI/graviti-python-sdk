@@ -148,7 +148,7 @@ class File(FileBase):
         """
         if not hasattr(self, "_checksum"):
             sha1_object = sha1()
-            with self.path.open("rb", encoding="utf-8") as fp:
+            with self.path.open("rb") as fp:
                 while True:
                     data = fp.read(self._BUFFER_SIZE)
                     if not data:
@@ -166,7 +166,7 @@ class File(FileBase):
             The local file pointer.
 
         """
-        return self.path.open("rb", encoding="utf-8")
+        return self.path.open("rb")
 
     def to_pyobj(self) -> Dict[str, str]:
         """Dump the local file to a python dict.
