@@ -85,7 +85,7 @@ class CreateSheet(SheetOperation):
         """
         schema = self.schema.to_yaml()
         pyarrow_schema = pa.schema(self.schema.fields.to_pyarrow())  # type: ignore[attr-defined]
-        arrow_schema = base64.encodebytes(pyarrow_schema.serialize().to_pybytes())
+        arrow_schema = base64.encodebytes(pyarrow_schema.serialize().to_pybytes()).decode("ascii")
         avro_schema = json.dumps(convert_arrow_schema_to_avro(pyarrow_schema))
 
         create_sheet(
