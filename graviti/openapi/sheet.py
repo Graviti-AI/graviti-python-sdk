@@ -63,8 +63,7 @@ def create_sheet(
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         name: The sheet name.
-        schema: The portex schema of the sheet..
-        _arrow_schema: The arrow schema of the sheet.
+        schema: The portex schema of the sheet.
         record_key_strategy: The ``__record_key`` generation strategy.
             If None, it is batch auto-increment sorting record key.
 
@@ -87,8 +86,10 @@ main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name"
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets")
-    post_data = {"name": name, "schema": schema, "_arrow_schema": _arrow_schema}
+    post_data: Dict[str, Any] = {"name": name, "schema": schema, "_avro_schema": _avro_schema}
 
+    if _arrow_schema is not None:
+        post_data["_arrow_schema"] = _arrow_schema
     if record_key_strategy is not None:
         post_data["record_key_strategy"] = record_key_strategy
 
