@@ -43,7 +43,7 @@ class AvroField:
             result = {
                 "name": self._name,
                 "type": [
-                    None,
+                    "null",
                     self._type.to_json(),
                 ],
             }
