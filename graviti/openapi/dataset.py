@@ -164,7 +164,7 @@ def update_dataset(
     alias: Optional[str] = None,
     is_public: Optional[bool] = None,
     default_branch: Optional[str] = None,
-) -> None:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}`.
 
     Arguments:
@@ -177,6 +177,9 @@ def update_dataset(
         is_public: Whether the dataset is public.
         default_branch: User's chosen branch.
 
+    Returns:
+        The response of OpenAPI.
+
     Examples:
         >>> update_dataset(
         ...     "ACCESSKEY-********",
@@ -188,6 +191,19 @@ def update_dataset(
         ...     is_public=True,
         ...     default_branch="main",
         ... )
+        {
+           "id": "2bc95d506db2401b898067f1045d7f68",
+           "name": "OxfordIIITPets",
+           "alias": "Oxford-IIIT Pet",
+           "default_branch": "main",
+           "commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
+           "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
+           "created_at": "2021-03-03T18:58:10Z",
+           "updated_at": "2021-03-04T18:58:10Z",
+           "owner": "czhual",
+           "is_public": true,
+           "config": "exampleConfigName"
+        }
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}")
@@ -205,7 +221,9 @@ def update_dataset(
     if default_branch is not None:
         patch_data["default_branch"] = default_branch
 
-    open_api_do("PATCH", access_key, url, json=patch_data)
+    return open_api_do(  # type: ignore[no-any-return]
+        "PATCH", access_key, url, json=patch_data
+    ).json()
 
 
 def delete_dataset(

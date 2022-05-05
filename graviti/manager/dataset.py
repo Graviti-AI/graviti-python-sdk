@@ -16,7 +16,13 @@ from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.tag import TagManager
-from graviti.openapi import create_dataset, delete_dataset, get_dataset, list_datasets
+from graviti.openapi import (
+    create_dataset,
+    delete_dataset,
+    get_dataset,
+    list_datasets,
+    update_dataset,
+)
 from graviti.utility import ReprMixin, ReprType, UserMutableMapping
 
 
@@ -195,6 +201,39 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
             self._data = self.branches.get(revision)
         except ResourceNotExistError:
             self._data = self.commits.get(revision)
+
+    def edit(
+        self,
+        *,
+        name: Optional[str] = None,
+        alias: Optional[str] = None,
+        is_public: Optional[bool] = None,
+        default_branch: Optional[str] = None,
+    ) -> None:
+        """Update the meta data of the dataset.
+
+        Arguments:
+            name: The new name of the dataset.
+            alias: The new alias of the dataset.
+            is_public: Whether the dataset is public.
+            default_branch: The new default branch of the dataset.
+
+        """
+        response = update_dataset(
+            self.access_key,
+            self.url,
+            self.owner,
+            self.name,
+            name=name,
+            alias=alias,
+            is_public=is_public,
+            default_branch=default_branch,
+        )
+        self.name = response["name"]
+        self.alias = response["alias"]
+        self.is_public = response["is_public"]
+        self.default_branch = response["default_branch"]
+        self.updated_at = response["updated_at"]
 
 
 class DatasetManager:
