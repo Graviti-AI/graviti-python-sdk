@@ -145,7 +145,9 @@ class AvroEnumSchema(AvroSchema):
 
 
 def _on_list(names, namespace, name, _pa_ist: pa.ListType) -> AvroArraySchema:
-    items = _on_type(names, namespace, name, 0, _pa_ist.value_type)
+    sub_namespace = f"{namespace}.{name}"
+    sub_name = "items"
+    items = _on_type(names, sub_namespace, sub_name, 0, _pa_ist.value_type)
     return AvroArraySchema(items=items)
 
 
