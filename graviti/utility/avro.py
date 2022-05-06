@@ -157,9 +157,9 @@ def _on_primitive(_filed: pa.DataType) -> AvroSchema:
         return AvroPrimitiveSchema(typ="int")
     elif pa_type in ("uint32", "int64"):
         return AvroPrimitiveSchema(typ="long")
-    elif pa_type == "float32":
+    elif pa_type == "float":
         return AvroPrimitiveSchema(typ="float")
-    elif pa_type == "float64":
+    elif pa_type == "double":
         return AvroPrimitiveSchema(typ="double")
     elif pa_type == "date32":
         return AvroPrimitiveSchema(typ="int")
