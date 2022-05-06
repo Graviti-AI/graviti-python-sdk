@@ -82,7 +82,9 @@ class AddData(DataFrameOperation):
         arrays = _get_arrays(dataframe, "file.RemoteFile")
         data = dataframe.to_pylist()
 
-        for batch, *file_arrays in chunked(zip(data, *arrays), _MAX_BATCH_SIZE):
+        for batch, *file_arrays in zip(
+            *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
+        ):
             for file_array in file_arrays:
                 upload_files(
                     access_key,
@@ -91,7 +93,7 @@ class AddData(DataFrameOperation):
                     dataset,
                     draft_number=draft_number,
                     sheet=sheet,
-                    files=file_array,  # type: ignore[arg-type]
+                    files=file_array,
                 )
 
             add_data(
@@ -141,7 +143,9 @@ class UpdateData(DataFrameOperation):
         arrays = _get_arrays(dataframe, "file.RemoteFile")
         data = dataframe.to_pylist()
 
-        for batch, *file_arrays in chunked(zip(data, *arrays), _MAX_BATCH_SIZE):
+        for batch, *file_arrays in zip(
+            *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
+        ):
             for file_array in file_arrays:
                 upload_files(
                     access_key,
@@ -150,7 +154,7 @@ class UpdateData(DataFrameOperation):
                     dataset,
                     draft_number=draft_number,
                     sheet=sheet,
-                    files=file_array,  # type: ignore[arg-type]
+                    files=file_array,
                 )
 
             update_data(
