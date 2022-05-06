@@ -104,6 +104,7 @@ class Commit(Sheets, AttrsMixin):
             dataset=self._dataset.name,
             commit_id=self.commit_id,
             sheet=sheet_name,
+            with_record_count=True,
         )
 
     def to_pyobj(self) -> Dict[str, str]:
