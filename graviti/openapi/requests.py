@@ -5,6 +5,7 @@
 
 """The basic concepts and methods of the Graviti OpenAPI."""
 
+import json
 from typing import Any
 from uuid import uuid4
 
@@ -27,6 +28,10 @@ def do(method: str, url: str, **kwargs: Any) -> Response:  # pylint: disable=inv
         Response of the request.
 
     """
+    params = kwargs.get("params", {})
+    for key, value in params.items():
+        params[key] = json.dumps(value)
+
     return get_session().request(method=method, url=url, **kwargs)
 
 
