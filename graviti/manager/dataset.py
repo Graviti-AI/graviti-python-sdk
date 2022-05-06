@@ -235,6 +235,19 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.default_branch = response["default_branch"]
         self.updated_at = response["updated_at"]
 
+    def search(self, sheet: str, criteria: Dict[str, Any]) -> DataFrame:
+        """Create a search.
+
+        Arguments:
+            sheet: The sheet name.
+            criteria: The criteria of search.
+
+        Returns:
+            The created :class:`~graviti.dataframe.DataFrame` instance.
+
+        """
+        return self.HEAD.search(sheet, criteria)
+
 
 class DatasetManager:
     """This class defines the operations on the dataset on Graviti.
