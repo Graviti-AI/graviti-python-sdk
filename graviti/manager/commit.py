@@ -9,15 +9,19 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, TypeVar
 
 from tensorbay.utility import AttrsMixin, attr
 
+from graviti.dataframe import DataFrame
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
+    create_search,
     get_commit_sheet,
     get_revision,
     list_commit_data,
     list_commit_sheets,
     list_commits,
 )
+from graviti.portex import PortexType
+from graviti.utility import LazyFactory
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -119,6 +123,43 @@ class Commit(Sheets, AttrsMixin):
 
         """
         return self._dumps()
+
+    def search(self, sheet: str, criteria: Dict[str, Any]) -> DataFrame:
+        """Create a search.
+
+        Arguments:
+            sheet: The sheet name.
+            criteria: The criteria of search.
+
+        Returns:
+            The created :class:`~graviti.dataframe.DataFrame` instance.
+
+        """
+
+        def _getter(offset: int, limit: int) -> Dict[str, Any]:
+            return create_search(
+                self._dataset.access_key,
+                self._dataset.url,
+                self._dataset.owner,
+                self._dataset.name,
+                commit_id=self.commit_id,
+                sheet=sheet,
+                criteria=criteria,
+                offset=offset,
+                limit=limit,
+            )
+
+        total_count = _getter(0, 1)["total_count"]
+        schema = PortexType.from_yaml(self._get_sheet(sheet)["schema"])
+
+        factory = LazyFactory(
+            total_count,
+            128,
+            _getter,
+            schema.to_pyarrow(),
+        )
+        paging_lists = factory.create_lists(schema.get_keys())
+        return DataFrame._from_paging(paging_lists, schema)  # pylint: disable=protected-access
 
 
 class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes

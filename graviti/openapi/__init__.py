@@ -17,6 +17,7 @@ from graviti.openapi.dataset import (
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
 from graviti.openapi.file import upload_files
+from graviti.openapi.search import create_search
 from graviti.openapi.sheet import (
     create_sheet,
     delete_sheet,
@@ -34,6 +35,7 @@ __all__ = [
     "create_branch",
     "create_dataset",
     "create_draft",
+    "create_search",
     "create_sheet",
     "create_tag",
     "delete_branch",
