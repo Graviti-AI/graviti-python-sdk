@@ -100,7 +100,7 @@ class Series(Container):
 
     def __repr__(self) -> str:
         indices = list(self._get_repr_indices())
-        indice_width = len(str(max(indices)))
+        indice_width = len(str(max(indices, default=1)))
 
         body = []
         body_item_width = 0
