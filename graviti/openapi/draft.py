@@ -185,7 +185,7 @@ def update_draft(
     state: Optional[str] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
-) -> None:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}/drafts/{draft_number}`.
 
     Arguments:
@@ -199,6 +199,9 @@ def update_draft(
         title: The draft title.
         description: The draft description.
 
+    Returns:
+        The response of OpenAPI.
+
     Examples:
         Update the title or description of the draft:
 
@@ -209,6 +212,17 @@ def update_draft(
         ...     draft_number=2,
         ...     title="draft-3"
         ... )
+        {
+           "number": 2,
+           "title": "draft-3",
+           "description": "",
+           "branch": "main",
+           "state": "OPEN",
+           "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
+           "creator": "czhual",
+           "created_at": "2021-03-03T18:58:10Z",
+           "updated_at": "2021-03-04T18:58:10Z"
+        }
 
         Close the draft:
 
@@ -219,6 +233,17 @@ def update_draft(
         ...     draft_number=2,
         ...     state="CLOSED"
         ... )
+        {
+           "number": 2,
+           "title": "draft-3",
+           "description": "",
+           "branch": "main",
+           "state": "CLOSED",
+           "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
+           "creator": "czhual",
+           "created_at": "2021-03-03T18:58:10Z",
+           "updated_at": "2021-03-05T18:58:10Z"
+        }
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}")
@@ -231,4 +256,6 @@ def update_draft(
     if description is not None:
         patch_data["description"] = description
 
-    open_api_do("PATCH", access_key, url, json=patch_data)
+    return open_api_do(  # type: ignore[no-any-return]
+        "PATCH", access_key, url, json=patch_data
+    ).json()
