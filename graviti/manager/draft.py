@@ -130,7 +130,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             description: The description of the draft.
 
         """
-        update_draft(
+        response = update_draft(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
@@ -139,15 +139,13 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             title=title,
             description=description,
         )
-        if title is not None:
-            self.title = title
-        if description is not None:
-            self.description = description
-        # TODO: update the draft.updated_at
+        self.title = response["title"]
+        self.description = response["description"]
+        self.updated_at = response["updated_at"]
 
     def close(self) -> None:
         """Close the draft."""
-        update_draft(
+        response = update_draft(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
@@ -155,8 +153,8 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             draft_number=self.number,
             state="CLOSED",
         )
-        self.state = "CLOSED"
-        # TODO: update the draft.updated_at
+        self.state = response["state"]
+        self.updated_at = response["updated_at"]
 
     def commit(self, title: str, description: Optional[str] = None) -> Commit:
         """Commit the current draft.
@@ -169,7 +167,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             The :class:`~graviti.manager.commit.Commit` instance.
 
         """
-        response = commit_draft(
+        commit_info = commit_draft(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
@@ -178,9 +176,18 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             title=title,
             description=description,
         )
-        self.state = "COMMITTED"
-        # TODO: update the draft.updated_at
-        return Commit(self._dataset, **response)
+
+        draft_info = get_draft(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            draft_number=self.number,
+        )
+        self.state = draft_info["state"]
+        self.updated_at = draft_info["updated_at"]
+
+        return Commit(self._dataset, **commit_info)
 
     def upload(self, jobs: int = 1) -> None:  # pylint: disable=unused-argument
         """Upload the local dataset to Graviti.
