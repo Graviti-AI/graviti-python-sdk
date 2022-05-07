@@ -607,7 +607,7 @@ class PagingList:
             The pyarrow ChunkedArray.
 
         """
-        return pa.chunked_array(page.get_array() for page in self._pages)
+        return pa.chunked_array((page.get_array() for page in self._pages), self._patype)
 
 
 PagingLists = NestedDict[str, PagingList]
