@@ -25,11 +25,11 @@ def get_current_user(access_key: str, url: str) -> Dict[str, Any]:
         >>> get_current_user("ACCESSKEY-********", "https://gas.graviti.com/")
         {
             "id": "41438e9df9a82a194e1e76cc31c1d8d4",
-            "name": "czhual",
             "nickname": "czh ual",
             "email": "********@graviti.com",
             "mobile": null,
             "description": "",
+            "workspace": "czhual",
             "team": null
         }
 
