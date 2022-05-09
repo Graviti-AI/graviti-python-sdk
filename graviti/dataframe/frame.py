@@ -33,6 +33,7 @@ from graviti.operation import AddData, DataFrameOperation
 from graviti.utility import MAX_REPR_ROWS, File, PagingLists
 
 _T = TypeVar("_T", bound="DataFrame")
+_C = TypeVar("_C", bound="Container")
 
 
 @pt.ContainerRegister(pt.record)
@@ -125,8 +126,26 @@ class DataFrame(Container):
 
         raise KeyError(key)
 
-    def __setitem__(self, key: str, value: Iterable[Any]) -> None:
-        pass
+    def __setitem__(self, key: str, value: Union[Iterable[Any], _C]) -> None:
+        if isinstance(value, Container):
+            schema = value.schema.copy()
+            column = value.copy()
+        else:
+            # TODO: Need to support the case where iterable elements are subclass of Container.
+            array = pa.array(value)
+            schema = pt.PortexType.from_pyarrow(array.type)
+            column = schema.container._from_pyarrow(array, schema)
+
+        if len(column) != len(self):
+            raise ValueError(
+                f"Length of values ({len(column)}) does not match length of "
+                f"self DataFrame ({len(self)})"
+            )
+
+        # TODO: Need edit the schema.
+        self._columns[key] = column
+        self._column_names.append(key)
+        # TODO: Need add corresponding operations.
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()

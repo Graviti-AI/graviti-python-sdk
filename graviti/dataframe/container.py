@@ -17,6 +17,8 @@ _T = TypeVar("_T", bound="Container")
 class Container:
     """The base class for the table-structured data container."""
 
+    schema: PortexType
+
     def __len__(self) -> int:
         raise NotImplementedError
 
