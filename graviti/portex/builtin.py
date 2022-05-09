@@ -470,25 +470,27 @@ class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
 
     Arguments:
         shape: The shape of the tensor.
-        dtype: The dtype of the tensor.
+        items: The item type of the tensor.
         nullable: Whether it is a nullable type.
 
     Examples:
-        >>> t = tensor((3, 3), "float64")
+        >>> t = tensor((3, 3), float64())
         >>> t
         tensor(
           shape=(3, 3),
-          dtype='float64',
+          items=float64(),
         )
 
     """
 
     shape: Tuple[Optional[int], ...] = param(ptype=PTYPE.Array)
-    dtype: str = param(ptype=PTYPE.TypeName)
+    items: PortexType = param(ptype=PTYPE.PortexType)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, shape: Iterable[Optional[int]], dtype: str, nullable: bool = False) -> None:
-        super().__init__(shape=shape, dtype=dtype, nullable=nullable)
+    def __init__(
+        self, shape: Iterable[Optional[int]], items: PortexType, nullable: bool = False
+    ) -> None:
+        super().__init__(shape=shape, items=items, nullable=nullable)
         self.shape = tuple(shape)
 
     def to_pyarrow(self) -> pa.DataType:
@@ -502,4 +504,4 @@ class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
             list_size = reduce(mul, self.shape)
         except TypeError:
             list_size = -1
-        return pa.list_(self.imports[self.dtype]().to_pyarrow(), list_size=list_size)
+        return pa.list_(self.items.to_pyarrow(), list_size=list_size)  # pylint: disable=no-member
