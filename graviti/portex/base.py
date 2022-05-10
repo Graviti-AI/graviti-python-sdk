@@ -229,7 +229,7 @@ class PortexType:
             A YAML representation of the Portex type.
 
         """
-        return yaml.dump(self.to_pyobj(), sort_keys=False)  # type: ignore[no-any-return]
+        return yaml.dump(self.to_pyobj(), sort_keys=False)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
