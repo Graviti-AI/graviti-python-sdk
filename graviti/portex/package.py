@@ -271,7 +271,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
             except KeyError:
                 continue
 
-        if self._package:
+        if self._package is not None:
             return self._package[key]
 
         raise KeyError(key)
