@@ -6,8 +6,8 @@
 """Functions about uploading files."""
 
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
-from time import time
 from typing import Any, Dict, Iterable, Tuple
 
 import filetype
@@ -20,7 +20,7 @@ from graviti.utility import File, config, locked, submit_multithread_tasks
 _EXPIRED_IN_SECOND = 240
 
 _PERMISSIONS: Dict[Tuple[str, str, int], Dict[str, Any]] = {}
-_DEFAULT_PERMISSION = {"expire_at": 0}
+_DEFAULT_PERMISSION = {"expire_at": datetime.fromtimestamp(0)}
 
 
 @locked
@@ -43,6 +43,7 @@ def _request_upload_permission(
         is_internal=config.is_internal,
         expired=_EXPIRED_IN_SECOND,
     )
+    permission["expire_at"] = datetime.fromisoformat(permission.pop("expire_at").rstrip("Z"))
 
     _PERMISSIONS[access_key, dataset, draft_number] = permission
 
@@ -57,7 +58,7 @@ def _get_upload_permission(
     sheet: str,
 ) -> Dict[str, Any]:
     key = (access_key, dataset, draft_number)
-    if int(time()) >= _PERMISSIONS.get(key, _DEFAULT_PERMISSION)["expire_at"]:
+    if datetime.now() >= _PERMISSIONS.get(key, _DEFAULT_PERMISSION)["expire_at"]:
         _request_upload_permission(
             access_key,
             url,
