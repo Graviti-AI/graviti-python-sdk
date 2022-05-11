@@ -6,7 +6,7 @@
 """Functions about uploading files."""
 
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple
 
@@ -43,7 +43,9 @@ def _request_upload_permission(
         is_internal=config.is_internal,
         expired=_EXPIRED_IN_SECOND,
     )
-    permission["expire_at"] = datetime.fromisoformat(permission.pop("expire_at").rstrip("Z"))
+    permission["expire_at"] = datetime.fromisoformat(
+        permission.pop("expire_at").replace("Z", "+00:00")
+    )
 
     _PERMISSIONS[access_key, dataset, draft_number] = permission
 
@@ -58,7 +60,7 @@ def _get_upload_permission(
     sheet: str,
 ) -> Dict[str, Any]:
     key = (access_key, dataset, draft_number)
-    if datetime.now() >= _PERMISSIONS.get(key, _DEFAULT_PERMISSION)["expire_at"]:
+    if datetime.now(timezone.utc) >= _PERMISSIONS.get(key, _DEFAULT_PERMISSION)["expire_at"]:
         _request_upload_permission(
             access_key,
             url,
