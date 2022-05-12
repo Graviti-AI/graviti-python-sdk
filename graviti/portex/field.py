@@ -5,7 +5,7 @@
 """Portex record field releated classes."""
 
 
-from typing import Any, Dict, Iterable, List, Mapping, Tuple, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, TypeVar, Union
 
 import pyarrow as pa
 
@@ -113,7 +113,9 @@ class Fields(NameOrderedDict[PortexType]):
         self._keys.__setitem__(self._keys.index(old_name), new_name)
 
     @classmethod
-    def from_pyobj(cls, content: List[Dict[str, Any]], imports: Imports) -> "Fields":
+    def from_pyobj(
+        cls, content: List[Dict[str, Any]], imports: Optional[Imports] = None
+    ) -> "Fields":
         """Create Portex fields dict instance from python list.
 
         Arguments:

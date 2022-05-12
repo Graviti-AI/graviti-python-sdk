@@ -8,7 +8,7 @@
 from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Dict, List, Sequence, Tuple, Type, TypeVar, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 from graviti.portex.base import PortexType as ClassPortexType
 from graviti.portex.field import Fields as ClassFields
@@ -40,7 +40,7 @@ class ParameterType:
         raise NotImplementedError
 
     @staticmethod
-    def load(content: TypingAny, _: Imports) -> TypingAny:
+    def load(content: TypingAny, _: Optional[Imports] = None) -> TypingAny:
         """Create an instance of the parameter type from the python content.
 
         Arguments:
@@ -172,6 +172,42 @@ class Array(ParameterType):
         return copy(arg)
 
 
+class Mapping(ParameterType):
+    """Parameter type for JSON object."""
+
+    @staticmethod
+    def check(arg: TypingAny) -> Dict[TypingAny, TypingAny]:
+        """Check the parameter type.
+
+        Arguments:
+            arg: The argument which needs to be checked.
+
+        Returns:
+            The input argument unchanged.
+
+        Raises:
+            TypeError: When the input argument is not a JSON object (dict in python).
+
+        """
+        if not isinstance(arg, dict):
+            raise TypeError("Argument should be a dict")
+
+        return arg
+
+    @staticmethod
+    def copy(arg: _T) -> _T:
+        """Get a copy of the input argument.
+
+        Arguments:
+            arg: The argument needs to be copied.
+
+        Returns:
+            A copy of the input argument.
+
+        """
+        return copy(arg)
+
+
 class Field(ParameterType):
     """Parameter type for Portex record field."""
 
@@ -196,7 +232,9 @@ class Field(ParameterType):
         raise TypeError("Argument should be a tuple of a str and a PortexType")
 
     @staticmethod
-    def load(content: Dict[str, TypingAny], imports: Imports) -> Tuple[str, ClassPortexType]:
+    def load(
+        content: Dict[str, TypingAny], imports: Optional[Imports] = None
+    ) -> Tuple[str, ClassPortexType]:
         """Create Portex field instance from python dict.
 
         Arguments:
@@ -254,7 +292,7 @@ class Fields(ParameterType):
         return ClassFields(arg)
 
     @staticmethod
-    def load(content: List[TypingAny], imports: Imports) -> ClassFields:
+    def load(content: List[TypingAny], imports: Optional[Imports] = None) -> ClassFields:
         """Create Portex field list instance from python list.
 
         Arguments:
@@ -363,7 +401,7 @@ class PortexType(ParameterType):
         return arg
 
     @staticmethod
-    def load(content: Dict[str, TypingAny], imports: Imports) -> ClassPortexType:
+    def load(content: Dict[str, TypingAny], imports: Optional[Imports] = None) -> ClassPortexType:
         """Create Portex type instance from python dict.
 
         Arguments:

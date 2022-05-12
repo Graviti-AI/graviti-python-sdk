@@ -119,7 +119,10 @@ class Param(Parameter):
 
         """
         if arg == self.default:
-            return arg
+            try:
+                return self.ptype.load(arg)  # type: ignore[union-attr]
+            except (TypeError, AttributeError):
+                return arg
 
         # TODO: Support check for dynamic parameter types.
         if isinstance(self.ptype, Dynamic):
