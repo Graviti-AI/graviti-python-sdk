@@ -20,7 +20,7 @@ from graviti.utility import File, config, locked, submit_multithread_tasks
 _EXPIRED_IN_SECOND = 240
 
 _PERMISSIONS: Dict[Tuple[str, str, int], Dict[str, Any]] = {}
-_DEFAULT_PERMISSION = {"expire_at": datetime.fromtimestamp(0)}
+_DEFAULT_PERMISSION = {"expire_at": datetime.fromtimestamp(0, timezone.utc)}
 
 
 @locked
