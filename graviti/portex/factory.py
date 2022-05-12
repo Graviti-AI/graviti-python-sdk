@@ -128,6 +128,19 @@ class DynamicListParameter(Dynamic):
 
         return PTYPE.Any
 
+    @staticmethod
+    def load(content: Any) -> Any:
+        """Return the original content.
+
+        Arguments:
+            content: A python presentation of the dynamic parameter type.
+
+        Returns:
+            The original content.
+
+        """
+        return content
+
 
 class Factory:
     """The base class of the template factory."""
@@ -233,6 +246,11 @@ class TypeFactory(Factory):
             keys.update(factory.keys)
             dependences.update(factory.dependences)
 
+        if "+" in decl:
+            unpack_factory = mapping_unpack_factory_creator(decl["+"], PTYPE.Mapping)
+            keys.update(unpack_factory.keys)
+            self._unpack_factory = unpack_factory
+
         self._factories = factories
         self.keys = keys
         self.dependences = dependences
@@ -248,7 +266,10 @@ class TypeFactory(Factory):
             The applied Portex type.
 
         """
-        type_kwargs = {key: factory(**kwargs) for key, factory in self._factories.items()}
+        type_kwargs: Dict[str, Any] = (
+            self._unpack_factory(**kwargs) if hasattr(self, "_unpack_factory") else {}
+        )
+        type_kwargs.update({key: factory(**kwargs) for key, factory in self._factories.items()})
         return self._class(**type_kwargs)
 
 
@@ -387,7 +408,14 @@ class DictFactory(Factory):
         factories = {}
         dependences = set()
         keys = {}
+
         for key, value in decl.items():
+            if key == "+":
+                unpack_factory = mapping_unpack_factory_creator(value, PTYPE.Mapping)
+                keys.update(unpack_factory.keys)
+                self._unpack_factory = unpack_factory
+                continue
+
             ptype = DynamicDictParameter(ptype, key, decl) if isinstance(ptype, Dynamic) else ptype
             factory = factory_creator(value, None, ptype)
             factories[key] = factory
@@ -408,7 +436,11 @@ class DictFactory(Factory):
             The applied dict.
 
         """
-        return {key: factory(**kwargs) for key, factory in self._factories.items()}
+        items: Dict[str, Any] = (
+            self._unpack_factory(**kwargs) if hasattr(self, "_unpack_factory") else {}
+        )
+        items.update({key: factory(**kwargs) for key, factory in self._factories.items()})
+        return items
 
 
 class FieldFactory(Factory):
@@ -493,9 +525,29 @@ class FieldsFactory(Factory):
         )
 
 
+def mapping_unpack_factory_creator(decl: str, ptype: PTYPE.PType) -> VariableFactory:
+    """Check whether the input have object unpack grammar and returns the corresponding factory.
+
+    Arguments:
+        decl: A decalaration dict.
+        ptype: The parameter type of the input.
+
+    Raises:
+        ValueError: When the object unpack grammar is incorrect.
+
+    Returns:
+        A ``VariableFactory`` instance according to the input.
+
+    """
+    if not decl.startswith("$params."):
+        raise ValueError("The decl does not have the correct object unpack grammar")
+
+    return VariableFactory(decl[8:], ptype)
+
+
 def type_factory_creator(
     decl: Dict[str, Any], imports: Imports
-) -> Union[TypeFactory, DynamicTypeFactory]:
+) -> Union[TypeFactory, DynamicTypeFactory, VariableFactory]:
     """Check whether the input is dynamic and returns the corresponding type factory.
 
     Arguments:
@@ -503,9 +555,12 @@ def type_factory_creator(
         imports: The :class:`Imports` instance to specify the import scope of the template.
 
     Returns:
-        A ``TypeFactory`` or a ``DynamicTypeFactory`` instance according to the input.
+        A ``TypeFactory`` or a ``DynamicTypeFactory`` or a ``VariableFactory`` instance.
 
     """
+    if "type" not in decl:
+        return mapping_unpack_factory_creator(decl["+"], PTYPE.PortexType)
+
     if decl["type"].startswith("$params."):
         return DynamicTypeFactory(decl, imports)
 
