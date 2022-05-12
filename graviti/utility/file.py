@@ -8,6 +8,7 @@
 from hashlib import sha1
 from pathlib import Path
 from typing import Dict, Type, TypeVar, Union
+from urllib.request import url2pathname
 
 import pyarrow as pa
 from _io import BufferedReader
@@ -120,7 +121,7 @@ class File(FileBase):
     @classmethod
     def _create(cls: Type[_T], url: str, checksum: str) -> _T:
         obj: _T = object.__new__(cls)
-        obj.path = Path(url[7:])
+        obj.path = Path(url2pathname(url[7:]))
         obj._url = url
         obj._checksum = checksum
         return obj
