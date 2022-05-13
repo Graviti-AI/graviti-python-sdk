@@ -89,10 +89,6 @@ def _get_attribute_params(subcatalog: AttributesMixin) -> Dict[str, Any]:
             )
             field["type"] = _JSON_TYPE_TO_PORTEX_TYPE[attribute_type]
 
-            if hasattr(attribute, "minimum"):
-                field["minimum"] = attribute.minimum
-            if hasattr(attribute, "maximum"):
-                field["maximum"] = attribute.maximum
         attribute_params.append(field)
     return {"attributes": attribute_params}
 

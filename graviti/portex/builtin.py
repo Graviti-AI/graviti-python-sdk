@@ -68,29 +68,6 @@ class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
         return self
 
 
-class PortexNumericType(PortexBuiltinType):  # pylint: disable=abstract-method
-    """The base class of the Portex numeric types.
-
-    Arguments:
-        minimum: The minimum value.
-        maximum: The maximum value.
-        nullable: Whether it is a nullable type.
-
-    """
-
-    minimum: Optional[float] = param(None, ptype=PTYPE.Number)
-    maximum: Optional[float] = param(None, ptype=PTYPE.Number)
-    nullable: bool = param(False, ptype=PTYPE.Boolean)
-
-    def __init__(
-        self,
-        minimum: Optional[float] = None,
-        maximum: Optional[float] = None,
-        nullable: bool = False,
-    ) -> None:
-        super().__init__(minimum=minimum, maximum=maximum, nullable=nullable)
-
-
 @PyArrowConversionRegister(pa.lib.Type_STRING)  # pylint: disable=c-extension-no-member
 class string(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
@@ -179,18 +156,23 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
 
 
 @PyArrowConversionRegister(pa.lib.Type_INT32)  # pylint: disable=c-extension-no-member
-class int32(PortexNumericType):  # pylint: disable=invalid-name
+class int32(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``int32``.
 
+    Arguments:
+        nullable: Whether it is a nullable type.
+
     Examples:
-        >>> t = int32(0, 100)
+        >>> t = int32()
         >>> t
-        int32(
-          minimum=0,
-          maximum=100,
-        )
+        int32()
 
     """
+
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -203,18 +185,23 @@ class int32(PortexNumericType):  # pylint: disable=invalid-name
 
 
 @PyArrowConversionRegister(pa.lib.Type_INT64)  # pylint: disable=c-extension-no-member
-class int64(PortexNumericType):  # pylint: disable=invalid-name
+class int64(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``int64``.
 
+    Arguments:
+        nullable: Whether it is a nullable type.
+
     Examples:
-        >>> t = int64(0, 100)
+        >>> t = int64()
         >>> t
-        int64(
-          minimum=0,
-          maximum=100,
-        )
+        int64()
 
     """
+
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -227,18 +214,23 @@ class int64(PortexNumericType):  # pylint: disable=invalid-name
 
 
 @PyArrowConversionRegister(pa.lib.Type_FLOAT)  # pylint: disable=c-extension-no-member
-class float32(PortexNumericType):  # pylint: disable=invalid-name
+class float32(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``float32``.
 
+    Arguments:
+        nullable: Whether it is a nullable type.
+
     Examples:
-        >>> t = float32(0, 100)
+        >>> t = float32()
         >>> t
-        float32(
-          minimum=0,
-          maximum=100,
-        )
+        float32()
 
     """
+
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -251,18 +243,23 @@ class float32(PortexNumericType):  # pylint: disable=invalid-name
 
 
 @PyArrowConversionRegister(pa.lib.Type_DOUBLE)  # pylint: disable=c-extension-no-member
-class float64(PortexNumericType):  # pylint: disable=invalid-name
+class float64(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``float64``.
 
+    Arguments:
+        nullable: Whether it is a nullable type.
+
     Examples:
-        >>> t = float64(0, 100)
+        >>> t = float64()
         >>> t
-        float64(
-          minimum=0,
-          maximum=100,
-        )
+        float64()
 
     """
+
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -285,15 +282,12 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
     Examples:
         Create a record by dict:
 
-        >>> t = record({"f0": int32(), "f1": float32(0, 100)})
+        >>> t = record({"f0": int32(), "f1": float32()})
         >>> t
         record(
           fields={
             'f0': int32(),
-            'f1': float32(
-              minimum=0,
-              maximum=100,
-            ),
+            'f1': float32(),
           },
         )
 
