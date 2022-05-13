@@ -621,37 +621,30 @@ class DataFrame(Container):
         self.operations.append(AddData(values))
 
     @staticmethod
-    def _process_array(
-        values: Iterable[Any], schema: pt.array
-    ) -> Tuple[Callable[[Any], Any], bool]:
-        item_schema = schema.items
-        container = item_schema.container
+    def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:
+        container = schema.container
         if container == DataFrame:
-            if isinstance(values, DataFrame):
-                return lambda x: x.to_pylist(), True
-
-            return DataFrame._process_record(
-                values, item_schema.to_builtin()  # type: ignore[arg-type, attr-defined]
-            )
-
+            return DataFrame._process_record(value, schema)  # type: ignore[arg-type]
         if container == ArraySeries:
-            for value in values:
-                if value is None:
-                    continue
+            return DataFrame._process_array(value, schema.items)  # type: ignore[attr-defined]
+        if container == FileSeries:
+            return DataFrame._process_file(value)
 
-                processor, need_process = DataFrame._process_array(
-                    value, item_schema  # type: ignore[arg-type]
-                )
-                return lambda x: list(map(processor, x)), need_process
+        return lambda x: x, False
 
-        elif container == FileSeries:
-            for value in values:
-                if value is None:
-                    continue
+    @staticmethod
+    def _process_array(
+        values: Iterable[Any], schema: pt.PortexType
+    ) -> Tuple[Callable[[Any], Any], bool]:
+        if isinstance(values, DataFrame):
+            return lambda x: x.to_pylist(), True
 
-                processor, need_process = DataFrame._process_file(value)
-                return lambda x: list(map(processor, x)), need_process
+        for value in values:
+            if value is None:
+                continue
 
+            processor, need_process = DataFrame._get_process(value, schema)
+            return lambda x: list(map(processor, x)), need_process
         return lambda x: x, False
 
     @staticmethod
@@ -663,54 +656,27 @@ class DataFrame(Container):
 
     @staticmethod
     def _process_record(
-        values: Iterable[Dict[str, Any]], schema: pt.record
+        values: Dict[str, Any], schema: pt.record
     ) -> Tuple[Callable[[Any], Any], bool]:
-        processors = {}
+        processors: Dict[str, Callable[[Any], Any]] = {}
         need_process, sub_need_process = False, False
-        for row in values:
-            for name, field in schema.fields.items():
-                if name in processors:
-                    continue
-
-                item = row[name]
-                if item is None:
-                    continue
-
-                container = field.container
-                if container == DataFrame:
-                    processors[name], sub_need_process = DataFrame._process_record(
-                        item, field.to_builtin()  # type: ignore[attr-defined]
-                    )
-                    need_process = need_process or sub_need_process
-                elif container == ArraySeries:
-                    processors[name], sub_need_process = DataFrame._process_array(
-                        item, field  # type: ignore[arg-type]
-                    )
-                    need_process = need_process or sub_need_process
-                elif container == FileSeries:
-                    processors[name], sub_need_process = DataFrame._process_file(item)
-                    need_process = need_process or sub_need_process
-                else:
-                    processors[name] = lambda x: x
-
-            if len(processors) == len(schema.fields):
-                break
-
-        for name in schema.fields:
-            # If all value in one column are None, add the default process function.
-            if name not in processors:
+        fields = schema.to_builtin().fields
+        for name, field in fields.items():
+            item = values[name]
+            if item is None:
                 processors[name] = lambda x: x
-        return lambda x: [{k: processors[k](v) for k, v in r.items()} for r in x], need_process
+            else:
+                processors[name], sub_need_process = DataFrame._get_process(item, field)
+                need_process = need_process or sub_need_process
+
+        return lambda x: {k: processors[k](v) for k, v in x.items()}, need_process
 
     @staticmethod
-    def _pylist_to_pyarrow(
-        values: Iterable[Dict[str, Any]], schema: pt.PortexType
-    ) -> pa.StructArray:
+    def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
 
         # In this case schema.to_builtin always returns record.
-        processor, need_process = DataFrame._process_record(
-            values, schema.to_builtin()  # type: ignore[attr-defined]
-        )
+        processor, need_process = DataFrame._process_array(values, schema)
+
         if not need_process:
             return pa.array(values, schema.to_pyarrow())
 
