@@ -6,7 +6,7 @@
 """Basic concepts of Graviti custom exceptions."""
 
 from subprocess import CalledProcessError
-from typing import Dict, Optional, Type, TypeVar
+from typing import Dict, Optional, Tuple, Type, TypeVar
 
 from requests.models import Response
 
@@ -111,7 +111,7 @@ class ResponseError(ManagerError):
     _INDENT = " " * len(__qualname__)  # type: ignore[name-defined]
 
     STATUS_CODE: int
-    ERROR_CODE: str
+    ERROR_CODE: Optional[str]
 
     def __init__(
         self, message: Optional[str] = None, *, response: Optional[Response] = None
@@ -144,9 +144,9 @@ class ResponseErrorRegister:
 
     """
 
-    RESPONSE_ERROR_DISTRIBUTOR: Dict[str, Type[ResponseError]] = {}
+    RESPONSE_ERROR_DISTRIBUTOR: Dict[Tuple[int, Optional[str]], Type[ResponseError]] = {}
 
-    def __init__(self, status_code: int, error_code: str) -> None:
+    def __init__(self, status_code: int, error_code: Optional[str] = None) -> None:
         self._status_code = status_code
         self._error_code = error_code
 
@@ -163,7 +163,7 @@ class ResponseErrorRegister:
         response_error.STATUS_CODE = self._status_code
         response_error.ERROR_CODE = self._error_code
 
-        self.RESPONSE_ERROR_DISTRIBUTOR[self._error_code] = response_error
+        self.RESPONSE_ERROR_DISTRIBUTOR[(self._status_code, self._error_code)] = response_error
 
         return response_error
 
@@ -193,8 +193,13 @@ class RequestParamsMissingError(ResponseError):
     """This class defines the exception for request parameters missing response error."""
 
 
+@ResponseErrorRegister(404)
+class NotFoundError(ResponseError):
+    """This class defines the exception for 404 not found response error without error code."""
+
+
 @ResponseErrorRegister(404, "ResourceNotExist")
-class ResourceNotExistError(ResponseError):
+class ResourceNotExistError(NotFoundError):
     """This class defines the exception for resource not existing response error."""
 
 
@@ -206,3 +211,8 @@ class InternalServerError(ResponseError):
 @ResponseErrorRegister(401, "Unauthorized")
 class UnauthorizedError(ResponseError):
     """This class defines the exception for unauthorized response error."""
+
+
+@ResponseErrorRegister(503)
+class ServiceUnavailableError(ResponseError):
+    """This class defines the exception for 503 service unavailable error without error code."""

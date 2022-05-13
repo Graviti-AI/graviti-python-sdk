@@ -57,5 +57,6 @@ def open_api_do(method: str, access_key: str, url: str, **kwargs: Any) -> Respon
         return do(method=method, url=url, **kwargs)
     except ResponseError as error:
         response = error.response
-        error_code = response.json()["code"]
-        raise RESPONSE_ERROR_DISTRIBUTOR.get(error_code, ResponseError)(response=response) from None
+        raise RESPONSE_ERROR_DISTRIBUTOR.get(
+            (response.status_code, response.json().get("code")), ResponseError
+        )(response=response) from None
