@@ -4,7 +4,7 @@
 #
 """Schema module."""
 
-from graviti.portex.base import PortexType
+from graviti.portex.base import PortexType, read_json, read_yaml
 from graviti.portex.builtin import (
     array,
     binary,
@@ -41,6 +41,8 @@ __all__ = [
     "int32",
     "int64",
     "packages",
+    "read_json",
+    "read_yaml",
     "record",
     "string",
     "tensor",

@@ -13,6 +13,7 @@ import yaml
 
 from graviti.portex.package import Imports, Package
 from graviti.portex.register import PyArrowConversionRegister
+from graviti.utility import PathLike
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
@@ -255,3 +256,31 @@ class PortexType:
             setattr(obj, name, param.copy(getattr(self, name)))
 
         return obj
+
+
+def read_yaml(path: PathLike) -> PortexType:
+    """Read a yaml file into Portex type.
+
+    Arguments:
+        path: The path of the yaml file.
+
+    Returns:
+        A Portex type instance created from the input yaml file.
+
+    """
+    with open(path, encoding="utf-8") as fp:
+        return PortexType.from_pyobj(yaml.load(fp, yaml.Loader))
+
+
+def read_json(path: PathLike) -> PortexType:
+    """Read a json file into Portex type.
+
+    Arguments:
+        path: The path of the json file.
+
+    Returns:
+        A Portex type instance created from the input json file.
+
+    """
+    with open(path, encoding="utf-8") as fp:
+        return PortexType.from_pyobj(json.load(fp))

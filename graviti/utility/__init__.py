@@ -29,7 +29,7 @@ from graviti.utility.pyarrow import (
 )
 from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
 from graviti.utility.requests import config, get_session, submit_multithread_tasks
-from graviti.utility.typing import NestedDict
+from graviti.utility.typing import NestedDict, PathLike
 
 __all__ = [
     "AttrDict",
@@ -45,6 +45,7 @@ __all__ = [
     "NestedDict",
     "PagingList",
     "PagingLists",
+    "PathLike",
     "RemoteFile",
     "RemoteFileArray",
     "RemoteFileType",
