@@ -18,6 +18,7 @@ from graviti.portex.builtin import (
     string,
     tensor,
 )
+from graviti.portex.package import build
 from graviti.portex.register import ContainerRegister, ExternalContainerRegister
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "array",
     "binary",
     "boolean",
+    "build",
     "enum",
     "float32",
     "float64",
