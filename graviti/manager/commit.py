@@ -156,7 +156,7 @@ class Commit(Sheets, AttrsMixin):
         factory = LazyFactory(
             total_count,
             128,
-            _getter,
+            lambda offset, limit: _getter(offset, limit)["data"],
             schema.to_pyarrow(),
         )
         paging_lists = factory.create_lists(schema.get_keys())
