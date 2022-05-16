@@ -7,6 +7,8 @@
 /.github/workflows/ @AChenQ
 /.pre-commit-config.yaml @AChenQ
 
+/docs/ @graczhual
+
 /graviti/openapi/ @graczhual
 /graviti/manager/ @graczhual
 /graviti/operation/ @graczhual
