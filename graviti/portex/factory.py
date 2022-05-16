@@ -11,6 +11,8 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -145,6 +147,7 @@ class DynamicListParameter(Dynamic):
 class Factory:
     """The base class of the template factory."""
 
+    is_unpack: bool = False
     keys: Dict[str, Any]
     dependences: Set[Type[PortexType]]
 
@@ -242,6 +245,8 @@ class TypeFactory(Factory):
                 continue
 
             factory = factory_creator(value, imports, parameter.ptype)
+            if factory.is_unpack:
+                raise ValueError("Use array unpack in object value is not allowed")
             factories[name] = factory
             keys.update(factory.keys)
             dependences.update(factory.dependences)
@@ -340,10 +345,11 @@ class VariableFactory(Factory):
 
     """
 
-    def __init__(self, decl: str, ptype: PTYPE.PType = PTYPE.Any) -> None:
+    def __init__(self, decl: str, ptype: PTYPE.PType = PTYPE.Any, is_unpack: bool = False) -> None:
         self._key = decl
         self.dependences = set()
         self.keys = {decl: ptype}
+        self.is_unpack = is_unpack
 
     def __call__(self, **kwargs: Any) -> Any:
         """Apply the input arguments to the variable template.
@@ -392,7 +398,7 @@ class ListFactory(Factory):
             The applied list.
 
         """
-        return list(factory(**kwargs) for factory in self._factories)
+        return list(_generate_factory_items(self._factories, kwargs))
 
 
 class DictFactory(Factory):
@@ -418,6 +424,8 @@ class DictFactory(Factory):
 
             ptype = DynamicDictParameter(ptype, key, decl) if isinstance(ptype, Dynamic) else ptype
             factory = factory_creator(value, None, ptype)
+            if factory.is_unpack:
+                raise ValueError("Use array unpack in object value is not allowed")
             factories[key] = factory
             dependences.update(factory.dependences)
             keys.update(factory.keys)
@@ -498,14 +506,22 @@ class FieldsFactory(Factory):
 
     """
 
-    def __init__(self, decl: List[Dict[str, Any]], imports: Imports) -> None:
-        self._factories = [FieldFactory(item, imports) for item in decl]
-
+    def __init__(self, decl: List[Union[Dict[str, Any], str]], imports: Imports) -> None:
+        self._factories = []
         dependences = set()
         keys = {}
-        for factory in self._factories:
-            dependences.update(factory.dependences)
+
+        for item in decl:
+            if isinstance(item, dict):
+                factory: Factory = FieldFactory(item, imports)
+                dependences.update(factory.dependences)
+            elif isinstance(item, str) and item.startswith("+$params."):
+                factory = VariableFactory(item[9:], PTYPE.Fields, True)
+            else:
+                raise ValueError("The items of fields can only be object or list unpack parameter")
+
             keys.update(factory.keys)
+            self._factories.append(factory)
 
         self.dependences = dependences
         self.keys = keys
@@ -521,15 +537,31 @@ class FieldsFactory(Factory):
 
         """
         return Fields(
-            filter(bool, (factory(**kwargs) for factory in self._factories)),  # type: ignore[misc]
+            filter(
+                bool,
+                _generate_factory_items(self._factories, kwargs, lambda x: x.items()),
+            )
         )
 
 
+def _generate_factory_items(
+    factories: Iterable[Factory],
+    kwargs: Dict[str, Any],
+    unpack_item_processer: Callable[[Any], Any] = lambda x: x,
+) -> Iterator[Any]:
+    for factory in factories:
+        item = factory(**kwargs)
+        if factory.is_unpack:
+            yield from unpack_item_processer(item)
+        else:
+            yield item
+
+
 def mapping_unpack_factory_creator(decl: str, ptype: PTYPE.PType) -> VariableFactory:
-    """Check whether the input have object unpack grammar and returns the corresponding factory.
+    """Check the object unpack grammar and returns the corresponding factory.
 
     Arguments:
-        decl: A decalaration dict.
+        decl: The parameter decalaration.
         ptype: The parameter type of the input.
 
     Raises:
@@ -602,7 +634,7 @@ def expression_creator(decl: Optional[str]) -> Union[BinaryExpression, ConstantF
     return BinaryExpression(decl)
 
 
-def factory_creator(
+def factory_creator(  # pylint: disable=too-many-return-statements
     decl: Any, imports: Optional[Imports], ptype: PTYPE.PType = PTYPE.Any
 ) -> Factory:
     """Check input type and returns the corresponding factory.
@@ -616,8 +648,12 @@ def factory_creator(
         A ``Factory`` instance according the input.
 
     """
-    if isinstance(decl, str) and decl.startswith("$params."):
-        return VariableFactory(decl[8:], ptype)
+    if isinstance(decl, str):
+        if decl.startswith("$params."):
+            return VariableFactory(decl[8:], ptype)
+
+        if decl.startswith("+$params."):
+            return VariableFactory(decl[9:], PTYPE.Array, True)
 
     if ptype == PTYPE.PortexType:
         assert isinstance(decl, dict)
