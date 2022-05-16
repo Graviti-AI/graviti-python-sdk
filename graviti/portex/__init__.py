@@ -4,6 +4,8 @@
 #
 """Schema module."""
 
+# https://github.com/python/mypy/issues/9318
+from graviti.portex.avro import convert_portex_schema_to_avro  # type: ignore[attr-defined]
 from graviti.portex.base import PortexType, read_json, read_yaml
 from graviti.portex.builtin import (
     array,
@@ -30,6 +32,7 @@ __all__ = [
     "boolean",
     "build",
     "build_openbytes",
+    "convert_portex_schema_to_avro",
     "enum",
     "float32",
     "float64",

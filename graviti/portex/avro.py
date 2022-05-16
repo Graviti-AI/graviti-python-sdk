@@ -6,10 +6,32 @@
 
 """Code converting PyArrow schema to Avro Schema."""
 
-
-import pyarrow as pa
+from graviti.portex.base import PortexType
+from graviti.portex.builtin import (
+    array,
+    binary,
+    boolean,
+    enum,
+    float32,
+    float64,
+    int32,
+    int64,
+    record,
+    string,
+    tensor,
+)
 
 _REMOTE_FILE_FIELD_NAMES = {"checksum", "url"}
+
+_PRIMITIVE_TYPES = {
+    int32: "int",
+    int64: "int",
+    float32: "float",
+    float64: "double",
+    boolean: "boolean",
+    string: "string",
+    binary: "bytes",
+}
 
 
 class AvroSchema:
@@ -72,28 +94,6 @@ class AvroPrimitiveSchema(AvroSchema):
             return self._type
 
 
-class AvroFixedSchema(AvroSchema):
-    def __init__(
-        self,
-        name_registry,
-        name,
-        namespace,
-        size,
-    ):
-        super().__init__()
-        self._name = name
-        self._namespace = namespace
-        self._size = size
-
-    def to_json(self):
-        return {
-            "type": "fixed",
-            "size": self._size,
-            "name": self._name,
-            "namespace": self._namespace,
-        }
-
-
 class AvroRecordSchema(AvroSchema):
     def __init__(self, name_registry, name, namespace, fields: [], aliases=None):
         super().__init__()
@@ -128,6 +128,21 @@ class AvroArraySchema(AvroSchema):
         }
 
 
+class AvroFixedArraySchema(AvroSchema):
+    def __init__(self, items: AvroSchema, shape):
+        super().__init__()
+        self._items = items
+        self._shape = shape
+
+    def to_json(self):
+        return {
+            "type": "array",
+            "items": self._items.to_json(),
+            "shape": self._shape,
+            "default": [],
+        }
+
+
 class AvroEnumSchema(AvroSchema):
     def __init__(self, namespace, name, symbols):
         super().__init__()
@@ -144,59 +159,43 @@ class AvroEnumSchema(AvroSchema):
         }
 
 
-def _on_list(names, namespace, name, _pa_ist: pa.ListType) -> AvroArraySchema:
+def _on_list(names, namespace, name, _pa_ist: array) -> AvroArraySchema:
     sub_namespace = f"{namespace}.{name}.items"
     sub_name = "items"
-    items = _on_type(names, sub_namespace, sub_name, 0, _pa_ist.value_type)
+    items = _on_type(names, sub_namespace, sub_name, 0, _pa_ist.items.to_builtin())
     return AvroArraySchema(items=items)
 
 
-def _on_primitive(_filed: pa.DataType) -> AvroSchema:
-    pa_type = str(_filed)
-    if pa_type in ("int8", "int16", "int32", "uint8", "uint16"):
-        return AvroPrimitiveSchema(typ="int")
-    elif pa_type in ("uint32", "int64"):
-        return AvroPrimitiveSchema(typ="long")
-    elif pa_type == "float":
-        return AvroPrimitiveSchema(typ="float")
-    elif pa_type == "double":
-        return AvroPrimitiveSchema(typ="double")
-    elif pa_type == "date32":
-        return AvroPrimitiveSchema(typ="int")
-    elif pa_type == "date64":
-        return AvroPrimitiveSchema(typ="long")
-    elif pa_type == "bool":
-        return AvroPrimitiveSchema(typ="boolean")
-    elif pa_type == "string":
-        return AvroPrimitiveSchema(typ="string")
-    elif pa_type == "binary":
-        return AvroPrimitiveSchema(typ="bytes")
-    else:
-        raise Exception(f"unsupported type {pa_type}")
+def _on_primitive(portex_type: PortexType) -> AvroSchema:
+    try:
+        return AvroPrimitiveSchema(typ=_PRIMITIVE_TYPES[type(portex_type)])
+    except KeyError:
+        raise Exception(f"unsupported type {portex_type}") from None
 
 
-def _on_struct(names, namespace, name, _struct: pa.StructType) -> AvroRecordSchema:
+def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
     avro_record_fields = list()
 
-    num_fields = _struct.num_fields
+    fields = _struct.fields
+    num_fields = len(fields)
     index_range = range(num_fields)
 
     # remove "url" field in avro schema
-    if num_fields == 2 and {field.name for field in _struct} == _REMOTE_FILE_FIELD_NAMES:
-        index_range = [_struct.get_field_index("checksum")]
+    if num_fields == 2 and set(fields) == _REMOTE_FILE_FIELD_NAMES:
+        index_range = [list(fields).index("checksum")]
 
     for i in index_range:
-        ps_sub_filed = _struct[i]
-        sub_name = ps_sub_filed.name
+        sub_name = list(fields.keys())[i]
+        sub_type = fields[i].to_builtin()
         sub_namespace = f"{namespace}.{sub_name}"
-        sub_schema = _on_type(names, sub_namespace, sub_name, i, ps_sub_filed.type)
+        sub_schema = _on_type(names, sub_namespace, sub_name, i, sub_type)
         avro_record_field = AvroField(
             typ=sub_schema,
             name=sub_name,
             index=i,
             has_default=False,
             name_registry=names,
-            optional=ps_sub_filed.nullable,
+            optional=sub_type.nullable,
         )
         avro_record_fields.append(avro_record_field)
 
@@ -205,52 +204,41 @@ def _on_struct(names, namespace, name, _struct: pa.StructType) -> AvroRecordSche
     )
 
 
-def _on_fixed_size_binary(
-    name_registry, namespace, name, _filed: pa.FixedSizeBinaryType
-) -> AvroSchema:
-    return AvroFixedSchema(
-        name=name, namespace=namespace, size=_filed.byte_width, name_registry=name_registry
-    )
+def _on_fixed_shape_list(names, namespace, name, _pa_ist: tensor) -> AvroArraySchema:
+    sub_namespace = f"{namespace}.{name}.items"
+    sub_name = "items"
+    items = _on_type(names, sub_namespace, sub_name, 0, _pa_ist.items.to_builtin())
+    return AvroArraySchema(items=items, shape=_pa_ist.shape)
 
 
-def _on_enum(name_registry, namespace, name, _filed: pa.DictionaryType) -> AvroSchema:
-    pass
+def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroSchema:
+    return AvroEnumSchema(namespace, name, _filed.values)
 
 
-def _on_type(names, namespace, name, _type_index, _arrow_field):
-    if isinstance(_arrow_field, pa.StructType):
-        return _on_struct(names, namespace, name, _arrow_field)
-    elif isinstance(_arrow_field, pa.ListType):
-        return _on_list(names, namespace, name, _arrow_field)
-    elif isinstance(_arrow_field, pa.FixedSizeBinaryType):
-        return _on_fixed_size_binary(names, namespace, name, _arrow_field)
-    elif isinstance(_arrow_field, pa.DictionaryType):
-        # return _on_enum(names, namespace, name, _arrow_field)
-        return _on_primitive(_arrow_field.value_type)
-    elif isinstance(_arrow_field, pa.DataType):
-        return _on_primitive(_arrow_field)
-    else:
-        raise f"unsupported type {_arrow_field}"
+def _on_type(names, namespace, name, _type_index, _portex_type):
+    typ = type(_portex_type)
+    if typ in _COMPLEX_TYPES_PROCESSERS:
+        return _COMPLEX_TYPES_PROCESSERS[typ](names, namespace, name, _portex_type)
+
+    return _on_primitive(_portex_type)
 
 
-def convert_arrow_schema_to_avro(_schema: pa.Schema):
+def convert_portex_schema_to_avro(_schema: record):
     avro_record_fields = list()
     namespace = "cn.graviti.portex"
     name = "root"
     names = []
 
-    for i in range(len(_schema.types)):
-        typ = _schema.types[i]
-        sub_name = _schema.names[i]
+    for i, (sub_name, typ) in enumerate(_schema.to_builtin().fields.items()):
         sub_namespace = f"{namespace}.{name}"
-        sub_schema = _on_type(names, sub_namespace, sub_name, i, typ)
+        sub_schema = _on_type(names, sub_namespace, sub_name, i, typ.to_builtin())
         avro_record_field = AvroField(
             typ=sub_schema,
             name=sub_name,
             index=i,
             has_default=False,
             name_registry=names,
-            optional=_schema[i].nullable,
+            optional=typ.nullable,
         )
 
         avro_record_fields.append(avro_record_field)
@@ -259,3 +247,11 @@ def convert_arrow_schema_to_avro(_schema: pa.Schema):
         name=name, namespace=namespace, fields=avro_record_fields, name_registry=names
     )
     return avro_schema.to_json()
+
+
+_COMPLEX_TYPES_PROCESSERS = {
+    record: _on_struct,
+    array: _on_list,
+    enum: _on_enum,
+    tensor: _on_fixed_shape_list,
+}
