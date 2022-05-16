@@ -11,8 +11,7 @@ import json
 import pyarrow as pa
 
 from graviti.openapi import create_sheet, delete_sheet
-from graviti.portex import PortexType
-from graviti.utility import convert_arrow_schema_to_avro
+from graviti.portex import PortexType, convert_portex_schema_to_avro
 
 
 class SheetOperation:
@@ -86,7 +85,7 @@ class CreateSheet(SheetOperation):
         schema = self.schema.to_yaml()
         pyarrow_schema = pa.schema(self.schema.fields.to_pyarrow())  # type: ignore[attr-defined]
         arrow_schema = base64.encodebytes(pyarrow_schema.serialize().to_pybytes()).decode("ascii")
-        avro_schema = json.dumps(convert_arrow_schema_to_avro(pyarrow_schema))
+        avro_schema = json.dumps(convert_portex_schema_to_avro(self.schema))
 
         create_sheet(
             access_key,
