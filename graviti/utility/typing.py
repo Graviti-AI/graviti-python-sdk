@@ -5,12 +5,15 @@
 
 """Graviti customized types."""
 
+from pathlib import Path
 from typing import AbstractSet, Tuple, TypeVar, Union
 
 from typing_extensions import Protocol
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
+
+PathLike = Union[str, Path]
 
 
 class NestedDict(Protocol[_K, _V]):
