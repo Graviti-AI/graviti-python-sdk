@@ -145,7 +145,7 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
         try:
             package = packages.externals[url, revision]
         except KeyError:
-            package = packages.build_package(url, revision)
+            package = packages.build(url, revision)
 
         subpackage = cls(package)
         for type_ in content["types"]:
@@ -223,7 +223,7 @@ class Packages:
         self.externals: Dict[Tuple[str, str], ExternalPackage] = {}
         self.locals = LocalPackage()
 
-    def build_package(self, url: str, revision: str) -> ExternalPackage:
+    def build(self, url: str, revision: str) -> ExternalPackage:
         """Build an external package.
 
         Arguments:
@@ -374,3 +374,17 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
         """
         self._package = package
+
+
+def build(url: str, revision: str) -> ExternalPackage:
+    """Build an external package.
+
+    Arguments:
+        url: The git repo url of the external package.
+        revision: The git repo revision (tag/commit) of the external package.
+
+    Returns:
+        The :class:`ExternalPackage` instance.
+
+    """
+    return packages.build(url, revision)
