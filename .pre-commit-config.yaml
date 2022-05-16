@@ -64,14 +64,7 @@ repos:
         types: [python]
         exclude: "(test_\\w*\\.py$)"
         additional_dependencies:
-          [
-            types-PyYAML==6.0.7,
-            types-requests==2.25.11,
-            tensorbay==1.20.0,
-            numpy==1.22.0,
-            types-mock,
-            click,
-          ]
+          [types-PyYAML==6.0.7, types-requests==2.25.11, tensorbay==1.20.0, numpy==1.22.0]
         args:
           [
             "--cache-dir=/tmp/mypy_cache/",
