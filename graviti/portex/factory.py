@@ -28,120 +28,9 @@ import yaml
 import graviti.portex.ptype as PTYPE
 from graviti.portex.base import PortexType
 from graviti.portex.field import Fields
-from graviti.portex.package import Imports, packages
+from graviti.portex.package import Imports
 
 _C = TypeVar("_C", str, float, bool, None)
-
-
-class Dynamic:
-    """The base class of the runtime parameter type analyzer."""
-
-    def __call__(self, **_: Any) -> PTYPE.PType:
-        """Get the parameter type.
-
-        Arguments:
-            _: The input arguments.
-
-        """
-        ...
-
-
-class DynamicPortexType(Dynamic):
-    """The runtime parameter type analyzer for portex type."""
-
-    def __call__(self, **_: Any) -> PTYPE.PType:
-        """Get the parameter type.
-
-        Arguments:
-            _: The input arguments.
-
-        Returns:
-            The ``PortexType``.
-
-        """
-        return PTYPE.PortexType
-
-
-class DynamicDictParameter(Dynamic):
-    """The runtime parameter type analyzer for dict values.
-
-    Arguments:
-        annotation_getter: A callable object returns the type of the dict.
-        key: The key of the dict value.
-        decl: The full dict.
-
-    """
-
-    def __init__(self, ptype_getter: Dynamic, key: str, decl: Dict[str, Any]):
-        self._ptype_getter = ptype_getter
-        self._key = key
-        self._decl = decl
-
-    def __call__(self, **kwargs: Any) -> PTYPE.PType:
-        """Get the parameter type.
-
-        Arguments:
-            kwargs: The input arguments.
-
-        Returns:
-            The parameter type of the dict value.
-
-        """
-        ptype = self._ptype_getter(**kwargs)
-        if ptype in {PTYPE.PortexType, PTYPE.Field}:
-            if self._key == "type":
-                return PTYPE.TypeName
-
-            if self._key == "name" and ptype == PTYPE.Field:
-                return PTYPE.String
-
-            name_factory = string_factory_creator(self._decl["type"], PTYPE.TypeName)
-            class_ = packages.builtins[name_factory(**kwargs)]
-            for name, parameter in class_.params.items():
-                if name == self._key:
-                    return parameter.ptype
-
-        return PTYPE.Any
-
-
-class DynamicListParameter(Dynamic):
-    """The runtime parameter type analyzer for list values.
-
-    Arguments:
-        ptype_getter: A callable object returns the type of the list.
-
-    """
-
-    def __init__(self, ptype_getter: Dynamic):
-        self._ptype_getter = ptype_getter
-
-    def __call__(self, **kwargs: Any) -> PTYPE.PType:
-        """Get the parameter type.
-
-        Arguments:
-            kwargs: The input arguments.
-
-        Returns:
-            The parameter type of the list value.
-
-        """
-        if self._ptype_getter(**kwargs) == PTYPE.Fields:
-            return PTYPE.Field
-
-        return PTYPE.Any
-
-    @staticmethod
-    def load(content: Any) -> Any:
-        """Return the original content.
-
-        Arguments:
-            content: A python presentation of the dynamic parameter type.
-
-        Returns:
-            The original content.
-
-        """
-        return content
 
 
 class Factory:
@@ -278,38 +167,6 @@ class TypeFactory(Factory):
         return self._class(**type_kwargs)
 
 
-class DynamicTypeFactory(Factory):
-    """The template factory for dynamic Portex type.
-
-    Arguments:
-        decl: A dict which indicates a dynamic Portex type.
-
-    """
-
-    def __init__(self, decl: Dict[str, Any], imports: Imports) -> None:
-        self._type_parameter = decl["type"][8:]
-        self._decl = decl
-        self._imports = imports
-
-        self.keys = DictFactory(decl, DynamicPortexType()).keys.copy()
-        self.dependences = set()
-        self.keys[self._type_parameter] = PTYPE.TypeName
-
-    def __call__(self, **kwargs: Any) -> PortexType:
-        """Apply the input arguments to the dynamic type template.
-
-        Arguments:
-            kwargs: The input arguments.
-
-        Returns:
-            The applied Portex type.
-
-        """
-        decl = self._decl.copy()
-        decl["type"] = kwargs[self._type_parameter]
-        return TypeFactory(decl, self._imports)(**kwargs)
-
-
 class ConstantFactory(Factory, Generic[_C]):
     """The template factory for a constant.
 
@@ -377,7 +234,6 @@ class ListFactory(Factory):
         factories = []
         dependences = set()
         keys = {}
-        ptype = DynamicListParameter(ptype) if isinstance(ptype, Dynamic) else ptype
         for value in decl:
             factory = factory_creator(value, None, ptype)
             factories.append(factory)
@@ -422,7 +278,6 @@ class DictFactory(Factory):
                 self._unpack_factory = unpack_factory
                 continue
 
-            ptype = DynamicDictParameter(ptype, key, decl) if isinstance(ptype, Dynamic) else ptype
             factory = factory_creator(value, None, ptype)
             if factory.is_unpack:
                 raise ValueError("Use array unpack in object value is not allowed")
@@ -579,22 +434,27 @@ def mapping_unpack_factory_creator(decl: str, ptype: PTYPE.PType) -> VariableFac
 
 def type_factory_creator(
     decl: Dict[str, Any], imports: Imports
-) -> Union[TypeFactory, DynamicTypeFactory, VariableFactory]:
-    """Check whether the input is dynamic and returns the corresponding type factory.
+) -> Union[TypeFactory, VariableFactory]:
+    """Check the input and returns the corresponding type factory.
 
     Arguments:
-        decl: A dict which indicates a portex type or a dynamic portex type.
+        decl: A dict which indicates a portex type or has object unpack grammar.
         imports: The :class:`Imports` instance to specify the import scope of the template.
 
+    Raises:
+        ValueError: When setting the type name as a parameter.
+
     Returns:
-        A ``TypeFactory`` or a ``DynamicTypeFactory`` or a ``VariableFactory`` instance.
+        A ``TypeFactory`` or a ``VariableFactory`` instance.
 
     """
     if "type" not in decl:
         return mapping_unpack_factory_creator(decl["+"], PTYPE.PortexType)
 
     if decl["type"].startswith("$params."):
-        return DynamicTypeFactory(decl, imports)
+        raise ValueError(
+            "Setting the type name as a parameter is not allowed. Please use object unpack grammar"
+        )
 
     return TypeFactory(decl, imports)
 
