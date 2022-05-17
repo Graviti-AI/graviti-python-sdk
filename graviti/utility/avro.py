@@ -169,6 +169,8 @@ def _on_primitive(_filed: pa.DataType) -> AvroSchema:
         return AvroPrimitiveSchema(typ="boolean")
     elif pa_type == "string":
         return AvroPrimitiveSchema(typ="string")
+    elif pa_type == "binary":
+        return AvroPrimitiveSchema(typ="bytes")
     else:
         raise Exception(f"unsupported type {pa_type}")
 
