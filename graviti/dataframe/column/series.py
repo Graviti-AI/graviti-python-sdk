@@ -53,6 +53,7 @@ class Series(Container):
 
     """
 
+    has_keys = False
     schema: pt.PortexType
     _data: PagingList
     name: Optional[str]

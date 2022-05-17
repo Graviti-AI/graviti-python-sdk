@@ -83,6 +83,9 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
             A list of keys to locate the data.
 
         """
+        if not self.container.has_keys:
+            return []
+
         return self.to_builtin().get_keys(type_name)
 
 
