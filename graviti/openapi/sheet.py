@@ -240,8 +240,8 @@ def get_draft_sheet(
         sheet: The sheet name.
         with_record_count: Whether return the record count of each sheet. The default value of
             this param in OpenAPI is False.
-        schema_format: Fill "JSON"/"YAML" to determine whether the schema_format of the returned
-            schema is json or yaml. None means "JSON" format.
+        schema_format: The format of the schema converted to a string. It can be "JSON" or "YAML".
+            The default value of this param in OpenAPIv2 is "YAML".
 
     Returns:
         The response of OpenAPI.
@@ -294,8 +294,8 @@ def get_commit_sheet(
         sheet: The sheet name.
         with_record_count: Whether return the record count of each sheet. The default value of
             this param in OpenAPI is False.
-        schema_format: Fill "JSON"/"YAML" to determine whether the schema_format of the returned
-            schema is json or yaml. None means "JSON" format.
+        schema_format: The format of the schema converted to a string. It can be "JSON" or "YAML".
+            The default value of this param in OpenAPIv2 is "YAML".
 
     Returns:
         The response of OpenAPI.
