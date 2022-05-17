@@ -19,6 +19,7 @@ def create_dataset(
     alias: str = "",
     is_public: bool = False,
     config: Optional[str] = None,
+    with_draft: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets`.
 
@@ -29,6 +30,8 @@ def create_dataset(
         alias: Alias of the dataset, default is "".
         is_public: Whether the dataset is a public dataset.
         config: The auth storage config name.
+        with_draft: Whether to create a draft after the dataset is created. The default value of
+            this parameter in OpenAPIv2 is False.
 
     Returns:
         The response of OpenAPI.
@@ -42,7 +45,7 @@ def create_dataset(
         {
            "id": "2bc95d506db2401b898067f1045d7f68",
            "name": "OxfordIIITPet",
-           "alias": "Oxford-IIIT Pet",
+           "alias": "",
            "default_branch": "main",
            "commit_id": "00000000000000000000000000000000",
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
@@ -60,8 +63,11 @@ def create_dataset(
         "alias": alias,
         "is_public": is_public,
     }
+
     if config is not None:
         post_data["config"] = config
+    if with_draft is not None:
+        post_data["with_draft"] = with_draft
 
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
