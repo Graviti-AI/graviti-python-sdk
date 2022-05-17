@@ -5,7 +5,7 @@
 """The table-structured data container related classes."""
 
 
-from typing import Any, List, Type, TypeVar
+from typing import Any, ClassVar, List, Type, TypeVar
 
 import pyarrow as pa
 
@@ -17,6 +17,7 @@ _T = TypeVar("_T", bound="Container")
 class Container:
     """The base class for the table-structured data container."""
 
+    has_keys: ClassVar[bool]
     schema: PortexType
 
     def __len__(self) -> int:

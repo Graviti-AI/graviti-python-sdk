@@ -66,6 +66,7 @@ class DataFrame(Container):
 
     """
 
+    has_keys = True
     _columns: Dict[str, Container]
     _column_names: List[str]
     schema: pt.PortexType
