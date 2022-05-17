@@ -190,13 +190,14 @@ def _on_struct(names, namespace, name, _struct: pa.StructType) -> AvroRecordSche
         sub_name = ps_sub_filed.name
         sub_namespace = f"{namespace}.{sub_name}"
         sub_schema = _on_type(names, sub_namespace, sub_name, i, ps_sub_filed.type)
+        nullable = not isinstance(ps_sub_filed.type, pa.StructType)
         avro_record_field = AvroField(
             typ=sub_schema,
             name=sub_name,
             index=i,
             has_default=False,
             name_registry=names,
-            optional=ps_sub_filed.nullable,
+            optional=nullable,
         )
         avro_record_fields.append(avro_record_field)
 
@@ -244,13 +245,14 @@ def convert_arrow_schema_to_avro(_schema: pa.Schema):
         sub_name = _schema.names[i]
         sub_namespace = f"{namespace}.{name}"
         sub_schema = _on_type(names, sub_namespace, sub_name, i, typ)
+        nullable = not isinstance(typ, pa.StructType)
         avro_record_field = AvroField(
             typ=sub_schema,
             name=sub_name,
             index=i,
             has_default=False,
             name_registry=names,
-            optional=_schema[i].nullable,
+            optional=nullable,
         )
 
         avro_record_fields.append(avro_record_field)
