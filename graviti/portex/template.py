@@ -12,7 +12,7 @@ import pyarrow as pa
 import graviti.portex.ptype as PTYPE
 from graviti.portex.base import PortexType
 from graviti.portex.builtin import PortexBuiltinType
-from graviti.portex.factory import Dynamic, Factory, type_factory_creator
+from graviti.portex.factory import Factory, type_factory_creator
 from graviti.portex.package import ExternalPackage, Imports, Package, packages
 from graviti.portex.param import Param, Params
 from graviti.portex.register import ExternalContainerRegister
@@ -33,10 +33,6 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         for key, value in arguments.items():
             param = self.params[key]
-            if isinstance(param.ptype, Dynamic):
-                ptype = param.ptype(**arguments)
-                param = Param(param.name, param.default, param.options, ptype)
-
             arguments[key] = param.check(value)
 
         super().__init__(**arguments)

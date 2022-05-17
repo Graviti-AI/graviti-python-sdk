@@ -6,17 +6,12 @@
 
 
 from copy import copy
-from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Type, TypeVar
 
 from graviti.portex.base import PortexType as ClassPortexType
 from graviti.portex.field import Fields as ClassFields
 from graviti.portex.package import Imports
-
-if TYPE_CHECKING:
-    from graviti.portex.factory import Dynamic
-
 
 _T = TypeVar("_T")
 _P = TypeVar("_P", bound=ClassPortexType)
@@ -80,7 +75,7 @@ class ParameterType:
         return arg
 
 
-PType = Union[Type[ParameterType], "Dynamic"]
+PType = Type[ParameterType]
 
 
 class Any(ParameterType):
