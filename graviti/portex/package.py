@@ -388,3 +388,18 @@ def build(url: str, revision: str) -> ExternalPackage:
 
     """
     return packages.build(url, revision)
+
+
+def build_openbytes(revision: str) -> ExternalPackage:
+    """Build the OpenBytes standard external package.
+
+    The repo url is: https://github.com/Project-OpenBytes/standard.
+
+    Arguments:
+        revision: The git repo revision (tag/commit) of the external package.
+
+    Returns:
+        The :class:`ExternalPackage` instance.
+
+    """
+    return packages.build("https://github.com/Project-OpenBytes/standard", revision)

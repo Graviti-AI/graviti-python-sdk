@@ -18,7 +18,7 @@ from graviti.portex.builtin import (
     string,
     tensor,
 )
-from graviti.portex.package import build
+from graviti.portex.package import build, build_openbytes
 from graviti.portex.register import ContainerRegister, ExternalContainerRegister
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     "binary",
     "boolean",
     "build",
+    "build_openbytes",
     "enum",
     "float32",
     "float64",
