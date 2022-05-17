@@ -294,7 +294,12 @@ class DatasetManager:
         """
         arguments = {"access_key": self.access_key, "url": self.url}
         response = create_dataset(
-            **arguments, name=name, alias=alias, is_public=is_public, config=config
+            **arguments,
+            name=name,
+            alias=alias,
+            is_public=is_public,
+            config=config,
+            with_draft=False,
         )
         response.update(arguments)
 
