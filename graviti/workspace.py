@@ -18,8 +18,8 @@ class Workspace:
 
     """
 
-    _DEFAULT_URL_CN = "https://gas.graviti.cn/"
-    _DEFAULT_URL_COM = "https://gas.graviti.com/"
+    _DEFAULT_URL_CN = "https://api.graviti.cn/"
+    _DEFAULT_URL_COM = "https://api.graviti.com/"
 
     def __init__(
         self,
