@@ -6,6 +6,7 @@
 
 
 import json
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 
 import pyarrow as pa
@@ -251,11 +252,7 @@ class PortexType:
             A copy of the portex type.
 
         """
-        obj: _T = object.__new__(self.__class__)
-        for name, param in self.params.items():
-            setattr(obj, name, param.copy(getattr(self, name)))
-
-        return obj
+        return deepcopy(self)
 
 
 def read_yaml(path: PathLike) -> PortexType:
