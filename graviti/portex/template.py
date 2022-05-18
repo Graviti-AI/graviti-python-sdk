@@ -99,42 +99,45 @@ def template(
         A subclass of ``PortexExternalType``.
 
     Examples:
+        >>> import graviti.portex as pt
+        >>> from graviti.portex.template import template
+        >>>
         >>> vector_template = {
         ...     "type": "template",
-        ...     "parameters": {
-        ...         "dtype": {
-        ...             "required": False,
-        ...             "default": "int32",
+        ...     "parameters": [
+        ...         {
+        ...             "name": "coords",
+        ...             "default": {"type": "int32"},
         ...         },
-        ...         "dimension": {
-        ...             "required": False,
-        ...             "default": "2D",
-        ...             "options": ["2D", "3D"],
+        ...         {
+        ...             "name": "labels",
+        ...             "default": None,
         ...         },
-        ...     },
+        ...     ],
         ...     "declaration": {
         ...         "type": "record",
         ...         "fields": [
         ...             {
         ...                 "name": "x",
-        ...                 "type": "$params.dtype"
+        ...                 "+": "$coords",
         ...             },
         ...             {
         ...                 "name": "y",
-        ...                 "type": "$params.dtype"
+        ...                 "+": "$coords",
         ...             },
         ...             {
-        ...                 "name": "z",
-        ...                 "exist_if": "$params.dimension == '3D'",
-        ...                 "type": "$params.dtype",
-        ...             }
-        ...         ]
-        ...     }
+        ...                 "name": "label",
+        ...                 "exist_if": "$labels",
+        ...                 "type": "enum",
+        ...                 "values": "$labels",
+        ...             },
+        ...         ],
+        ...     },
         ... }
         >>> Vector = template("Vector", vector_template)
         >>> vector2d_int = Vector()
         >>> vector2d_int
-        Vector
+        Vector()
         >>> vector2d_int.internal_type
         record(
           fields={
@@ -143,10 +146,10 @@ def template(
           },
         )
         >>>
-        >>> vector2d_float = Vector("float32")
+        >>> vector2d_float = Vector(pt.float32())
         >>> vector2d_float
         Vector(
-          dtype='float32',
+          coords=float32(),
         )
         >>> vector2d_float.internal_type
         record(
@@ -156,17 +159,19 @@ def template(
           },
         )
         >>>
-        >>> vector3d = Vector(dimension="3D")
-        >>> vector3d
+        >>> labeled_vector = Vector(labels=["visble", "occluded"])
+        >>> labeled_vector
         Vector(
-          dimension='3D',
+          labels=['visble', 'occluded'],
         )
-        >>> vector3d.internal_type
+        >>> labeled_vector.internal_type
         record(
           fields={
             'x': int32(),
             'y': int32(),
-            'z': int32(),
+            'label': enum(
+              values=['visble', 'occluded'],
+            ),
           },
         )
 
