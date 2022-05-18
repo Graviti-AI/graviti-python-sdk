@@ -5,7 +5,6 @@
 """Template factory releated classes."""
 
 
-from collections import OrderedDict
 from typing import (
     Any,
     Callable,
@@ -14,7 +13,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -22,8 +20,6 @@ from typing import (
     TypeVar,
     Union,
 )
-
-import yaml
 
 import graviti.portex.ptype as PTYPE
 from graviti.portex.base import PortexType
@@ -48,66 +44,6 @@ class Factory:
 
         """
         ...
-
-
-class BinaryExpression(Factory):
-    """The Portex binary expression parser.
-
-    Arguments:
-        decl: A dict which indicates a portex expression.
-
-    """
-
-    # Why not use typing.OrderedDict here?
-    # typing.OrderedDict is supported after python 3.7.2
-    # typing_extensions.OrderedDict will trigger https://github.com/python/mypy/issues/11528
-    _OPERATORS: Mapping[str, Callable[[Any, Any], bool]] = OrderedDict(
-        {
-            "==": lambda x, y: x == y,  # type: ignore[no-any-return]
-            "!=": lambda x, y: x != y,  # type: ignore[no-any-return]
-            ">=": lambda x, y: x >= y,  # type: ignore[no-any-return]
-            "<=": lambda x, y: x <= y,  # type: ignore[no-any-return]
-            ">": lambda x, y: x > y,  # type: ignore[no-any-return]
-            "<": lambda x, y: x < y,  # type: ignore[no-any-return]
-        }
-    )
-
-    def __init__(self, decl: str) -> None:
-        keys = {}
-        for operator, method in self._OPERATORS.items():
-            if operator not in decl:
-                continue
-
-            operands = decl.split(operator)
-            if len(operands) != 2:
-                raise SyntaxError("Binary operator only accept two operands")
-
-            # TODO: Use "string_factory_creator" in non-string case
-            factories = [string_factory_creator(operand.strip()) for operand in operands]
-            for i, factory in enumerate(factories):
-                if isinstance(factory, ConstantFactory):
-                    factories[i] = ConstantFactory(yaml.load(factory(), yaml.Loader))
-                else:
-                    keys.update(factory.keys)
-
-            self._factories = factories
-            self._method = method
-            self.keys = keys
-            return
-
-        raise SyntaxError("No operator found in expression")
-
-    def __call__(self, **kwargs: Any) -> bool:
-        """Apply the input arguments to the expression.
-
-        Arguments:
-            kwargs: The input arguments.
-
-        Returns:
-            The bool result of the expression.
-
-        """
-        return self._method(*(factory(**kwargs) for factory in self._factories))
 
 
 class TypeFactory(Factory):
@@ -321,8 +257,8 @@ class FieldFactory(Factory):
         dependences = set()
         keys = {}
 
-        expression = expression_creator(item.pop("exist_if", None))
-        keys.update(expression.keys)
+        condition = string_factory_creator(item.pop("exist_if", True))
+        keys.update(condition.keys)
 
         name_factory = string_factory_creator(item.pop("name"), PTYPE.String)
         type_factory = type_factory_creator(item, imports)
@@ -331,7 +267,7 @@ class FieldFactory(Factory):
         keys.update(name_factory.keys)
         keys.update(type_factory.keys)
 
-        self._expression = expression
+        self._condition = condition
         self._name_factory = name_factory
         self._type_factory = type_factory
         self.dependences = dependences
@@ -347,7 +283,7 @@ class FieldFactory(Factory):
             The applied tuple of name and PortexType.
 
         """
-        if not self._expression(**kwargs):
+        if self._condition(**kwargs) is None:
             return None
 
         return self._name_factory(**kwargs), self._type_factory(**kwargs)
@@ -476,22 +412,6 @@ def string_factory_creator(
         return VariableFactory(decl[1:], ptype)
 
     return ConstantFactory(decl)
-
-
-def expression_creator(decl: Optional[str]) -> Union[BinaryExpression, ConstantFactory[bool]]:
-    """Check whether the input string is binary expression and returns the corresponding factory.
-
-    Arguments:
-        decl: A string which indicates a expression.
-
-    Returns:
-        A ``BinaryExpression`` or a ``ConstantFactory`` instance according to the input.
-
-    """
-    if decl is None:
-        return ConstantFactory(True)
-
-    return BinaryExpression(decl)
 
 
 def factory_creator(  # pylint: disable=too-many-return-statements
