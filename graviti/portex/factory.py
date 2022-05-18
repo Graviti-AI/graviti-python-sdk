@@ -408,7 +408,7 @@ def string_factory_creator(
         A ``VariableFactory`` or a ``ConstantFactory`` instance according to the input.
 
     """
-    if decl.startswith("$"):
+    if isinstance(decl, str) and decl.startswith("$"):
         return VariableFactory(decl[1:], ptype)
 
     return ConstantFactory(decl)
