@@ -101,7 +101,7 @@ def template(
     Examples:
         >>> vector_template = {
         ...     "type": "template",
-        ...     "params": {
+        ...     "parameters": {
         ...         "dtype": {
         ...             "required": False,
         ...             "default": "int32",
@@ -171,7 +171,7 @@ def template(
         )
 
     """
-    params_pyobj = content.get("params", {})
+    params_pyobj = content.get("parameters", {})
     decl = content["declaration"]
 
     imports = Imports.from_pyobj(content.get("imports", []))
@@ -190,7 +190,7 @@ def template(
     type_: Type[PortexExternalType] = type(
         name,
         (PortexExternalType,),
-        {"params": params, "dependences": factory.dependences, "factory": factory},
+        {"parameters": params, "dependences": factory.dependences, "factory": factory},
     )
 
     if isinstance(package, ExternalPackage):
