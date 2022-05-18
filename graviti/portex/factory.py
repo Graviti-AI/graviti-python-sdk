@@ -370,8 +370,8 @@ class FieldsFactory(Factory):
             if isinstance(item, dict):
                 factory: Factory = FieldFactory(item, imports)
                 dependences.update(factory.dependences)
-            elif isinstance(item, str) and item.startswith("+$params."):
-                factory = VariableFactory(item[9:], PTYPE.Fields, True)
+            elif isinstance(item, str) and item.startswith("+$"):
+                factory = VariableFactory(item[2:], PTYPE.Fields, True)
             else:
                 raise ValueError("The items of fields can only be object or list unpack parameter")
 
@@ -426,10 +426,10 @@ def mapping_unpack_factory_creator(decl: str, ptype: PTYPE.PType) -> VariableFac
         A ``VariableFactory`` instance according to the input.
 
     """
-    if not decl.startswith("$params."):
+    if not decl.startswith("$"):
         raise ValueError("The decl does not have the correct object unpack grammar")
 
-    return VariableFactory(decl[8:], ptype)
+    return VariableFactory(decl[1:], ptype)
 
 
 def type_factory_creator(
@@ -451,7 +451,7 @@ def type_factory_creator(
     if "type" not in decl:
         return mapping_unpack_factory_creator(decl["+"], PTYPE.PortexType)
 
-    if decl["type"].startswith("$params."):
+    if decl["type"].startswith("$"):
         raise ValueError(
             "Setting the type name as a parameter is not allowed. Please use object unpack grammar"
         )
@@ -472,8 +472,8 @@ def string_factory_creator(
         A ``VariableFactory`` or a ``ConstantFactory`` instance according to the input.
 
     """
-    if decl.startswith("$params."):
-        return VariableFactory(decl[8:], ptype)
+    if decl.startswith("$"):
+        return VariableFactory(decl[1:], ptype)
 
     return ConstantFactory(decl)
 
@@ -509,11 +509,11 @@ def factory_creator(  # pylint: disable=too-many-return-statements
 
     """
     if isinstance(decl, str):
-        if decl.startswith("$params."):
-            return VariableFactory(decl[8:], ptype)
+        if decl.startswith("$"):
+            return VariableFactory(decl[1:], ptype)
 
-        if decl.startswith("+$params."):
-            return VariableFactory(decl[9:], PTYPE.Array, True)
+        if decl.startswith("+$"):
+            return VariableFactory(decl[2:], PTYPE.Array, True)
 
     if ptype == PTYPE.PortexType:
         assert isinstance(decl, dict)
