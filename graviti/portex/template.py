@@ -171,7 +171,7 @@ def template(
         )
 
     """
-    params_pyobj = content.get("parameters", {})
+    params_pyobj = content.get("parameters", [])
     decl = content["declaration"]
 
     imports = Imports.from_pyobj(content.get("imports", []))
@@ -190,7 +190,7 @@ def template(
     type_: Type[PortexExternalType] = type(
         name,
         (PortexExternalType,),
-        {"parameters": params, "dependences": factory.dependences, "factory": factory},
+        {"params": params, "dependences": factory.dependences, "factory": factory},
     )
 
     if isinstance(package, ExternalPackage):

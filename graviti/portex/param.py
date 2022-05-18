@@ -7,7 +7,7 @@
 
 from collections import OrderedDict
 from inspect import Parameter, Signature
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
 import graviti.portex.ptype as PTYPE
 from graviti.portex.package import Imports
@@ -57,6 +57,23 @@ class Param(Parameter):
         self.options = set(options) if options else None
         self.ptype = ptype
 
+    @classmethod
+    def from_pyobj(cls, pyobj: Dict[str, Any]) -> "Param":
+        """Create Param instance from python dict.
+
+        Arguments:
+            pyobj: A python dict representing a parameter.
+
+        Returns:
+            A Param instance created from the input python dict.
+
+        """
+        return cls(
+            pyobj["name"],
+            pyobj.get("default", cls._empty),
+            pyobj.get("options"),
+        )
+
     @property
     def required(self) -> bool:
         """Whether this parameter is a required parameter.
@@ -67,24 +84,6 @@ class Param(Parameter):
         """
         return self.default == self._empty  # type: ignore[no-any-return]
 
-    @classmethod
-    def from_pyobj(cls, name: str, pyobj: Dict[str, Any]) -> "Param":
-        """Create Param instance from python dict.
-
-        Arguments:
-            name: The name of the parameter.
-            pyobj: A python dict representing a parameter.
-
-        Returns:
-            A Param instance created from the input python dict.
-
-        """
-        return cls(
-            name,
-            pyobj.get("default", cls._empty),
-            pyobj.get("options"),
-        )
-
     def to_pyobj(self) -> Dict[str, Any]:
         """Dump the instance to a python dict.
 
@@ -92,9 +91,8 @@ class Param(Parameter):
             A python dict representation of the Param.
 
         """
-        required = self.required
-        pyobj: Dict[str, Any] = {"required": required}
-        if not required:
+        pyobj: Dict[str, Any] = {"name": self.name}
+        if self.default != self._empty:
             pyobj["default"] = self.default
         if self.options is not None:
             pyobj["options"] = list(self.options)
@@ -169,30 +167,30 @@ class Params(UserMapping[str, Param]):
         self._data: MutableMapping[str, Param] = OrderedDict(values if values else {})
 
     @classmethod
-    def from_pyobj(cls, pyobj: Dict[str, Any]) -> "Params":
-        """Create Params instance from python dict.
+    def from_pyobj(cls, pyobj: List[Dict[str, Any]]) -> "Params":
+        """Create Params instance from python list.
 
         Arguments:
             pyobj: A python dict representing parameters.
 
         Returns:
-            A Params instance created from the input python dict.
+            A Params instance created from the input python list.
 
         """
         params = cls()
-        for key, value in pyobj.items():
-            params.add(Param.from_pyobj(key, value))
+        for item in pyobj:
+            params.add(Param.from_pyobj(item))
 
         return params
 
-    def to_pyobj(self) -> Dict[str, Any]:
-        """Dump the instance to a python dict.
+    def to_pyobj(self) -> List[Dict[str, Any]]:
+        """Dump the instance to a python list.
 
         Returns:
-            A python dict representation of the Params.
+            A python list representation of the Params.
 
         """
-        return {key: value.to_pyobj() for key, value in self._data.items()}
+        return [item.to_pyobj() for item in self._data.values()]
 
     def add(self, value: Param) -> None:
         """Add a parameter.
