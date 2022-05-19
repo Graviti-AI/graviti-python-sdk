@@ -45,6 +45,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",  # used for referring sections in a rst file
     "sphinx.ext.napoleon",  # used for being compatible with Google and Numpy doc style
     "sphinx.ext.coverage",  # used for generating doc coverage report
+    "autoapi.extension",
 ]
 
 # extensions_config
@@ -56,6 +57,19 @@ numfig = True
 # The default options for autodoc
 autodoc_default_options = {"member-order": "bysource"}
 autodoc_typehints = "description"
+
+# The default options for autoapi
+autoapi_type = "python"
+autoapi_dirs = ["../../graviti"]
+autoapi_add_toctree_entry = False
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
+]
+autoapi_template_dir = "../source/_templates"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

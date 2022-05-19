@@ -20,4 +20,4 @@
    :maxdepth: 1
    :caption: Reference
 
-   reference/api/index
+   API Reference <autoapi/graviti/index>

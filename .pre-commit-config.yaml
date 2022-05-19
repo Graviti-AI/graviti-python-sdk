@@ -104,6 +104,7 @@ repos:
       - id: rstcheck
         types: [rst]
         additional_dependencies: [sphinx==4.5.0]
+        exclude: "(^docs/source/_templates/)"
         args:
           [
             "--ignore-directives=automodule",
