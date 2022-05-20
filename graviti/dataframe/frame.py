@@ -584,29 +584,29 @@ class DataFrame(Container):
             TypeError: When the given Dataframe mismatched with the self schema.
 
         Examples:
-        >>> df = DataFrame([
-        ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
-        ...     {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
-        ... ])
+            >>> df = DataFrame([
+            ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
+            ...     {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
+            ... ])
 
-        Extended by another list.
-        >>> df.extend([{"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}}])
-        >>> df
-            filename box2ds
-                     x      y
-        0   a.jpg    1      1
-        1   b.jpg    2      2
-        2   c.jpg    3      3
+            Extended by another list.
+            >>> df.extend([{"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}}])
+            >>> df
+                filename box2ds
+                         x      y
+            0   a.jpg    1      1
+            1   b.jpg    2      2
+            2   c.jpg    3      3
 
-        Extended by another DataFrame.
-        >>> df2 = DataFrame([{"filename": "d.jpg", "box2ds": {"x": 4 "y": 4}}])
-        >>> df.extend(df2)
-        >>> df
-            filename box2ds
-                     x      y
-        0   a.jpg    1      1
-        1   b.jpg    2      2
-        2   d.jpg    4      4
+            Extended by another DataFrame.
+            >>> df2 = DataFrame([{"filename": "d.jpg", "box2ds": {"x": 4 "y": 4}}])
+            >>> df.extend(df2)
+            >>> df
+                filename box2ds
+                         x      y
+            0   a.jpg    1      1
+            1   b.jpg    2      2
+            2   d.jpg    4      4
 
         """
         if not isinstance(values, DataFrame):
