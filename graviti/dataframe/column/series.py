@@ -79,7 +79,7 @@ class Series(Container):
     #     ...
 
     def __getitem__(self, key: int) -> Any:
-        return self._data[key]
+        return self._data[key].as_py()
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[Any]) -> None:
