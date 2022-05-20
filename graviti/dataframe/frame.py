@@ -590,6 +590,7 @@ class DataFrame(Container):
             ... ])
 
             Extended by another list.
+
             >>> df.extend([{"filename": "c.jpg", "box2ds": {"x": 3, "y": 3}}])
             >>> df
                 filename box2ds
@@ -599,6 +600,7 @@ class DataFrame(Container):
             2   c.jpg    3      3
 
             Extended by another DataFrame.
+
             >>> df2 = DataFrame([{"filename": "d.jpg", "box2ds": {"x": 4 "y": 4}}])
             >>> df.extend(df2)
             >>> df
