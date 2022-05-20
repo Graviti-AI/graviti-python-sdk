@@ -255,7 +255,7 @@ def update_data(
         data: The update data.
 
     Examples:
-        >>> update_dataset(
+        >>> update_data(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com/",
         ...     "czhual",
@@ -323,7 +323,7 @@ def add_data(
             of the sheet.
 
     Examples:
-        >>> update_dataset(
+        >>> add_data(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com/",
         ...     "czhual",
