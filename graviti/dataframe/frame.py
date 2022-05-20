@@ -137,29 +137,17 @@ class DataFrame(Container):
         raise KeyError(key)
 
     def __setitem__(self, key: str, value: Union[Iterable[Any], _C]) -> None:
-        if isinstance(value, Container):
-            schema = value.schema.copy()
-            column = value.copy()
-        else:
-            # TODO: Need to support the case where iterable elements are subclass of Container.
-            array = pa.array(value)
-            schema = pt.PortexType.from_pyarrow(array.type)
-            column = schema.container._from_pyarrow(array, schema)
+        if self.operations is None:
+            self._setitem(key, value)
+            return
 
-        if len(column) != len(self):
-            raise ValueError(
-                f"Length of values ({len(column)}) does not match length of "
-                f"self DataFrame ({len(self)})"
-            )
+        if key in self._column_names:
+            raise NotImplementedError("Replacing a column in a sheet is not supported yet")
 
-        # TODO: Need edit the schema.
-        self._columns[key] = column
-        if key not in self._column_names:
-            self._column_names.append(key)
-        if self.operations is not None:
-            dataframe = self.copy()
-            dataframe._record_key = self._record_key
-            self.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
+        self._setitem(key, value)
+        dataframe = self.copy()
+        dataframe._record_key = self._record_key
+        self.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
@@ -280,6 +268,29 @@ class DataFrame(Container):
             raise TypeError("The schema is mismatched with the pyarrow array")
 
         return cls._from_pyarrow(array, schema)
+
+    def _setitem(self, key: str, value: Union[Iterable[Any], _C]) -> None:
+        if isinstance(value, Container):
+            schema = value.schema.copy()
+            column = value.copy()
+        else:
+            # TODO: Need to support the case where iterable elements are subclass of Container.
+            array = pa.array(value)
+            schema = pt.PortexType.from_pyarrow(array.type)
+            column = schema.container._from_pyarrow(  # pylint: disable=protected-access
+                array, schema
+            )
+
+        if len(column) != len(self):
+            raise ValueError(
+                f"Length of values ({len(column)}) does not match length of "
+                f"self DataFrame ({len(self)})"
+            )
+
+        self.schema[key] = schema
+        self._columns[key] = column
+        if key not in self._column_names:
+            self._column_names.append(key)
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeriesBase]]:
         header: List[Tuple[str, ...]] = []
