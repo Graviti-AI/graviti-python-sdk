@@ -78,8 +78,8 @@ def list_drafts(
     *,
     state: Optional[str] = None,
     branch: Optional[str] = None,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts`.
 
@@ -91,8 +91,8 @@ def list_drafts(
         state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL" and None.
             None means listing open drafts.
         branch: The branch name. None means listing drafts from all branches.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
 
     Returns:
         The response of OpenAPI.
@@ -125,12 +125,16 @@ def list_drafts(
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts")
-    params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
+    params: Dict[str, Any] = {}
     if state:
         params["state"] = state
     if branch:
         params["branch"] = branch
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 

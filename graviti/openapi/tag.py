@@ -5,7 +5,7 @@
 
 """Interfaces about the tag."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
@@ -61,8 +61,8 @@ def list_tags(
     owner: str,
     dataset: str,
     *,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags`.
 
@@ -71,8 +71,8 @@ def list_tags(
         url: The URL of the graviti website.
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
 
     Returns:
         The response of OpenAPI.
@@ -103,7 +103,13 @@ def list_tags(
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags")
-    params = {"offset": offset, "limit": limit}
+
+    params = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
+
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 

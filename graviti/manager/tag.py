@@ -43,7 +43,7 @@ class TagManager:
     def __init__(self, dataset: "Dataset") -> None:
         self._dataset = dataset
 
-    def _generate(self, offset: int = 0, limit: int = 128) -> Generator[Tag, None, int]:
+    def _generate(self, offset: int, limit: int) -> Generator[Tag, None, int]:
         response = list_tags(
             self._dataset.access_key,
             self._dataset.url,
@@ -116,7 +116,7 @@ class TagManager:
             The LazyPagingList of :class:`tags<.Tag>` instances.
 
         """
-        return LazyPagingList(self._generate, 128)
+        return LazyPagingList(self._generate, 24)
 
     def delete(self, name: str) -> None:
         """Delete a tag.

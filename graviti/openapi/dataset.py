@@ -110,16 +110,16 @@ def list_datasets(
     access_key: str,
     url: str,
     *,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
 
     Returns:
         The response of OpenAPI.
@@ -149,7 +149,12 @@ def list_datasets(
 
     """
     url = urljoin(url, "v2/datasets")
-    params: Dict[str, Any] = {"offset": offset, "limit": limit}
+
+    params = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
