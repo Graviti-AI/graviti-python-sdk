@@ -15,10 +15,15 @@ def _list_sheet(
     access_key: str,
     url: str,
     with_record_count: Optional[bool],
-    offset: int,
-    limit: int,
+    offset: Optional[int],
+    limit: Optional[int],
 ) -> Dict[str, Any]:
-    params: Dict[str, Any] = {"offset": offset, "limit": limit}
+
+    params: Dict[str, Any] = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
     if with_record_count is not None:
         params["with_record_count"] = with_record_count
 
@@ -104,8 +109,8 @@ def list_draft_sheets(
     *,
     draft_number: int,
     with_record_count: Optional[bool] = None,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
 
@@ -117,8 +122,8 @@ def list_draft_sheets(
         draft_number: The draft number.
         with_record_count: Whether return the record count of each sheet. The default value of
             this param in OpenAPI is False.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
 
     Returns:
         The response of OpenAPI.
@@ -165,8 +170,8 @@ def list_commit_sheets(
     *,
     commit_id: str,
     with_record_count: Optional[bool] = None,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets`.
 
@@ -178,8 +183,8 @@ def list_commit_sheets(
         commit_id: The commit id.
         with_record_count: Whether return the record count of each sheet. The default value of
             this param in OpenAPI is False.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
 
     Returns:
         The response of OpenAPI.

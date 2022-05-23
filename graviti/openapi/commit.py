@@ -72,8 +72,8 @@ def list_commits(
     dataset: str,
     *,
     revision: Optional[str] = None,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits`.
 
@@ -84,8 +84,8 @@ def list_commits(
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
 
     Returns:
         The response of OpenAPI.
@@ -115,8 +115,12 @@ def list_commits(
 
     """
     url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits")
-    params: Dict[str, Any] = {"offset": offset, "limit": limit}
 
+    params: Dict[str, Any] = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
     if revision is not None:
         params["revision"] = revision
 

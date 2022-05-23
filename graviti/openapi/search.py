@@ -5,7 +5,7 @@
 
 """Interfaces about the search."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
@@ -20,8 +20,8 @@ def create_search(
     commit_id: str,
     sheet: str,
     criteria: Dict[str, Any],
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets\
     /{sheet}/search?offset={offset}&limit={limit}`.
@@ -34,8 +34,8 @@ def create_search(
         commit_id: The commit id.
         sheet: The sheet name.
         criteria: The criteria of the search.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.
@@ -97,13 +97,15 @@ def create_search(
         }
 
     """
-    url = urljoin(
-        url,
-        f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/\
-search?offset={offset}&limit={limit}",
-    )
+    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/search")
+
     post_data = {"criteria": criteria}
+    params = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
 
     return open_api_do(  # type: ignore[no-any-return]
-        "POST", access_key, url, json=post_data
+        "POST", access_key, url, json=post_data, params=params
     ).json()

@@ -17,15 +17,20 @@ def _list_data(
     *,
     columns: Optional[str],
     order_by: Optional[str],
-    offset: int,
-    limit: int,
+    offset: Optional[int],
+    limit: Optional[int],
 ) -> Dict[str, Any]:
 
-    params: Dict[str, Any] = {"offset": offset, "limit": limit}
+    params: Dict[str, Any] = {}
+
     if columns is not None:
         params["columns"] = columns
     if order_by is not None:
         params["order_by"] = order_by
+    if offset is not None:
+        params["offset"] = columns
+    if limit is not None:
+        params["limit"] = order_by
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -40,8 +45,8 @@ def list_draft_data(
     sheet: str,
     columns: Optional[str] = None,
     order_by: Optional[str] = None,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
     /sheets/{sheet}/data`.
@@ -58,8 +63,8 @@ def list_draft_data(
         order_by: The string of column names separated by ``|`` whose order determines the
             precedence of the sort. The rest are sorted by `__record_key` first. Multiple
             indexes can be expressed using ``.``.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.
@@ -141,8 +146,8 @@ def list_commit_data(
     sheet: str,
     columns: Optional[str] = None,
     order_by: Optional[str] = None,
-    offset: int = 0,
-    limit: int = 128,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets\
     /{sheet}/data`.
@@ -159,8 +164,8 @@ def list_commit_data(
         order_by: The string of column names separated by ``|`` whose order determines the
             precedence of the sort. The rest are sorted by `__record_key` first. Multiple
             indexes can be expressed using ``.``.
-        offset: The offset of the page.
-        limit: The limit of the page.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.

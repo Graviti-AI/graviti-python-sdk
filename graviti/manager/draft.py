@@ -232,10 +232,10 @@ class DraftManager:
 
     def _generate(
         self,
-        state: Optional[str] = None,
-        branch: Optional[str] = None,
-        offset: int = 0,
-        limit: int = 128,
+        state: Optional[str],
+        branch: Optional[str],
+        offset: int,
+        limit: int,
     ) -> Generator[Draft, None, int]:
         response = list_drafts(
             self._dataset.access_key,
@@ -313,5 +313,5 @@ class DraftManager:
         """
         return LazyPagingList(
             lambda offset, limit: self._generate(state, branch, offset, limit),
-            128,
+            24,
         )

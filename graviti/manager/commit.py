@@ -245,7 +245,7 @@ class CommitManager:
         self._dataset = dataset
 
     def _generate(
-        self, revision: Optional[str], offset: int = 0, limit: int = 128
+        self, revision: Optional[str], offset: int, limit: int
     ) -> Generator[Commit, None, int]:
         if revision is None:
             revision = self._dataset.HEAD.commit_id
@@ -303,5 +303,5 @@ class CommitManager:
         """
         return LazyPagingList(
             lambda offset, limit: self._generate(revision, offset, limit),
-            128,
+            24,
         )

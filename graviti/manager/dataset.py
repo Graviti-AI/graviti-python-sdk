@@ -259,7 +259,7 @@ class DatasetManager:
         self.url = url
         self.owner = owner
 
-    def _generate(self, offset: int = 0, limit: int = 128) -> Generator[Dataset, None, int]:
+    def _generate(self, offset: int, limit: int) -> Generator[Dataset, None, int]:
         arguments = {"access_key": self.access_key, "url": self.url}
         response = list_datasets(**arguments, limit=limit, offset=offset)
 
@@ -327,7 +327,7 @@ class DatasetManager:
             The LazyPagingList of :class:`~graviti.manager.dataset.Dataset` instances.
 
         """
-        return LazyPagingList(self._generate, 128)
+        return LazyPagingList(self._generate, 24)
 
     def delete(self, name: str) -> None:
         """Delete a Graviti dataset with given name.
