@@ -14,9 +14,7 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Set,
     Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -34,7 +32,6 @@ class Factory:
 
     is_unpack: bool = False
     keys: Dict[str, Any]
-    dependences: Set[Type[PortexType]]
 
     def __call__(self, **_: Any) -> Any:
         """Apply the input arguments to the template.
@@ -59,7 +56,6 @@ class TypeFactory(Factory):
 
         factories = {}
         keys = {}
-        dependences = {class_}
 
         for name, parameter in class_.params.items():
             try:
@@ -74,7 +70,6 @@ class TypeFactory(Factory):
                 raise ValueError("Use array unpack in object value is not allowed")
             factories[name] = factory
             keys.update(factory.keys)
-            dependences.update(factory.dependences)
 
         if "+" in decl:
             unpack_factory = mapping_unpack_factory_creator(decl["+"], PTYPE.Mapping)
@@ -83,7 +78,6 @@ class TypeFactory(Factory):
 
         self._factories = factories
         self.keys = keys
-        self.dependences = dependences
         self._class = class_
 
     def __call__(self, **kwargs: Any) -> PortexType:
@@ -113,7 +107,6 @@ class ConstantFactory(Factory, Generic[_C]):
 
     def __init__(self, decl: _C) -> None:
         self._constant: _C = decl
-        self.dependences = set()
         self.keys: Dict[str, Any] = {}
 
     def __call__(self, **_: Any) -> _C:
@@ -140,7 +133,6 @@ class VariableFactory(Factory):
 
     def __init__(self, decl: str, ptype: PTYPE.PType = PTYPE.Any, is_unpack: bool = False) -> None:
         self._key = decl
-        self.dependences = set()
         self.keys = {decl: ptype}
         self.is_unpack = is_unpack
 
@@ -168,16 +160,13 @@ class ListFactory(Factory):
 
     def __init__(self, decl: List[Any], ptype: PTYPE.PType = PTYPE.Any) -> None:
         factories = []
-        dependences = set()
         keys = {}
         for value in decl:
             factory = factory_creator(value, None, ptype)
             factories.append(factory)
-            dependences.update(factory.dependences)
             keys.update(factory.keys)
 
         self._factories = factories
-        self.dependences = dependences
         self.keys = keys
 
     def __call__(self, **kwargs: Any) -> List[Any]:
@@ -204,7 +193,6 @@ class DictFactory(Factory):
 
     def __init__(self, decl: Dict[str, Any], ptype: PTYPE.PType = PTYPE.Any) -> None:
         factories = {}
-        dependences = set()
         keys = {}
 
         for key, value in decl.items():
@@ -218,11 +206,9 @@ class DictFactory(Factory):
             if factory.is_unpack:
                 raise ValueError("Use array unpack in object value is not allowed")
             factories[key] = factory
-            dependences.update(factory.dependences)
             keys.update(factory.keys)
 
         self._factories = factories
-        self.dependences = dependences
         self.keys = keys
 
     def __call__(self, **kwargs: Any) -> Dict[str, Any]:
@@ -254,7 +240,6 @@ class FieldFactory(Factory):
         self.creator: Callable[..., Tuple[str, PortexType]]
 
         item = decl.copy()
-        dependences = set()
         keys = {}
 
         condition = string_factory_creator(item.pop("exist_if", True))
@@ -263,14 +248,12 @@ class FieldFactory(Factory):
         name_factory = string_factory_creator(item.pop("name"), PTYPE.String)
         type_factory = type_factory_creator(item, imports)
 
-        dependences.update(type_factory.dependences)
         keys.update(name_factory.keys)
         keys.update(type_factory.keys)
 
         self._condition = condition
         self._name_factory = name_factory
         self._type_factory = type_factory
-        self.dependences = dependences
         self.keys = keys
 
     def __call__(self, **kwargs: Any) -> Optional[Tuple[str, PortexType]]:
@@ -299,13 +282,11 @@ class FieldsFactory(Factory):
 
     def __init__(self, decl: List[Union[Dict[str, Any], str]], imports: Imports) -> None:
         self._factories = []
-        dependences = set()
         keys = {}
 
         for item in decl:
             if isinstance(item, dict):
                 factory: Factory = FieldFactory(item, imports)
-                dependences.update(factory.dependences)
             elif isinstance(item, str) and item.startswith("+$"):
                 factory = VariableFactory(item[2:], PTYPE.Fields, True)
             else:
@@ -314,7 +295,6 @@ class FieldsFactory(Factory):
             keys.update(factory.keys)
             self._factories.append(factory)
 
-        self.dependences = dependences
         self.keys = keys
 
     def __call__(self, **kwargs: Any) -> Fields:
