@@ -376,35 +376,20 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
-    values: List[Any] = param(ptype=PTYPE.Array)
+    values: List[str] = param(ptype=PTYPE.Enum)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, values: List[Any], nullable: bool = False) -> None:
+    def __init__(self, values: Iterable[str], nullable: bool = False) -> None:
         super().__init__(values=values, nullable=nullable)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
-        Raises:
-            NotImplementedError: When the values have more than one types.
-
         Returns:
             The corresponding builtin PyArrow DataType.
 
         """
-        pytype = None
-        for value in self.values:
-            if value is None:
-                self.nullable = True
-                continue
-
-            value_type = type(value)
-            if value_type != pytype and pytype is not None:
-                raise NotImplementedError("Values with more than one type is not supported yet")
-
-            pytype = value_type
-
-        return pa.dictionary(pa.int32(), _PYTHON_TYPE_TO_PYARROW_TYPE[pytype])
+        return pa.dictionary(pa.int32(), pa.string())
 
 
 @PyArrowConversionRegister(
