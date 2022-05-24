@@ -5,7 +5,7 @@
 """Template base class."""
 
 
-from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
 
 import pyarrow as pa
 
@@ -24,7 +24,6 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex external type."""
 
     nullable: bool
-    dependences: ClassVar[Set[PortexType]]
     package: ClassVar[ExternalPackage]
     factory: ClassVar[Factory]
 
@@ -195,7 +194,7 @@ def template(
     type_: Type[PortexExternalType] = type(
         name,
         (PortexExternalType,),
-        {"params": params, "dependences": factory.dependences, "factory": factory},
+        {"params": params, "factory": factory},
     )
 
     if isinstance(package, ExternalPackage):
