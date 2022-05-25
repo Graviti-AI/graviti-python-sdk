@@ -82,7 +82,7 @@ def upload_files(
     draft_number: int,
     sheet: str,
     files: Iterable[File],
-    jobs: int = 1,
+    jobs: int,
 ) -> None:
     """Upload multiple local files with multithread.
 
