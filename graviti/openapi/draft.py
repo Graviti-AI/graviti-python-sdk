@@ -6,7 +6,6 @@
 """Interfaces about the draft."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -38,7 +37,7 @@ def create_draft(
     Examples:
         >>> create_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     title="draft-2",
@@ -57,7 +56,7 @@ def create_draft(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts"
     post_data = {"title": title}
 
     if description:
@@ -100,7 +99,7 @@ def list_drafts(
     Examples:
         >>> list_drafts(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ... )
@@ -124,7 +123,7 @@ def list_drafts(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts"
 
     params: Dict[str, Any] = {}
     if state:
@@ -157,7 +156,7 @@ def get_draft(
     Examples:
         >>> get_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     "czhual",
         ...     draft_number=2,
@@ -175,7 +174,7 @@ def get_draft(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -211,7 +210,7 @@ def update_draft(
 
         >>> update_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     draft_number=2,
         ...     title="draft-3"
@@ -232,7 +231,7 @@ def update_draft(
 
         >>> update_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     draft_number=2,
         ...     state="CLOSED"
@@ -250,7 +249,7 @@ def update_draft(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}"
     patch_data: Dict[str, Any] = {"draft_number": draft_number}
 
     if state:

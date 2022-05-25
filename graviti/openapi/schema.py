@@ -6,7 +6,6 @@
 """Interfaces about the schema."""
 
 from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -39,7 +38,7 @@ def update_schema(
     Examples:
         >>> update_schema(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -54,7 +53,7 @@ main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name"
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/schema")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/schema"
     patch_data: Dict[str, Any] = {"_schema": _schema, "_avro_schema": _avro_schema}
 
     if _arrow_schema is not None:

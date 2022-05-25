@@ -6,7 +6,6 @@
 """Interfaces about the commit."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -38,7 +37,7 @@ def commit_draft(
     Examples:
         >>> commit_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number=2,
@@ -54,7 +53,7 @@ def commit_draft(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits"
     post_data: Dict[str, Any] = {"draft_number": draft_number, "title": title}
 
     if description:
@@ -93,7 +92,7 @@ def list_commits(
     Examples:
         >>> list_commits(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ... )
@@ -114,7 +113,7 @@ def list_commits(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits"
 
     params: Dict[str, Any] = {}
     if offset is not None:
@@ -145,7 +144,7 @@ def get_commit(
     Examples:
         >>> get_commit(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id="85c57a7f03804ccc906632248dc8c359"
@@ -160,7 +159,7 @@ def get_commit(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}")
+    url = f"{url}/v2/{owner}/{dataset}/commits/{commit_id}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -183,7 +182,7 @@ def get_revision(
     Examples:
         >>> get_revision(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     revision="branch-1"
         ... )
@@ -198,5 +197,5 @@ def get_revision(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/revisions/{revision}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/revisions/{revision}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]

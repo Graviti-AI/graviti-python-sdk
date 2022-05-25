@@ -6,7 +6,6 @@
 """Interfaces about the branch."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -37,7 +36,7 @@ def create_branch(
     Examples:
         >>> create_branch(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     name="branch-1",
@@ -54,7 +53,7 @@ def create_branch(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/branches")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/branches"
     post_data = {"name": name, "revision": revision}
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
@@ -86,7 +85,7 @@ def list_branches(
     Examples:
         >>> list_branches(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST"
         ... )
@@ -108,7 +107,7 @@ def list_branches(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/branches")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/branches"
 
     params = {}
     if offset is not None:
@@ -142,7 +141,7 @@ def get_branch(
     Examples:
         >>> get_branch(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     branch="main",
@@ -158,7 +157,7 @@ def get_branch(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/branches/{branch}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/branches/{branch}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -182,12 +181,12 @@ def delete_branch(
     Examples:
         >>> delete_branch(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     branch="branch-1",
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/branches/{branch}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/branches/{branch}"
     open_api_do("DELETE", access_key, url)

@@ -6,7 +6,6 @@
 """Interfaces about the tag."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -31,7 +30,7 @@ def create_tag(
     Examples:
         >>> create_tag(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     name="tag-2",
@@ -48,7 +47,7 @@ def create_tag(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/tags"
     post_data = {"name": name, "revision": revision}
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
@@ -80,7 +79,7 @@ def list_tags(
     Examples:
         >>> list_tags(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST"
         ... )
@@ -102,7 +101,7 @@ def list_tags(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/tags"
 
     params = {}
     if offset is not None:
@@ -129,7 +128,7 @@ def get_tag(access_key: str, url: str, dataset: str, owner: str, *, tag: str) ->
     Examples:
         >>> get_tag(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     tag="tag-2"
@@ -145,7 +144,7 @@ def get_tag(access_key: str, url: str, dataset: str, owner: str, *, tag: str) ->
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags/{tag}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/tags/{tag}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -169,12 +168,12 @@ def delete_tag(
     Examples:
         >>> delete_tag(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     tag="tag-2"
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/tags/{tag}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/tags/{tag}"
     open_api_do("DELETE", access_key, url)

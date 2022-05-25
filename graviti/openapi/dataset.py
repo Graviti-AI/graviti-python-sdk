@@ -6,7 +6,6 @@
 """Interfaces about the dataset."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -37,7 +36,7 @@ def create_dataset(
     Examples:
         >>> create_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ... )
         {
@@ -55,7 +54,7 @@ def create_dataset(
         }
 
     """
-    url = urljoin(url, "v2/datasets")
+    url = f"{url}/v2/datasets"
     post_data: Dict[str, Any] = {"name": name, "alias": alias}
 
     if config is not None:
@@ -83,7 +82,7 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
     Examples:
         >>> get_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet"
         ... )
@@ -102,7 +101,7 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -125,7 +124,7 @@ def list_datasets(
         The response of OpenAPI.
 
     Examples:
-        >>> list_datasets("ACCESSKEY-********", "https://api.graviti.com/")
+        >>> list_datasets("ACCESSKEY-********", "https://api.graviti.com")
         {
            "datasets": [
                {
@@ -148,7 +147,7 @@ def list_datasets(
         }
 
     """
-    url = urljoin(url, "v2/datasets")
+    url = f"{url}/v2/datasets"
 
     params = {}
     if offset is not None:
@@ -186,7 +185,7 @@ def update_dataset(
     Examples:
         >>> update_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ...     name="OxfordIIITPets",
@@ -208,7 +207,7 @@ def update_dataset(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}"
     patch_data: Dict[str, Any] = {}
 
     if name is not None:
@@ -242,11 +241,11 @@ def delete_dataset(
     Examples:
         >>> delete_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}"
     open_api_do("DELETE", access_key, url)
