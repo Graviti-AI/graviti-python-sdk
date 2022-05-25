@@ -7,7 +7,9 @@
 
 import re
 from typing import Any as TypingAny
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import ClassVar, Dict, Iterable, List
+from typing import Mapping as TypingMapping
+from typing import Optional, Sequence, Tuple, Type, Union
 
 from graviti.portex.base import PortexType as ClassPortexType
 from graviti.portex.field import Fields as ClassFields
@@ -18,17 +20,17 @@ class ParameterType:
     """The base class of parameter type."""
 
     @staticmethod
-    def check(_: TypingAny) -> TypingAny:
+    def check(arg: TypingAny) -> TypingAny:
         """Check the parameter type.
 
         Arguments:
-            _: The argument which needs to be checked.
+            arg: The argument which needs to be checked.
 
-        Raises:
-            NotImplementedError: The check method in base class should never be called.
+        Returns:
+            The input argument unchanged.
 
         """
-        raise NotImplementedError
+        return arg
 
     @staticmethod
     def load(content: TypingAny, _: Optional[Imports] = None) -> TypingAny:
@@ -61,67 +63,67 @@ class ParameterType:
 PType = Type[ParameterType]
 
 
+class _JsonType(ParameterType):
+    _type: ClassVar[Union[Type[TypingAny], Tuple[Type[TypingAny], ...]]]
+
+    @classmethod
+    def check(cls, arg: TypingAny) -> TypingAny:
+        """Check the type of the input argument.
+
+        Arguments:
+            arg: The argument which needs to be checked.
+
+        Returns:
+            The input argument unchanged.
+
+        Raises:
+            TypeError: When the input argument does not match the parameter type.
+
+        """
+        if not isinstance(arg, cls._type):
+            raise TypeError(f"Argument should be a {cls._type}")
+
+        return arg
+
+
 class Any(ParameterType):
     """Unconstrained parameter type."""
 
-    @staticmethod
-    def check(arg: TypingAny) -> TypingAny:
-        """Check the parameter type.
 
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Returns:
-            The input argument unchanged.
-
-        """
-        return arg
-
-
-class Boolean(ParameterType):
+class Boolean(_JsonType):
     """Parameter type for JSON Boolean."""
 
-    @staticmethod
-    def check(arg: TypingAny) -> TypingAny:
-        """Check the parameter type.
-
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Returns:
-            The input argument unchanged.
-
-        Raises:
-            TypeError: When the input argument is not a JSON boolean (bool in python).
-
-        """
-        if not isinstance(arg, bool):
-            raise TypeError("Argument should be a bool")
-
-        return arg
+    _type = bool
 
 
-class Array(ParameterType):
+class Array(_JsonType):
     """Parameter type for JSON Array."""
 
-    @staticmethod
-    def check(arg: TypingAny) -> Sequence[TypingAny]:
-        """Check the parameter type.
+    _type = Sequence
 
-        Arguments:
-            arg: The argument which needs to be checked.
 
-        Returns:
-            The input argument unchanged.
+class Mapping(_JsonType):
+    """Parameter type for JSON object."""
 
-        Raises:
-            TypeError: When the input argument is not a JSON array (Sequence in python).
+    _type = TypingMapping
 
-        """
-        if not isinstance(arg, Sequence):
-            raise TypeError("Argument should be a Sequence")
 
-        return arg
+class Number(_JsonType):
+    """Parameter type for JSON number."""
+
+    _type = (int, float)
+
+
+class Integer(_JsonType):
+    """Parameter type for JSON integer."""
+
+    _type = int
+
+
+class String(_JsonType):
+    """Parameter type for JSON string."""
+
+    _type = str
 
 
 class Enum(ParameterType):
@@ -156,29 +158,6 @@ class Enum(ParameterType):
                     "The value of enum type must match the format [A-Za-z_][A-Za-z0-9_]*"
                 )
         return values
-
-
-class Mapping(ParameterType):
-    """Parameter type for JSON object."""
-
-    @staticmethod
-    def check(arg: TypingAny) -> Dict[TypingAny, TypingAny]:
-        """Check the parameter type.
-
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Returns:
-            The input argument unchanged.
-
-        Raises:
-            TypeError: When the input argument is not a JSON object (dict in python).
-
-        """
-        if not isinstance(arg, dict):
-            raise TypeError("Argument should be a dict")
-
-        return arg
 
 
 class Field(ParameterType):
@@ -279,52 +258,6 @@ class Fields(ParameterType):
         return arg.to_pyobj()
 
 
-class Number(ParameterType):
-    """Parameter type for JSON number."""
-
-    @staticmethod
-    def check(arg: TypingAny) -> float:
-        """Check the parameter type.
-
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Returns:
-            The input argument unchanged.
-
-        Raises:
-            TypeError: When the input argument is not a JSON number (float and int in python).
-
-        """
-        if not isinstance(arg, (float, int)):
-            raise TypeError("Argument should be a float or int")
-
-        return arg
-
-
-class Integer(ParameterType):
-    """Parameter type for JSON integer."""
-
-    @staticmethod
-    def check(arg: TypingAny) -> float:
-        """Check the parameter type.
-
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Returns:
-            The input argument unchanged.
-
-        Raises:
-            TypeError: When the input argument is not a JSON integer (int in python).
-
-        """
-        if not isinstance(arg, int):
-            raise TypeError("Argument should be a int")
-
-        return arg
-
-
 class PortexType(ParameterType):
     """Parameter type for Portex type."""
 
@@ -373,30 +306,3 @@ class PortexType(ParameterType):
 
         """
         return arg.to_pyobj(False)
-
-
-class String(ParameterType):
-    """Parameter type for JSON string."""
-
-    @staticmethod
-    def check(arg: TypingAny) -> str:
-        """Check the parameter type.
-
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Returns:
-            The input argument unchanged.
-
-        Raises:
-            TypeError: When the input argument is not a JSON string (str in python).
-
-        """
-        if not isinstance(arg, str):
-            raise TypeError("Argument should be a string")
-
-        return arg
-
-
-class TypeName(String):
-    """Parameter type for Portex type name."""
