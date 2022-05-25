@@ -189,11 +189,11 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
         return Commit(self._dataset, **commit_info)
 
-    def upload(self, jobs: int = 1) -> None:  # pylint: disable=unused-argument
+    def upload(self, jobs: int = 8) -> None:
         """Upload the local dataset to Graviti.
 
         Arguments:
-            jobs: The number of the max workers in multi-thread upload.
+            jobs: The number of the max workers in multi-thread upload, the default is 8.
 
         """
         for sheet_operation in self.operations:
@@ -214,6 +214,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
                     self._dataset.name,
                     draft_number=self.number,
                     sheet=sheet_name,
+                    jobs=jobs,
                 )
 
         delattr(self, "_data")

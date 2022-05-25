@@ -28,6 +28,7 @@ class DataFrameOperation:
         *,
         draft_number: int,
         sheet: str,
+        jobs: int,
     ) -> None:
         """Execute the OpenAPI create sheet.
 
@@ -38,6 +39,7 @@ class DataFrameOperation:
             dataset: Name of the dataset, unique for a user.
             draft_number: The draft number.
             sheet: The sheet name.
+            jobs: The number of the max workers in multi-thread operation.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -66,6 +68,7 @@ class AddData(DataFrameOperation):
         *,
         draft_number: int,
         sheet: str,
+        jobs: int,
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -76,6 +79,7 @@ class AddData(DataFrameOperation):
             dataset: Name of the dataset, unique for a user.
             draft_number: The draft number.
             sheet: The sheet name.
+            jobs: The number of the max workers in multi-thread operation.
 
         """
         dataframe = self.data
@@ -94,6 +98,7 @@ class AddData(DataFrameOperation):
                     draft_number=draft_number,
                     sheet=sheet,
                     files=file_array,
+                    jobs=jobs,
                 )
 
             add_data(
@@ -127,6 +132,7 @@ class UpdateData(DataFrameOperation):
         *,
         draft_number: int,
         sheet: str,
+        jobs: int,
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -137,6 +143,7 @@ class UpdateData(DataFrameOperation):
             dataset: Name of the dataset, unique for a user.
             draft_number: The draft number.
             sheet: The sheet name.
+            jobs: The number of the max workers in multi-thread operation.
 
         """
         dataframe = self.data
@@ -155,6 +162,7 @@ class UpdateData(DataFrameOperation):
                     draft_number=draft_number,
                     sheet=sheet,
                     files=file_array,
+                    jobs=jobs,
                 )
 
             update_data(

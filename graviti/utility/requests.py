@@ -226,7 +226,7 @@ _T = TypeVar("_T")
 
 
 def submit_multithread_tasks(
-    function: Callable[[_T], Any], arguments: Iterable[_T], *, jobs: int = 1
+    function: Callable[[_T], Any], arguments: Iterable[_T], *, jobs: int
 ) -> None:
     """Multi-thread framework.
 
