@@ -112,7 +112,7 @@ def list_tags(
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
-def get_tag(access_key: str, url: str, dataset: str, owner: str, *, tag: str) -> Dict[str, str]:
+def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) -> Dict[str, str]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags/{tag}`.
 
     Arguments:
