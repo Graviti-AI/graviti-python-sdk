@@ -6,7 +6,6 @@
 """Interfaces about the sheet."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -75,7 +74,7 @@ def create_sheet(
     Examples:
         >>> create_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -90,7 +89,7 @@ main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name"
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets"
     post_data = {"name": name, "schema": schema, "_avro_schema": _avro_schema}
 
     if _arrow_schema is not None:
@@ -131,7 +130,7 @@ def list_draft_sheets(
     Examples:
         >>> list_draft_sheets(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -155,7 +154,7 @@ def list_draft_sheets(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets"
 
     return _list_sheet(
         access_key, url, with_record_count=with_record_count, offset=offset, limit=limit
@@ -192,7 +191,7 @@ def list_commit_sheets(
     Examples:
         >>> list_commit_sheets(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -216,7 +215,7 @@ def list_commit_sheets(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets"
 
     return _list_sheet(
         access_key, url, with_record_count=with_record_count, offset=offset, limit=limit
@@ -254,7 +253,7 @@ def get_draft_sheet(
     Examples:
         >>> get_draft_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -270,7 +269,7 @@ def get_draft_sheet(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}"
 
     return _get_sheet(
         access_key, url, with_record_count=with_record_count, schema_format=schema_format
@@ -308,7 +307,7 @@ def get_commit_sheet(
     Examples:
         >>> get_commit_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -324,7 +323,7 @@ def get_commit_sheet(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}"
 
     return _get_sheet(
         access_key, url, with_record_count=with_record_count, schema_format=schema_format
@@ -354,7 +353,7 @@ def delete_sheet(
     Examples:
         >>> delete_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number=1,
@@ -362,5 +361,5 @@ def delete_sheet(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}"
     open_api_do("DELETE", access_key, url)

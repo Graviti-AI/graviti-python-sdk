@@ -6,7 +6,6 @@
 """Interfaces about the data."""
 
 from typing import Any, Dict, List, Optional, Tuple, Union
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -72,7 +71,7 @@ def list_draft_data(
     Examples:
         >>> list_draft_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -129,7 +128,7 @@ def list_draft_data(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data"
 
     return _list_data(
         access_key, url, columns=columns, order_by=order_by, offset=offset, limit=limit
@@ -173,7 +172,7 @@ def list_commit_data(
     Examples:
         >>> list_commit_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -230,7 +229,7 @@ def list_commit_data(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/data")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/data"
 
     return _list_data(
         access_key, url, columns=columns, order_by=order_by, offset=offset, limit=limit
@@ -262,7 +261,7 @@ def update_data(
     Examples:
         >>> update_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ...     draft_number = 1,
@@ -296,7 +295,7 @@ def update_data(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data"
     patch_data = {"data": data}
 
     open_api_do("PATCH", access_key, url, json=patch_data)
@@ -330,7 +329,7 @@ def add_data(
     Examples:
         >>> add_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ...     draft_number = 1,
@@ -362,7 +361,7 @@ def add_data(
         ... )
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data"
     post_data: Dict[str, Any] = {"data": data}
     if strategy_arguments is not None:
         post_data["strategy_arguments"] = strategy_arguments
@@ -402,7 +401,7 @@ def get_policy(
     Examples:
         >>> get_policy(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -424,7 +423,7 @@ def get_policy(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/policy")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/policy"
     params: Dict[str, Any] = {}
     if is_internal is not None:
         params["is_internal"] = is_internal

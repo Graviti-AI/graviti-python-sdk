@@ -6,7 +6,6 @@
 """Interfaces about the search."""
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 from graviti.openapi.requests import open_api_do
 
@@ -43,7 +42,7 @@ def create_search(
     Examples:
         >>> create_search(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com/",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "BDD100K",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -97,7 +96,7 @@ def create_search(
         }
 
     """
-    url = urljoin(url, f"v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/search")
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/search"
 
     post_data = {"criteria": criteria}
     params = {}
