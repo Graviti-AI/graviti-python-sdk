@@ -12,7 +12,7 @@
    :maxdepth: 1
    :caption: FEATURES
 
-   features/dataset_management/index
+   features/dataset_management
    features/version_control/index
    features/sheet_management/index
 
