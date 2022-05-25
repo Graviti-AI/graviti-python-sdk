@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, 
 
 import yaml
 
-from graviti.utility import AttrDict, ReprMixin, ReprType, UserMapping
+from graviti.utility import AttrDict, ReprMixin, ReprType, UserMapping, urlnorm
 
 if TYPE_CHECKING:
     from graviti.portex.base import PortexType
@@ -155,6 +155,7 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
 
         """
         url, revision = content["repo"].split("@", 1)
+        url = urlnorm(url)
         try:
             package = packages.externals[url, revision]
         except KeyError:
@@ -247,6 +248,7 @@ class Packages:
             The :class:`ExternalPackage` instance.
 
         """
+        url = urlnorm(url)
         package = ExternalPackage(url, revision)
         self.externals[url, revision] = package
         return package

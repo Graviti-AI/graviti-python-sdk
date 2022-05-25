@@ -8,6 +8,7 @@
 from typing import TYPE_CHECKING, ClassVar, Dict, Tuple, Type, TypeVar
 
 from graviti.portex.package import packages
+from graviti.utility import urlnorm
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
@@ -57,7 +58,7 @@ class ExternalContainerRegister:
     EXTERNAL_TYPE_TO_CONTAINER: ClassVar[Dict[Tuple[str, str, str], Type["Container"]]] = {}
 
     def __init__(self, url: str, revision: str, *names: str) -> None:
-        self._url = url
+        self._url = urlnorm(url)
         self._revision = revision
         self._names = names
 
