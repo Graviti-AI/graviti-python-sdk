@@ -7,6 +7,7 @@
 
 from graviti.manager import DatasetManager
 from graviti.openapi import get_current_user
+from graviti.utility import urlnorm
 
 
 class Workspace:
@@ -18,8 +19,8 @@ class Workspace:
 
     """
 
-    _DEFAULT_URL_CN = "https://api.graviti.cn/"
-    _DEFAULT_URL_COM = "https://api.graviti.com/"
+    _DEFAULT_URL_CN = "https://api.graviti.cn"
+    _DEFAULT_URL_COM = "https://api.graviti.com"
 
     def __init__(
         self,
@@ -35,6 +36,8 @@ class Workspace:
 
         if not url.startswith("https://"):
             raise TypeError("Invalid url, only support url starts with 'https://'")
+
+        url = urlnorm(url)
 
         self._access_key = access_key
         self._url = url

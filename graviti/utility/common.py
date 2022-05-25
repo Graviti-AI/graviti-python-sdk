@@ -16,6 +16,19 @@ _T = TypeVar("_T")
 locks: DefaultDict[int, Lock] = defaultdict(Lock)
 
 
+def urlnorm(url: str) -> str:
+    """Normalized the input url by removing the trailing slash.
+
+    Arguments:
+        url: the url needs to be normalized.
+
+    Returns:
+        The normalized url.
+
+    """
+    return url.rstrip("/")
+
+
 def locked(func: _CallableWithoutReturnValue) -> _CallableWithoutReturnValue:
     """The decorator to add threading lock for methods.
 

@@ -12,7 +12,7 @@ from graviti.utility.collections import (
     UserMutableSequence,
     UserSequence,
 )
-from graviti.utility.common import locked, shorten
+from graviti.utility.common import locked, shorten, urlnorm
 from graviti.utility.file import File, FileBase, RemoteFile
 from graviti.utility.itertools import chunked
 from graviti.utility.paging import LazyFactory, PagingList, PagingLists
@@ -56,6 +56,7 @@ __all__ = [
     "config",
     "get_session",
     "locked",
+    "urlnorm",
     "shorten",
     "submit_multithread_tasks",
 ]
