@@ -23,18 +23,18 @@ EXTERNAL_TYPE_TO_CONTAINER = ExternalContainerRegister.EXTERNAL_TYPE_TO_CONTAINE
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex external type."""
 
-    nullable: bool
     package: ClassVar[ExternalPackage]
     factory: ClassVar[Factory]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        arguments = self._bind_arguments(*args, **kwargs)
+        bound_arguments = self.params.get_signature().bind(*args, **kwargs)
+        bound_arguments.apply_defaults()
+        arguments = bound_arguments.arguments
 
         for key, value in arguments.items():
-            param = self.params[key]
-            arguments[key] = param.check(value)
+            arguments[key] = self.params[key].check(value)
 
-        super().__init__(**arguments)
+        self.__dict__.update(arguments)
 
         if not hasattr(self.__class__, "container"):
             self.container = self.internal_type.container

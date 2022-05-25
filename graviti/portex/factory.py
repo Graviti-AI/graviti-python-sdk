@@ -94,7 +94,7 @@ class TypeFactory(Factory):
             self._unpack_factory(**kwargs) if hasattr(self, "_unpack_factory") else {}
         )
         type_kwargs.update({key: factory(**kwargs) for key, factory in self._factories.items()})
-        return self._class(**type_kwargs)
+        return self._class(**type_kwargs)  # type: ignore[call-arg]
 
 
 class ConstantFactory(Factory, Generic[_C]):
