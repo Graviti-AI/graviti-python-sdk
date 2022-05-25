@@ -41,7 +41,7 @@ class Workspace:
 
         self._access_key = access_key
         self._url = url
-        response = get_current_user(self._access_key, self._url)
+        response = get_current_user(access_key, url)
         self._dataset_manager = DatasetManager(access_key, url, response["workspace"])
 
     @property
