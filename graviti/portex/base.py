@@ -35,9 +35,6 @@ class PortexType:
     params: ClassVar["Params"]
     container: Type["Container"]
 
-    def __init__(self, **kwargs: Any) -> None:
-        self.__dict__.update(kwargs)
-
     def __repr__(self) -> str:
         return self._repr1(0)
 
@@ -63,12 +60,6 @@ class PortexType:
             return f"\n{indent}".join(lines)
 
         return f"{lines[0]})"
-
-    def _bind_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        signature = self.params.get_signature()
-        bound_arguments = signature.bind(*args, **kwargs)
-        bound_arguments.apply_defaults()
-        return bound_arguments.arguments
 
     def _dump_arguments(self) -> Dict[str, Any]:
         arguments = {}
@@ -138,7 +129,7 @@ class PortexType:
             if kwarg is not ...:
                 kwargs[name] = param.load(kwarg, _imports)
 
-        type_ = class_(**kwargs)
+        type_ = class_(**kwargs)  # type: ignore[call-arg]
         return type_
 
     @classmethod
