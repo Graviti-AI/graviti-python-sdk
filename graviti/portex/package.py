@@ -5,9 +5,10 @@
 """Package related class."""
 
 
+from hashlib import md5
 from itertools import chain
 from pathlib import Path
-from subprocess import run
+from subprocess import PIPE, run
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar
 
@@ -64,10 +65,22 @@ class ExternalPackage(Package[Type["PortexExternalType"]]):
     def _build(self) -> None:
         temp_path = Path(gettempdir()) / "portex"
         temp_path.mkdir(exist_ok=True)
-        repo_name = self.url.rsplit("/", 1)[-1]
-        repo_path = temp_path / repo_name
+
+        md5_instance = md5()
+        md5_instance.update(self.repo.encode("utf-8"))
+        checksum = md5_instance.hexdigest()
+
+        repo_path = temp_path / checksum
+
         if not repo_path.exists():
-            run(["git", "clone", self.url, "-b", self.revision, repo_path], check=True)
+            print(f"Cloning repo '{self.repo}'")
+            run(
+                ["git", "clone", self.url, "--depth=1", "-b", self.revision, repo_path],
+                stdout=PIPE,
+                stderr=PIPE,
+                check=True,
+            )
+            print(f"Cloned to '{repo_path}'")
 
         roots = list(repo_path.glob("**/ROOT.yaml"))
 
