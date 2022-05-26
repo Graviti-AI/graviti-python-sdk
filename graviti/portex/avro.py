@@ -204,11 +204,11 @@ def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
     )
 
 
-def _on_fixed_shape_list(names, namespace, name, _pa_ist: tensor) -> AvroArraySchema:
+def _on_fixed_shape_list(names, namespace, name, _pa_ist: tensor) -> AvroFixedArraySchema:
     sub_namespace = f"{namespace}.{name}.items"
     sub_name = "items"
     items = _on_type(names, sub_namespace, sub_name, 0, _pa_ist.items.to_builtin())
-    return AvroArraySchema(items=items, shape=_pa_ist.shape)
+    return AvroFixedArraySchema(items=items, shape=_pa_ist.shape)
 
 
 def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroSchema:
