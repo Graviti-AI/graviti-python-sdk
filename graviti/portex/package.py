@@ -5,23 +5,18 @@
 """Package related class."""
 
 
-from hashlib import md5
 from itertools import chain
-from pathlib import Path
-from subprocess import PIPE, run
-from tempfile import gettempdir
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar
-
-import yaml
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Tuple, Type, TypeVar
 
 from graviti.utility import AttrDict, ReprMixin, ReprType, UserMapping, urlnorm
 
 if TYPE_CHECKING:
     from graviti.portex.base import PortexType
     from graviti.portex.builtin import PortexBuiltinType
-    from graviti.portex.template import PortexExternalType
+    from graviti.portex.external import PortexExternalType
 
 _T = TypeVar("_T", bound=Type["PortexType"])
+_I = TypeVar("_I", bound="Imports")
 
 
 class Package(AttrDict[_T]):
@@ -32,7 +27,6 @@ class Package(AttrDict[_T]):
             raise KeyError(f"{key} already exists in package")
 
         super().__setitem__(key, value)
-        value.package = self
 
 
 class BuiltinPackage(Package[Type["PortexBuiltinType"]]):
@@ -56,52 +50,6 @@ class ExternalPackage(Package[Type["PortexExternalType"]]):
         super().__init__()
         self.url = url
         self.revision = revision
-        self._builders: Dict[str, TypeBuilder] = {}
-        self._build()
-
-    def __missing__(self, key: str) -> Type["PortexExternalType"]:
-        return self._builders[key]()
-
-    def _build(self) -> None:
-        temp_path = Path(gettempdir()) / "portex"
-        temp_path.mkdir(exist_ok=True)
-
-        md5_instance = md5()
-        md5_instance.update(self.repo.encode("utf-8"))
-        checksum = md5_instance.hexdigest()
-
-        repo_path = temp_path / checksum
-
-        if not repo_path.exists():
-            print(f"Cloning repo '{self.repo}'")
-            run(
-                ["git", "clone", self.url, "--depth=1", "-b", self.revision, repo_path],
-                stdout=PIPE,
-                stderr=PIPE,
-                check=True,
-            )
-            print(f"Cloned to '{repo_path}'")
-
-        roots = list(repo_path.glob("**/ROOT.yaml"))
-
-        if len(roots) == 0:
-            raise TypeError("No 'ROOT.yaml' file found")
-        if len(roots) >= 2:
-            raise TypeError("More than one 'ROOT.yaml' file found")
-
-        root_dir = roots[0].parent
-        for yaml_file in root_dir.glob("**/*.yaml"):
-            if yaml_file.name == "ROOT.yaml":
-                continue
-
-            parts = (*yaml_file.relative_to(root_dir).parent.parts, yaml_file.stem)
-            name = ".".join(parts)
-            self._builders[name] = TypeBuilder(name, yaml_file, self)
-
-        for builder in self._builders.values():
-            if builder.is_building:
-                continue
-            builder()
 
     @property
     def repo(self) -> str:
@@ -159,7 +107,11 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
         try:
             package = packages.externals[url, revision]
         except KeyError:
-            package = packages.build(url, revision)
+            # TODO: Import "build" on toplevel will cause circular imports, to be solved.
+            # pylint: disable=import-outside-toplevel
+            from graviti.portex.builder import build
+
+            package = build(url, revision)
 
         subpackage = cls(package)
         for type_ in content["types"]:
@@ -188,47 +140,6 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
         return pyobj
 
 
-class TypeBuilder:
-    """The builder of the external Portex template type.
-
-    Arguments:
-        name: The name of the Portex template type.
-        path: The source file path of the Portex template type.
-        package: The package the Portex template type belongs to.
-
-    """
-
-    def __init__(self, name: str, path: Path, package: "ExternalPackage") -> None:
-        self._name = name
-        self._path = path
-        self._package = package
-        self.is_building = False
-
-    def __call__(self) -> Type["PortexExternalType"]:
-        """Build the Portex external type.
-
-        Returns:
-            The builded Portex external type.
-
-        Raises:
-            TypeError: Raise when circular reference detected.
-
-        """
-        # TODO: Import "template" on toplevel will cause circular imports, wait to be solved.
-        # pylint: disable=import-outside-toplevel
-        from graviti.portex.template import template
-
-        if self.is_building:
-            raise TypeError("Circular reference")
-
-        self.is_building = True
-
-        with self._path.open() as fp:
-            content = yaml.load(fp, yaml.Loader)
-
-        return template(self._name, content, self._package)
-
-
 class Packages:
     """The package manager to manage different Portex packages."""
 
@@ -236,22 +147,6 @@ class Packages:
         self.builtins = BuiltinPackage()
         self.externals: Dict[Tuple[str, str], ExternalPackage] = {}
         self.locals = LocalPackage()
-
-    def build(self, url: str, revision: str) -> ExternalPackage:
-        """Build an external package.
-
-        Arguments:
-            url: The git repo url of the external package.
-            revision: The git repo revision (tag/commit) of the external package.
-
-        Returns:
-            The :class:`ExternalPackage` instance.
-
-        """
-        url = urlnorm(url)
-        package = ExternalPackage(url, revision)
-        self.externals[url, revision] = package
-        return package
 
 
 packages = Packages()
@@ -267,8 +162,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
     _repr_type = ReprType.MAPPING
 
-    def __init__(self, package: Optional[Package[Type["PortexType"]]] = None) -> None:
-        self._package = package
+    def __init__(self) -> None:
         self._subpackages: Dict[str, Subpackage] = {}
 
     def __len__(self) -> int:
@@ -286,9 +180,6 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
             except KeyError:
                 continue
 
-        if self._package is not None:
-            return self._package[key]
-
         raise KeyError(key)
 
     def __setitem__(self, key: str, value: Type["PortexType"]) -> None:
@@ -300,7 +191,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
         # TODO: Import "PortexExternalType" on toplevel will cause circular imports, to be solved.
         # pylint: disable=import-outside-toplevel
-        from graviti.portex.template import PortexExternalType
+        from graviti.portex.external import PortexExternalType
 
         if not issubclass(value, PortexExternalType):
             raise TypeError("Local portex type is not supported yet")
@@ -323,7 +214,6 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
             other: An :class:`Imports` instance whose types need to be updated to this imports.
 
         """
-        assert not self._package and not other._package  # pylint: disable=protected-access
         for key, value in other.items():
             self.__setitem__(key, value)
 
@@ -339,7 +229,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
         self.update(type_.imports)
 
     @classmethod
-    def from_pyobj(cls, content: List[Dict[str, Any]]) -> "Imports":
+    def from_pyobj(cls: Type[_I], content: List[Dict[str, Any]]) -> _I:
         """Create :class:`Imports` instance from python list.
 
         Arguments:
@@ -380,41 +270,3 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
                 raise KeyError("Duplicate names")
 
         self._subpackages[subpackage.package.repo] = subpackage
-
-    def update_base_package(self, package: Package[Type["PortexType"]]) -> None:
-        """Update base package to the :class:`Imports` instance.
-
-        Arguments:
-            package: The base package which needs to be updated.
-
-        """
-        self._package = package
-
-
-def build(url: str, revision: str) -> ExternalPackage:
-    """Build an external package.
-
-    Arguments:
-        url: The git repo url of the external package.
-        revision: The git repo revision (tag/commit) of the external package.
-
-    Returns:
-        The :class:`ExternalPackage` instance.
-
-    """
-    return packages.build(url, revision)
-
-
-def build_openbytes(revision: str) -> ExternalPackage:
-    """Build the OpenBytes standard external package.
-
-    The repo url is: https://github.com/Project-OpenBytes/standard.
-
-    Arguments:
-        revision: The git repo revision (tag/commit) of the external package.
-
-    Returns:
-        The :class:`ExternalPackage` instance.
-
-    """
-    return packages.build("https://github.com/Project-OpenBytes/standard", revision)

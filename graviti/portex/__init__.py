@@ -7,6 +7,7 @@
 # https://github.com/python/mypy/issues/9318
 from graviti.portex.avro import convert_portex_schema_to_avro  # type: ignore[attr-defined]
 from graviti.portex.base import PortexType, read_json, read_yaml
+from graviti.portex.builder import build, build_openbytes
 from graviti.portex.builtin import (
     array,
     binary,
@@ -20,7 +21,6 @@ from graviti.portex.builtin import (
     string,
     tensor,
 )
-from graviti.portex.package import build, build_openbytes
 from graviti.portex.register import ContainerRegister, ExternalContainerRegister
 
 __all__ = [
