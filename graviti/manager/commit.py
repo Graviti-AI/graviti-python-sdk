@@ -5,7 +5,7 @@
 
 """The implementation of the Commit and CommitManager."""
 
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple
 
 from tensorbay.utility import AttrsMixin, attr
 
@@ -42,8 +42,6 @@ class Commit(Sheets, AttrsMixin):
         committed_at: The time when the draft is committed.
 
     """
-
-    _T = TypeVar("_T", bound="Commit")
 
     _repr_attrs: Tuple[str, ...] = ("parent_commit_id", "title", "committer", "committed_at")
 
@@ -180,8 +178,6 @@ class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
         committed_at: The time when the draft is committed.
 
     """
-
-    _T = TypeVar("_T", bound="NamedCommit")
 
     _repr_attrs = ("commit_id",) + Commit._repr_attrs
 

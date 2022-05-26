@@ -61,17 +61,6 @@ class PortexType:
 
         return f"{lines[0]})"
 
-    def _dump_arguments(self) -> Dict[str, Any]:
-        arguments = {}
-        for key, value in self.params.items():
-            argument = getattr(self, key)
-            if argument == value.default:
-                continue
-
-            arguments[key] = value.dump(argument)
-
-        return arguments
-
     def get_keys(  # pylint: disable=no-self-use
         self, _: Optional[str] = None
     ) -> List[Tuple[str, ...]]:
