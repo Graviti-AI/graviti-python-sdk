@@ -27,6 +27,7 @@ class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
     _T = TypeVar("_T", bound="PortexBuiltinType")
 
     params = Params()
+    packages = builtins
 
     def __init_subclass__(cls) -> None:
         params = Params(cls.params)
