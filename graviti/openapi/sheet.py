@@ -74,7 +74,7 @@ def create_sheet(
     Examples:
         >>> create_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -130,7 +130,7 @@ def list_draft_sheets(
     Examples:
         >>> list_draft_sheets(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -191,7 +191,7 @@ def list_commit_sheets(
     Examples:
         >>> list_commit_sheets(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -253,7 +253,7 @@ def get_draft_sheet(
     Examples:
         >>> get_draft_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -307,7 +307,7 @@ def get_commit_sheet(
     Examples:
         >>> get_commit_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -353,7 +353,7 @@ def delete_sheet(
     Examples:
         >>> delete_sheet(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number=1,

@@ -21,7 +21,10 @@ def get_current_user(access_key: str, url: str) -> Dict[str, Any]:
         The response of OpenAPI.
 
     Examples:
-        >>> get_current_user("ACCESSKEY-********", "https://api.graviti.com")
+        >>> get_current_user(
+        ...     "ACCESSKEY-********",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ... )
         {
             "id": "41438e9df9a82a194e1e76cc31c1d8d4",
             "nickname": "czh ual",
