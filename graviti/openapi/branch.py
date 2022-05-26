@@ -36,7 +36,7 @@ def create_branch(
     Examples:
         >>> create_branch(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     name="branch-1",
@@ -85,7 +85,7 @@ def list_branches(
     Examples:
         >>> list_branches(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST"
         ... )
@@ -141,7 +141,7 @@ def get_branch(
     Examples:
         >>> get_branch(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     branch="main",
@@ -181,7 +181,7 @@ def delete_branch(
     Examples:
         >>> delete_branch(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     branch="branch-1",

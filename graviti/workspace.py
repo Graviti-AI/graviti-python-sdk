@@ -19,8 +19,8 @@ class Workspace:
 
     """
 
-    _DEFAULT_URL_CN = "https://api.graviti.cn"
-    _DEFAULT_URL_COM = "https://api.graviti.com"
+    _DEFAULT_URL_CN = "https://gas.graviti.cn/gatewayv2/tensorbay-open-api"
+    _DEFAULT_URL_COM = "https://gas.graviti.com/gatewayv2/tensorbay-open-api"
 
     def __init__(
         self,

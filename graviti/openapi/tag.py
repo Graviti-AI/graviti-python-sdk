@@ -30,7 +30,7 @@ def create_tag(
     Examples:
         >>> create_tag(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     name="tag-2",
@@ -79,7 +79,7 @@ def list_tags(
     Examples:
         >>> list_tags(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST"
         ... )
@@ -128,7 +128,7 @@ def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) ->
     Examples:
         >>> get_tag(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     tag="tag-2"
@@ -168,7 +168,7 @@ def delete_tag(
     Examples:
         >>> delete_tag(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     tag="tag-2"

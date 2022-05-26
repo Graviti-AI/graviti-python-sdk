@@ -71,7 +71,7 @@ def list_draft_data(
     Examples:
         >>> list_draft_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
@@ -172,7 +172,7 @@ def list_commit_data(
     Examples:
         >>> list_commit_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
@@ -261,7 +261,7 @@ def update_data(
     Examples:
         >>> update_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ...     draft_number = 1,
@@ -329,7 +329,7 @@ def add_data(
     Examples:
         >>> add_data(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ...     draft_number = 1,
@@ -401,7 +401,7 @@ def get_policy(
     Examples:
         >>> get_policy(
         ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
+        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,
