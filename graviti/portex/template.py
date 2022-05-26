@@ -5,6 +5,7 @@
 """Template base class."""
 
 
+from inspect import Signature
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
 
 import pyarrow as pa
@@ -23,11 +24,16 @@ EXTERNAL_TYPE_TO_CONTAINER = ExternalContainerRegister.EXTERNAL_TYPE_TO_CONTAINE
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex external type."""
 
+    _signature: ClassVar[Signature]
+
     package: ClassVar[ExternalPackage]
     factory: ClassVar[Factory]
 
+    def __init_subclass__(cls) -> None:
+        cls._signature = cls.params.get_signature()
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        bound_arguments = self.params.get_signature().bind(*args, **kwargs)
+        bound_arguments = self._signature.bind(*args, **kwargs)
         bound_arguments.apply_defaults()
         arguments = bound_arguments.arguments
 
