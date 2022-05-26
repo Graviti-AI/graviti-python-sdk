@@ -44,8 +44,6 @@ class LazyItem(Generic[_T]):
 
     """
 
-    _S = TypeVar("_S", bound="LazyItem[_T]")
-
     __slots__ = ("page", "data")
 
     def __init__(self, page: "LazyPage[_T]", data: _T):

@@ -20,15 +20,6 @@ from graviti.portex.register import PyArrowConversionRegister
 
 builtins = packages.builtins
 
-_PYTHON_TYPE_TO_PYARROW_TYPE = {
-    int: pa.int64(),
-    float: pa.float64(),
-    bool: pa.bool_(),
-    str: pa.string(),
-    bytes: pa.binary(),
-    None: pa.null(),
-}
-
 
 class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex builtin type."""

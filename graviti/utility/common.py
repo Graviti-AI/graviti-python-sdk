@@ -11,7 +11,6 @@ from threading import Lock
 from typing import Any, Callable, DefaultDict, TypeVar
 
 _CallableWithoutReturnValue = TypeVar("_CallableWithoutReturnValue", bound=Callable[..., None])
-_T = TypeVar("_T")
 
 locks: DefaultDict[int, Lock] = defaultdict(Lock)
 

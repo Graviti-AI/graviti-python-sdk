@@ -18,7 +18,6 @@ from graviti.utility import MAX_REPR_ROWS, FileBase, PagingList
 
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
-_F = TypeVar("_F", bound="FileSeries")
 
 
 @pt.ContainerRegister(
