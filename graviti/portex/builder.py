@@ -203,7 +203,7 @@ class BuilderImports(Imports):
         return imports
 
 
-def build(url: str, revision: str) -> ExternalPackage:
+def build_package(url: str, revision: str) -> ExternalPackage:
     """Build an external package.
 
     Arguments:
@@ -218,18 +218,3 @@ def build(url: str, revision: str) -> ExternalPackage:
     package = builder.build()
     packages.externals[url, revision] = package
     return package
-
-
-def build_openbytes(revision: str) -> ExternalPackage:
-    """Build the OpenBytes standard external package.
-
-    The repo url is: https://github.com/Project-OpenBytes/standard.
-
-    Arguments:
-        revision: The git repo revision (tag/commit) of the external package.
-
-    Returns:
-        The :class:`ExternalPackage` instance.
-
-    """
-    return build("https://github.com/Project-OpenBytes/standard", revision)

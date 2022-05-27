@@ -7,7 +7,7 @@
 # https://github.com/python/mypy/issues/9318
 from graviti.portex.avro import convert_portex_schema_to_avro  # type: ignore[attr-defined]
 from graviti.portex.base import PortexType, read_json, read_yaml
-from graviti.portex.builder import build, build_openbytes
+from graviti.portex.builder import build_package
 from graviti.portex.builtin import (
     array,
     binary,
@@ -30,8 +30,7 @@ __all__ = [
     "array",
     "binary",
     "boolean",
-    "build",
-    "build_openbytes",
+    "build_package",
     "convert_portex_schema_to_avro",
     "enum",
     "float32",

@@ -109,9 +109,9 @@ class Subpackage(UserMapping[str, Type["PortexExternalType"]]):
         except KeyError:
             # TODO: Import "build" on toplevel will cause circular imports, to be solved.
             # pylint: disable=import-outside-toplevel
-            from graviti.portex.builder import build
+            from graviti.portex.builder import build_package
 
-            package = build(url, revision)
+            package = build_package(url, revision)
 
         subpackage = cls(package)
         for type_ in content["types"]:
