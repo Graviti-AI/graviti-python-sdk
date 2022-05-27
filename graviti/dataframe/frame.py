@@ -377,19 +377,19 @@ class DataFrame(Container):
         """
         return (self.__len__(), len(self._column_names))
 
-    @property
-    def size(self) -> int:
-        """Return an int representing the number of elements in this object.
-
-        Return:
-            Size of the DataFrame.
-
-        Examples:
-            >>> df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
-            >>> df.size
-            4
-
-        """
+    # @property
+    # def size(self) -> int:
+    #     """Return an int representing the number of elements in this object.
+    #
+    #     Return:
+    #         Size of the DataFrame.
+    #
+    #     Examples:
+    #         >>> df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+    #         >>> df.size
+    #         4
+    #
+    #     """
 
     # @overload
     # def _getitem_by_location(self, key: slice) -> "DataFrame":
@@ -421,120 +421,120 @@ class DataFrame(Container):
     # def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, Iterable[int]]:
     #     return key
 
-    def head(self, n: int = 5) -> "DataFrame":
-        """Return the first `n` rows.
+    # def head(self, n: int = 5) -> "DataFrame":
+    #     """Return the first `n` rows.
+    #
+    #     Arguments:
+    #         n: Number of rows to select.
+    #
+    #     Return:
+    #         The first `n` rows.
+    #
+    #     Examples:
+    #         >>> df = DataFrame(
+    #         ...     {
+    #         ...         "animal": [
+    #         ...             "alligator",
+    #         ...             "bee",
+    #         ...             "falcon",
+    #         ...             "lion",
+    #         ...             "monkey",
+    #         ...             "parrot",
+    #         ...             "shark",
+    #         ...             "whale",
+    #         ...             "zebra",
+    #         ...         ]
+    #         ...     }
+    #         ... )
+    #         >>> df
+    #               animal
+    #         0  alligator
+    #         1        bee
+    #         2     falcon
+    #         3       lion
+    #         4     monkey
+    #         5     parrot
+    #         6      shark
+    #         7      whale
+    #         8      zebra
+    #
+    #         Viewing the first `n` lines (three in this case)
+    #
+    #         >>> df.head(3)
+    #               animal
+    #         0  alligator
+    #         1        bee
+    #         2     falcon
+    #
+    #         For negative values of `n`
+    #
+    #         >>> df.head(-3)
+    #               animal
+    #         0  alligator
+    #         1        bee
+    #         2     falcon
+    #         3       lion
+    #         4     monkey
+    #         5     parrot
+    #
+    #     """
 
-        Arguments:
-            n: Number of rows to select.
-
-        Return:
-            The first `n` rows.
-
-        Examples:
-            >>> df = DataFrame(
-            ...     {
-            ...         "animal": [
-            ...             "alligator",
-            ...             "bee",
-            ...             "falcon",
-            ...             "lion",
-            ...             "monkey",
-            ...             "parrot",
-            ...             "shark",
-            ...             "whale",
-            ...             "zebra",
-            ...         ]
-            ...     }
-            ... )
-            >>> df
-                  animal
-            0  alligator
-            1        bee
-            2     falcon
-            3       lion
-            4     monkey
-            5     parrot
-            6      shark
-            7      whale
-            8      zebra
-
-            Viewing the first `n` lines (three in this case)
-
-            >>> df.head(3)
-                  animal
-            0  alligator
-            1        bee
-            2     falcon
-
-            For negative values of `n`
-
-            >>> df.head(-3)
-                  animal
-            0  alligator
-            1        bee
-            2     falcon
-            3       lion
-            4     monkey
-            5     parrot
-
-        """
-
-    def tail(self, n: int = 5) -> "DataFrame":
-        """Return the last `n` rows.
-
-        Arguments:
-            n: Number of rows to select.
-
-        Return:
-            The last `n` rows.
-
-        Examples:
-            >>> df = DataFrame(
-            ...     {
-            ...         "animal": [
-            ...             "alligator",
-            ...             "bee",
-            ...             "falcon",
-            ...             "lion",
-            ...             "monkey",
-            ...             "parrot",
-            ...             "shark",
-            ...             "whale",
-            ...             "zebra",
-            ...         ]
-            ...     }
-            ... )
-            >>> df
-                  animal
-            0  alligator
-            1        bee
-            2     falcon
-            3       lion
-            4     monkey
-            5     parrot
-            6      shark
-            7      whale
-            8      zebra
-
-            Viewing the last 5 lines
-
-            >>> df.tail()
-               animal
-            4  monkey
-            5  parrot
-            6   shark
-            7   whale
-            8   zebra
-
-            Viewing the last `n` lines (three in this case)
-
-            >>> df.tail(3)
-              animal
-            6  shark
-            7  whale
-            8  zebra
-
-        """
+    # def tail(self, n: int = 5) -> "DataFrame":
+    #     """Return the last `n` rows.
+    #
+    #     Arguments:
+    #         n: Number of rows to select.
+    #
+    #     Return:
+    #         The last `n` rows.
+    #
+    #     Examples:
+    #         >>> df = DataFrame(
+    #         ...     {
+    #         ...         "animal": [
+    #         ...             "alligator",
+    #         ...             "bee",
+    #         ...             "falcon",
+    #         ...             "lion",
+    #         ...             "monkey",
+    #         ...             "parrot",
+    #         ...             "shark",
+    #         ...             "whale",
+    #         ...             "zebra",
+    #         ...         ]
+    #         ...     }
+    #         ... )
+    #         >>> df
+    #               animal
+    #         0  alligator
+    #         1        bee
+    #         2     falcon
+    #         3       lion
+    #         4     monkey
+    #         5     parrot
+    #         6      shark
+    #         7      whale
+    #         8      zebra
+    #
+    #         Viewing the last 5 lines
+    #
+    #         >>> df.tail()
+    #            animal
+    #         4  monkey
+    #         5  parrot
+    #         6   shark
+    #         7   whale
+    #         8   zebra
+    #
+    #         Viewing the last `n` lines (three in this case)
+    #
+    #         >>> df.tail(3)
+    #           animal
+    #         6  shark
+    #         7  whale
+    #         8  zebra
+    #
+    #     """
 
     def copy(self: _T) -> _T:
         """Get a copy of the dataframe.
@@ -556,23 +556,23 @@ class DataFrame(Container):
         obj._column_names = self._column_names.copy()
         return obj
 
-    def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
-        """Return a random sample of items from an axis of object.
+    # def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
+    #     """Return a random sample of items from an axis of object.
+    #
+    #     Arguments:
+    #         n: Number of items from axis to return.
+    #         axis: {0 or `index`, 1 or `columns`, None}
+    #             Axis to sample. Accepts axis number or name. Default is stat axis
+    #             for given data type (0 for Series and DataFrames).
+    #
+    #     Return:
+    #         A new object of same type as caller containing `n` items randomly
+    #         sampled from the caller object.
+    #
+    #     """
 
-        Arguments:
-            n: Number of items from axis to return.
-            axis: {0 or `index`, 1 or `columns`, None}
-                Axis to sample. Accepts axis number or name. Default is stat axis
-                for given data type (0 for Series and DataFrames).
-
-        Return:
-            A new object of same type as caller containing `n` items randomly
-            sampled from the caller object.
-
-        """
-
-    def info(self) -> None:
-        """Print a concise summary of a DataFrame."""
+    # def info(self) -> None:
+    #     """Print a concise summary of a DataFrame."""
 
     def extend(self, values: Union[Iterable[Dict[str, Any]], "DataFrame"]) -> None:
         """Extend Sequence object or DataFrame to itself row by row.
