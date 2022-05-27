@@ -282,6 +282,7 @@ class CommitManager:
             self._dataset.name,
             revision=revision,
         )
+        del response["type"]
         return Commit(self._dataset, **response)
 
     def list(self, revision: Optional[str] = None) -> LazyPagingList[Commit]:

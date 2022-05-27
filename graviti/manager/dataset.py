@@ -5,25 +5,35 @@
 
 """The implementation of the Dataset and DatasetManager."""
 
+from enum import Enum
 from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
 
 from tensorbay.utility import AttrsMixin, attr, common_loads
 
 from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNotExistError
-from graviti.manager.branch import BranchManager
+from graviti.manager.branch import Branch, BranchManager
 from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
-from graviti.manager.tag import TagManager
+from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
     create_dataset,
     delete_dataset,
     get_dataset,
+    get_revision,
     list_datasets,
     update_dataset,
 )
 from graviti.utility import ReprMixin, ReprType, UserMutableMapping
+
+
+class RevisionType(Enum):
+    """RevisionType is an enumeration type including "BRANCH", "COMMIT" and "TAG"."""
+
+    BRANCH = Branch
+    COMMIT = Commit
+    TAG = Tag
 
 
 class Dataset(  # pylint: disable=too-many-instance-attributes
@@ -197,10 +207,19 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                 the branch, or the tag.
 
         """
-        try:
-            self._data = self.branches.get(revision)
-        except ResourceNotExistError:
-            self._data = self.commits.get(revision)
+        response = get_revision(
+            self.access_key,
+            self.url,
+            self.owner,
+            self.name,
+            revision=revision,
+        )
+
+        revision_type = RevisionType[response.pop("type")]
+        if revision_type != RevisionType.COMMIT:
+            response["name"] = revision
+
+        self._data = revision_type.value(self, **response)
 
     def edit(
         self,
