@@ -130,7 +130,7 @@ View the current version of the dataset:
    >>> dataset.HEAD
    Branch("main")(
      (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): '00000000000000000000000000000000',
+     (parent_commit_id): None,
      (title): 'Commit-1',
      (committer): 'czhual',
      (committed_at): '2022-05-26T02:57:00Z'
@@ -171,7 +171,7 @@ Checkout commit/branch/tag:
    >>> dataset.checkout("47293b32f28c4008bc0f25b847b97d6f")  # commit id
    >>> dataset.HEAD
    Commit("47293b32f28c4008bc0f25b847b97d6f")(
-     (parent_commit_id): '00000000000000000000000000000000',
+     (parent_commit_id): None,
      (title): 'Commit-1',
      (committer): 'czhual',
      (committed_at): '2022-05-26T02:57:00Z'
@@ -181,7 +181,7 @@ Checkout commit/branch/tag:
    >>> dataset.HEAD
    Branch("dev")(
      (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): '00000000000000000000000000000000',
+     (parent_commit_id): None,
      (title): 'Commit-1',
      (committer): 'czhual',
      (committed_at): '2022-05-26T02:57:00Z'
@@ -190,7 +190,7 @@ Checkout commit/branch/tag:
    >>> dataset.checkout("v1.0")  # tag name
    >>> dataset.HEAD
    Commit("47293b32f28c4008bc0f25b847b97d6f")(
-     (parent_commit_id): '00000000000000000000000000000000',
+     (parent_commit_id): None,
      (title): 'Commit-1',
      (committer): 'czhual',
      (committed_at): '2022-05-26T02:57:00Z'
@@ -280,7 +280,7 @@ Get the data by rows or columns:
 .. code:: python
 
    >>> df["box2ds"][0]
-       xmin  ymin  xmax  ymax  category  attribute
+      xmin  ymin  xmax  ymax  category  attribute
                                         difficult  occluded
    0  1.0   1.0   4.0   5.0   boat      False      False
 
