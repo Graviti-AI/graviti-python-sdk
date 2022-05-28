@@ -8,7 +8,7 @@
 from typing import TYPE_CHECKING, List
 
 from graviti.openapi import add_data, update_data, upload_files
-from graviti.utility import chunked
+from graviti.utility import File, chunked
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container, DataFrame
@@ -90,6 +90,7 @@ class AddData(DataFrameOperation):
             *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
         ):
             for file_array in file_arrays:
+                local_files = filter(lambda x: isinstance(x, File), file_array)
                 upload_files(
                     access_key,
                     url,
@@ -97,7 +98,7 @@ class AddData(DataFrameOperation):
                     dataset,
                     draft_number=draft_number,
                     sheet=sheet,
-                    files=file_array,
+                    files=local_files,
                     jobs=jobs,
                 )
 
