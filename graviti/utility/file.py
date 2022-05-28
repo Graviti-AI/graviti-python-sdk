@@ -74,6 +74,15 @@ class FileBase(ReprMixin):
 
         return RemoteFile(url, checksum)
 
+    def to_pyobj(self) -> Dict[str, str]:
+        """Dump the local file to a python dict.
+
+        Returns:
+            A python dict representation of the local file.
+
+        """
+        return {"url": self.url, "checksum": self.checksum}
+
 
 class RemoteFile(FileBase):
     """This class represents the file on Graviti platform.
@@ -168,12 +177,3 @@ class File(FileBase):
 
         """
         return self.path.open("rb")
-
-    def to_pyobj(self) -> Dict[str, str]:
-        """Dump the local file to a python dict.
-
-        Returns:
-            A python dict representation of the local file.
-
-        """
-        return {"url": self.url, "checksum": self.checksum}

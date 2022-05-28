@@ -30,7 +30,7 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.utility import MAX_REPR_ROWS, File, PagingLists
+from graviti.utility import MAX_REPR_ROWS, FileBase, PagingLists
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
@@ -652,7 +652,7 @@ class DataFrame(Container):
 
     @staticmethod
     def _process_file(values: Iterable[Any]) -> Tuple[Callable[[Any], Any], bool]:
-        if isinstance(values, File):
+        if isinstance(values, FileBase):
             return lambda x: x.to_pyobj(), True
 
         return lambda x: x, False
