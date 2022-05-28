@@ -217,17 +217,6 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
         for key, value in other.items():
             self.__setitem__(key, value)
 
-    def update_from_type(self, type_: "PortexType") -> None:
-        """Update the imports from a Portex type instance.
-
-        Arguments:
-            type_: The Portex type instance needs to be updated into this imports.
-
-        """
-        class_ = type_.__class__
-        self.__setitem__(class_.__name__, class_)
-        self.update(type_.imports)
-
     @classmethod
     def from_pyobj(cls: Type[_I], content: List[Dict[str, Any]]) -> _I:
         """Create :class:`Imports` instance from python list.

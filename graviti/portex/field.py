@@ -56,7 +56,7 @@ class Fields(NameOrderedDict[PortexType]):
         """
         imports = Imports()
         for portex_type in self._data.values():
-            imports.update_from_type(portex_type)
+            imports.update(portex_type.imports)
 
         return imports
 
