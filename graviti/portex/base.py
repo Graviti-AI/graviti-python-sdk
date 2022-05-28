@@ -82,14 +82,13 @@ class PortexType:
         """
         imports = Imports()
 
+        cls = self.__class__
+        imports[cls.__name__] = cls
+
         for name in self.params:
             argument = getattr(self, name)
             if hasattr(argument, "imports"):
                 imports.update(argument.imports)
-
-            if isinstance(argument, PortexType):
-                class_ = argument.__class__
-                imports[class_.__name__] = class_
 
         return imports
 
