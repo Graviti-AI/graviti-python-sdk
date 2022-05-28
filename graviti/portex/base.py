@@ -87,8 +87,9 @@ class PortexType:
 
         for name in self.params:
             argument = getattr(self, name)
-            if hasattr(argument, "imports"):
-                imports.update(argument.imports)
+            argument_imports = getattr(argument, "imports", None)
+            if argument_imports:
+                imports.update(argument_imports)
 
         return imports
 
