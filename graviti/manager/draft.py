@@ -44,7 +44,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
     """
 
-    _repr_attrs: Tuple[str, ...] = ("title", "state", "branch")
+    _repr_attrs: Tuple[str, ...] = ("state", "branch", "creator", "created_at", "updated_at")
 
     def __init__(
         self,
@@ -88,7 +88,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.operations.append(DeleteSheet(key))
 
     def _repr_head(self) -> str:
-        return f'{self.__class__.__name__}("{self.number}")'
+        return f'{self.__class__.__name__}("#{self.number}: {self.title}")'
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         return list_draft_data(  # type: ignore[no-any-return]
