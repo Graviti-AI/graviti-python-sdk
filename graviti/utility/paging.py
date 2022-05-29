@@ -90,7 +90,10 @@ class Offsets:
 
         """
         if not hasattr(self, "_offsets"):
-            return divmod(index, self._limit)
+            try:
+                return divmod(index, self._limit)
+            except ZeroDivisionError:
+                return 0, index
 
         i = bisect_right(self._offsets, index) - 1
         return i, index - self._offsets[i]
