@@ -8,6 +8,8 @@
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
 from graviti.dataframe import DataFrame
+from graviti.exception import StatusError
+from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
@@ -267,7 +269,19 @@ class DraftManager:
         Returns:
             The :class:`.Draft` instance with the given title and description.
 
+        Raises:
+            StatusError: When creating the draft without basing on a branch.
+
         """
+        if branch is None:
+            current_branch = self._dataset.HEAD
+            if not isinstance(current_branch, Branch):
+                raise StatusError(
+                    "The current dataset is not on a branch, please checkout a branch first "
+                    "or input the argument 'branch'"
+                )
+            branch = current_branch.name
+
         response = create_draft(
             self._dataset.access_key,
             self._dataset.url,
