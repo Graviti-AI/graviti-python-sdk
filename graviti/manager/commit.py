@@ -277,7 +277,8 @@ class CommitManager:
                 the branch name, or the tag name. If it is not given, get the current commit.
 
         Raises:
-            StatusError: When revision is not given and the commit id of current dataset is None.
+            StatusError: When revision is not given and the commit id of current dataset is None,
+                or when the given branch has no commit history yet.
 
         Returns:
             The :class:`.Commit` instance with the given revision.
@@ -295,6 +296,9 @@ class CommitManager:
             self._dataset.name,
             revision=revision,
         )
+        if response["commit_id"] is None:
+            raise StatusError("No commits on the default branch yet")
+
         del response["type"]
         return Commit(self._dataset, **response)
 
