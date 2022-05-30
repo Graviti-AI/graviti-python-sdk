@@ -56,7 +56,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         title: str,
         branch: str,
         state: str,
-        parent_commit_id: str,
+        parent_commit_id: Optional[str],
         creator: str,
         created_at: str,
         updated_at: str,
