@@ -37,7 +37,7 @@ class Branch(NamedCommit):
 
     """
 
-    parent_commit_id: str = _attr()
+    parent_commit_id: Optional[str] = _attr()
     title: str = _attr()
     description: str = _attr()
     committer: str = _attr()

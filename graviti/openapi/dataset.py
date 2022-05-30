@@ -44,7 +44,7 @@ def create_dataset(
            "name": "OxfordIIITPet",
            "alias": "",
            "default_branch": "main",
-           "commit_id": "00000000000000000000000000000000",
+           "commit_id": None,
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",

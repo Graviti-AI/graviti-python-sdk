@@ -93,7 +93,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         *,
         alias: str,
         default_branch: str,
-        commit_id: str,
+        commit_id: Optional[str],
         created_at: str,
         updated_at: str,
         owner: str,
@@ -132,7 +132,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                         "name": <str>
                         "alias": <str>
                         "default_branch": <str>
-                        "commit_id": <str>
+                        "commit_id": <Optional[str]>
                         "created_at": <str>
                         "updated_at": <str>
                         "owner": <str>

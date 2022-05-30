@@ -26,8 +26,6 @@ from graviti.utility import LazyFactory
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
 
-ROOT_COMMIT_ID = "00000000000000000000000000000000"
-
 
 class Commit(Sheets, AttrsMixin):
     """This class defines the structure of a commit.
@@ -46,7 +44,7 @@ class Commit(Sheets, AttrsMixin):
     _repr_attrs: Tuple[str, ...] = ("parent_commit_id", "title", "committer", "committed_at")
 
     commit_id: str = attr()
-    parent_commit_id: str = attr(default="")
+    parent_commit_id: Optional[str] = attr()
     title: str = attr()
     description: str = attr(default="")
     committer: str = attr()
@@ -56,7 +54,7 @@ class Commit(Sheets, AttrsMixin):
         self,
         dataset: "Dataset",
         commit_id: str,
-        parent_commit_id: str,
+        parent_commit_id: Optional[str],
         title: str,
         description: str,
         committer: str,
@@ -113,7 +111,7 @@ class Commit(Sheets, AttrsMixin):
 
                 {
                     "commit_id": <str>
-                    "parent_commit_id": <str>
+                    "parent_commit_id": <Optional[str]>
                     "title": <str>
                     "description": <str>
                     "committer":  <str>
@@ -182,13 +180,14 @@ class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
     _repr_attrs = ("commit_id",) + Commit._repr_attrs
 
     name: str = attr()
+    commit_id: Optional[str] = attr()  # type: ignore[assignment]
 
     def __init__(  # pylint: disable=too-many-arguments, super-init-not-called
         self,
         dataset: "Dataset",
         name: str,
-        commit_id: str,
-        parent_commit_id: str,
+        commit_id: Optional[str],
+        parent_commit_id: Optional[str],
         title: str,
         description: str,
         committer: str,
@@ -197,7 +196,7 @@ class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
         self._dataset = dataset
         self.name = name
         self.commit_id = commit_id
-        if self.commit_id == ROOT_COMMIT_ID:
+        if self.commit_id is None:
             return
 
         self.parent_commit_id = parent_commit_id
@@ -217,8 +216,8 @@ class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
 
                 {
                     "name": <str>
-                    "commit_id": <str>
-                    "parent_commit_id": <str>
+                    "commit_id": <Optional[str]>
+                    "parent_commit_id": <Optional[str]>
                     "title": <str>
                     "description": <str>
                     "committer":  <str>
