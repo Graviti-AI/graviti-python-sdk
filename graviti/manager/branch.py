@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Generator, Optional
 
 from tensorbay.utility import attr
 
-from graviti.exception import ResourceNotExistError
+from graviti.exception import ForbiddenError, ResourceNotExistError
 from graviti.manager.commit import NamedCommit
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
@@ -79,12 +79,19 @@ class BranchManager:
                 the branch name, or the tag name.
                 If the revision is not given, create the branch based on the current commit.
 
+        Raises:
+            ForbiddenError: When create branches on the default branch without commit history.
+
         Returns:
             The :class:`.Branch` instance with the given name.
 
         """
         if not revision:
             revision = self._dataset.HEAD.commit_id
+            if revision is None:
+                raise ForbiddenError(
+                    "Creating branches on the default branch without commit history is not allowed"
+                )
 
         response = create_branch(
             self._dataset.access_key,
