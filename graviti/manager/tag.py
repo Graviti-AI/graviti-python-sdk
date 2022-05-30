@@ -7,7 +7,7 @@
 
 from typing import TYPE_CHECKING, Generator, Optional
 
-from graviti.exception import ResourceNotExistError
+from graviti.exception import ForbiddenError, ResourceNotExistError
 from graviti.manager.commit import NamedCommit
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
@@ -67,12 +67,19 @@ class TagManager:
                 the branch name, or the tag name.
                 If the revision is not given, create the tag for the current commit.
 
+        Raises:
+            ForbiddenError: When create tags on the default branch without commit history.
+
         Returns:
             The :class:`.Tag` instance with the given name.
 
         """
         if not revision:
             revision = self._dataset.HEAD.commit_id
+            if revision is None:
+                raise ForbiddenError(
+                    "Creating tags on the default branch without commit history is not allowed"
+                )
 
         response = create_tag(
             self._dataset.access_key,

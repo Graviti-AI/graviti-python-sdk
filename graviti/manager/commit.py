@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple
 from tensorbay.utility import AttrsMixin, attr
 
 from graviti.dataframe import DataFrame
+from graviti.exception import StatusError
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -84,6 +85,9 @@ class Commit(Sheets, AttrsMixin):
         )["data"]
 
     def _list_sheets(self) -> Dict[str, Any]:
+        if self.commit_id is None:
+            raise StatusError("No commit on the current branch. Please create a draft first")
+
         return list_commit_sheets(
             access_key=self._dataset.access_key,
             url=self._dataset.url,
@@ -128,10 +132,15 @@ class Commit(Sheets, AttrsMixin):
             sheet: The sheet name.
             criteria: The criteria of search.
 
+        Raises:
+            StatusError: When there is no commit on the current branch.
+
         Returns:
             The created :class:`~graviti.dataframe.DataFrame` instance.
 
         """
+        if self.commit_id is None:
+            raise StatusError("No commit on the current branch. Please create a draft first")
 
         def _getter(offset: int, limit: int) -> Dict[str, Any]:
             return create_search(
@@ -267,12 +276,17 @@ class CommitManager:
             revision: The information to locate the specific commit, which can be the commit id,
                 the branch name, or the tag name. If it is not given, get the current commit.
 
+        Raises:
+            StatusError: When revision is not given and the commit id of current dataset is None.
+
         Returns:
             The :class:`.Commit` instance with the given revision.
 
         """
         if revision is None:
             revision = self._dataset.HEAD.commit_id
+            if revision is None:
+                raise StatusError("No commits on the default branch yet")
 
         response = get_revision(
             self._dataset.access_key,
