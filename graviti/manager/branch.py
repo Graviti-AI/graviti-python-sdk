@@ -12,6 +12,7 @@ from graviti.manager.commit import NamedCommit
 from graviti.manager.common import CURRENT_COMMIT, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
+from graviti.utility import check_type
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -108,6 +109,7 @@ class BranchManager:
             The :class:`.Branch` instance with the given name.
 
         """
+        check_type("name", name, str)
         if not name:
             raise ResourceNameError("branch", name)
 
@@ -141,6 +143,7 @@ class BranchManager:
             ResourceNameError: When the given name is an empty string.
 
         """
+        check_type("name", name, str)
         if not name:
             raise ResourceNameError("branch", name)
 

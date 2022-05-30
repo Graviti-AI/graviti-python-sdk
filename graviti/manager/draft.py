@@ -26,7 +26,7 @@ from graviti.openapi import (
     update_draft,
 )
 from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
-from graviti.utility import convert_iso_to_datetime
+from graviti.utility import check_type, convert_iso_to_datetime
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -325,19 +325,17 @@ class DraftManager:
     def _generate(
         self,
         state: str,
-        branch: str,
+        branch: Optional[str],
         offset: int,
         limit: int,
     ) -> Generator[Draft, None, int]:
-        _branch = None if branch is ALL_BRANCHES else branch
-
         response = list_drafts(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
             self._dataset.name,
             state=state,
-            branch=_branch,
+            branch=branch,
             offset=offset,
             limit=limit,
         )
@@ -396,6 +394,7 @@ class DraftManager:
             The :class:`.Draft` instance with the given number.
 
         """
+        check_type("draft_number", draft_number, int)
         response = get_draft(
             self._dataset.access_key,
             self._dataset.url,
@@ -417,7 +416,13 @@ class DraftManager:
             The LazyPagingList of :class:`drafts<.Draft>` instances.
 
         """
+        if branch is ALL_BRANCHES:
+            _branch = None
+        else:
+            check_type("branch", branch, str)
+            _branch = branch
+
         return LazyPagingList(
-            lambda offset, limit: self._generate(state, branch, offset, limit),
+            lambda offset, limit: self._generate(state, _branch, offset, limit),
             LIMIT,
         )

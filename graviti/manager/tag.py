@@ -12,6 +12,7 @@ from graviti.manager.commit import NamedCommit
 from graviti.manager.common import CURRENT_COMMIT, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
+from graviti.utility import check_type
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -108,7 +109,7 @@ class TagManager:
             The :class:`.Tag` instance with the given name.
 
         """
-        head = self._dataset.HEAD
+        check_type("name", name, str)
         if not name:
             raise ResourceNameError("tag", name)
 
@@ -119,8 +120,7 @@ class TagManager:
             self._dataset.name,
             tag=name,
         )
-
-        check_head_status(head, name, response["commit_id"])
+        check_head_status(self._dataset.HEAD, name, response["commit_id"])
         return Tag.from_response(self._dataset, response)
 
     def list(self) -> LazyPagingList[Tag]:
@@ -142,6 +142,7 @@ class TagManager:
             ResourceNameError: When the name is an empty string.
 
         """
+        check_type("name", name, str)
         if not name:
             raise ResourceNameError("tag", name)
 
