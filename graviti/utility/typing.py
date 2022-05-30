@@ -5,8 +5,9 @@
 
 """Graviti customized types."""
 
+import inspect
 from pathlib import Path
-from typing import AbstractSet, Tuple, TypeVar, Union
+from typing import AbstractSet, Any, Tuple, Type, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -43,3 +44,21 @@ class NestedDict(Protocol[_K, _V]):
 
         """
         ...
+
+
+def check_type(name: str, value: Any, expected_type: Type[Any]) -> None:
+    """Check the type of the argument.
+
+    Arguments:
+        name: The name of the argument.
+        value: The value of the argument.
+        expected_type: The type of the argument.
+
+    Raises:
+        TypeError: When the value is not of the type.
+
+    """
+    if not isinstance(value, expected_type):
+        raise TypeError(
+            f'{inspect.stack()[1][3]}(): "{name}" must be {expected_type}, not {type(value)}'
+        )

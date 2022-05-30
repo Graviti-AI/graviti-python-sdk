@@ -25,7 +25,7 @@ from graviti.openapi import (
 )
 from graviti.paging import LazyFactory
 from graviti.portex import PortexRecordBase
-from graviti.utility import convert_iso_to_datetime
+from graviti.utility import check_type, convert_iso_to_datetime
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -373,6 +373,7 @@ class CommitManager:
             if _revision is None:
                 raise NoCommitsError("No commits on the default branch yet")
         else:
+            check_type("revision", revision, str)
             _revision = revision
 
         response = get_revision(
@@ -409,6 +410,7 @@ class CommitManager:
             if _revision is None:
                 return []
         else:
+            check_type("revision", revision, str)
             _revision = revision
 
         return LazyPagingList(

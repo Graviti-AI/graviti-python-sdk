@@ -24,7 +24,13 @@ from graviti.openapi import (
     list_datasets,
     update_dataset,
 )
-from graviti.utility import ReprMixin, ReprType, UserMutableMapping, convert_iso_to_datetime
+from graviti.utility import (
+    ReprMixin,
+    ReprType,
+    UserMutableMapping,
+    check_type,
+    convert_iso_to_datetime,
+)
 
 
 class RevisionType(Enum):
@@ -270,6 +276,7 @@ class DatasetManager:
             ResourceNameError: When the required dataset does not exist.
 
         """
+        check_type("dataset", dataset, str)
         if not dataset:
             raise ResourceNameError("dataset", dataset)
 
@@ -293,4 +300,5 @@ class DatasetManager:
             name: The name of the dataset, unique for a user.
 
         """
+        check_type("name", name, str)
         delete_dataset(self.access_key, self.url, self.owner, name)
