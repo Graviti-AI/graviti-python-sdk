@@ -37,7 +37,7 @@ def create_draft(
     Examples:
         >>> create_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     title="draft-2",
@@ -99,7 +99,7 @@ def list_drafts(
     Examples:
         >>> list_drafts(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ... )
@@ -156,7 +156,7 @@ def get_draft(
     Examples:
         >>> get_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     "czhual",
         ...     draft_number=2,
@@ -210,7 +210,7 @@ def update_draft(
 
         >>> update_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     draft_number=2,
         ...     title="draft-3"
@@ -231,7 +231,7 @@ def update_draft(
 
         >>> update_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     draft_number=2,
         ...     state="CLOSED"
