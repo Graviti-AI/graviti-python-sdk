@@ -37,7 +37,7 @@ def commit_draft(
     Examples:
         >>> commit_draft(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number=2,
@@ -92,7 +92,7 @@ def list_commits(
     Examples:
         >>> list_commits(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ... )
@@ -144,7 +144,7 @@ def get_commit(
     Examples:
         >>> get_commit(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     commit_id="85c57a7f03804ccc906632248dc8c359"
@@ -182,7 +182,7 @@ def get_revision(
     Examples:
         >>> get_revision(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ...     revision="branch-1"
         ... )

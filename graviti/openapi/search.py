@@ -42,7 +42,7 @@ def create_search(
     Examples:
         >>> create_search(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "BDD100K",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",

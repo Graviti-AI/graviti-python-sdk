@@ -38,7 +38,7 @@ def update_schema(
     Examples:
         >>> update_schema(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "MNIST",
         ...     draft_number = 1,

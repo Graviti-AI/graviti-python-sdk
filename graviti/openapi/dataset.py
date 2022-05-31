@@ -36,7 +36,7 @@ def create_dataset(
     Examples:
         >>> create_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "MNIST",
         ... )
         {
@@ -82,7 +82,7 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
     Examples:
         >>> get_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet"
         ... )
@@ -124,10 +124,7 @@ def list_datasets(
         The response of OpenAPI.
 
     Examples:
-        >>> list_datasets(
-        ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
-        ... )
+        >>> list_datasets("ACCESSKEY-********", "https://api.graviti.com")
         {
            "datasets": [
                {
@@ -188,7 +185,7 @@ def update_dataset(
     Examples:
         >>> update_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ...     name="OxfordIIITPets",
@@ -244,7 +241,7 @@ def delete_dataset(
     Examples:
         >>> delete_dataset(
         ...     "ACCESSKEY-********",
-        ...     "https://gas.graviti.com/gatewayv2/tensorbay-open-api",
+        ...     "https://api.graviti.com",
         ...     "czhual",
         ...     "OxfordIIITPet",
         ... )
