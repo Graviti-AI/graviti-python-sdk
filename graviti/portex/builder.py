@@ -7,7 +7,7 @@
 
 from hashlib import md5
 from pathlib import Path
-from subprocess import PIPE, run
+from subprocess import PIPE, CalledProcessError, run
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
 
@@ -27,6 +27,79 @@ if TYPE_CHECKING:
 EXTERNAL_TYPE_TO_CONTAINER = ExternalContainerRegister.EXTERNAL_TYPE_TO_CONTAINER
 
 _I = TypeVar("_I", bound="BuilderImports")
+
+
+class PackageRepo:
+    """The local git repo of the external Portex package.
+
+    Arguments:
+        url: The git repo url of the external package.
+        revision: The git repo revision (tag/commit) of the external package.
+
+    """
+
+    def __init__(self, url: str, revision: str) -> None:
+        tempdir = Path(gettempdir()) / "portex"
+        tempdir.mkdir(exist_ok=True)
+
+        md5_instance = md5()
+        md5_instance.update(url.encode("utf-8"))
+        md5_instance.update(revision.encode("utf-8"))
+
+        self._path = tempdir / md5_instance.hexdigest()
+        self._url = url
+        self._revision = revision
+
+        self._prepare_repo()
+
+    def _prepare_repo(self) -> None:
+        path = self._path
+
+        if not path.exists():
+            print(f"Cloning repo '{self._url}@{self._revision}'")
+
+            path.mkdir()
+            self._init_repo()
+            try:
+                self._shallow_fetch()
+            except CalledProcessError:
+                self._deep_fetch()
+
+            print(f"Cloned to '{path}'")
+
+    def _run(self, args: List[str]) -> None:
+        run(args, cwd=self._path, stdout=PIPE, stderr=PIPE, check=True)
+
+    def _init_repo(self) -> None:
+        self._run(["git", "init"])
+        self._run(["git", "remote", "add", "origin", self._url])
+
+    def _shallow_fetch(self) -> None:
+        self._run(["git", "fetch", "origin", self._revision, "--depth=1"])
+        self._run(["git", "checkout", "FETCH_HEAD"])
+
+    def _deep_fetch(self) -> None:
+        self._run(["git", "fetch", "origin"])
+        self._run(["git", "checkout", self._revision])
+
+    def get_root(self) -> Path:
+        """Get the root directory path of the package repo.
+
+        Returns:
+            The root directory path of the package repo.
+
+        Raises:
+            TypeError: when the "ROOT.yaml" not found or more than one "ROOT.yaml" found.
+
+        """
+        roots = list(self._path.glob("**/ROOT.yaml"))
+
+        if len(roots) == 0:
+            raise TypeError("No 'ROOT.yaml' file found")
+        if len(roots) >= 2:
+            raise TypeError("More than one 'ROOT.yaml' file found")
+
+        return roots[0].parent
 
 
 class PackageBuilder:
@@ -50,42 +123,15 @@ class PackageBuilder:
             return self._builders.__getitem__(key).build()
 
     def _create_type_builders(self) -> Dict[str, "TypeBuilder"]:
-        package = self.package
-        repo = package.repo
-
-        temp_path = Path(gettempdir()) / "portex"
-        temp_path.mkdir(exist_ok=True)
-
-        md5_instance = md5()
-        md5_instance.update(repo.encode("utf-8"))
-        checksum = md5_instance.hexdigest()
-
-        repo_path = temp_path / checksum
-
-        if not repo_path.exists():
-            print(f"Cloning repo '{repo}'")
-            run(
-                ["git", "clone", package.url, "--depth=1", "-b", package.revision, repo_path],
-                stdout=PIPE,
-                stderr=PIPE,
-                check=True,
-            )
-            print(f"Cloned to '{repo_path}'")
-
-        roots = list(repo_path.glob("**/ROOT.yaml"))
-
-        if len(roots) == 0:
-            raise TypeError("No 'ROOT.yaml' file found")
-        if len(roots) >= 2:
-            raise TypeError("More than one 'ROOT.yaml' file found")
+        repo = PackageRepo(self.package.url, self.package.revision)
+        root = repo.get_root()
 
         builders = {}
-        root_dir = roots[0].parent
-        for yaml_file in root_dir.glob("**/*.yaml"):
+        for yaml_file in root.glob("**/*.yaml"):
             if yaml_file.name == "ROOT.yaml":
                 continue
 
-            parts = (*yaml_file.relative_to(root_dir).parent.parts, yaml_file.stem)
+            parts = (*yaml_file.relative_to(root).parent.parts, yaml_file.stem)
             name = ".".join(parts)
             builders[name] = TypeBuilder(name, yaml_file, self)
 
