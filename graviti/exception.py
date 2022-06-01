@@ -229,17 +229,6 @@ RESPONSE_ERROR_DISTRIBUTOR: Dict[str, Type[ResponseError]] = {
 }
 
 
-class UtilityError(GravitiException):
-    """This is the base class for custom exceptions in Graviti utility module."""
-
-
-class AttrError(UtilityError):
-    """This class defines the exception for dynamic attr have default value."""
-
-    def __str__(self) -> str:
-        return "Dynamic attr cannot have default value."
-
-
 class GitCommandError(GravitiException):
     """This class defines the exception for the git command related error.
 
