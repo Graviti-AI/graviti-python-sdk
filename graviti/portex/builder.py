@@ -7,6 +7,7 @@
 
 from hashlib import md5
 from pathlib import Path
+from shutil import rmtree
 from subprocess import PIPE, CalledProcessError, run
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
@@ -21,6 +22,8 @@ from graviti.portex.param import Param, Params
 from graviti.portex.register import ExternalContainerRegister
 
 if TYPE_CHECKING:
+    from subprocess import CompletedProcess
+
     from graviti.portex.base import PortexType
 
 
@@ -53,22 +56,14 @@ class PackageRepo:
         self._prepare_repo()
 
     def _prepare_repo(self) -> None:
-        path = self._path
+        if not self._path.exists():
+            self._clone_repo()
+        elif not self._check_repo_integrity():
+            rmtree(self._path)
+            self._clone_repo()
 
-        if not path.exists():
-            print(f"Cloning repo '{self._url}@{self._revision}'")
-
-            path.mkdir()
-            self._init_repo()
-            try:
-                self._shallow_fetch()
-            except CalledProcessError:
-                self._deep_fetch()
-
-            print(f"Cloned to '{path}'")
-
-    def _run(self, args: List[str]) -> None:
-        run(args, cwd=self._path, stdout=PIPE, stderr=PIPE, check=True)
+    def _run(self, args: List[str]) -> "CompletedProcess[bytes]":
+        return run(args, cwd=self._path, stdout=PIPE, stderr=PIPE, check=True)
 
     def _init_repo(self) -> None:
         self._run(["git", "init"])
@@ -81,6 +76,32 @@ class PackageRepo:
     def _deep_fetch(self) -> None:
         self._run(["git", "fetch", "origin"])
         self._run(["git", "checkout", self._revision])
+
+    def _check_repo_integrity(self) -> bool:
+        try:
+            result = self._run(["git", "status", "--porcelain"])
+        except CalledProcessError:
+            # The git command failed means the git repo has been cleaned or broken
+            return False
+
+        return not bool(result.stdout)
+
+    def _clone_repo(self) -> None:
+        print(f"Cloning repo '{self._url}@{self._revision}'")
+
+        path = self._path
+        path.mkdir()
+        try:
+            self._init_repo()
+            try:
+                self._shallow_fetch()
+            except CalledProcessError:
+                self._deep_fetch()
+        except CalledProcessError:
+            rmtree(path)
+            raise
+
+        print(f"Cloned to '{path}'")
 
     def get_root(self) -> Path:
         """Get the root directory path of the package repo.
