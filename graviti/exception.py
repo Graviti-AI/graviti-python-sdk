@@ -27,11 +27,11 @@ class GravitiException(Exception):
         return self._message if self._message else ""
 
 
-class ClientError(GravitiException):
-    """This is the base class for custom exceptions in Graviti client module."""
+class ManagerError(GravitiException):
+    """This is the base class for custom exceptions in Graviti manager module."""
 
 
-class StatusError(ClientError):
+class StatusError(ManagerError):
     """This class defines the exception for illegal status.
 
     Arguments:
@@ -49,7 +49,7 @@ class StatusError(ClientError):
             self._message = f"The status is not {required_status}"
 
 
-class ResponseError(ClientError):
+class ResponseError(GravitiException):
     """This class defines the exception for post response error.
 
     Arguments:
