@@ -5,6 +5,7 @@
 
 """Basic concepts of Graviti custom exceptions."""
 
+from subprocess import CalledProcessError
 from typing import Dict, Optional, Type, Union
 
 from requests.models import Response
@@ -237,3 +238,27 @@ class AttrError(UtilityError):
 
     def __str__(self) -> str:
         return "Dynamic attr cannot have default value."
+
+
+class GitCommandError(GravitiException):
+    """This class defines the exception for the git command related error.
+
+    Arguments:
+       message: The error message.
+       called_process_error: The CalledProcessError raised from the subprocess.run().
+
+    """
+
+    def __init__(self, message: str, called_process_error: CalledProcessError):
+        super().__init__(message)
+        self.called_process_error = called_process_error
+
+    def __str__(self) -> str:
+        error = self.called_process_error
+        return (
+            f"{self._message}\n"
+            f"  command: {error.cmd}\n"
+            f"  returncode: {error.returncode}\n"
+            f"  stdout: {error.stdout.decode()}\n"
+            f"  stderr: {error.stderr.decode()}"
+        )

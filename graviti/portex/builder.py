@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
 import yaml
 
 import graviti.portex.ptype as PTYPE
+from graviti.exception import GitCommandError
 from graviti.portex.external import PortexExternalType
 from graviti.portex.factory import type_factory_creator
 from graviti.portex.package import ExternalPackage, Imports, packages
@@ -76,8 +77,21 @@ class PackageRepo:
         self._run(["git", "checkout", "FETCH_HEAD"])
 
     def _deep_fetch(self) -> None:
-        self._run(["git", "fetch", "origin"])
-        self._run(["git", "checkout", self._revision])
+        try:
+            self._run(["git", "fetch", "origin"])
+        except CalledProcessError as error:
+            raise GitCommandError(
+                "'git fetch' failed, most likely due to the repo url is invalid.",
+                error,
+            ) from None
+
+        try:
+            self._run(["git", "checkout", self._revision])
+        except CalledProcessError as error:
+            raise GitCommandError(
+                "'git checkout' failed, most likely due to the repo revision is invalid.",
+                error,
+            ) from None
 
     def _check_repo_integrity(self) -> bool:
         try:
@@ -99,7 +113,7 @@ class PackageRepo:
                 self._shallow_fetch()
             except CalledProcessError:
                 self._deep_fetch()
-        except CalledProcessError:
+        except (CalledProcessError, GitCommandError):
             rmtree(path)
             raise
 
