@@ -7,7 +7,7 @@
 
 from typing import TYPE_CHECKING, Generator, Optional
 
-from graviti.exception import ForbiddenError, ResourceNotExistError
+from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
@@ -68,7 +68,7 @@ class TagManager:
                 If the revision is not given, create the tag for the current commit.
 
         Raises:
-            ForbiddenError: When create tags on the default branch without commit history.
+            NoCommitsError: When create tags on the default branch without commit history.
 
         Returns:
             The :class:`.Tag` instance with the given name.
@@ -77,8 +77,9 @@ class TagManager:
         if not revision:
             revision = self._dataset.HEAD.commit_id
             if revision is None:
-                raise ForbiddenError(
-                    "Creating tags on the default branch without commit history is not allowed"
+                raise NoCommitsError(
+                    "Creating tags on the default branch without commit history is not allowed."
+                    "Please create a draft first"
                 )
 
         response = create_tag(
@@ -98,14 +99,14 @@ class TagManager:
             name: The required tag name.
 
         Raises:
-            ResourceNotExistError: When the name is an empty string.
+            ResourceNameError: When the name is an empty string.
 
         Returns:
             The :class:`.Tag` instance with the given name.
 
         """
         if not name:
-            raise ResourceNotExistError(resource="tag", identification=name)
+            raise ResourceNameError("tag", name)
 
         response = get_tag(
             self._dataset.access_key,
@@ -132,11 +133,11 @@ class TagManager:
             name: The tag name to be deleted for the specific commit.
 
         Raises:
-            ResourceNotExistError: When the name is an empty string.
+            ResourceNameError: When the name is an empty string.
 
         """
         if not name:
-            raise ResourceNotExistError(resource="tag", identification=name)
+            raise ResourceNameError("tag", name)
 
         delete_tag(
             self._dataset.access_key,

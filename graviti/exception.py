@@ -6,7 +6,7 @@
 """Basic concepts of Graviti custom exceptions."""
 
 from subprocess import CalledProcessError
-from typing import Dict, Optional, Type, Union
+from typing import Dict, Optional, Type
 
 from requests.models import Response
 
@@ -77,24 +77,26 @@ class ManagerError(GravitiException):
 
 
 class StatusError(ManagerError):
-    """This class defines the exception for illegal status.
+    """This class defines the exception for illegal status."""
 
-    Arguments:
-        is_draft: Whether the status is draft.
-        message: The error message.
 
-    """
+class NoCommitsError(StatusError):
+    """This class defines the exception for illegal operations on dataset with no commit history."""
 
-    def __init__(self, message: Optional[str] = None, *, is_draft: Optional[bool] = None) -> None:
+
+class ResourceNameError(ManagerError):
+    """This class defines the exception for invalid resource names."""
+
+    def __init__(self, resource: str, name: str) -> None:
         super().__init__()
-        if is_draft is None:
-            self._message = message
-        else:
-            required_status = "commit" if is_draft else "draft"
-            self._message = f"The status is not {required_status}"
+        self._resource = resource
+        self._name = name
+
+    def __str__(self) -> str:
+        return f'The {self._resource} name "{self._name}" is invalid.'
 
 
-class ResponseError(GravitiException):
+class ResponseError(ManagerError):
     """This class defines the exception for post response error.
 
     Arguments:
@@ -142,73 +144,15 @@ class ForbiddenError(ResponseError):
 
 
 class InvalidParamsError(ResponseError):
-    """This class defines the exception for invalid parameters response error.
-
-    Arguments:
-        response: The response of the request.
-        param_name: The name of the invalid parameter.
-        param_value: The value of the invalid parameter.
-
-    Attributes:
-        response: The response of the request.
-
-    """
+    """This class defines the exception for invalid parameters response error."""
 
     STATUS_CODE = 400
 
-    def __init__(
-        self,
-        message: Optional[str] = None,
-        *,
-        response: Optional[Response] = None,
-        param_name: Optional[str] = None,
-        param_value: Optional[str] = None,
-    ) -> None:
-        super().__init__(message, response=response)
-        self._param_name = param_name
-        self._param_value = param_value
-
-    def __str__(self) -> str:
-        if self._param_name and self._param_value:
-            messages = [f"Invalid {self._param_name}: {self._param_value}."]
-            if self._param_name == "path":
-                messages.append("Remote path should follow linux style.")
-
-            return f"\n{self._INDENT}".join(messages)
-        return super().__str__()
-
 
 class NameConflictError(ResponseError):
-    """This class defines the exception for name conflict response error.
-
-    Arguments:
-        response: The response of the request.
-        resource: The type of the conflict resource.
-        identification: The identification of the conflict resource.
-
-    Attributes:
-        response: The response of the request.
-
-    """
+    """This class defines the exception for name conflict response error."""
 
     STATUS_CODE = 409
-
-    def __init__(
-        self,
-        message: Optional[str] = None,
-        *,
-        response: Optional[Response] = None,
-        resource: Optional[str] = None,
-        identification: Union[int, str, None] = None,
-    ) -> None:
-        super().__init__(message, response=response)
-        self._resource = resource
-        self._identification = identification
-
-    def __str__(self) -> str:
-        if self._resource and self._identification:
-            return f"The {self._resource}: {self._identification} already exists."
-        return super().__str__()
 
 
 class RequestParamsMissingError(ResponseError):
@@ -218,36 +162,9 @@ class RequestParamsMissingError(ResponseError):
 
 
 class ResourceNotExistError(ResponseError):
-    """This class defines the exception for resource not existing response error.
-
-    Arguments:
-        response: The response of the request.
-        resource: The type of the conflict resource.
-        identification: The identification of the conflict resource.
-
-    Arguments:
-        response: The response of the request.
-
-    """
+    """This class defines the exception for resource not existing response error."""
 
     STATUS_CODE = 404
-
-    def __init__(
-        self,
-        message: Optional[str] = None,
-        *,
-        response: Optional[Response] = None,
-        resource: Optional[str] = None,
-        identification: Union[int, str, None] = None,
-    ) -> None:
-        super().__init__(message, response=response)
-        self._resource = resource
-        self._identification = identification
-
-    def __str__(self) -> str:
-        if self._resource and self._identification:
-            return f"The {self._resource}: {self._identification} does not exist."
-        return super().__str__()
 
 
 class InternalServerError(ResponseError):
