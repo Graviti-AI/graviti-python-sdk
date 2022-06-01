@@ -41,6 +41,8 @@ class PackageRepo:
 
     """
 
+    _env: Dict[str, Any] = {}
+
     def __init__(self, url: str, revision: str) -> None:
         tempdir = Path(gettempdir()) / "portex"
         tempdir.mkdir(exist_ok=True)
@@ -63,7 +65,7 @@ class PackageRepo:
             self._clone_repo()
 
     def _run(self, args: List[str]) -> "CompletedProcess[bytes]":
-        return run(args, cwd=self._path, stdout=PIPE, stderr=PIPE, check=True)
+        return run(args, cwd=self._path, env=self._env, stdout=PIPE, stderr=PIPE, check=True)
 
     def _init_repo(self) -> None:
         self._run(["git", "init"])
