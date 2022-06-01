@@ -11,8 +11,10 @@ from uuid import uuid4
 from requests.models import Response
 
 from graviti.__version__ import __version__
-from graviti.exception import RESPONSE_ERROR_DISTRIBUTOR, ResponseError
+from graviti.exception import ResponseError, ResponseErrorRegister
 from graviti.utility import config, get_session
+
+RESPONSE_ERROR_DISTRIBUTOR = ResponseErrorRegister.RESPONSE_ERROR_DISTRIBUTOR
 
 
 def do(method: str, url: str, **kwargs: Any) -> Response:  # pylint: disable=invalid-name

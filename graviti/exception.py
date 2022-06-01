@@ -6,7 +6,7 @@
 """Basic concepts of Graviti custom exceptions."""
 
 from subprocess import CalledProcessError
-from typing import Dict, Optional, Type
+from typing import Dict, Optional, Type, TypeVar
 
 from requests.models import Response
 
@@ -111,6 +111,7 @@ class ResponseError(ManagerError):
     _INDENT = " " * len(__qualname__)  # type: ignore[name-defined]
 
     STATUS_CODE: int
+    ERROR_CODE: str
 
     def __init__(
         self, message: Optional[str] = None, *, response: Optional[Response] = None
@@ -131,61 +132,77 @@ class ResponseError(ManagerError):
         return super().__str__()
 
 
+_R = TypeVar("_R", bound=Type[ResponseError])
+
+
+class ResponseErrorRegister:
+    """A class decorator to register the ResponseError into the distributor.
+
+    Arguments:
+        status_code: The http status code of the specific ResponseError.
+        error_code: The response error code of the specific ResponseError.
+
+    """
+
+    RESPONSE_ERROR_DISTRIBUTOR: Dict[str, Type[ResponseError]] = {}
+
+    def __init__(self, status_code: int, error_code: str) -> None:
+        self._status_code = status_code
+        self._error_code = error_code
+
+    def __call__(self, response_error: _R) -> _R:
+        """Register the ResponseError into the distributor.
+
+        Arguments:
+            response_error: The response error needs to be registered.
+
+        Returns:
+            The input response error class unchanged.
+
+        """
+        response_error.STATUS_CODE = self._status_code
+        response_error.ERROR_CODE = self._error_code
+
+        self.RESPONSE_ERROR_DISTRIBUTOR[self._error_code] = response_error
+
+        return response_error
+
+
+@ResponseErrorRegister(403, "AccessDenied")
 class AccessDeniedError(ResponseError):
     """This class defines the exception for access denied response error."""
 
-    STATUS_CODE = 403
 
-
+@ResponseErrorRegister(403, "Forbidden")
 class ForbiddenError(ResponseError):
     """This class defines the exception for illegal operations Graviti forbids."""
 
-    STATUS_CODE = 403
 
-
+@ResponseErrorRegister(400, "InvalidParamsValue")
 class InvalidParamsError(ResponseError):
     """This class defines the exception for invalid parameters response error."""
 
-    STATUS_CODE = 400
 
-
+@ResponseErrorRegister(409, "NameConflict")
 class NameConflictError(ResponseError):
     """This class defines the exception for name conflict response error."""
 
-    STATUS_CODE = 409
 
-
+@ResponseErrorRegister(400, "RequestParamsMissing")
 class RequestParamsMissingError(ResponseError):
     """This class defines the exception for request parameters missing response error."""
 
-    STATUS_CODE = 400
 
-
+@ResponseErrorRegister(404, "ResourceNotExist")
 class ResourceNotExistError(ResponseError):
     """This class defines the exception for resource not existing response error."""
 
-    STATUS_CODE = 404
 
-
+@ResponseErrorRegister(500, "InternalServerError")
 class InternalServerError(ResponseError):
     """This class defines the exception for internal server error."""
 
-    STATUS_CODE = 500
 
-
+@ResponseErrorRegister(401, "Unauthorized")
 class UnauthorizedError(ResponseError):
     """This class defines the exception for unauthorized response error."""
-
-    STATUS_CODE = 401
-
-
-RESPONSE_ERROR_DISTRIBUTOR: Dict[str, Type[ResponseError]] = {
-    "AccessDenied": AccessDeniedError,
-    "Forbidden": ForbiddenError,
-    "InvalidParamsValue": InvalidParamsError,
-    "NameConflict": NameConflictError,
-    "RequestParamsMissing": RequestParamsMissingError,
-    "ResourceNotExist": ResourceNotExistError,
-    "InternalServerError": InternalServerError,
-    "Unauthorized": UnauthorizedError,
-}
