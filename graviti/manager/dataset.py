@@ -11,7 +11,7 @@ from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
 from tensorbay.utility import AttrsMixin, attr, common_loads
 
 from graviti.dataframe import DataFrame
-from graviti.exception import ResourceNotExistError
+from graviti.exception import ResourceNameError
 from graviti.manager.branch import Branch, BranchManager
 from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.draft import DraftManager
@@ -327,11 +327,11 @@ class DatasetManager:
             The requested :class:`~graviti.manager.dataset.Dataset` instance.
 
         Raises:
-            ResourceNotExistError: When the required dataset does not exist.
+            ResourceNameError: When the required dataset does not exist.
 
         """
         if not dataset:
-            raise ResourceNotExistError(resource="dataset", identification=dataset)
+            raise ResourceNameError("dataset", dataset)
 
         arguments = {"access_key": self.access_key, "url": self.url}
         response = get_dataset(**arguments, owner=self.owner, dataset=dataset)

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Generator, Optional
 
 from tensorbay.utility import attr
 
-from graviti.exception import ForbiddenError, ResourceNotExistError
+from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
@@ -80,7 +80,7 @@ class BranchManager:
                 If the revision is not given, create the branch based on the current commit.
 
         Raises:
-            ForbiddenError: When create branches on the default branch without commit history.
+            NoCommitsError: When create branches on default branch without commit history.
 
         Returns:
             The :class:`.Branch` instance with the given name.
@@ -89,8 +89,9 @@ class BranchManager:
         if not revision:
             revision = self._dataset.HEAD.commit_id
             if revision is None:
-                raise ForbiddenError(
-                    "Creating branches on the default branch without commit history is not allowed"
+                raise NoCommitsError(
+                    "Creating branches on the default branch without commit history is not allowed."
+                    "Please create a draft first"
                 )
 
         response = create_branch(
@@ -110,14 +111,14 @@ class BranchManager:
             name: The required branch name.
 
         Raises:
-            ResourceNotExistError: When the given name is an empty string.
+            ResourceNameError: When the given name is an empty string.
 
         Returns:
             The :class:`.Branch` instance with the given name.
 
         """
         if not name:
-            raise ResourceNotExistError(resource="branch", identification=name)
+            raise ResourceNameError("branch", name)
 
         response = get_branch(
             self._dataset.access_key,
@@ -144,11 +145,11 @@ class BranchManager:
             name: The name of the branch to be deleted.
 
         Raises:
-            ResourceNotExistError: When the given name is an empty string.
+            ResourceNameError: When the given name is an empty string.
 
         """
         if not name:
-            raise ResourceNotExistError(resource="branch", identification=name)
+            raise ResourceNameError("branch", name)
 
         delete_branch(
             self._dataset.access_key,
