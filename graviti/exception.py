@@ -27,6 +27,51 @@ class GravitiException(Exception):
         return self._message if self._message else ""
 
 
+class PortexError(GravitiException):
+    """This is the base class for custom exceptions in Graviti portex module."""
+
+
+class GitNotFoundError(PortexError):
+    """This class defines the exception for the git command not found error.
+
+    Arguments:
+       message: The error message.
+
+    """
+
+    _MESSAGE = (
+        "'git' command failed, most likely due to the 'git' is not installed.\n"
+        "Please install 'git' first: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"
+    )
+
+    def __init__(self, message: str = _MESSAGE):
+        super().__init__(message)
+
+
+class GitCommandError(PortexError):
+    """This class defines the exception for the git command related error.
+
+    Arguments:
+       message: The error message.
+       called_process_error: The CalledProcessError raised from the subprocess.run().
+
+    """
+
+    def __init__(self, message: str, called_process_error: CalledProcessError):
+        super().__init__(message)
+        self.called_process_error = called_process_error
+
+    def __str__(self) -> str:
+        error = self.called_process_error
+        return (
+            f"{self._message}\n"
+            f"  command: {error.cmd}\n"
+            f"  returncode: {error.returncode}\n"
+            f"  stdout: {error.stdout.decode()}\n"
+            f"  stderr: {error.stderr.decode()}"
+        )
+
+
 class ManagerError(GravitiException):
     """This is the base class for custom exceptions in Graviti manager module."""
 
@@ -227,27 +272,3 @@ RESPONSE_ERROR_DISTRIBUTOR: Dict[str, Type[ResponseError]] = {
     "InternalServerError": InternalServerError,
     "Unauthorized": UnauthorizedError,
 }
-
-
-class GitCommandError(GravitiException):
-    """This class defines the exception for the git command related error.
-
-    Arguments:
-       message: The error message.
-       called_process_error: The CalledProcessError raised from the subprocess.run().
-
-    """
-
-    def __init__(self, message: str, called_process_error: CalledProcessError):
-        super().__init__(message)
-        self.called_process_error = called_process_error
-
-    def __str__(self) -> str:
-        error = self.called_process_error
-        return (
-            f"{self._message}\n"
-            f"  command: {error.cmd}\n"
-            f"  returncode: {error.returncode}\n"
-            f"  stdout: {error.stdout.decode()}\n"
-            f"  stderr: {error.stderr.decode()}"
-        )

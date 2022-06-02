@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
 import yaml
 
 import graviti.portex.ptype as PTYPE
-from graviti.exception import GitCommandError
+from graviti.exception import GitCommandError, GitNotFoundError
 from graviti.portex.external import PortexExternalType
 from graviti.portex.factory import type_factory_creator
 from graviti.portex.package import ExternalPackage, Imports, packages
@@ -56,7 +56,10 @@ class PackageRepo:
         self._url = url
         self._revision = revision
 
-        self._prepare_repo()
+        try:
+            self._prepare_repo()
+        except FileNotFoundError:
+            raise GitNotFoundError() from None
 
     def _prepare_repo(self) -> None:
         if not self._path.exists():
@@ -113,7 +116,7 @@ class PackageRepo:
                 self._shallow_fetch()
             except CalledProcessError:
                 self._deep_fetch()
-        except (CalledProcessError, GitCommandError):
+        except (CalledProcessError, GitCommandError, FileNotFoundError):
             rmtree(path)
             raise
 
