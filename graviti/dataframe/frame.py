@@ -696,3 +696,40 @@ class DataFrame(Container):
             dict(zip(self._column_names, values))
             for values in zip(*(column.to_pylist() for column in self._columns.values()))
         ]
+
+    def query(self, func: Callable[[Any], Any]) -> "DataFrame":
+        """Query the columns of a DataFrame with a lambda function.
+
+        Arguments:
+            func: The query function.
+
+        Examples:
+            >>> df = DataFrame([
+            ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
+            ...     {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
+            ... ])
+            >>> df.query(lambda x: x["filename"] == "a.jpg")
+                filename box2ds
+                         x      y
+            0   a.jpg    1      1
+
+        """
+
+    def apply(self, func: Callable[[Any], Any]) -> "DataFrame":
+        """Apply a function to the DataFrame row by row.
+
+        Arguments:
+            func: Function to apply to each row.
+
+        Examples:
+            >>> df = DataFrame([
+            ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
+            ...     {"filename": "b.jpg", "box2ds": {"x": 2, "y": 2}},
+            ... ])
+            >>> df.apply(lambda x: x["box2ds"]["x"] + 1)
+                filename box2ds
+                         x      y
+            0   a.jpg    2      1
+            1   b.jpg    3      2
+
+        """
