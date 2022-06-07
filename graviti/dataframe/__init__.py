@@ -5,6 +5,6 @@
 """Dataframe module."""
 
 from graviti.dataframe.container import Container
-from graviti.dataframe.frame import DataFrame
+from graviti.dataframe.frame import RECORD_KEY, DataFrame
 
-__all__ = ["DataFrame", "Container"]
+__all__ = ["Container", "DataFrame", "RECORD_KEY"]

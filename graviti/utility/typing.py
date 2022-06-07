@@ -19,6 +19,9 @@ PathLike = Union[str, Path]
 class NestedDict(Protocol[_K, _V]):
     """Typehint for nested dict."""
 
+    def __contains__(self, key: _K) -> bool:
+        ...
+
     def __getitem__(self, key: _K) -> Union["NestedDict[_K, _V]", _V]:
         ...
 
