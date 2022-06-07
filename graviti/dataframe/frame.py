@@ -30,10 +30,13 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.utility import MAX_REPR_ROWS, FileBase, PagingLists
+from graviti.utility import MAX_REPR_ROWS, FileBase, PagingList, PagingLists
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
+
+
+RECORD_KEY = "__record_key"
 
 
 @pt.ContainerRegister(pt.record)
@@ -69,6 +72,7 @@ class DataFrame(Container):
     has_keys = True
     _columns: Dict[str, Container]
     _column_names: List[str]
+    _record_key: Optional[PagingList] = None
     schema: pt.PortexType
     operations: List[DataFrameOperation]
 
@@ -228,6 +232,9 @@ class DataFrame(Container):
             )
 
             obj._column_names.append(key)
+
+        if RECORD_KEY in paging:
+            obj._record_key = paging[RECORD_KEY]  # type: ignore[assignment]
 
         return obj
 
@@ -622,6 +629,9 @@ class DataFrame(Container):
 
         self._extend(values)
         self.operations.append(AddData(values))
+
+        if self._record_key is not None:
+            self._record_key.extend_nulls(len(values))
 
     @staticmethod
     def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:

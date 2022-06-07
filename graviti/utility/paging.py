@@ -589,6 +589,17 @@ class PagingList:
         self._offsets.extend((len(page),))
         self._pages.append(page)
 
+    def extend_nulls(self, size: int) -> None:
+        """Extend PagingList by appending nulls.
+
+        Arguments:
+            size: The size of the nulls to be extended.
+
+        """
+        page = Page(pa.nulls(size, self._patype))
+        self._offsets.extend((len(page),))
+        self._pages.append(page)
+
     def copy(self: _P) -> _P:
         """Return a copy of the paging list.
 

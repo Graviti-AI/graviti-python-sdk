@@ -8,7 +8,9 @@
 from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Iterator, MutableMapping
 
-from graviti.dataframe import DataFrame
+import pyarrow as pa
+
+from graviti.dataframe import RECORD_KEY, DataFrame
 from graviti.portex import PortexType
 from graviti.utility import LazyFactory, ReprMixin
 
@@ -55,13 +57,18 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             sheet = self._get_sheet(sheet_name)
             schema = PortexType.from_yaml(sheet["schema"])
 
+            patype = schema.to_pyarrow()
+
             factory = LazyFactory(
                 sheet["record_count"],
                 128,
                 partial(self._list_data, sheet_name=sheet_name),
-                schema.to_pyarrow(),
+                pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
             )
+
             paging_lists = factory.create_lists(schema.get_keys())
+            paging_lists[RECORD_KEY] = factory.create_list((RECORD_KEY,))
+
             self._data[sheet_name] = DataFrame._from_paging(  # pylint: disable=protected-access
                 paging_lists, schema
             )
