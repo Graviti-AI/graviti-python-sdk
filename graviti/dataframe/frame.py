@@ -74,7 +74,7 @@ class DataFrame(Container):
     _column_names: List[str]
     _record_key: Optional[PagingList] = None
     schema: pt.PortexType
-    operations: List[DataFrameOperation]
+    operations: Optional[List[DataFrameOperation]] = None
 
     def __new__(
         cls: Type[_T],
@@ -203,7 +203,6 @@ class DataFrame(Container):
 
             obj._column_names.append(key)
 
-        obj.operations = [AddData(obj.copy())]
         return obj
 
     @classmethod
@@ -624,11 +623,12 @@ class DataFrame(Container):
             )
         elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
             raise TypeError("The schema of the given DataFrame is mismatched.")
-        else:
+        elif self.operations is not None:
             values = values.copy()
 
         self._extend(values)
-        self.operations.append(AddData(values))
+        if self.operations is not None:
+            self.operations.append(AddData(values))
 
         if self._record_key is not None:
             self._record_key.extend_nulls(len(values))
