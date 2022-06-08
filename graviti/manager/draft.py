@@ -23,7 +23,7 @@ from graviti.openapi import (
     list_drafts,
     update_draft,
 )
-from graviti.operation import CreateSheet, DeleteSheet, SheetOperation
+from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -83,10 +83,19 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         if is_replace:
             self.operations.append(DeleteSheet(key))
 
+        if value.operations is None:
+            value.operations = [AddData(value.copy())]
+        else:
+            raise NotImplementedError(
+                "Not support assigning one DataFrame to multiple sheets."
+                " Please use method 'copy' first."
+            )
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
+        dataframe = self[key]
         super().__delitem__(key)
+        del dataframe.operations
         self.operations.append(DeleteSheet(key))
 
     def _repr_head(self) -> str:
@@ -208,7 +217,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             )
 
         for sheet_name, dataframe in self.items():
-            for df_operation in dataframe.operations:
+            for df_operation in dataframe.operations:  # type: ignore[union-attr]
                 df_operation.do(
                     self._dataset.access_key,
                     self._dataset.url,
