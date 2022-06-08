@@ -26,7 +26,7 @@ from typing import (
 import pyarrow as pa
 
 from graviti.paging.offset import Offsets
-from graviti.paging.page import LazyPage, Page
+from graviti.paging.page import LazyPage, Page, PageBase
 from graviti.utility import NestedDict
 
 _P = TypeVar("_P", bound="PagingList")
@@ -42,7 +42,7 @@ class PagingList:
 
     def __init__(self, array: pa.Array) -> None:
         length = len(array)
-        self._pages = [Page(array)] if length != 0 else []
+        self._pages: List[PageBase[Any]] = [Page(array)] if length != 0 else []
         self._offsets = Offsets(length, length)
         self._patype = array.type
 
@@ -114,7 +114,9 @@ class PagingList:
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i].get_item(j)
 
-    def _update_pages(self, start: int, stop: int, pages: Optional[Sequence[Page]] = None) -> None:
+    def _update_pages(
+        self, start: int, stop: int, pages: Optional[Sequence[PageBase[Any]]] = None
+    ) -> None:
         if start >= stop and not pages:
             return
 
@@ -123,7 +125,7 @@ class PagingList:
         start_i, start_j = self._offsets.get_coordinate(start)
         stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
 
-        update_pages = []
+        update_pages: List[PageBase[Any]] = []
         update_lengths = []
 
         left_page = self._pages[start_i].get_slice(stop=start_j)
