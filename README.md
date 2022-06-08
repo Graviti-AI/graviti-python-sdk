@@ -10,6 +10,12 @@
 Graviti Python SDK is a python library to access [Graviti](https://www.graviti.com) workspace and
 manage your datasets. It provides a pythonic way to access your datasets by Graviti OpenAPI.
 
+---
+
+**NOTE: This project is still on pre-alpha stage, may have breaking changes in the future.**
+
+---
+
 ## Installation
 
 Graviti can be installed from PyPI:
