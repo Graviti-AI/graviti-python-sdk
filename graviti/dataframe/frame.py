@@ -30,7 +30,8 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.utility import MAX_REPR_ROWS, FileBase, PagingList, PagingLists
+from graviti.paging import PagingList, PagingLists
+from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
