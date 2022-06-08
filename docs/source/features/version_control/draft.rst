@@ -109,6 +109,24 @@ saved into this commit.
    draft.commit(f"{COMMIT_TITLE}")
    draft.commit(f"{COMMIT_TITLE}", f"{COMMIT_DESCRIPTION}")
 
+.. attention::
+   SDK does not automatically update the ``dataset.HEAD`` after committing the draft. Therefore,
+   the dataset may be some commits behind the server. In addition, other members of the workspace
+   may have committed drafts on this branch.
+
+   So it is necessary to ``checkout`` the specified branch, commit or tag before proceeding to the
+   next step. For example, if the user needs to commit a draft and tag the commit: 
+
+   .. code:: python
+   
+      draft = dataset.drafts.get(DRAFT_NUMBER)
+      commit = draft.commit(f"{COMMIT_TITLE}")
+      # Checkout first.
+      dataset.checkout(commit.commit_id)
+      dataset.tags.create(f"{TAG_NAME}")
+      # Or specify the revision.
+      dataset.tag.create(f"{TAG_NAME}", commit.commit_id)
+
 .. warning::
    It is not allowed to read or upload data on a committed draft.
 
