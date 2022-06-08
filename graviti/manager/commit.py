@@ -21,8 +21,8 @@ from graviti.openapi import (
     list_commit_sheets,
     list_commits,
 )
+from graviti.paging import LazyFactory
 from graviti.portex import PortexType
-from graviti.utility import LazyFactory
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset

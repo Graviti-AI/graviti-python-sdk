@@ -14,7 +14,8 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
-from graviti.utility import MAX_REPR_ROWS, FileBase, PagingList
+from graviti.paging import PagingList
+from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")

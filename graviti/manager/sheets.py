@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, MutableMapping
 import pyarrow as pa
 
 from graviti.dataframe import RECORD_KEY, DataFrame
+from graviti.paging import LazyFactory
 from graviti.portex import PortexType
-from graviti.utility import LazyFactory, ReprMixin
+from graviti.utility import ReprMixin
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
