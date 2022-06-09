@@ -41,13 +41,12 @@ class PagingList:
 
     """
 
-    _array_creator: Callable[[Iterable[Any]], Sequence[Any]] = tuple
+    _array_creator = tuple
     _pages: List[PageBase[Any]]
     _offsets: Offsets
 
     def __init__(self, iterable: Iterable[Any]) -> None:
-        # https://github.com/python/mypy/issues/5485
-        array = self._array_creator(iterable)  # type: ignore[call-arg]
+        array = self._array_creator(iterable)
         self._init(array)
 
     def __len__(self) -> int:
@@ -211,8 +210,7 @@ class PagingList:
 
         """
         index = self._make_index_nonnegative(index)
-        # https://github.com/python/mypy/issues/5485
-        page = Page(self._array_creator((value,)))  # type: ignore[call-arg]
+        page = Page(self._array_creator((value,)))
         self._update_pages(index, index + 1, [page])
 
     def set_slice(self: _PL, index: slice, values: _PL) -> None:
@@ -261,8 +259,7 @@ class PagingList:
         start, stop, step = index.indices(self.__len__())
 
         if step == 1:
-            # https://github.com/python/mypy/issues/5485
-            array = self._array_creator(values)  # type: ignore[call-arg]
+            array = self._array_creator(values)
             self._update_pages(start, stop, [Page(array)] if len(array) != 0 else None)
             return
 
@@ -272,8 +269,7 @@ class PagingList:
             except TypeError:
                 values = reversed(list(values))
 
-            # https://github.com/python/mypy/issues/5485
-            array = self._array_creator(values)  # type: ignore[call-arg]
+            array = self._array_creator(values)
 
             start, stop = stop + 1, max(start, stop) + 1
             if len(array) != stop - start:
@@ -285,13 +281,7 @@ class PagingList:
             self._update_pages(start, stop, [Page(array)] if len(array) != 0 else None)
             return
 
-        # https://github.com/python/mypy/issues/5485
-        self._update_pages_with_step(
-            start,
-            stop,
-            step,
-            self.__class__(self._array_creator(values)),  # type: ignore[call-arg]
-        )
+        self._update_pages_with_step(start, stop, step, self.__class__(self._array_creator(values)))
 
     def extend(self: _PL, values: _PL) -> None:
         """Extend PagingList by appending elements from another PagingList.
@@ -311,8 +301,7 @@ class PagingList:
             values: Elements to be extended into the PagingList.
 
         """
-        # https://github.com/python/mypy/issues/5485
-        page = Page(self._array_creator(values))  # type: ignore[call-arg]
+        page = Page(self._array_creator(values))
         self._offsets.extend((len(page),))
         self._pages.append(page)
 
@@ -323,8 +312,7 @@ class PagingList:
             size: The size of the nulls to be extended.
 
         """
-        # https://github.com/python/mypy/issues/5485
-        page = Page(self._array_creator(repeat(None, size)))  # type: ignore[call-arg]
+        page = Page(self._array_creator(repeat(None, size)))
         self._offsets.extend((len(page),))
         self._pages.append(page)
 
