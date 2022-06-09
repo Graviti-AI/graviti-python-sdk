@@ -11,6 +11,7 @@ from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
+from graviti.manager.common import check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -282,14 +283,14 @@ class DraftManager:
             StatusError: When creating the draft without basing on a branch.
 
         """
+        head = self._dataset.HEAD
         if branch is None:
-            current_branch = self._dataset.HEAD
-            if not isinstance(current_branch, Branch):
+            if not isinstance(head, Branch):
                 raise StatusError(
                     "The current dataset is not on a branch, please checkout a branch first "
                     "or input the argument 'branch'"
                 )
-            branch = current_branch.name
+            branch = head.name
 
         response = create_draft(
             self._dataset.access_key,
@@ -300,6 +301,8 @@ class DraftManager:
             branch=branch,
             description=description,
         )
+
+        check_head_status(head, branch, response["parent_commit_id"])
         return Draft(self._dataset, **response)
 
     def get(self, draft_number: int) -> Draft:

@@ -12,6 +12,7 @@ from tensorbay.utility import attr
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
+from graviti.manager.common import check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
 
@@ -65,7 +66,9 @@ class BranchManager:
             limit=limit,
         )
 
+        head = self._dataset.HEAD
         for item in response["branches"]:
+            check_head_status(head, item["name"], item["commit_id"])
             yield Branch(self._dataset, **item)
 
         return response["total_count"]  # type: ignore[no-any-return]
@@ -86,8 +89,9 @@ class BranchManager:
             The :class:`.Branch` instance with the given name.
 
         """
+        head = self._dataset.HEAD
         if not revision:
-            revision = self._dataset.HEAD.commit_id
+            revision = head.commit_id
             if revision is None:
                 raise NoCommitsError(
                     "Creating branches on the default branch without commit history is not allowed."
@@ -102,6 +106,8 @@ class BranchManager:
             name=name,
             revision=revision,
         )
+
+        check_head_status(head, revision, response["commit_id"])
         return Branch(self._dataset, **response)
 
     def get(self, name: str) -> Branch:
@@ -127,6 +133,10 @@ class BranchManager:
             self._dataset.name,
             branch=name,
         )
+
+        if getattr(self._dataset, "HEAD", None):
+            check_head_status(self._dataset.HEAD, name, response["commit_id"])
+
         return Branch(self._dataset, **response)
 
     def list(self) -> LazyPagingList[Branch]:
