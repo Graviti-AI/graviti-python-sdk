@@ -11,6 +11,7 @@ from tensorbay.utility import AttrsMixin, attr
 
 from graviti.dataframe import DataFrame
 from graviti.exception import NoCommitsError
+from graviti.manager.common import check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -248,11 +249,8 @@ class CommitManager:
     def __init__(self, dataset: "Dataset") -> None:
         self._dataset = dataset
 
-    def _generate(
-        self, revision: Optional[str], offset: int, limit: int
-    ) -> Generator[Commit, None, int]:
-        if revision is None:
-            revision = self._dataset.HEAD.commit_id
+    def _generate(self, revision: str, offset: int, limit: int) -> Generator[Commit, None, int]:
+        head = self._dataset.HEAD
 
         response = list_commits(
             self._dataset.access_key,
@@ -264,7 +262,11 @@ class CommitManager:
             limit=limit,
         )
 
-        for item in response["commits"]:
+        commits = response["commits"]
+        if offset == 0 and commits:
+            check_head_status(head, revision, commits[0]["commit_id"])
+
+        for item in commits:
             yield Commit(self._dataset, **item)
 
         return response["total_count"]  # type: ignore[no-any-return]
@@ -284,8 +286,9 @@ class CommitManager:
             The :class:`.Commit` instance with the given revision.
 
         """
+        head = self._dataset.HEAD
         if revision is None:
-            revision = self._dataset.HEAD.commit_id
+            revision = head.commit_id
             if revision is None:
                 raise NoCommitsError("No commits on the default branch yet")
 
@@ -300,6 +303,8 @@ class CommitManager:
             raise NoCommitsError("No commits on the default branch yet")
 
         del response["type"]
+        check_head_status(head, revision, response["commit_id"])
+
         return Commit(self._dataset, **response)
 
     def list(self, revision: Optional[str] = None) -> LazyPagingList[Commit]:
@@ -315,7 +320,12 @@ class CommitManager:
             The LazyPagingList of :class:`commits<.Commit>` instances.
 
         """
+        if revision is None:
+            revision = self._dataset.HEAD.commit_id
+            if revision is None:
+                return []  # type: ignore[unreachable]
+
         return LazyPagingList(
-            lambda offset, limit: self._generate(revision, offset, limit),
+            lambda offset, limit: self._generate(revision, offset, limit),  # type: ignore[arg-type]
             24,
         )

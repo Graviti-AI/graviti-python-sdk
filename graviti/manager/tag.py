@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Generator, Optional
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
+from graviti.manager.common import check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
 
@@ -53,7 +54,9 @@ class TagManager:
             limit=limit,
         )
 
+        head = self._dataset.HEAD
         for item in response["tags"]:
+            check_head_status(head, item["name"], item["commit_id"])
             yield Tag(self._dataset, **item)
 
         return response["total_count"]  # type: ignore[no-any-return]
@@ -74,8 +77,9 @@ class TagManager:
             The :class:`.Tag` instance with the given name.
 
         """
+        head = self._dataset.HEAD
         if not revision:
-            revision = self._dataset.HEAD.commit_id
+            revision = head.commit_id
             if revision is None:
                 raise NoCommitsError(
                     "Creating tags on the default branch without commit history is not allowed."
@@ -90,6 +94,8 @@ class TagManager:
             name=name,
             revision=revision,
         )
+
+        check_head_status(head, revision, response["commit_id"])
         return Tag(self._dataset, **response)
 
     def get(self, name: str) -> Tag:
@@ -105,6 +111,7 @@ class TagManager:
             The :class:`.Tag` instance with the given name.
 
         """
+        head = self._dataset.HEAD
         if not name:
             raise ResourceNameError("tag", name)
 
@@ -115,6 +122,8 @@ class TagManager:
             self._dataset.name,
             tag=name,
         )
+
+        check_head_status(head, name, response["commit_id"])
         return Tag(self._dataset, **response)
 
     def list(self) -> LazyPagingList[Tag]:
