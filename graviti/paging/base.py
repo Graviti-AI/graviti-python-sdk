@@ -359,6 +359,22 @@ class PyArrowPagingList(PagingList):
         self._array_creator = partial(pa.array, type=array.type)
 
     @classmethod
+    def from_pyarrow(cls: Type[_PPL], array: pa.Array) -> _PPL:
+        """Create PyArrowPagingList from pyarrow array.
+
+        Arguments:
+            array: The input pyarrow array.
+
+        Returns:
+            The PyArrowPagingList instance created from given pyarrow array.
+
+        """
+        obj: _PPL = object.__new__(cls)
+        obj._init(array)
+
+        return obj
+
+    @classmethod
     def from_factory(
         cls: Type[_PPL], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
     ) -> _PPL:

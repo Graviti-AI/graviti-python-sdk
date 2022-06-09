@@ -249,7 +249,7 @@ class Series(Container):
         cls: Type[_S], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
     ) -> _S:
         obj: _S = object.__new__(cls)
-        obj._data = PyArrowPagingList(array.to_pylist())
+        obj._data = PyArrowPagingList.from_pyarrow(array)
         obj.schema = schema
         obj.name = name
         return obj
