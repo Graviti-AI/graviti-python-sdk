@@ -11,9 +11,78 @@ import pyarrow as pa
 
 from graviti.portex.base import _INDENT, PortexType
 from graviti.portex.package import Imports
-from graviti.utility import NameOrderedDict
+from graviti.utility import FrozenNameOrderedDict, NameOrderedDict
 
 _T = TypeVar("_T", bound="Fields")
+
+
+class ImmutableFields(FrozenNameOrderedDict[PortexType]):
+    """Represents an immutable fields dict."""
+
+    @classmethod
+    def _check_value(cls, value: PortexType) -> None:
+        if not isinstance(value, PortexType):
+            raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
+
+    def _setitem(self, key: str, value: PortexType) -> None:
+        self._check_value(value)
+        super()._setitem(key, value)
+
+
+class MutableFields(NameOrderedDict[PortexType], ImmutableFields):
+    """Represents a mutable fields dict."""
+
+    def insert(self, index: int, name: str, portex_type: PortexType) -> None:
+        """Insert the name and portex_type at the index.
+
+        Arguments:
+            index: The index to insert the field.
+            name: The name of the field to be inserted.
+            portex_type: The portex_type of the field to be inserted.
+
+        Raises:
+            KeyError: When the name already exists in the Fields.
+
+        """
+        self._check_key(name)
+        self._check_value(portex_type)
+
+        if self.__contains__(name):
+            raise KeyError(f'"{name}" already exists in the Fields')
+
+        self._keys.insert(index, name)
+        self._data.__setitem__(name, portex_type)
+
+    def astype(self, name: str, portex_type: PortexType) -> None:
+        """Convert the type of the field with the given name to the new PortexType.
+
+        Arguments:
+            name: The name of the field to convert.
+            portex_type: The new PortexType of the field to convert to.
+
+        Raises:
+            KeyError: When the name does not exist in the Fields.
+
+        """
+        self._check_value(portex_type)
+
+        if not self.__contains__(name):
+            raise KeyError(f'"{name}" does not exist in the Fields')
+
+        self._data.__setitem__(name, portex_type)
+
+    def rename(self, old_name: str, new_name: str) -> None:
+        """Rename the name of a field.
+
+        Arguments:
+            old_name: The current name of the field to be renamed.
+            new_name: The new name of the field to assign.
+
+        """
+        self._check_key(new_name)
+
+        self._data.__setitem__(new_name, self._data.pop(old_name))
+        self._keys.__setitem__(self._keys.index(old_name), new_name)
 
 
 class Fields(NameOrderedDict[PortexType]):

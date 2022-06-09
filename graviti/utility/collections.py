@@ -359,11 +359,11 @@ class UserMutableMapping(MutableMapping[_K, _V], UserMapping[_K, _V]):
         self._data.update(__m, **kwargs)
 
 
-class NameOrderedDict(MutableMapping[str, _V]):
-    """This class is a dict of ordered elements, supports searching the element by its index.
+class FrozenNameOrderedDict(Mapping[str, _V], ReprMixin):
+    """This class is an immutable dict of ordered elements, supports searching the element by index.
 
     Arguments:
-        items: The items need to be stored into the NameOrderedDict.
+        items: The items need to be stored into the FrozenNameOrderedDict.
 
     """
 
@@ -389,23 +389,6 @@ class NameOrderedDict(MutableMapping[str, _V]):
 
         return self._data.__getitem__(key)
 
-    def __setitem__(self, key: Union[int, str], value: _V) -> None:
-        if isinstance(key, int):
-            key = self._keys.__getitem__(key)
-
-        self._setitem(key, value)
-
-    def __delitem__(self, key: Union[int, str]) -> None:
-        try:
-            if isinstance(key, int):
-                key = self._keys.pop(key)
-            else:
-                self._keys.remove(key)
-        except ValueError:
-            raise KeyError(key) from None
-
-        self._data.__delitem__(key)
-
     def __contains__(self, key: Any) -> bool:
         return self._data.__contains__(key)
 
@@ -429,6 +412,32 @@ class NameOrderedDict(MutableMapping[str, _V]):
         if not self._data.__contains__(key):
             self._keys.append(key)
         self._data.__setitem__(key, value)
+
+
+class NameOrderedDict(MutableMapping[str, _V], FrozenNameOrderedDict[_V]):
+    """This class is a dict of ordered elements, supports searching the element by its index.
+
+    Arguments:
+        items: The items need to be stored into the NameOrderedDict.
+
+    """
+
+    def __setitem__(self, key: Union[int, str], value: _V) -> None:
+        if isinstance(key, int):
+            key = self._keys.__getitem__(key)
+
+        self._setitem(key, value)
+
+    def __delitem__(self, key: Union[int, str]) -> None:
+        try:
+            if isinstance(key, int):
+                key = self._keys.pop(key)
+            else:
+                self._keys.remove(key)
+        except ValueError:
+            raise KeyError(key) from None
+
+        self._data.__delitem__(key)
 
     def popitem(self) -> Tuple[str, _V]:
         """Remove and return a (key, value) pair as a tuple.
