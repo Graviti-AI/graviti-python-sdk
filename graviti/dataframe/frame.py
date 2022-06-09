@@ -30,7 +30,7 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.paging import PagingList, PagingLists
+from graviti.paging import PagingLists, PyArrowPagingList
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _T = TypeVar("_T", bound="DataFrame")
@@ -73,7 +73,7 @@ class DataFrame(Container):
     has_keys = True
     _columns: Dict[str, Container]
     _column_names: List[str]
-    _record_key: Optional[PagingList] = None
+    _record_key: Optional[PyArrowPagingList] = None
     schema: pt.PortexType
     operations: Optional[List[DataFrameOperation]] = None
 

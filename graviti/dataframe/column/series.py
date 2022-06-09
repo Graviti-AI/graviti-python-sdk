@@ -14,7 +14,7 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
-from graviti.paging import PagingList
+from graviti.paging import PyArrowPagingList
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _S = TypeVar("_S", bound="Series")
@@ -55,7 +55,7 @@ class Series(Container):
 
     has_keys = False
     schema: pt.PortexType
-    _data: PagingList
+    _data: PyArrowPagingList
     name: Optional[str]
 
     def __init__(
@@ -236,7 +236,7 @@ class Series(Container):
 
     @classmethod
     def _from_paging(  # pylint: disable=arguments-differ
-        cls: Type[_S], paging: PagingList, schema: pt.PortexType, name: Optional[str] = None
+        cls: Type[_S], paging: PyArrowPagingList, schema: pt.PortexType, name: Optional[str] = None
     ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = paging
@@ -249,7 +249,7 @@ class Series(Container):
         cls: Type[_S], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
     ) -> _S:
         obj: _S = object.__new__(cls)
-        obj._data = PagingList(array)
+        obj._data = PyArrowPagingList(array)
         obj.schema = schema
         obj.name = name
         return obj
@@ -324,7 +324,7 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
 
     @classmethod
     def _from_paging(  # pylint: disable=arguments-differ
-        cls: Type[_A], paging: PagingList, schema: pt.PortexType, name: Optional[str] = None
+        cls: Type[_A], paging: PyArrowPagingList, schema: pt.PortexType, name: Optional[str] = None
     ) -> _A:
         obj = super()._from_paging(paging, schema, name)
 

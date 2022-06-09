@@ -29,22 +29,24 @@ from graviti.paging.offset import Offsets
 from graviti.paging.page import LazyPage, Page, PageBase
 from graviti.utility import NestedDict
 
-_P = TypeVar("_P", bound="PagingList")
+_PL = TypeVar("_PL", bound="PagingList")
+_PPL = TypeVar("_PPL", bound="PyArrowPagingList")
 
 
 class PagingList:
     """PagingList is a list composed of multiple lists (pages).
 
     Arguments:
-        array: The input pyarrow array.
+        array: The input sequence.
 
     """
 
-    def __init__(self, array: pa.Array) -> None:
+    _array_creator: Callable[[Iterable[Any]], Sequence[Any]] = tuple
+
+    def __init__(self, array: Sequence[Any]) -> None:
         length = len(array)
         self._pages: List[PageBase[Any]] = [Page(array)] if length != 0 else []
         self._offsets = Offsets(length, length)
-        self._patype = array.type
 
     def __len__(self) -> int:
         return self._offsets.total_count
@@ -57,15 +59,15 @@ class PagingList:
         ...
 
     @overload
-    def __setitem__(self, index: slice, value: Union[Iterable[Any], "PagingList"]) -> None:
+    def __setitem__(self: _PL, index: slice, value: Union[Iterable[Any], _PL]) -> None:
         ...
 
     def __setitem__(
-        self, index: Union[int, slice], value: Union[Any, Iterable[Any], "PagingList"]
+        self: _PL, index: Union[int, slice], value: Union[Any, Iterable[Any], _PL]
     ) -> None:
         if isinstance(index, int):
             self.set_item(index, value)
-        elif isinstance(value, PagingList):
+        elif isinstance(value, self.__class__):
             self.set_slice(index, value)
         else:
             self.set_slice_iterable(index, value)
@@ -99,7 +101,7 @@ class PagingList:
         index = self._make_index_nonnegative(index)
         return self._getitem(index)
 
-    def __iadd__(self: _P, values: Union["PagingList", Iterable[Any]]) -> _P:
+    def __iadd__(self: _PL, values: Union[_PL, Iterable[Any]]) -> _PL:
         if isinstance(values, self.__class__):
             self.extend(values)
         else:
@@ -147,9 +149,7 @@ class PagingList:
         self._pages[start_i : stop_i + 1] = update_pages
         self._offsets.update(start_i, stop_i, update_lengths)
 
-    def _update_pages_with_step(
-        self, start: int, stop: int, step: int, values: "PagingList"
-    ) -> None:
+    def _update_pages_with_step(self: _PL, start: int, stop: int, step: int, values: _PL) -> None:
         length = len(values)
         ranging: Any = range(start, stop, step)
         indices: Any = range(length)
@@ -171,33 +171,29 @@ class PagingList:
             x, y = offsets.get_coordinate(j)
             self._update_pages(i, i + 1, [pages[x][y : y + 1]])
 
-    @classmethod
-    def from_factory(
-        cls: Type[_P], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
-    ) -> _P:
-        """Create PagingList from LazyFactory.
+    # @classmethod
+    # def from_factory(cls: Type[_B], factory: "LazyFactory", keys: Tuple[str, ...]) -> _B:
+    #     """Create PagingList from LazyFactory.
 
-        Arguments:
-            factory: The parent :class:`LazyFactory` instance.
-            keys: The keys to access the array from factory.
-            patype: The pyarrow DataType of the elements in the list.
+    #     Arguments:
+    #         factory: The parent :class:`LazyFactory` instance.
+    #         keys: The keys to access the array from factory.
 
-        Returns:
-            The PagingList instance created from given factory.
+    #     Returns:
+    #         The PagingList instance created from given factory.
 
-        """
-        obj: _P = object.__new__(cls)
-        array_getter = partial(factory.get_array, keys=keys)
-        obj._pages = [
-            LazyPage(ranging, pos, array_getter)
-            for pos, ranging in enumerate(factory.get_page_ranges())
-        ]
-        obj._offsets = Offsets(
-            factory._total_count, factory._limit  # pylint: disable=protected-access
-        )
-        obj._patype = patype
+    #     """
+    #     obj: _B = object.__new__(cls)
+    #     array_getter = partial(factory.get_array, keys=keys)
+    #     obj._pages = [
+    #         LazyPage(ranging, pos, array_getter)
+    #         for pos, ranging in enumerate(factory.get_page_ranges())
+    #     ]
+    #     obj._offsets = Offsets(
+    #         factory._total_count, factory._limit  # pylint: disable=protected-access
+    #     )
 
-        return obj
+    #     return obj
 
     def set_item(self, index: int, value: Any) -> None:
         """Update the element value in PagingList at the given index.
@@ -208,27 +204,21 @@ class PagingList:
 
         """
         index = self._make_index_nonnegative(index)
-        page = Page(pa.array((value,), self._patype))
+        # https://github.com/python/mypy/issues/5485
+        page = Page(self._array_creator((value,)))  # type: ignore[call-arg]
         self._update_pages(index, index + 1, [page])
 
-    def set_slice(self, index: slice, values: "PagingList") -> None:
-        """Update the element values in PagingList at the given slice with another PagingList.
+    def set_slice(self: _PL, index: slice, values: _PL) -> None:
+        """Update the element values at the given slice with input PagingList.
 
         Arguments:
             index: The element slice.
             values: The PagingList which contains the elements to be set.
 
         Raises:
-            ArrowTypeError: When two pyarrow types mismatch.
             ValueError: When the input size mismatches with the slice size (when step != 1).
 
         """
-        # pylint: disable=protected-access
-        if values._patype != self._patype:
-            raise pa.ArrowTypeError(
-                f"Can not set a '{self._patype}' list with a '{values._patype}' list"
-            )
-
         start, stop, step = index.indices(self.__len__())
 
         if step == 1:
@@ -264,7 +254,8 @@ class PagingList:
         start, stop, step = index.indices(self.__len__())
 
         if step == 1:
-            array = pa.array(values, self._patype)
+            # https://github.com/python/mypy/issues/5485
+            array = self._array_creator(values)  # type: ignore[call-arg]
             self._update_pages(start, stop, [Page(array)] if len(array) != 0 else None)
             return
 
@@ -274,7 +265,8 @@ class PagingList:
             except TypeError:
                 values = reversed(list(values))
 
-            array = pa.array(values, self._patype)
+            # https://github.com/python/mypy/issues/5485
+            array = self._array_creator(values)  # type: ignore[call-arg]
 
             start, stop = stop + 1, max(start, stop) + 1
             if len(array) != stop - start:
@@ -286,24 +278,21 @@ class PagingList:
             self._update_pages(start, stop, [Page(array)] if len(array) != 0 else None)
             return
 
-        self._update_pages_with_step(start, stop, step, PagingList(pa.array(values, self._patype)))
+        # https://github.com/python/mypy/issues/5485
+        self._update_pages_with_step(
+            start,
+            stop,
+            step,
+            self.__class__(self._array_creator(values)),  # type: ignore[call-arg]
+        )
 
-    def extend(self, values: "PagingList") -> None:
+    def extend(self: _PL, values: _PL) -> None:
         """Extend PagingList by appending elements from another PagingList.
 
         Arguments:
             values: The PagingList which contains the elements to be extended.
 
-        Raises:
-            ArrowTypeError: When two pyarrow types mismatch.
-
         """
-        # pylint: disable=protected-access
-        if values._patype != self._patype:
-            raise pa.ArrowTypeError(
-                f"Can not extend a '{self._patype}' list with a '{values._patype}' list"
-            )
-
         pages = values._pages
         self._offsets.extend(map(len, pages))
         self._pages.extend(pages)
@@ -315,7 +304,8 @@ class PagingList:
             values: Elements to be extended into the PagingList.
 
         """
-        page = Page(pa.array(values, self._patype))
+        # https://github.com/python/mypy/issues/5485
+        page = Page(self._array_creator(values))  # type: ignore[call-arg]
         self._offsets.extend((len(page),))
         self._pages.append(page)
 
@@ -326,21 +316,128 @@ class PagingList:
             size: The size of the nulls to be extended.
 
         """
-        page = Page(pa.nulls(size, self._patype))
+        # https://github.com/python/mypy/issues/5485
+        page = Page(self._array_creator(repeat(None, size)))  # type: ignore[call-arg]
         self._offsets.extend((len(page),))
         self._pages.append(page)
 
-    def copy(self: _P) -> _P:
+    def copy(self: _PL) -> _PL:
         """Return a copy of the paging list.
 
         Returns:
             A copy of the paging list.
 
         """
-        obj: _P = object.__new__(self.__class__)
+        obj: _PL = object.__new__(self.__class__)
         # pylint: disable=protected-access
         obj._pages = self._pages.copy()
         obj._offsets = self._offsets.copy()
+        return obj
+
+
+class PyArrowPagingList(PagingList):
+    """PyArrowPagingList is a list composed of multiple pyarrow arrays (pages).
+
+    Arguments:
+        array: The input pyarrow array.
+
+    """
+
+    def __init__(self, array: pa.Array) -> None:
+        super().__init__(array)
+        self._patype = array.type
+        # https://github.com/python/mypy/issues/708
+        # https://github.com/python/mypy/issues/2427
+        self._array_creator = partial(pa.array, type=array.type)  # type: ignore[assignment]
+
+    @classmethod
+    def from_factory(
+        cls: Type[_PPL], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
+    ) -> _PPL:
+        """Create PyArrowPagingList from LazyFactory.
+
+        Arguments:
+            factory: The parent :class:`LazyFactory` instance.
+            keys: The keys to access the array from factory.
+            patype: The pyarrow DataType of the elements in the list.
+
+        Returns:
+            The PyArrowPagingList instance created from given factory.
+
+        """
+        obj: _PPL = object.__new__(cls)
+        array_getter = partial(factory.get_array, keys=keys)
+        obj._pages = [
+            LazyPage(ranging, pos, array_getter)
+            for pos, ranging in enumerate(factory.get_page_ranges())
+        ]
+        obj._offsets = Offsets(
+            factory._total_count, factory._limit  # pylint: disable=protected-access
+        )
+        obj._patype = patype
+
+        return obj
+
+    def set_slice(self: _PPL, index: slice, values: _PPL) -> None:
+        """Update the element values at the given slice with input PyArrowPagingList.
+
+        Arguments:
+            index: The element slice.
+            values: The PyArrowPagingList which contains the elements to be set.
+
+        Raises:
+            ArrowTypeError: When two pyarrow types mismatch.
+
+        """
+        # pylint: disable=protected-access
+        if values._patype != self._patype:
+            raise pa.ArrowTypeError(
+                f"Can not set a '{self._patype}' list with a '{values._patype}' list"
+            )
+
+        super().set_slice(index, values)
+
+    def extend(self: _PPL, values: _PPL) -> None:
+        """Extend PyArrowPagingList by appending elements from another PyArrowPagingList.
+
+        Arguments:
+            values: The PyArrowPagingList which contains the elements to be extended.
+
+        Raises:
+            ArrowTypeError: When two pyarrow types mismatch.
+
+        """
+        # pylint: disable=protected-access
+        if values._patype != self._patype:
+            raise pa.ArrowTypeError(
+                f"Can not extend a '{self._patype}' list with a '{values._patype}' list"
+            )
+
+        super().extend(values)
+
+    def extend_nulls(self, size: int) -> None:
+        """Extend PyArrowPagingList by appending nulls.
+
+        Arguments:
+            size: The size of the nulls to be extended.
+
+        """
+        page = Page(pa.nulls(size, self._patype))
+        self._offsets.extend((len(page),))
+        self._pages.append(page)
+
+    def copy(self: _PPL) -> _PPL:
+        """Return a copy of the paging list.
+
+        Returns:
+            A copy of the paging list.
+
+        """
+        obj = super().copy()
+        # pylint: disable=protected-access
+        # https://github.com/python/mypy/issues/708
+        # https://github.com/python/mypy/issues/2427
+        obj._array_creator = self._array_creator  # type: ignore[assignment]
         obj._patype = self._patype
         return obj
 
@@ -459,7 +556,7 @@ class LazyFactory:
         for key in keys:
             patype = patype[key].type
 
-        return PagingList.from_factory(self, keys, patype)
+        return PyArrowPagingList.from_factory(self, keys, patype)
 
     def create_lists(self, keys: List[Tuple[str, ...]]) -> PagingLists:
         """Create a dict of PagingList from the given keys.
