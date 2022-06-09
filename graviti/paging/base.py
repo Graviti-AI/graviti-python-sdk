@@ -42,11 +42,13 @@ class PagingList:
     """
 
     _array_creator: Callable[[Iterable[Any]], Sequence[Any]] = tuple
+    _pages: List[PageBase[Any]]
+    _offsets: Offsets
 
-    def __init__(self, array: Sequence[Any]) -> None:
-        length = len(array)
-        self._pages: List[PageBase[Any]] = [Page(array)] if length != 0 else []
-        self._offsets = Offsets(length, length)
+    def __init__(self, iterable: Iterable[Any]) -> None:
+        # https://github.com/python/mypy/issues/5485
+        array = self._array_creator(iterable)  # type: ignore[call-arg]
+        self._init(array)
 
     def __len__(self) -> int:
         return self._offsets.total_count
@@ -108,6 +110,11 @@ class PagingList:
             self.extend_iterable(values)
 
         return self
+
+    def _init(self, array: Sequence[Any]) -> None:
+        length = len(array)
+        self._pages = [Page(array)] if length != 0 else []
+        self._offsets = Offsets(length, length)
 
     def _make_index_nonnegative(self, index: int) -> int:
         return index if index >= 0 else self.__len__() + index
@@ -343,12 +350,13 @@ class PyArrowPagingList(PagingList):
 
     """
 
-    def __init__(self, array: pa.Array) -> None:
-        super().__init__(array)
+    _array_creator = pa.array
+    _patype: pa.DataType
+
+    def _init(self, array: pa.Array) -> None:
+        super()._init(array)
         self._patype = array.type
-        # https://github.com/python/mypy/issues/708
-        # https://github.com/python/mypy/issues/2427
-        self._array_creator = partial(pa.array, type=array.type)  # type: ignore[assignment]
+        self._array_creator = partial(pa.array, type=array.type)
 
     @classmethod
     def from_factory(
@@ -435,9 +443,7 @@ class PyArrowPagingList(PagingList):
         """
         obj = super().copy()
         # pylint: disable=protected-access
-        # https://github.com/python/mypy/issues/708
-        # https://github.com/python/mypy/issues/2427
-        obj._array_creator = self._array_creator  # type: ignore[assignment]
+        obj._array_creator = self._array_creator
         obj._patype = self._patype
         return obj
 
