@@ -6,6 +6,7 @@
 
 from graviti.utility.attr import AttrDict
 from graviti.utility.collections import (
+    FrozenNameOrderedDict,
     NameOrderedDict,
     UserMapping,
     UserMutableMapping,
@@ -35,6 +36,7 @@ __all__ = [
     "File",
     "FileBase",
     "GravitiExtension",
+    "FrozenNameOrderedDict",
     "MAX_REPR_ROWS",
     "NameOrderedDict",
     "NestedDict",
