@@ -87,7 +87,7 @@ class Commit(Sheets, AttrsMixin):
 
     def _list_sheets(self) -> Dict[str, Any]:
         if self.commit_id is None:
-            raise NoCommitsError("No commit on the current branch. Please create a draft first")
+            raise NoCommitsError("No commit on the current branch. Please commit a draft first")
 
         return list_commit_sheets(
             access_key=self._dataset.access_key,
@@ -141,7 +141,7 @@ class Commit(Sheets, AttrsMixin):
 
         """
         if self.commit_id is None:
-            raise NoCommitsError("No commit on the current branch. Please create a draft first")
+            raise NoCommitsError("No commit on the current branch. Please commit a draft first")
 
         def _getter(offset: int, limit: int) -> Dict[str, Any]:
             return create_search(

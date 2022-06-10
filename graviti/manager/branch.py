@@ -95,7 +95,7 @@ class BranchManager:
             if revision is None:
                 raise NoCommitsError(
                     "Creating branches on the default branch without commit history is not allowed."
-                    "Please create a draft first"
+                    "Please commit a draft first"
                 )
 
         response = create_branch(

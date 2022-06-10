@@ -83,7 +83,7 @@ class TagManager:
             if revision is None:
                 raise NoCommitsError(
                     "Creating tags on the default branch without commit history is not allowed."
-                    "Please create a draft first"
+                    "Please commit a draft first"
                 )
 
         response = create_tag(
