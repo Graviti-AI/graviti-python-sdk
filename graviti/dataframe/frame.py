@@ -101,7 +101,7 @@ class DataFrame(Container):
 
         if isinstance(data, cls):
             if schema is not None:
-                raise ValueError("Only support the schema when data is not DataFrame.")
+                raise ValueError("Only support the schema when data is not DataFrame")
 
             return data.copy()
 
@@ -258,7 +258,7 @@ class DataFrame(Container):
         if schema is None:
             schema = pt.PortexType.from_pyarrow(array.type)
         elif not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array.")
+            raise TypeError("The schema is mismatched with the pyarrow array")
 
         return cls._from_pyarrow(array, schema)
 
@@ -623,7 +623,7 @@ class DataFrame(Container):
                 self._pylist_to_pyarrow(values, self.schema), self.schema
             )
         elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
-            raise TypeError("The schema of the given DataFrame is mismatched.")
+            raise TypeError("The schema of the given DataFrame is mismatched")
         elif self.operations is not None:
             values = values.copy()
 

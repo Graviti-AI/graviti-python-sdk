@@ -93,7 +93,7 @@ class ResourceNameError(ManagerError):
         self._name = name
 
     def __str__(self) -> str:
-        return f'The {self._resource} name "{self._name}" is invalid.'
+        return f'The {self._resource} name "{self._name}" is invalid'
 
 
 class ResponseError(ManagerError):

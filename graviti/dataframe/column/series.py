@@ -64,7 +64,7 @@ class Series(Container):
         schema: Optional[pt.PortexType] = None,
         name: Union[str, None] = None,
     ) -> None:
-        raise NotImplementedError("Not support initializing Series by __init__.")
+        raise NotImplementedError("Not support initializing Series by __init__")
 
     # @overload
     # def __getitem__(self, key: slice) -> "Series":
@@ -278,7 +278,7 @@ class Series(Container):
         if schema is None:
             schema = pt.PortexType.from_pyarrow(array.type)
         elif not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array.")
+            raise TypeError("The schema is mismatched with the pyarrow array")
 
         return cls._from_pyarrow(array, schema, name)
 
