@@ -365,6 +365,8 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
     "file.PointCloud",
     "file.PointCloudBin",
     "file.RemoteFile",
+    "label.file.RemoteInstanceMask",
+    "label.file.RemoteSemanticMask",
 )
 class FileSeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
