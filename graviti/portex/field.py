@@ -5,7 +5,23 @@
 """Portex record field releated classes."""
 
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, TypeVar, Union
+from collections import ChainMap
+from itertools import chain
+from typing import Any
+from typing import ChainMap as ChainMapType
+from typing import (
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import pyarrow as pa
 
@@ -24,12 +40,58 @@ class ImmutableFields(FrozenNameOrderedDict[PortexType]):
         if not isinstance(value, PortexType):
             raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
 
+    def __setitem__(self, key: Union[int, str], value: PortexType) -> None:
+        raise TypeError(f"Cannot set item '{key}' in {self.__class__.__name__}")
+
+    def __delitem__(self, key: Union[int, str]) -> None:
+        raise TypeError(f"Cannot delete item '{key}' in {self.__class__.__name__}")
+
     def _setitem(self, key: str, value: PortexType) -> None:
         self._check_value(value)
         super()._setitem(key, value)
 
+    def insert(self, index: int, name: str, portex_type: PortexType) -> None:
+        """Insert the name and portex_type at the index.
 
-class MutableFields(NameOrderedDict[PortexType], ImmutableFields):
+        Arguments:
+            index: The index to insert the field.
+            name: The name of the field to be inserted.
+            portex_type: The portex_type of the field to be inserted.
+
+        Raises:
+            TypeError: When calling this method of ImmutableFields.
+
+        """
+        raise TypeError(f"Cannot insert in {self.__class__.__name__}")
+
+    def astype(self, name: str, portex_type: PortexType) -> None:
+        """Convert the type of the field with the given name to the new PortexType.
+
+        Arguments:
+            name: The name of the field to convert.
+            portex_type: The new PortexType of the field to convert to.
+
+        Raises:
+            TypeError: When calling this method of ImmutableFields.
+
+        """
+        raise TypeError(f"Cannot change the type of '{name}' in {self.__class__.__name__}")
+
+    def rename(self, old_name: str, new_name: str) -> None:
+        """Rename the name of a field.
+
+        Arguments:
+            old_name: The current name of the field to be renamed.
+            new_name: The new name of the field to assign.
+
+        Raises:
+            TypeError: When calling this method of ImmutableFields.
+
+        """
+        raise TypeError(f"Cannot rename '{old_name}' in {self.__class__.__name__}")
+
+
+class MutableFields(NameOrderedDict[PortexType], ImmutableFields):  # type: ignore[misc]
     """Represents a mutable fields dict."""
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
@@ -83,6 +145,142 @@ class MutableFields(NameOrderedDict[PortexType], ImmutableFields):
 
         self._data.__setitem__(new_name, self._data.pop(old_name))
         self._keys.__setitem__(self._keys.index(old_name), new_name)
+
+
+UnionFields = Union[ImmutableFields, MutableFields]
+
+
+class ConnectedFields(MutableMapping[str, PortexType]):
+    """Fields composed of ImmutableFields and MutableFields.
+
+    Raises:
+        ValueError: When there as repeated field names.
+
+    Arguments:
+        multi_fields: The ImmutableFields and MutableFields.
+
+    """
+
+    def __init__(self, multi_fields: Iterable[UnionFields]) -> None:
+        multi_fields = list(multi_fields)
+        field_keys: Set[str] = set()
+        for fields in multi_fields:
+            keys = fields.keys()
+            repeated_keys = field_keys & keys
+            if repeated_keys:
+                raise ValueError(f"Repeated field names '{repeated_keys}'")
+            field_keys.update(keys)
+
+        self._mapping: ChainMapType[str, PortexType] = ChainMap()
+        self._mapping.maps = multi_fields  # type: ignore[assignment]
+        self._sequence = multi_fields
+
+    def __len__(self) -> int:
+        return sum(map(len, self._sequence))
+
+    def __getitem__(self, key: Union[int, str]) -> PortexType:
+        if isinstance(key, int):
+            i, j = self._get_indices(key)
+            return self._sequence[i][j]
+
+        return self._mapping[key]
+
+    def __setitem__(self, key: Union[int, str], value: PortexType) -> None:
+        if isinstance(key, int):
+            i, key = self._get_indices(key)
+            fields = self._sequence[i]
+        else:
+            try:
+                fields = self._get_fields(key)
+            except KeyError:
+                fields = self._sequence[-1]
+
+        fields[key] = value
+
+    def __delitem__(self, key: Union[int, str]) -> None:
+        if isinstance(key, int):
+            i, key = self._get_indices(key)
+            fields = self._sequence[i]
+        else:
+            fields = self._get_fields(key)
+
+        del fields[key]
+
+    def __iter__(self) -> Iterator[str]:
+        yield from chain(*self._sequence)
+
+    def _get_fields(self, key: str) -> UnionFields:
+        for fields in self._sequence:
+            if key in fields:
+                return fields
+
+        raise KeyError(key)
+
+    def _get_indices(self, index: int) -> Tuple[int, int]:
+        if index < 0:
+            index = self.__len__() + index
+
+        offset = index
+        for i, length in enumerate(map(len, self._sequence)):
+            if offset < length:
+                return i, offset
+            offset -= length
+
+        raise IndexError("Index out of range")
+
+    def insert(self, index: int, name: str, portex_type: PortexType) -> None:
+        """Insert the name and portex_type at the index.
+
+        Arguments:
+            index: The index to insert the field.
+            name: The name of the field to be inserted.
+            portex_type: The portex_type of the field to be inserted.
+
+        Raises:
+            ValueError: When the name already exists in the fields.
+            TypeError: When trying to insert a field into ImmutableFields.
+
+        """
+        if name in self._mapping:
+            raise ValueError(f"The '{name}' field already exists")
+
+        i, j = self._get_indices(index)
+
+        try:
+            self._sequence[i].insert(j, name, portex_type)
+            return
+        except TypeError:
+            pass
+
+        if j == 0 and i > 0:
+            fields = self._sequence[i - 1]
+            try:
+                fields[name] = portex_type
+                return
+            except TypeError:
+                pass
+
+        raise TypeError(f"Cannot insert at index {index} due to immutable fields") from None
+
+    def astype(self, name: str, portex_type: PortexType) -> None:
+        """Convert the type of the field with the given name to the new PortexType.
+
+        Arguments:
+            name: The name of the field to convert.
+            portex_type: The new PortexType of the field to convert to.
+
+        """
+        self._get_fields(name).astype(name, portex_type)
+
+    def rename(self, old_name: str, new_name: str) -> None:
+        """Rename the name of a field.
+
+        Arguments:
+            old_name: The current name of the field to be renamed.
+            new_name: The new name of the field to assign.
+
+        """
+        self._get_fields(old_name).rename(old_name, new_name)
 
 
 class Fields(NameOrderedDict[PortexType]):
