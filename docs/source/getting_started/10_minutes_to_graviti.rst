@@ -38,8 +38,8 @@ below, users can create a very simple dataset to experience Graviti SDK.
    dataset = ws.datasets.create("Graviti-dataset-demo")
    draft = dataset.drafts.create("Draft-1")
 
-   ob = pt.build_openbytes("main")
-   box2ds = ob.label.Box2D(
+   standard = pt.build_package("https://github.com/Project-OpenBytes/standard", "main")
+   box2ds = standard.label.Box2D(
        categories=["boat", "car"],
        attributes={
            "difficult": pt.boolean(),
@@ -189,7 +189,8 @@ Checkout commit/branch/tag:
 
    >>> dataset.checkout("v1.0")  # tag name
    >>> dataset.HEAD
-   Commit("47293b32f28c4008bc0f25b847b97d6f")(
+   Tag("v1.0")(
+     (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
      (parent_commit_id): None,
      (title): 'Commit-1',
      (committer): 'czhual',
