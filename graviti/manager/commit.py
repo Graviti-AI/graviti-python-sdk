@@ -165,8 +165,8 @@ class Commit(Sheets, AttrsMixin):
             lambda offset, limit: _getter(offset, limit)["data"],
             schema.to_pyarrow(),
         )
-        paging_lists = factory.create_lists(schema.get_keys())
-        return DataFrame._from_paging(paging_lists, schema)  # pylint: disable=protected-access
+
+        return DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
 
 
 class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes

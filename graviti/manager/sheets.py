@@ -67,11 +67,8 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                 pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
             )
 
-            paging_lists = factory.create_lists(schema.get_keys())
-            paging_lists[RECORD_KEY] = factory.create_list((RECORD_KEY,))
-
-            self._data[sheet_name] = DataFrame._from_paging(  # pylint: disable=protected-access
-                paging_lists, schema
+            self._data[sheet_name] = DataFrame._from_factory(  # pylint: disable=protected-access
+                factory, schema
             )
 
     def _get_data(self) -> Dict[str, DataFrame]:

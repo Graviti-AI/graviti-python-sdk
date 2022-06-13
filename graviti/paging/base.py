@@ -27,7 +27,6 @@ import pyarrow as pa
 
 from graviti.paging.offset import Offsets
 from graviti.paging.page import LazyPage, Page, PageBase
-from graviti.utility import NestedDict
 
 _PL = TypeVar("_PL", bound="PagingList")
 _PPL = TypeVar("_PPL", bound="PyArrowPagingList")
@@ -461,11 +460,33 @@ class PyArrowPagingList(PagingList):
         return pa.chunked_array((page.get_array() for page in self._pages), self._patype)
 
 
-PagingLists = NestedDict[str, PagingList]
+class LazyFactoryBase:
+    """LazyFactoryBase is the base class of the lazy facotry."""
+
+    _patype: pa.DataType
+
+    def __getitem__(self, key: str) -> "LazySubFactory":
+        raise NotImplementedError
+
+    def __contains__(self, key: str) -> bool:
+        try:
+            self._patype.__getitem__(key)
+            return True
+        except KeyError:
+            return False
+
+    def create_list(self) -> PyArrowPagingList:
+        """Create a paging list from the factory.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
 
 
-class LazyFactory:
-    """LazyFactory is a factory for creating paging lists.
+class LazyFactory(LazyFactoryBase):
+    """LazyFactory is a factory for requesting source data and creating paging lists.
 
     Arguments:
         total_count: The total count of the elements in the paging lists.
@@ -493,8 +514,8 @@ class LazyFactory:
         ...     ]
         ...
         >>> factory = LazyFactory(TOTAL_COUNT, 128, getter, patype)
-        >>> paths = factory.create_list(("remotePath",))
-        >>> categories = factory.create_list(("label", "CLASSIFICATION", "category"))
+        >>> paths = factory["remotePath"].create_list()
+        >>> categories = factory["label"]["CLASSIFICATION"]["category"].create_list()
         >>> len(paths)
         1000
         >>> list(paths)
@@ -531,6 +552,9 @@ class LazyFactory:
         self._patype = patype
         self._pages: List[Optional[pa.StructArray]] = [None] * ceil(total_count / limit)
 
+    def __getitem__(self, key: str) -> "LazySubFactory":
+        return LazySubFactory(self, (key,), self._patype[key].type)
+
     def get_array(self, pos: int, keys: Tuple[str, ...]) -> pa.Array:
         """Get the array from the factory.
 
@@ -552,40 +576,14 @@ class LazyFactory:
 
         return array
 
-    def create_list(self, keys: Tuple[str, ...]) -> PagingList:
+    def create_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
 
-        Arguments:
-            keys: The keys to access the array from factory.
-
         Returns:
-            A paging list created by the given keys.
+            A paging list created from the factory.
 
         """
-        patype = self._patype
-        for key in keys:
-            patype = patype[key].type
-
-        return PyArrowPagingList.from_factory(self, keys, patype)
-
-    def create_lists(self, keys: List[Tuple[str, ...]]) -> PagingLists:
-        """Create a dict of PagingList from the given keys.
-
-        Arguments:
-            keys: A list of keys to create the paging lists.
-
-        Returns:
-            The created paging lists.
-
-        """
-        paging_lists: PagingLists = {}
-        for key in keys:
-            position = paging_lists
-            for subkey in key[:-1]:
-                position = position.setdefault(subkey, {})  # type: ignore[assignment]
-            position[key[-1]] = self.create_list(key)
-
-        return paging_lists
+        return PyArrowPagingList.from_factory(self, (), self._patype)
 
     def get_page_ranges(self) -> Iterator[range]:
         """A Generator which generates the range of the pages in the factory.
@@ -598,3 +596,31 @@ class LazyFactory:
         yield from repeat(range(self._limit), div)
         if mod != 0:
             yield range(mod)
+
+
+class LazySubFactory(LazyFactoryBase):
+    """LazySubFactory is a factory for creating paging lists.
+
+    Arguments:
+        factory: The source LazyFactory instance.
+        keys: The keys to access the array from the source LazyFactory.
+        patype: The pyarrow DataType of the data in the sub-factory.
+
+    """
+
+    def __init__(self, factory: LazyFactory, keys: Tuple[str, ...], patype: pa.DataType) -> None:
+        self._factory = factory
+        self._keys = keys
+        self._patype = patype
+
+    def __getitem__(self, key: str) -> "LazySubFactory":
+        return LazySubFactory(self._factory, self._keys + (key,), self._patype[key].type)
+
+    def create_list(self) -> PyArrowPagingList:
+        """Create a paging list from the factory.
+
+        Returns:
+            A paging list created from the factory.
+
+        """
+        return PyArrowPagingList.from_factory(self._factory, self._keys, self._patype)
