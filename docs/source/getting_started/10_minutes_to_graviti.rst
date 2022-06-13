@@ -7,20 +7,13 @@
 
 This is a simple introductory tutorial for beginners.
 
-**************
- Registration
-**************
+******************
+ Get an AccessKey
+******************
 
-Before using Graviti SDK, please finish the following registration steps:
+Before using Graviti SDK, please visit `Graviti Developer Tools`_ to get an AccessKey.
 
-- Please visit `Graviti`_ to sign up.
-- Please visit `Graviti Developer Tools`_ to get an AccessKey.
-
-.. _Graviti: https://www.graviti.com
 .. _Graviti Developer Tools: https://gas.graviti.com/tensorbay/developer
-
-.. note::
-   An AccessKey is needed to authenticate identity when using Graviti SDK.
 
 *********************
  Dataset Preparation
@@ -77,12 +70,7 @@ below, users can create a very simple dataset to experience Graviti SDK.
        data.append(row_data)
    draft["train"] = DataFrame(data=data, schema=schema)
    draft.upload()
-
    draft.commit("Commit-1")
-
-   dataset.checkout("main")
-   dataset.tags.create("v1.0")
-   dataset.branches.create("dev")
 
 ***************
  Get a Dataset
@@ -119,97 +107,9 @@ Get one dataset:
      (config): 'AmazonS3-us-west-1'
    )
 
-***********************************
- Switch Between Different Versions
-***********************************
-
-View the current version of the dataset:
-
-.. code:: python
-
-   >>> dataset.HEAD
-   Branch("main")(
-     (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): None,
-     (title): 'Commit-1',
-     (committer): 'czhual',
-     (committed_at): '2022-05-26T02:57:00Z'
-   )
-
-List history commits:
-
-.. code:: python
-
-   >>> dataset.commits.list()
-   LazyPagingList [
-     Commit("47293b32f28c4008bc0f25b847b97d6f")(...)
-   ]
-
-List all branches:
-
-.. code:: python
-
-   >>> dataset.branches.list()
-   LazyPagingList [
-     Branch("main")(...),
-     Branch("dev")(...)
-   ]
-
-List all tags:
-
-.. code:: python
-
-   >>> dataset.tags.list()
-   LazyPagingList [
-     Tag("v1.0")(...)
-   ]
-
-Checkout commit/branch/tag:
-
-.. code:: python
-
-   >>> dataset.checkout("47293b32f28c4008bc0f25b847b97d6f")  # commit id
-   >>> dataset.HEAD
-   Commit("47293b32f28c4008bc0f25b847b97d6f")(
-     (parent_commit_id): None,
-     (title): 'Commit-1',
-     (committer): 'czhual',
-     (committed_at): '2022-05-26T02:57:00Z'
-   )
-
-   >>> dataset.checkout("dev")  # branch name
-   >>> dataset.HEAD
-   Branch("dev")(
-     (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): None,
-     (title): 'Commit-1',
-     (committer): 'czhual',
-     (committed_at): '2022-05-26T02:57:00Z'
-   )
-
-   >>> dataset.checkout("v1.0")  # tag name
-   >>> dataset.HEAD
-   Tag("v1.0")(
-     (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): None,
-     (title): 'Commit-1',
-     (committer): 'czhual',
-     (committed_at): '2022-05-26T02:57:00Z'
-   )
-
-
 *************
  Get a Sheet
 *************
-
-List all sheets:
-
-.. code:: python
-
-   >>> list(dataset.keys())
-   ['train']
-
-Get a sheet:
 
 .. code:: python
 
@@ -298,15 +198,15 @@ Search the data within a specified sheet:
    ...     "opt": "or",
    ...     "value": [
    ...         {
-   ...              "opt": "eq",
-   ...              "key": "filename",
-   ...              "value": "a.jpg"
-   ...          },
+   ...             "opt": "eq",
+   ...             "key": "filename",
+   ...             "value": "a.jpg"
+   ...         },
    ...         {
-   ...              "opt": "eq",
-   ...              "key": "filename",
-   ...              "value": "b.jpg"
-   ...          },
+   ...             "opt": "eq",
+   ...             "key": "filename",
+   ...             "value": "b.jpg"
+   ...         }
    ...     ]
    ... }
    >>> dataset.search("train", criteria)
