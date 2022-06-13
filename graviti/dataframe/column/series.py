@@ -14,7 +14,7 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
-from graviti.paging import PyArrowPagingList
+from graviti.paging import LazyFactoryBase, PyArrowPagingList
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _S = TypeVar("_S", bound="Series")
@@ -235,11 +235,11 @@ class Series(Container):
         return ColumnSeriesLocIndexer(self)
 
     @classmethod
-    def _from_paging(  # pylint: disable=arguments-differ
-        cls: Type[_S], paging: PyArrowPagingList, schema: pt.PortexType, name: Optional[str] = None
+    def _from_factory(  # pylint: disable=arguments-differ
+        cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
     ) -> _S:
         obj: _S = object.__new__(cls)
-        obj._data = paging
+        obj._data = factory.create_list()
         obj.schema = schema
         obj.name = name
         return obj
@@ -323,10 +323,10 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
         )
 
     @classmethod
-    def _from_paging(  # pylint: disable=arguments-differ
-        cls: Type[_A], paging: PyArrowPagingList, schema: pt.PortexType, name: Optional[str] = None
+    def _from_factory(  # pylint: disable=arguments-differ
+        cls: Type[_A], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
     ) -> _A:
-        obj = super()._from_paging(paging, schema, name)
+        obj = super()._from_factory(factory, schema, name)
 
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         obj._item_container = builtin_schema.items.container  # pylint: disable=protected-access

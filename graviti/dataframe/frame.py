@@ -30,7 +30,7 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.operation import AddData, DataFrameOperation
-from graviti.paging import PagingLists, PyArrowPagingList
+from graviti.paging import LazyFactoryBase, PyArrowPagingList
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _T = TypeVar("_T", bound="DataFrame")
@@ -207,12 +207,11 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def _from_paging(cls: Type[_T], paging: PagingLists, schema: pt.PortexType) -> _T:
+    def _from_factory(cls: Type[_T], factory: LazyFactoryBase, schema: pt.PortexType) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:
-            paging: A dict used to initialize dataframe whose data is stored in
-                lazy-loaded form.
+            factory: The LazyFactory instance for creating the PagingList.
             schema: The schema of the DataFrame.
 
         Returns:
@@ -227,14 +226,14 @@ class DataFrame(Container):
 
         # In this case schema.to_builtin always returns record.
         for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
-            obj._columns[key] = value.container._from_paging(  # pylint: disable=protected-access
-                paging[key], schema=value
+            obj._columns[key] = value.container._from_factory(  # pylint: disable=protected-access
+                factory[key], schema=value
             )
 
             obj._column_names.append(key)
 
-        if RECORD_KEY in paging:
-            obj._record_key = paging[RECORD_KEY]  # type: ignore[assignment]
+        if RECORD_KEY in factory:
+            obj._record_key = factory[RECORD_KEY].create_list()
 
         return obj
 

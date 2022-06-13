@@ -9,6 +9,7 @@ from typing import Any, ClassVar, List, Type, TypeVar
 
 import pyarrow as pa
 
+from graviti.paging.base import LazyFactoryBase
 from graviti.portex import PortexType
 
 _T = TypeVar("_T", bound="Container")
@@ -24,7 +25,7 @@ class Container:
         raise NotImplementedError
 
     @classmethod
-    def _from_paging(cls: Type[_T], paging: pa.Array, schema: PortexType) -> _T:
+    def _from_factory(cls: Type[_T], factory: LazyFactoryBase, schema: PortexType) -> _T:
         raise NotImplementedError
 
     @classmethod
