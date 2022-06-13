@@ -12,7 +12,7 @@ from tensorbay.utility import attr
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
-from graviti.manager.common import check_head_status
+from graviti.manager.common import CURRENT_COMMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
 
@@ -73,14 +73,14 @@ class BranchManager:
 
         return response["total_count"]  # type: ignore[no-any-return]
 
-    def create(self, name: str, revision: Optional[str] = None) -> Branch:
+    def create(self, name: str, revision: str = CURRENT_COMMIT) -> Branch:
         """Create a branch.
 
         Arguments:
             name: The branch name.
             revision: The information to locate the specific commit, which can be the commit id,
-                the branch name, or the tag name.
-                If the revision is not given, create the branch based on the current commit.
+                the branch name, or the tag name. The default value is the current commit of the
+                dataset.
 
         Raises:
             NoCommitsError: When create branches on default branch without commit history.
@@ -90,7 +90,7 @@ class BranchManager:
 
         """
         head = self._dataset.HEAD
-        if not revision:
+        if revision is CURRENT_COMMIT:
             revision = head.commit_id
             if revision is None:
                 raise NoCommitsError(

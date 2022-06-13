@@ -11,7 +11,7 @@ from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
-from graviti.manager.common import check_head_status
+from graviti.manager.common import ALL_BRANCHES, CURRENT_BRANCH, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -250,18 +250,20 @@ class DraftManager:
 
     def _generate(
         self,
-        state: Optional[str],
-        branch: Optional[str],
+        state: str,
+        branch: str,
         offset: int,
         limit: int,
     ) -> Generator[Draft, None, int]:
+        _branch = None if branch is ALL_BRANCHES else branch
+
         response = list_drafts(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
             self._dataset.name,
             state=state,
-            branch=branch,
+            branch=_branch,
             offset=offset,
             limit=limit,
         )
@@ -272,14 +274,14 @@ class DraftManager:
         return response["total_count"]  # type: ignore[no-any-return]
 
     def create(
-        self, title: str, description: Optional[str] = None, branch: Optional[str] = None
+        self, title: str, description: Optional[str] = None, branch: str = CURRENT_BRANCH
     ) -> Draft:
         """Create a draft.
 
         Arguments:
             title: The draft title.
             description: The draft description.
-            branch: The branch name.
+            branch: The branch name. The default value is the current branch of the dataset.
 
         Returns:
             The :class:`.Draft` instance with the given title and description.
@@ -289,7 +291,7 @@ class DraftManager:
 
         """
         head = self._dataset.HEAD
-        if branch is None:
+        if branch is CURRENT_BRANCH:
             if not isinstance(head, Branch):
                 raise StatusError(
                     "The current dataset is not on a branch, please checkout a branch first "
@@ -329,15 +331,13 @@ class DraftManager:
         )
         return Draft(self._dataset, **response)
 
-    def list(
-        self, state: Optional[str] = None, branch: Optional[str] = None
-    ) -> LazyPagingList[Draft]:
+    def list(self, state: str = "OPEN", branch: str = ALL_BRANCHES) -> LazyPagingList[Draft]:
         """List all the drafts.
 
         Arguments:
-            state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL" and None.
-                    None means listing open drafts.
-            branch: The branch name. None means listing drafts from all branches.
+            state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL". The default
+                value is "OPEN".
+            branch: The branch name. The default value is all branches.
 
         Returns:
             The LazyPagingList of :class:`drafts<.Draft>` instances.

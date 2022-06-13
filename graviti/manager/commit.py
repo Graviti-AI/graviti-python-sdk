@@ -11,7 +11,7 @@ from tensorbay.utility import AttrsMixin, attr
 
 from graviti.dataframe import DataFrame
 from graviti.exception import NoCommitsError
-from graviti.manager.common import check_head_status
+from graviti.manager.common import CURRENT_COMMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -271,12 +271,13 @@ class CommitManager:
 
         return response["total_count"]  # type: ignore[no-any-return]
 
-    def get(self, revision: Optional[str] = None) -> Commit:
+    def get(self, revision: str = CURRENT_COMMIT) -> Commit:
         """Get the certain commit with the given revision.
 
         Arguments:
             revision: The information to locate the specific commit, which can be the commit id,
-                the branch name, or the tag name. If it is not given, get the current commit.
+                the branch name, or the tag name. The default value is the current commit of the
+                dataset.
 
         Raises:
             NoCommitsError: When revision is not given and the commit id of current dataset is None,
@@ -287,7 +288,7 @@ class CommitManager:
 
         """
         head = self._dataset.HEAD
-        if revision is None:
+        if revision is CURRENT_COMMIT:
             revision = head.commit_id
             if revision is None:
                 raise NoCommitsError("No commits on the default branch yet")
@@ -307,7 +308,7 @@ class CommitManager:
 
         return Commit(self._dataset, **response)
 
-    def list(self, revision: Optional[str] = None) -> LazyPagingList[Commit]:
+    def list(self, revision: str = CURRENT_COMMIT) -> LazyPagingList[Commit]:
         """List the commits.
 
         Arguments:
@@ -320,12 +321,9 @@ class CommitManager:
             The LazyPagingList of :class:`commits<.Commit>` instances.
 
         """
-        if revision is None:
+        if revision is CURRENT_COMMIT:
             revision = self._dataset.HEAD.commit_id
             if revision is None:
                 return []  # type: ignore[unreachable]
 
-        return LazyPagingList(
-            lambda offset, limit: self._generate(revision, offset, limit),  # type: ignore[arg-type]
-            24,
-        )
+        return LazyPagingList(lambda offset, limit: self._generate(revision, offset, limit), 24)

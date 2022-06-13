@@ -5,11 +5,11 @@
 
 """The implementation of the Tag and TagManager."""
 
-from typing import TYPE_CHECKING, Generator, Optional
+from typing import TYPE_CHECKING, Generator
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
-from graviti.manager.common import check_head_status
+from graviti.manager.common import CURRENT_COMMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
 
@@ -61,14 +61,14 @@ class TagManager:
 
         return response["total_count"]  # type: ignore[no-any-return]
 
-    def create(self, name: str, revision: Optional[str] = None) -> Tag:
+    def create(self, name: str, revision: str = CURRENT_COMMIT) -> Tag:
         """Create a tag for a commit.
 
         Arguments:
             name: The tag name to be created for the specific commit.
             revision: The information to locate the specific commit, which can be the commit id,
-                the branch name, or the tag name.
-                If the revision is not given, create the tag for the current commit.
+                the branch name, or the tag name. The default value is the current commit of the
+                dataset.
 
         Raises:
             NoCommitsError: When create tags on the default branch without commit history.
@@ -78,7 +78,7 @@ class TagManager:
 
         """
         head = self._dataset.HEAD
-        if not revision:
+        if revision is CURRENT_COMMIT:
             revision = head.commit_id
             if revision is None:
                 raise NoCommitsError(
