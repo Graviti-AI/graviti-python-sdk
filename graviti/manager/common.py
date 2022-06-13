@@ -6,10 +6,30 @@
 """Common tools."""
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from graviti.manager.commit import Commit
+
+
+class DefaultValue:
+    """This class defines the default value of parameters from methods in manager.
+
+    Arguments:
+        name: The name of the default value.
+
+    """
+
+    def __init__(self, name: str) -> None:
+        self._name = name
+
+    def __repr__(self) -> str:
+        return self._name
+
+
+CURRENT_COMMIT: Any = DefaultValue("CURRENT_COMMIT")
+CURRENT_BRANCH: Any = DefaultValue("CURRENT_BRANCH")
+ALL_BRANCHES: Any = DefaultValue("ALL_BRANCHES")
 
 
 class StatusWarning(Warning):
