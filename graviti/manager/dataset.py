@@ -48,7 +48,6 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         name: The name of the dataset, unique for a user.
         alias: Dataset alias.
         default_branch: The default branch of dataset.
-        commit_id: The commit ID.
         created_at: The time when the dataset was created.
         updated_at: The time when the dataset was last modified.
         owner: The owner of the dataset.
@@ -93,7 +92,6 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         *,
         alias: str,
         default_branch: str,
-        commit_id: Optional[str],
         created_at: str,
         updated_at: str,
         owner: str,
@@ -112,8 +110,6 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.is_public = is_public
         self.config = config
         self._data: Commit = self.branches.get(default_branch)
-        if commit_id != self._data.commit_id:
-            self._data = self.commits.get(commit_id)
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
