@@ -38,7 +38,7 @@ def commit_draft(
         >>> commit_draft(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ...     draft_number=2,
         ...     title="commit-2",
@@ -48,7 +48,7 @@ def commit_draft(
            "parent_commit_id": "784ba0d3bf0a41f6a7bfd771d8c00fcb",
            "title": "upload data",
            "description": "",
-           "committer": "czhual",
+           "committer": "Graviti-example",
            "committed_at": "2021-03-03T18:58:10Z"
         }
 
@@ -93,7 +93,7 @@ def list_commits(
         >>> list_commits(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ... )
         {
@@ -103,7 +103,7 @@ def list_commits(
                    "parent_commitId": "784ba0d3bf0a41f6a7bfd771d8c00fcb",
                    "title": "upload data",
                    "description": "",
-                   "committer": "Gravitier",
+                   "committer": "Graviti-example",
                    "committed_at": "2021-03-03T18:58:10Z"
                }
            ],
@@ -145,7 +145,7 @@ def get_commit(
         >>> get_commit(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ...     commit_id="85c57a7f03804ccc906632248dc8c359"
         ... )
@@ -154,7 +154,7 @@ def get_commit(
             "parent_commit_id": "784ba0d3bf0a41f6a7bfd771d8c00fcb",
             "title": "upload data",
             "description": "",
-            "committer": "czhual",
+            "committer": "Graviti-example",
             "committed_at": "2021-03-03T18:58:10Z"
         }
 
@@ -192,7 +192,7 @@ def get_revision(
            "parent_commit_id": "784ba0d3bf0a41f6a7bfd771d8c00fcb",
            "title": "upload data",
            "description": "",
-           "committer": "czhual",
+           "committer": "Graviti-example",
            "committed_at": "2021-03-03T18:58:10Z"
         }
 

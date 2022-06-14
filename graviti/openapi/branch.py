@@ -37,7 +37,7 @@ def create_branch(
         >>> create_branch(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ...     name="branch-1",
         ...     revision="main"
@@ -48,7 +48,7 @@ def create_branch(
             "parent_commit_id": "f68b1375454f459b8a486b8d1f4d9ddb",
             "title": "first commit",
             "description": "desc",
-            "committer": "graviti",
+            "committer": "Graviti-example",
             "committed_at": "2021-03-03T18:58:10Z"
         }
 
@@ -86,7 +86,7 @@ def list_branches(
         >>> list_branches(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST"
         ... )
         {
@@ -97,7 +97,7 @@ def list_branches(
                    "parent_commit_id": "f68b1375454f459b8a486b8d1f4d9ddb",
                    "title": "first commit",
                    "description": "desc",
-                   "committer": "graviti",
+                   "committer": "Graviti-example",
                    "committed_at": "2021-03-03T18:58:10Z"
                }
            ],
@@ -142,7 +142,7 @@ def get_branch(
         >>> get_branch(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ...     branch="main",
         ... )
@@ -152,7 +152,7 @@ def get_branch(
             "parent_commit_id": "f68b1375454f459b8a486b8d1f4d9ddb",
             "title": "first commit",
             "description": "desc",
-            "committer": "graviti",
+            "committer": "Graviti-example",
             "committed_at": "2021-03-03T18:58:10Z"
         }
 
@@ -182,7 +182,7 @@ def delete_branch(
         >>> delete_branch(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ...     branch="branch-1",
         ... )

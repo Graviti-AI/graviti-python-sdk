@@ -38,7 +38,7 @@ def create_draft(
         >>> create_draft(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ...     title="draft-2",
         ...     branch="main",
@@ -50,7 +50,7 @@ def create_draft(
            "branch": "main",
            "state": "OPEN",
            "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
-           "creator": "czhual",
+           "creator": "Graviti-example",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z"
         }
@@ -100,7 +100,7 @@ def list_drafts(
         >>> list_drafts(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     "MNIST",
         ... )
         {
@@ -112,7 +112,7 @@ def list_drafts(
                    "branch": "main",
                    "state": "OPEN",
                    "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
-                   "creator": "czhual",
+                   "creator": "Graviti-example",
                    "created_at": "2021-03-03T18:58:10Z",
                    "updated_at": "2021-03-03T18:58:10Z"
                }
@@ -158,7 +158,7 @@ def get_draft(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "MNIST",
-        ...     "czhual",
+        ...     "Graviti-example",
         ...     draft_number=2,
         ... )
         {
@@ -168,7 +168,7 @@ def get_draft(
            "branch": "main",
            "state": "OPEN",
            "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
-           "creator": "czhual",
+           "creator": "Graviti-example",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z"
         }
@@ -221,8 +221,8 @@ def update_draft(
            "description": "",
            "branch": "main",
            "state": "OPEN",
-            "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
-           "creator": "czhual",
+           "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
+           "creator": "Graviti-example",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-04T18:58:10Z"
         }
@@ -243,7 +243,7 @@ def update_draft(
            "branch": "main",
            "state": "CLOSED",
            "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
-           "creator": "czhual",
+           "creator": "Graviti-example",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-05T18:58:10Z"
         }
