@@ -9,7 +9,7 @@ from typing import Any, ClassVar, List, Type, TypeVar
 
 import pyarrow as pa
 
-from graviti.paging.base import LazyFactoryBase
+from graviti.paging import LazyFactoryBase
 from graviti.portex import PortexType
 
 _T = TypeVar("_T", bound="Container")
