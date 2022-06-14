@@ -11,7 +11,7 @@ from typing import Any, Callable, Iterator, List, Optional, Tuple
 
 import pyarrow as pa
 
-from graviti.paging.lists import PyArrowPagingList
+from graviti.paging.lists import PagingList, PyArrowPagingList
 
 
 class LazyFactoryBase:
@@ -29,7 +29,19 @@ class LazyFactoryBase:
         except KeyError:
             return False
 
-    def create_list(self) -> PyArrowPagingList:
+    def create_list(self, converter: Callable[[pa.Array], Tuple[Any, ...]]) -> PagingList:
+        """Create a paging list from the factory.
+
+        Arguments:
+            converter: A callable object to convert pyarrow array to python tuple.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
 
         Raises:
@@ -130,7 +142,19 @@ class LazyFactory(LazyFactoryBase):
 
         return array
 
-    def create_list(self) -> PyArrowPagingList:
+    def create_list(self, converter: Callable[[pa.Array], Tuple[Any, ...]]) -> PagingList:
+        """Create a paging list from the factory.
+
+        Arguments:
+            converter: A callable object to convert pyarrow array to python tuple.
+
+        Returns:
+            A paging list created from the factory.
+
+        """
+        return PagingList.from_factory(self, (), converter)
+
+    def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
 
         Returns:
@@ -170,7 +194,19 @@ class LazySubFactory(LazyFactoryBase):
     def __getitem__(self, key: str) -> "LazySubFactory":
         return LazySubFactory(self._factory, self._keys + (key,), self._patype[key].type)
 
-    def create_list(self) -> PyArrowPagingList:
+    def create_list(self, converter: Callable[[pa.Array], Tuple[Any, ...]]) -> PagingList:
+        """Create a paging list from the factory.
+
+        Arguments:
+            converter: A callable object to convert pyarrow array to python tuple.
+
+        Returns:
+            A paging list created from the factory.
+
+        """
+        return PagingList.from_factory(self._factory, self._keys, converter)
+
+    def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
 
         Returns:
