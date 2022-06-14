@@ -29,6 +29,7 @@ from graviti.utility import PathLike, UserMutableMapping
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
+    from graviti.dataframe.sql.container import SearchContainer
     from graviti.portex.field import ConnectedFields
     from graviti.portex.param import Params
 
@@ -46,6 +47,7 @@ class PortexType:
     package: ClassVar[Package[Any]]
     params: ClassVar["Params"]
     container: Type["Container"]
+    search_container: Type["SearchContainer"]
 
     def __repr__(self) -> str:
         return self._repr1(0)
