@@ -29,8 +29,7 @@ draft based on a branch:
 
    dataset.drafts.create(f"{DRAFT_TITLE}", branch=f"{BRANCH_NAME}")
 
-If no branch is specified, the created draft will be based on the current branch of the
-dataset, which can be viewed by ``dataset.HEAD``:
+If no branch is specified, the created draft will be based on the current branch of the dataset:
 
 .. code:: python
 
@@ -129,9 +128,9 @@ In addition to title, it is also allowed to add description to the commit:
    draft.commit(f"{COMMIT_TITLE}", f"{COMMIT_DESCRIPTION}")
 
 .. important::
-   SDK does not automatically update the ``dataset.HEAD`` after committing the draft. Therefore,
-   the dataset may be some commits behind the server. In addition, other members of the workspace
-   may have committed drafts on this branch.
+   SDK does not automatically update the version of the dataset after committing the draft.
+   Therefore, the dataset may be some commits behind the server. In addition, other members
+   of the workspace may have committed drafts on this branch.
 
    So it is necessary to ``checkout`` the specified branch, commit or tag before proceeding to the
    next step. For example, if the user needs to commit a draft and tag the commit: 

@@ -81,9 +81,8 @@ If no revision is specified, the current commit of dataset will be returned:
 *****************
 
 SDK provides method :meth:`~graviti.manager.dataset.Dataset.checkout` to support switching the
-version of the dataset by commits. The version of dataset can be viewed by ``dataset.HEAD``.
+version of the dataset by commits:
 
 .. code:: python
 
    dataset.checkout(f"{COMMIT_ID}")
-   dataset.HEAD

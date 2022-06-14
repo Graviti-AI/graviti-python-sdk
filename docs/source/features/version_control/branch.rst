@@ -48,7 +48,7 @@ The revision can also be the tag name:
    dataset.branches.create(f"{BRANCH_NAME}", f"{TAG_NAME}")
 
 If no revision is specified, the created branch will be based on the current commit of the
-dataset, which can be viewed by ``dataset.HEAD.commit_id``.
+dataset:
 
 .. code:: python
 
@@ -92,11 +92,12 @@ branch by name:
 *****************
 
 SDK provides method :meth:`~graviti.manager.dataset.Dataset.checkout` to support switching the
-version of the dataset by branches. The version of dataset can be viewed by ``dataset.HEAD``.
+version of the dataset by branches:
 
 .. code:: python
 
    dataset.checkout(f"{BRANCH_NAME}")
+   # Check whether the dataset version is correct.
    dataset.HEAD
 
 .. note::
@@ -108,4 +109,4 @@ version of the dataset by branches. The version of dataset can be viewed by ``da
       dataset.checkout(f"{BRANCH_NAME}")
       draft = dataset.drafts.create(f"{DRAFT_TITLE}")
       draft.commit(f"{COMMIT_TITLE}")
-      dataset.checkout(f"{BRANCH_NAME}")  # update dataset.HEAD
+      dataset.checkout(f"{BRANCH_NAME}")  # update the version of the dataset
