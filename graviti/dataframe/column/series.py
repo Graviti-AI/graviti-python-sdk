@@ -29,7 +29,6 @@ class SeriesBase(Container):
     Arguments:
         data: The data that needs to be stored in Series. Could be ndarray or Iterable.
         schema: Data type to force. If None, will be inferred from ``data``.
-        name: The name to the Series.
 
     Examples:
         Constructing Series from a list.
@@ -47,13 +46,11 @@ class SeriesBase(Container):
     has_keys = False
     schema: pt.PortexType
     _data: PagingListBase
-    name: Optional[str]
 
     def __init__(
         self,
         data: Iterable[Any],
         schema: Optional[pt.PortexType] = None,
-        name: Union[str, None] = None,
     ) -> None:
         raise NotImplementedError("Not support initializing Series by __init__")
 
@@ -107,8 +104,6 @@ class SeriesBase(Container):
             lines.append(f"{indice:<{indice_width+2}}{value:<{body_item_width+2}}")
         if self.__len__() > MAX_REPR_ROWS:
             lines.append(f"...({self.__len__()})")
-        if self.name:
-            lines.append(f"Name: {self.name}")
         return "\n".join(lines)
 
     def _get_repr_indices(self) -> Iterable[int]:
@@ -226,24 +221,16 @@ class SeriesBase(Container):
         return ColumnSeriesLocIndexer(self)
 
     @classmethod
-    def _from_pyarrow(  # pylint: disable=arguments-differ
-        cls: Type[_SB], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _SB:
-        raise NotImplementedError
-
-    @classmethod
     def from_pyarrow(
         cls: Type[_SB],
         array: pa.Array,
         schema: Optional[pt.PortexType] = None,
-        name: Optional[str] = None,
     ) -> _SB:
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
             array: The input pyarrow array.
             schema: The schema of the series. If None, will be inferred from `array`.
-            name: The name to the Series.
 
         Raises:
             TypeError: When the schema is mismatched with the pyarrow array type.
@@ -257,7 +244,7 @@ class SeriesBase(Container):
         elif not array.type.equals(schema.to_pyarrow()):
             raise TypeError("The schema is mismatched with the pyarrow array")
 
-        return cls._from_pyarrow(array, schema, name)
+        return cls._from_pyarrow(array, schema)
 
     def copy(self: _SB) -> _SB:
         """Get a copy of the series.
@@ -268,7 +255,6 @@ class SeriesBase(Container):
         """
         obj: _SB = object.__new__(self.__class__)
 
-        obj.name = self.name
         obj.schema = self.schema.copy()
         obj._data = self._data.copy()  # pylint: disable=protected-access
 
@@ -291,7 +277,6 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
     Arguments:
         data: The data that needs to be stored in Series. Could be ndarray or Iterable.
         schema: Data type to force. If None, will be inferred from ``data``.
-        name: The name to the Series.
 
     Examples:
         Constructing Series from a list.
@@ -312,23 +297,17 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key].as_py()
 
     @classmethod
-    def _from_factory(  # pylint: disable=arguments-differ
-        cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _S:
+    def _from_factory(cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()
         obj.schema = schema
-        obj.name = name
         return obj
 
     @classmethod
-    def _from_pyarrow(  # pylint: disable=arguments-differ
-        cls: Type[_S], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _S:
+    def _from_pyarrow(cls: Type[_S], array: pa.Array, schema: pt.PortexType) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = PyArrowPagingList.from_pyarrow(array)
         obj.schema = schema
-        obj.name = name
         return obj
 
     def to_pylist(self) -> List[Any]:
@@ -351,9 +330,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key]
 
     @classmethod
-    def _from_factory(  # pylint: disable=arguments-differ
-        cls: Type[_A], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _A:
+    def _from_factory(cls: Type[_A], factory: LazyFactoryBase, schema: pt.PortexType) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
@@ -363,14 +340,11 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
             lambda array: tuple(_item_creator(item.values, _item_schema) for item in array)
         )
         obj.schema = schema
-        obj.name = name
 
         return obj
 
     @classmethod
-    def _from_pyarrow(  # pylint: disable=arguments-differ
-        cls: Type[_A], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _A:
+    def _from_pyarrow(cls: Type[_A], array: pa.Array, schema: pt.PortexType) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
@@ -378,7 +352,6 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj: _A = object.__new__(cls)
         obj._data = PagingList(_item_creator(item.values, _item_schema) for item in array)
         obj.schema = schema
-        obj.name = name
         return obj
 
     # TODO: copy method will be implementated sooner.

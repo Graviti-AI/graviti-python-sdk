@@ -18,7 +18,6 @@ class Series:
     Arguments:
         data: The data that needs to be stored in Series. Could be ndarray or Iterable.
         schema: Data type to force. If None, will be inferred from ``data``.
-        name: The name to the Series.
         index: Index of the ``data``.
 
     Examples:
@@ -40,7 +39,6 @@ class Series:
         self,
         data: Optional[Dict[str, Any]] = None,
         schema: Any = None,
-        name: Union[str, int, None] = None,
         index: Optional[List[str]] = None,
     ) -> None:
         if data is None:
@@ -55,10 +53,9 @@ class Series:
         self._indices_data, self._indices = {}, []
         for key, value in data.items():
             if isinstance(value, dict):
-                value = Series(value, name=name)
+                value = Series(value)
             self._indices_data[key] = value
             self._indices.append(key)
-        self.name = name
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
@@ -74,8 +71,6 @@ class Series:
         ]
         if self.__len__() > MAX_REPR_ROWS:
             lines.append(f"...({self.__len__()})")
-        if self.name:
-            lines.append(f"Name: {self.name}")
         return "\n".join(lines)
 
     # @overload
@@ -95,7 +90,7 @@ class Series:
             return self._indices_data[key]
 
         new_data = {name: self._indices_data[name] for name in key}
-        return Series(new_data, name=self.name)
+        return Series(new_data)
 
     def __setitem__(self, key: str, value: Any) -> None:
         pass
@@ -120,12 +115,11 @@ class Series:
         return lines
 
     @classmethod
-    def _construct(cls, indices_data: Dict[str, Any], new_name: Union[str, int, None]) -> "Series":
+    def _construct(cls, indices_data: Dict[str, Any]) -> "Series":
         obj: Series = object.__new__(cls)
         # pylint: disable=protected-access
         obj._indices_data = indices_data
         obj._indices = list(indices_data.keys())
-        obj.name = new_name
         return obj
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[Any]]:
@@ -160,7 +154,7 @@ class Series:
         indices_data = {
             self._indices[index]: self._indices_data[self._indices[index]] for index in key
         }
-        return self._construct(indices_data, self.name)
+        return self._construct(indices_data)
 
     @property
     def iloc(self) -> RowSeriesILocIndexer:

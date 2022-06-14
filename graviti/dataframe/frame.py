@@ -410,7 +410,7 @@ class DataFrame(Container):
 
     def _getitem_by_location(self, key: int) -> RowSeries:
         indices_data = {name: self._columns[name].iloc[key] for name in self._column_names}
-        return RowSeries._construct(indices_data, key)  # pylint: disable=protected-access
+        return RowSeries._construct(indices_data)  # pylint: disable=protected-access
 
     # @overload
     # @staticmethod
