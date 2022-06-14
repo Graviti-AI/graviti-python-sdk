@@ -48,8 +48,12 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         self.__dict__.update(arguments)
 
+        internal_type = self.internal_type
         if not hasattr(self.__class__, "container"):
-            self.container = self.internal_type.container
+            self.container = internal_type.container
+
+        if not hasattr(self.__class__, "search_container"):
+            self.search_container = internal_type.search_container
 
     @property
     def internal_type(self) -> PortexType:
