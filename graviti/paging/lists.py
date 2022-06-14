@@ -31,12 +31,13 @@ from graviti.paging.page import LazyPage, Page, PageBase
 if TYPE_CHECKING:
     from graviti.paging.factory import LazyFactory
 
+_PLB = TypeVar("_PLB", bound="PagingListBase")
 _PL = TypeVar("_PL", bound="PagingList")
 _PPL = TypeVar("_PPL", bound="PyArrowPagingList")
 
 
-class PagingList:
-    """PagingList is a list composed of multiple lists (pages).
+class PagingListBase:
+    """PagingListBase is the base class of the paging list related classes.
 
     Arguments:
         array: The input sequence.
@@ -62,11 +63,11 @@ class PagingList:
         ...
 
     @overload
-    def __setitem__(self: _PL, index: slice, value: Union[Iterable[Any], _PL]) -> None:
+    def __setitem__(self: _PLB, index: slice, value: Union[Iterable[Any], _PLB]) -> None:
         ...
 
     def __setitem__(
-        self: _PL, index: Union[int, slice], value: Union[Any, Iterable[Any], _PL]
+        self: _PLB, index: Union[int, slice], value: Union[Any, Iterable[Any], _PLB]
     ) -> None:
         if isinstance(index, int):
             self.set_item(index, value)
@@ -104,7 +105,7 @@ class PagingList:
         index = self._make_index_nonnegative(index)
         return self._getitem(index)
 
-    def __iadd__(self: _PL, values: Union[_PL, Iterable[Any]]) -> _PL:
+    def __iadd__(self: _PLB, values: Union[_PLB, Iterable[Any]]) -> _PLB:
         if isinstance(values, self.__class__):
             self.extend(values)
         else:
@@ -157,7 +158,7 @@ class PagingList:
         self._pages[start_i : stop_i + 1] = update_pages
         self._offsets.update(start_i, stop_i, update_lengths)
 
-    def _update_pages_with_step(self: _PL, start: int, stop: int, step: int, values: _PL) -> None:
+    def _update_pages_with_step(self: _PLB, start: int, stop: int, step: int, values: _PLB) -> None:
         length = len(values)
         ranging: Any = range(start, stop, step)
         indices: Any = range(length)
@@ -179,39 +180,6 @@ class PagingList:
             x, y = offsets.get_coordinate(j)
             self._update_pages(i, i + 1, [pages[x][y : y + 1]])
 
-    @classmethod
-    def from_factory(
-        cls: Type[_PL],
-        factory: "LazyFactory",
-        keys: Tuple[str, ...],
-        converter: Callable[[pa.Array], Tuple[Any, ...]],
-    ) -> _PL:
-        """Create PagingList from LazyFactory.
-
-        Arguments:
-            factory: The parent :class:`LazyFactory` instance.
-            keys: The keys to access the array from factory.
-            converter: A callable object to convert pyarrow array to python tuple.
-
-        Returns:
-            The PagingList instance created from given factory.
-
-        """
-        obj: _PL = object.__new__(cls)
-
-        def get_array(pos: int) -> Sequence[Any]:
-            return converter(factory.get_array(pos, keys))
-
-        obj._pages = [
-            LazyPage(ranging, pos, get_array)
-            for pos, ranging in enumerate(factory.get_page_ranges())
-        ]
-        obj._offsets = Offsets(
-            factory._total_count, factory._limit  # pylint: disable=protected-access
-        )
-
-        return obj
-
     def set_item(self, index: int, value: Any) -> None:
         """Update the element value in PagingList at the given index.
 
@@ -224,7 +192,7 @@ class PagingList:
         page = Page(self._array_creator((value,)))
         self._update_pages(index, index + 1, [page])
 
-    def set_slice(self: _PL, index: slice, values: _PL) -> None:
+    def set_slice(self: _PLB, index: slice, values: _PLB) -> None:
         """Update the element values at the given slice with input PagingList.
 
         Arguments:
@@ -299,7 +267,7 @@ class PagingList:
 
         self._update_pages_with_step(start, stop, step, self.__class__(self._array_creator(values)))
 
-    def extend(self: _PL, values: _PL) -> None:
+    def extend(self: _PLB, values: _PLB) -> None:
         """Extend PagingList by appending elements from another PagingList.
 
         Arguments:
@@ -332,21 +300,58 @@ class PagingList:
         self._offsets.extend((len(page),))
         self._pages.append(page)
 
-    def copy(self: _PL) -> _PL:
+    def copy(self: _PLB) -> _PLB:
         """Return a copy of the paging list.
 
         Returns:
             A copy of the paging list.
 
         """
-        obj: _PL = object.__new__(self.__class__)
+        obj: _PLB = object.__new__(self.__class__)
         # pylint: disable=protected-access
         obj._pages = self._pages.copy()
         obj._offsets = self._offsets.copy()
         return obj
 
 
-class PyArrowPagingList(PagingList):
+class PagingList(PagingListBase):
+    """PagingList is a list composed of multiple lists (pages)."""
+
+    @classmethod
+    def from_factory(
+        cls: Type[_PL],
+        factory: "LazyFactory",
+        keys: Tuple[str, ...],
+        converter: Callable[[pa.Array], Tuple[Any, ...]],
+    ) -> _PL:
+        """Create PagingList from LazyFactory.
+
+        Arguments:
+            factory: The parent :class:`LazyFactory` instance.
+            keys: The keys to access the array from factory.
+            converter: A callable object to convert pyarrow array to python tuple.
+
+        Returns:
+            The PagingList instance created from given factory.
+
+        """
+        obj: _PL = object.__new__(cls)
+
+        def get_array(pos: int) -> Sequence[Any]:
+            return converter(factory.get_array(pos, keys))
+
+        obj._pages = [
+            LazyPage(ranging, pos, get_array)
+            for pos, ranging in enumerate(factory.get_page_ranges())
+        ]
+        obj._offsets = Offsets(
+            factory._total_count, factory._limit  # pylint: disable=protected-access
+        )
+
+        return obj
+
+
+class PyArrowPagingList(PagingListBase):
     """PyArrowPagingList is a list composed of multiple pyarrow arrays (pages).
 
     Arguments:
@@ -379,7 +384,7 @@ class PyArrowPagingList(PagingList):
         return obj
 
     @classmethod
-    def from_factory(  # pylint: disable=arguments-renamed
+    def from_factory(
         cls: Type[_PPL], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
     ) -> _PPL:
         """Create PyArrowPagingList from LazyFactory.
