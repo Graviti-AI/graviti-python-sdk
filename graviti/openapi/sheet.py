@@ -122,7 +122,7 @@ def list_draft_sheets(
         with_record_count: Whether return the record count of each sheet. The default value of
             this param in OpenAPI is False.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
-        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.
@@ -183,7 +183,7 @@ def list_commit_sheets(
         with_record_count: Whether return the record count of each sheet. The default value of
             this param in OpenAPI is False.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
-        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.

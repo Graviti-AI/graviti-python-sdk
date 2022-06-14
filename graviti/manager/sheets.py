@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, MutableMapping
 import pyarrow as pa
 
 from graviti.dataframe import RECORD_KEY, DataFrame
+from graviti.manager.common import LIMIT
 from graviti.paging import LazyFactory
 from graviti.portex import PortexType
 from graviti.utility import ReprMixin
@@ -57,7 +58,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
         factory = LazyFactory(
             sheet["record_count"],
-            128,
+            LIMIT,
             partial(self._list_data, sheet_name=sheet_name),
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )

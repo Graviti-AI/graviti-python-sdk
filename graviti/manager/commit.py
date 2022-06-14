@@ -11,7 +11,7 @@ from tensorbay.utility import AttrsMixin, attr
 
 from graviti.dataframe import DataFrame
 from graviti.exception import NoCommitsError
-from graviti.manager.common import CURRENT_COMMIT, check_head_status
+from graviti.manager.common import CURRENT_COMMIT, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -161,7 +161,7 @@ class Commit(Sheets, AttrsMixin):
 
         factory = LazyFactory(
             total_count,
-            128,
+            LIMIT,
             lambda offset, limit: _getter(offset, limit)["data"],
             schema.to_pyarrow(),
         )
@@ -326,4 +326,4 @@ class CommitManager:
             if revision is None:
                 return []  # type: ignore[unreachable]
 
-        return LazyPagingList(lambda offset, limit: self._generate(revision, offset, limit), 24)
+        return LazyPagingList(lambda offset, limit: self._generate(revision, offset, limit), LIMIT)

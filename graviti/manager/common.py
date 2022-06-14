@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from graviti.manager.commit import Commit
 
 
+LIMIT = 128
+
+
 class DefaultValue:
     """This class defines the default value of parameters from methods in manager.
 

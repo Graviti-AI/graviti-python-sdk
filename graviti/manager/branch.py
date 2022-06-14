@@ -12,7 +12,7 @@ from tensorbay.utility import attr
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
-from graviti.manager.common import CURRENT_COMMIT, check_head_status
+from graviti.manager.common import CURRENT_COMMIT, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_branch, delete_branch, get_branch, list_branches
 
@@ -146,7 +146,7 @@ class BranchManager:
             The LazyPagingList of :class:`branches<.Branch>` instances.
 
         """
-        return LazyPagingList(self._generate, 24)
+        return LazyPagingList(self._generate, LIMIT)
 
     def delete(self, name: str) -> None:
         """Delete a branch.

@@ -91,7 +91,7 @@ def list_drafts(
             None means listing open drafts.
         branch: The branch name. None means listing drafts from all branches.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
-        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.
@@ -221,7 +221,7 @@ def update_draft(
            "description": "",
            "branch": "main",
            "state": "OPEN",
-           "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
+            "parent_commit_id": "85c57a7f03804ccc906632248dc8c359",
            "creator": "czhual",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-04T18:58:10Z"

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Generator
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
-from graviti.manager.common import CURRENT_COMMIT, check_head_status
+from graviti.manager.common import CURRENT_COMMIT, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import create_tag, delete_tag, get_tag, list_tags
 
@@ -133,7 +133,7 @@ class TagManager:
             The LazyPagingList of :class:`tags<.Tag>` instances.
 
         """
-        return LazyPagingList(self._generate, 24)
+        return LazyPagingList(self._generate, LIMIT)
 
     def delete(self, name: str) -> None:
         """Delete a tag.
