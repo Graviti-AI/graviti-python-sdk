@@ -49,27 +49,28 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
         raise NotImplementedError
 
+    def _init_dataframe(self, sheet_name: str) -> DataFrame:
+        sheet = self._get_sheet(sheet_name)
+        schema = PortexType.from_yaml(sheet["schema"])
+
+        patype = schema.to_pyarrow()
+
+        factory = LazyFactory(
+            sheet["record_count"],
+            128,
+            partial(self._list_data, sheet_name=sheet_name),
+            pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
+        )
+
+        return DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+
     def _init_data(self) -> None:
         self._data = {}
         sheets_info = self._list_sheets()["sheets"]
 
         for sheet_info in sheets_info:
             sheet_name = sheet_info["name"]
-            sheet = self._get_sheet(sheet_name)
-            schema = PortexType.from_yaml(sheet["schema"])
-
-            patype = schema.to_pyarrow()
-
-            factory = LazyFactory(
-                sheet["record_count"],
-                128,
-                partial(self._list_data, sheet_name=sheet_name),
-                pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
-            )
-
-            self._data[sheet_name] = DataFrame._from_factory(  # pylint: disable=protected-access
-                factory, schema
-            )
+            self._data[sheet_name] = self._init_dataframe(sheet_name)
 
     def _get_data(self) -> Dict[str, DataFrame]:
         if not hasattr(self, "_data"):

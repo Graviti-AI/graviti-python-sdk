@@ -222,7 +222,6 @@ class DataFrame(Container):
         obj.schema = schema
         obj._columns = {}
         obj._column_names = []
-        obj.operations = []
 
         # In this case schema.to_builtin always returns record.
         for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
