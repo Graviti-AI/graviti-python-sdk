@@ -14,6 +14,7 @@ from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNameError
 from graviti.manager.branch import Branch, BranchManager
 from graviti.manager.commit import Commit, CommitManager
+from graviti.manager.common import LIMIT
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.tag import Tag, TagManager
@@ -342,7 +343,7 @@ class DatasetManager:
             The LazyPagingList of :class:`~graviti.manager.dataset.Dataset` instances.
 
         """
-        return LazyPagingList(self._generate, 24)
+        return LazyPagingList(self._generate, LIMIT)
 
     def delete(self, name: str) -> None:
         """Delete a Graviti dataset with given name.

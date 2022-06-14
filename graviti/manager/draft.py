@@ -11,7 +11,7 @@ from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
-from graviti.manager.common import ALL_BRANCHES, CURRENT_BRANCH, check_head_status
+from graviti.manager.common import ALL_BRANCHES, CURRENT_BRANCH, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
@@ -345,5 +345,5 @@ class DraftManager:
         """
         return LazyPagingList(
             lambda offset, limit: self._generate(state, branch, offset, limit),
-            24,
+            LIMIT,
         )

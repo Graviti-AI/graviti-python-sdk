@@ -71,7 +71,7 @@ def list_tags(
         owner: The owner of the dataset.
         dataset: Name of the dataset, unique for a user.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
-        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.

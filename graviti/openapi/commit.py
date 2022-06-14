@@ -84,7 +84,7 @@ def list_commits(
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
-        limit: The limit of the page. The default value of this param in OpenAPIv2 is 24.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.
