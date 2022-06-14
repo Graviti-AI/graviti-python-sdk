@@ -89,7 +89,7 @@ List datasets on the workspace:
 
    >>> ws.datasets.list()
    LazyPagingList [
-     Dataset("changjun/Graviti-dataset-demo")(...)
+     Dataset("Graviti-example/Graviti-dataset-demo")(...)
    ]
 
 Get one dataset:
@@ -98,7 +98,7 @@ Get one dataset:
 
    >>> dataset = ws.datasets.get("Graviti-dataset-demo")
    >>> dataset
-   Dataset("changjun/Graviti-dataset-demo")(
+   Dataset("Graviti-example/Graviti-dataset-demo")(
      (alias): '',
      (default_branch): 'main',
      (created_at): '2022-05-26T02:55:36Z',

@@ -57,7 +57,7 @@ List datasets on the workspace:
 ```python
 >>> ws.datasets.list()
 LazyPagingList [
-  Dataset("czhual/Graviti-dataset-demo")(...)
+  Dataset("Graviti-example/Graviti-dataset-demo")(...)
 ]
 ```
 
@@ -66,7 +66,7 @@ Get one dataset:
 ```python
 >>> dataset = ws.datasets.get("Graviti-dataset-demo")
 >>> dataset
-Dataset("czhual/Graviti-dataset-demo")(
+Dataset("Graviti-example/Graviti-dataset-demo")(
   (alias): '',
   (default_branch): 'main',
   (created_at): '2022-05-26T02:55:36Z',
@@ -86,7 +86,7 @@ Branch("main")(
   (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
   (parent_commit_id): None,
   (title): 'Commit-1',
-  (committer): 'czhual',
+  (committer): 'Graviti-example',
   (committed_at): '2022-05-26T02:57:00Z'
 )
 ```
@@ -127,7 +127,7 @@ Checkout commit/branch/tag:
 Commit("47293b32f28c4008bc0f25b847b97d6f")(
   (parent_commit_id): None,
   (title): 'Commit-1',
-  (committer): 'czhual',
+  (committer): 'Graviti-example',
   (committed_at): '2022-05-26T02:57:00Z'
 )
 ```
@@ -139,7 +139,7 @@ Branch("dev")(
   (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
   (parent_commit_id): None,
   (title): 'Commit-1',
-  (committer): 'czhual',
+  (committer): 'Graviti-example',
   (committed_at): '2022-05-26T02:57:00Z'
 )
 ```
@@ -150,7 +150,7 @@ Branch("dev")(
 Commit("47293b32f28c4008bc0f25b847b97d6f")(
   (parent_commit_id): None,
   (title): 'Commit-1',
-  (committer): 'czhual',
+  (committer): 'Graviti-example',
   (committed_at): '2022-05-26T02:57:00Z'
 )
 ```
