@@ -41,8 +41,7 @@ The revision can also be the tag name. SDK supports creating multiple tags based
 
    dataset.tags.create(f"{TAG_NAME}", f"{SOURCE_TAG_NAME}")
 
-If no tag is specified, the created tag will be based on the current commit of the
-dataset, which can be viewed by ``dataset.HEAD.commit_id``.
+If no tag is specified, the created tag will be based on the current commit of the dataset:
 
 .. code:: python
 
@@ -84,9 +83,10 @@ name:
 **************
 
 SDK provides method :meth:`~graviti.manager.dataset.Dataset.checkout` to support switching the
-version of the dataset by tags. The version of dataset can be viewed by ``dataset.HEAD``.
+version of the dataset by tags:
 
 .. code:: python
 
    dataset.checkout(f"{TAG_NAME}")
+   # Check whether the dataset version is correct.
    dataset.HEAD
