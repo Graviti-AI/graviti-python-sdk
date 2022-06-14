@@ -5,6 +5,12 @@
 """Paging module."""
 
 from graviti.paging.factory import LazyFactory, LazyFactoryBase
-from graviti.paging.lists import PagingList, PyArrowPagingList
+from graviti.paging.lists import PagingList, PagingListBase, PyArrowPagingList
 
-__all__ = ["LazyFactory", "LazyFactoryBase", "PyArrowPagingList", "PagingList"]
+__all__ = [
+    "LazyFactory",
+    "LazyFactoryBase",
+    "PagingList",
+    "PagingListBase",
+    "PyArrowPagingList",
+]
