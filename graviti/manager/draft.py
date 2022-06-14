@@ -37,7 +37,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         number: The number of the draft.
         title: The title of the draft.
-        branch_name: The branch name.
+        branch: The based branch of the draft.
         state: The draft state which includes "OPEN", "CLOSED", "COMMITTED".
         parent_commit_id: The parent commit id.
         creator: The creator of the draft.
