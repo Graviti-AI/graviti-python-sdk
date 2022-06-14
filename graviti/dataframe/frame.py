@@ -232,7 +232,7 @@ class DataFrame(Container):
             obj._column_names.append(key)
 
         if RECORD_KEY in factory:
-            obj._record_key = factory[RECORD_KEY].create_list()
+            obj._record_key = factory[RECORD_KEY].create_pyarrow_list()
 
         return obj
 

@@ -14,7 +14,7 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
-from graviti.paging import LazyFactoryBase, PyArrowPagingList
+from graviti.paging import LazyFactoryBase, PagingList, PyArrowPagingList
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _S = TypeVar("_S", bound="Series")
@@ -239,7 +239,7 @@ class Series(Container):
         cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
     ) -> _S:
         obj: _S = object.__new__(cls)
-        obj._data = factory.create_list()
+        obj._data = factory.create_pyarrow_list()
         obj.schema = schema
         obj.name = name
         return obj
@@ -311,25 +311,25 @@ class Series(Container):
 class ArraySeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for portex builtin type array."""
 
-    _item_container: Type[Container]
+    _data: PagingList  # type: ignore[assignment]
 
     def __getitem__(self, key: int) -> Any:
-        scalar = self._data[key]
-        if not scalar.is_valid:
-            return None
-
-        return self._item_container._from_pyarrow(
-            scalar.values, self.schema.to_builtin().items  # type: ignore[attr-defined]
-        )
+        return self._data[key]
 
     @classmethod
     def _from_factory(  # pylint: disable=arguments-differ
         cls: Type[_A], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
     ) -> _A:
-        obj = super()._from_factory(factory, schema, name)
-
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
-        obj._item_container = builtin_schema.items.container  # pylint: disable=protected-access
+        _item_schema = builtin_schema.items
+        _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
+
+        obj: _A = object.__new__(cls)
+        obj._data = factory.create_list(
+            lambda array: tuple(_item_creator(item.values, _item_schema) for item in array)
+        )
+        obj.schema = schema
+        obj.name = name
 
         return obj
 
@@ -337,24 +337,36 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
     def _from_pyarrow(  # pylint: disable=arguments-differ
         cls: Type[_A], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
     ) -> _A:
-        obj = super()._from_pyarrow(array, schema, name)
-
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
-        obj._item_container = builtin_schema.items.container  # pylint: disable=protected-access
+        _item_schema = builtin_schema.items
+        _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
+        obj: _A = object.__new__(cls)
+        obj._data = PagingList(_item_creator(item.values, _item_schema) for item in array)
+        obj.schema = schema
+        obj.name = name
         return obj
 
-    def copy(self: _A) -> _A:
-        """Get a copy of the series.
+    # TODO: copy method will be implementated sooner.
+    # def copy(self: _A) -> _A:
+    #     """Get a copy of the series.
+
+    #     Returns:
+    #         A copy of the series.
+
+    #     """
+    #     obj = super().copy()
+
+    #     return obj
+
+    def to_pylist(self) -> List[Any]:
+        """Convert the Series to a python list.
 
         Returns:
-            A copy of the series.
+            The python list representing the Series.
 
         """
-        obj = super().copy()
-        obj._item_container = self._item_container  # pylint: disable=protected-access
-
-        return obj
+        return [item.to_pylist() for item in self._data]
 
 
 @pt.ExternalContainerRegister(

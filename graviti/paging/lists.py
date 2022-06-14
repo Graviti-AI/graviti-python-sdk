@@ -10,6 +10,7 @@ from itertools import chain, repeat
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Iterable,
     Iterator,
     List,
@@ -178,29 +179,38 @@ class PagingList:
             x, y = offsets.get_coordinate(j)
             self._update_pages(i, i + 1, [pages[x][y : y + 1]])
 
-    # @classmethod
-    # def from_factory(cls: Type[_B], factory: "LazyFactory", keys: Tuple[str, ...]) -> _B:
-    #     """Create PagingList from LazyFactory.
+    @classmethod
+    def from_factory(
+        cls: Type[_PL],
+        factory: "LazyFactory",
+        keys: Tuple[str, ...],
+        converter: Callable[[pa.Array], Tuple[Any, ...]],
+    ) -> _PL:
+        """Create PagingList from LazyFactory.
 
-    #     Arguments:
-    #         factory: The parent :class:`LazyFactory` instance.
-    #         keys: The keys to access the array from factory.
+        Arguments:
+            factory: The parent :class:`LazyFactory` instance.
+            keys: The keys to access the array from factory.
+            converter: A callable object to convert pyarrow array to python tuple.
 
-    #     Returns:
-    #         The PagingList instance created from given factory.
+        Returns:
+            The PagingList instance created from given factory.
 
-    #     """
-    #     obj: _B = object.__new__(cls)
-    #     array_getter = partial(factory.get_array, keys=keys)
-    #     obj._pages = [
-    #         LazyPage(ranging, pos, array_getter)
-    #         for pos, ranging in enumerate(factory.get_page_ranges())
-    #     ]
-    #     obj._offsets = Offsets(
-    #         factory._total_count, factory._limit  # pylint: disable=protected-access
-    #     )
+        """
+        obj: _PL = object.__new__(cls)
 
-    #     return obj
+        def get_array(pos: int) -> Sequence[Any]:
+            return converter(factory.get_array(pos, keys))
+
+        obj._pages = [
+            LazyPage(ranging, pos, get_array)
+            for pos, ranging in enumerate(factory.get_page_ranges())
+        ]
+        obj._offsets = Offsets(
+            factory._total_count, factory._limit  # pylint: disable=protected-access
+        )
+
+        return obj
 
     def set_item(self, index: int, value: Any) -> None:
         """Update the element value in PagingList at the given index.
@@ -228,7 +238,7 @@ class PagingList:
         start, stop, step = index.indices(self.__len__())
 
         if step == 1:
-            self._update_pages(start, stop, values._pages)
+            self._update_pages(start, stop, values._pages)  # pylint: disable=protected-access
             return
 
         if step == -1:
@@ -240,7 +250,12 @@ class PagingList:
                 )
 
             self._update_pages(
-                start, stop, [page.get_slice(step=-1) for page in reversed(values._pages)]
+                start,
+                stop,
+                [
+                    page.get_slice(step=-1)
+                    for page in reversed(values._pages)  # pylint: disable=protected-access
+                ],
             )
             return
 
@@ -291,7 +306,7 @@ class PagingList:
             values: The PagingList which contains the elements to be extended.
 
         """
-        pages = values._pages
+        pages = values._pages  # pylint: disable=protected-access
         self._offsets.extend(map(len, pages))
         self._pages.extend(pages)
 
@@ -364,7 +379,7 @@ class PyArrowPagingList(PagingList):
         return obj
 
     @classmethod
-    def from_factory(
+    def from_factory(  # pylint: disable=arguments-renamed
         cls: Type[_PPL], factory: "LazyFactory", keys: Tuple[str, ...], patype: pa.DataType
     ) -> _PPL:
         """Create PyArrowPagingList from LazyFactory.
