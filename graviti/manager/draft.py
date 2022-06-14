@@ -134,6 +134,11 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             with_record_count=True,
         )
 
+    def _init_dataframe(self, sheet_name: str) -> DataFrame:
+        dataframe = super()._init_dataframe(sheet_name)
+        dataframe.operations = []
+        return dataframe
+
     def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:
         """Update title and description of the draft.
 
