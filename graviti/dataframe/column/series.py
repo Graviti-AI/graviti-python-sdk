@@ -15,30 +15,21 @@ import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
 from graviti.paging import LazyFactoryBase, PagingList, PyArrowPagingList
+from graviti.paging.lists import PagingListBase
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
+_SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
 
 
-@pt.ContainerRegister(
-    pt.binary,
-    pt.boolean,
-    pt.enum,
-    pt.float32,
-    pt.float64,
-    pt.int32,
-    pt.int64,
-    pt.string,
-)
-class Series(Container):
+class SeriesBase(Container):
     """One-dimensional array.
 
     Arguments:
         data: The data that needs to be stored in Series. Could be ndarray or Iterable.
         schema: Data type to force. If None, will be inferred from ``data``.
         name: The name to the Series.
-        index: Index of the data, must have the same length as ``data``.
 
     Examples:
         Constructing Series from a list.
@@ -55,7 +46,7 @@ class Series(Container):
 
     has_keys = False
     schema: pt.PortexType
-    _data: PyArrowPagingList
+    _data: PagingListBase
     name: Optional[str]
 
     def __init__(
@@ -79,7 +70,7 @@ class Series(Container):
     #     ...
 
     def __getitem__(self, key: int) -> Any:
-        return self._data[key].as_py()
+        return self._data[key]
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[Any]) -> None:
@@ -155,7 +146,7 @@ class Series(Container):
     def _getitem_by_location(self, key: int) -> Any:
         return self.__getitem__(key)
 
-    def _extend(self, values: "Series") -> None:
+    def _extend(self: _SB, values: _SB) -> None:
         """Extend Series to itself row by row.
 
         Arguments:
@@ -235,32 +226,18 @@ class Series(Container):
         return ColumnSeriesLocIndexer(self)
 
     @classmethod
-    def _from_factory(  # pylint: disable=arguments-differ
-        cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _S:
-        obj: _S = object.__new__(cls)
-        obj._data = factory.create_pyarrow_list()
-        obj.schema = schema
-        obj.name = name
-        return obj
-
-    @classmethod
     def _from_pyarrow(  # pylint: disable=arguments-differ
-        cls: Type[_S], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
-    ) -> _S:
-        obj: _S = object.__new__(cls)
-        obj._data = PyArrowPagingList.from_pyarrow(array)
-        obj.schema = schema
-        obj.name = name
-        return obj
+        cls: Type[_SB], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _SB:
+        raise NotImplementedError
 
     @classmethod
     def from_pyarrow(
-        cls: Type[_S],
+        cls: Type[_SB],
         array: pa.Array,
         schema: Optional[pt.PortexType] = None,
         name: Optional[str] = None,
-    ) -> _S:
+    ) -> _SB:
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
@@ -282,6 +259,78 @@ class Series(Container):
 
         return cls._from_pyarrow(array, schema, name)
 
+    def copy(self: _SB) -> _SB:
+        """Get a copy of the series.
+
+        Returns:
+            A copy of the series.
+
+        """
+        obj: _SB = object.__new__(self.__class__)
+
+        obj.name = self.name
+        obj.schema = self.schema.copy()
+        obj._data = self._data.copy()  # pylint: disable=protected-access
+
+        return obj
+
+
+@pt.ContainerRegister(
+    pt.binary,
+    pt.boolean,
+    pt.enum,
+    pt.float32,
+    pt.float64,
+    pt.int32,
+    pt.int64,
+    pt.string,
+)
+class Series(SeriesBase):  # pylint: disable=abstract-method
+    """One-dimensional array.
+
+    Arguments:
+        data: The data that needs to be stored in Series. Could be ndarray or Iterable.
+        schema: Data type to force. If None, will be inferred from ``data``.
+        name: The name to the Series.
+
+    Examples:
+        Constructing Series from a list.
+
+        >>> d = [1,2,3,4]
+        >>> series = Series(data=d)
+        >>> series
+        0 1
+        1 2
+        2 3
+        3 4
+
+    """
+
+    _data: PyArrowPagingList
+
+    def __getitem__(self, key: int) -> Any:
+        return self._data[key].as_py()
+
+    @classmethod
+    def _from_factory(  # pylint: disable=arguments-differ
+        cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _S:
+        obj: _S = object.__new__(cls)
+        obj._data = factory.create_pyarrow_list()
+        obj.schema = schema
+        obj.name = name
+        return obj
+
+    @classmethod
+    def _from_pyarrow(  # pylint: disable=arguments-differ
+        cls: Type[_S], array: pa.Array, schema: pt.PortexType, name: Optional[str] = None
+    ) -> _S:
+        obj: _S = object.__new__(cls)
+        obj._data = PyArrowPagingList.from_pyarrow(array)
+        obj.schema = schema
+        obj.name = name
+        return obj
+
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
 
@@ -291,27 +340,12 @@ class Series(Container):
         """
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
-    def copy(self: _S) -> _S:
-        """Get a copy of the series.
-
-        Returns:
-            A copy of the series.
-
-        """
-        obj: _S = object.__new__(self.__class__)
-
-        obj.name = self.name
-        obj.schema = self.schema.copy()
-        obj._data = self._data.copy()  # pylint: disable=protected-access
-
-        return obj
-
 
 @pt.ContainerRegister(pt.array)
-class ArraySeries(Series):  # pylint: disable=abstract-method
+class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     """One-dimensional array for portex builtin type array."""
 
-    _data: PagingList  # type: ignore[assignment]
+    _data: PagingList
 
     def __getitem__(self, key: int) -> Any:
         return self._data[key]

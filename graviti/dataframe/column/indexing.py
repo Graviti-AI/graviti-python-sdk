@@ -8,14 +8,14 @@
 from typing import TYPE_CHECKING, Any, Iterable, Union, overload
 
 if TYPE_CHECKING:
-    from graviti.dataframe.column.series import Series as ColumnSeries
+    from graviti.dataframe.column.series import SeriesBase
 
 
 class ColumnSeriesILocIndexer:
     """Index class for ColumnSeries.iloc."""
 
-    def __init__(self, obj: "ColumnSeries") -> None:
-        self.obj: "ColumnSeries" = obj
+    def __init__(self, obj: "SeriesBase") -> None:
+        self.obj: "SeriesBase" = obj
 
     # @overload
     # def __getitem__(self, key: Union[Iterable[bool], slice]) -> "ColumnSeries":
@@ -51,8 +51,8 @@ class ColumnSeriesILocIndexer:
 class ColumnSeriesLocIndexer:
     """Index class for ColumnSeries.loc."""
 
-    def __init__(self, obj: "ColumnSeries") -> None:
-        self.obj: "ColumnSeries" = obj
+    def __init__(self, obj: "SeriesBase") -> None:
+        self.obj: "SeriesBase" = obj
 
     # @overload
     # def __getitem__(self, key: Union[Iterable[bool], slice]) -> "ColumnSeries":
