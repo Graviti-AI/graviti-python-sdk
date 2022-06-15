@@ -30,6 +30,7 @@ from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
 from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
+from graviti.dataframe.sql import RowSeries as SqlRowSeries
 from graviti.operation import AddData, DataFrameOperation, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, FileBase
@@ -77,6 +78,7 @@ class DataFrame(Container):
     _record_key: Optional[ColumnSeries] = None
     schema: pt.PortexType
     operations: Optional[List[DataFrameOperation]] = None
+    searcher: Optional[Callable[[Dict[str, Any]], "DataFrame"]] = None
 
     def __new__(
         cls: Type[_T],
@@ -739,6 +741,12 @@ class DataFrame(Container):
         Arguments:
             func: The query function.
 
+        Returns:
+            The query result DataFrame.
+
+        Raises:
+            TypeError: When the DataFrame is not in a Commit.
+
         Examples:
             >>> df = DataFrame([
             ...     {"filename": "a.jpg", "box2ds": {"x": 1, "y": 1}},
@@ -750,12 +758,24 @@ class DataFrame(Container):
             0   a.jpg    1      1
 
         """
+        if self.searcher is None:
+            raise TypeError("'query' is not supported for the DataFrame not in a Commit")
 
-    def apply(self, func: Callable[[Any], Any]) -> "DataFrame":
+        result = func(SqlRowSeries(self.schema))
+        criteria = {"where": result.expr}
+        return self.searcher(criteria)  # pylint: disable=not-callable
+
+    def apply(self, func: Callable[[Any], Any]) -> Container:
         """Apply a function to the DataFrame row by row.
 
         Arguments:
             func: Function to apply to each row.
+
+        Returns:
+            The apply result DataFrame or Series.
+
+        Raises:
+            TypeError: When the DataFrame is not in a Commit.
 
         Examples:
             >>> df = DataFrame([
@@ -769,3 +789,11 @@ class DataFrame(Container):
             1   b.jpg    3      2
 
         """
+        if self.searcher is None:
+            raise TypeError("'apply' is not supported for the DataFrame not in a Commit")
+
+        result = func(SqlRowSeries(self.schema))
+        criteria = {"select": [result.expr]}
+        dataframe = self.searcher(criteria)  # pylint: disable=not-callable
+        key = dataframe._column_names[0]  # pylint: disable=protected-access
+        return dataframe[key]
