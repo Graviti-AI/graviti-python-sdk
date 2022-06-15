@@ -23,33 +23,36 @@ in the SDK. Of course, it is necessary to get a dataset first:
    has just been created and has no commit history, the commit id of its default branch is
    ``None``.
 
-
 *****************
  Create a Branch
 *****************
 
 SDK provides method :meth:`~graviti.manager.branch.BranchManager.create` to support creating a
-branch based on a commit:
+branch based on a revision. The revision can be one commit ID:
+
+.. code:: python
+
+   dataset.branches.create(f"{BRANCH_NAME}", f"{COMMIT_ID}")
+
+The revision can also be the branch name. In this situation, the new branch will be created based
+on the latest commit of the source branch:
+
+.. code:: python
+
+   dataset.branches.create(f"{BRANCH_NAME}", f"{SOURCE_BRANCH_NAME}")
+
+The revision can also be the tag name:
+
+.. code:: python
+
+   dataset.branches.create(f"{BRANCH_NAME}", f"{TAG_NAME}")
+
+If no revision is specified, the created branch will be based on the current commit of the
+dataset, which can be viewed by ``dataset.HEAD.commit_id``.
 
 .. code:: python
 
    dataset.branches.create(f"{BRANCH_NAME}")
-   dataset.branches.create(f"{BRANCH_NAME}", f"{BRANCH_NAME}")
-   dataset.branches.create(f"{BRANCH_NAME}", f"{COMMIT_ID}")
-   dataset.branches.create(f"{BRANCH_NAME}", f"{TAG_NAME}")
-
-.. note::
-   If no revision is specified, the created branch will be based on the current commit of the
-   dataset, which can be viewed by ``dataset.HEAD.commit_id``.
-
-.. warning::
-   It is not allowed to create a new branch based on a branch with no commit history, for
-   example:
-
-   .. code:: python
-
-      dataset = ws.datasets.create(f"{DATASET_NAME}")
-      dataset.branches.create(f"{BRANCH_NAME}")
 
 ***************
  List Branches
@@ -66,7 +69,8 @@ branches:
  Get a Branch
 **************
 
-SDK provides method :meth:`~graviti.manager.branch.BranchManager.get` to support getting a branch:
+SDK provides method :meth:`~graviti.manager.branch.BranchManager.get` to support getting a branch
+by name:
 
 .. code:: python
 
@@ -77,7 +81,7 @@ SDK provides method :meth:`~graviti.manager.branch.BranchManager.get` to support
 *****************
 
 SDK provides method :meth:`~graviti.manager.branch.BranchManager.delete` to support deleting a
-branch:
+branch by name:
 
 .. code:: python
 
@@ -96,7 +100,8 @@ version of the dataset by branches. The version of dataset can be viewed by ``da
    dataset.HEAD
 
 .. note::
-   This ``checkout`` method is often used to update the version of the local dataset, for example:
+   This ``checkout`` method is often used to update the version of the local dataset, for
+   example:
 
    .. code:: python
 
