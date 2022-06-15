@@ -7,17 +7,29 @@
 
 import json
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 import pyarrow as pa
 import yaml
 
 from graviti.portex.package import Imports, Package
 from graviti.portex.register import PyArrowConversionRegister
-from graviti.utility import PathLike
+from graviti.utility import PathLike, UserMutableMapping
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
+    from graviti.portex.field import ConnectedFields
     from graviti.portex.param import Params
 
 _INDENT = " " * 2
@@ -233,6 +245,63 @@ class PortexType:
 
         """
         return deepcopy(self)
+
+
+class PortexRecordBase(
+    PortexType, UserMutableMapping[str, PortexType]
+):  # pylint: disable=abstract-method
+    """The base class of record like Portex types."""
+
+    # _fields_factory: "ConnectedFieldsFactory"
+    _fields_factory: Callable[..., Any]
+
+    @property
+    def _data(self) -> "ConnectedFields":  # type: ignore[override]
+        return self._fields_factory(  # type: ignore[no-any-return]
+            **{name: getattr(self, name) for name in self.params}
+        )
+
+    def insert(self, index: int, name: str, portex_type: PortexType) -> None:
+        """Insert the name and portex_type at the index.
+
+        Arguments:
+            index: The index to insert the field.
+            name: The name of the field to be inserted.
+            portex_type: The portex_type of the field to be inserted.
+
+        """
+        self._data.insert(index, name, portex_type)
+
+    def astype(self, name: str, portex_type: PortexType) -> None:
+        """Convert the type of the field with the given name to the new PortexType.
+
+        Arguments:
+            name: The name of the field to convert.
+            portex_type: The new PortexType of the field to convert to.
+
+        """
+        self._data.astype(name, portex_type)
+
+    def rename(self, old_name: str, new_name: str) -> None:
+        """Rename the name of a field.
+
+        Arguments:
+            old_name: The current name of the field to be renamed.
+            new_name: The new name of the field to assign.
+
+        """
+        self._data.rename(old_name, new_name)
+
+    def to_pyarrow(self) -> pa.StructType:
+        """Convert the Portex type to the corresponding builtin PyArrow StructType.
+
+        Returns:
+            The corresponding builtin PyArrow StructType.
+
+        """
+        return pa.struct(
+            [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self._data.items()]
+        )
 
 
 def read_yaml(path: PathLike) -> PortexType:
