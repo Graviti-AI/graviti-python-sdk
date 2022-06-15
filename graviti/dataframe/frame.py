@@ -25,7 +25,7 @@ import pyarrow as pa
 
 import graviti.portex as pt
 from graviti.dataframe.column.series import ArraySeries, FileSeries
-from graviti.dataframe.column.series import Series as ColumnSeries
+from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
 from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
@@ -114,7 +114,7 @@ class DataFrame(Container):
         raise ValueError("DataFrame only supports creating from list object now")
 
     @overload
-    def __getitem__(self, key: str) -> Union[ColumnSeries, "DataFrame"]:  # type: ignore[misc]
+    def __getitem__(self, key: str) -> Union[ColumnSeriesBase, "DataFrame"]:  # type: ignore[misc]
         # https://github.com/python/mypy/issues/5090
         ...
 
@@ -260,15 +260,15 @@ class DataFrame(Container):
 
         return cls._from_pyarrow(array, schema)
 
-    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
+    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeriesBase]]:
         header: List[Tuple[str, ...]] = []
-        data: List[ColumnSeries] = []
+        data: List[ColumnSeriesBase] = []
         for key, value in self._columns.items():
             if isinstance(value, DataFrame):
                 nested_header, nested_data = value._flatten()  # pylint: disable=protected-access
                 header.extend((key, *sub_column) for sub_column in nested_header)
                 data.extend(nested_data)
-            elif isinstance(value, ColumnSeries):
+            elif isinstance(value, ColumnSeriesBase):
                 data.append(value)
                 header.append((key,))
             else:
@@ -282,7 +282,7 @@ class DataFrame(Container):
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
 
-    def _get_repr_body(self, flatten_data: List[ColumnSeries]) -> List[List[str]]:
+    def _get_repr_body(self, flatten_data: List[ColumnSeriesBase]) -> List[List[str]]:
         lines = []
         for i in self._get_repr_indices():
             line: List[str] = [str(i)]
