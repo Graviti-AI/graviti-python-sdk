@@ -43,7 +43,7 @@ def create_search(
         >>> create_search(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "BDD100K",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
         ...     sheet = "train",

@@ -28,7 +28,7 @@ def get_current_user(access_key: str, url: str) -> Dict[str, Any]:
             "email": "********@graviti.com",
             "mobile": null,
             "description": "",
-            "workspace": "Graviti-example",
+            "workspace": "graviti-example",
             "team": null
         }
 

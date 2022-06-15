@@ -31,7 +31,7 @@ def create_tag(
         >>> create_tag(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     name="tag-2",
         ...     revision="986d8ea00da842ed85dd5d5cd14b5aef"
@@ -42,7 +42,7 @@ def create_tag(
            "parent_commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
            "title": "commit-1",
            "description": "",
-           "committer": "Graviti-example",
+           "committer": "graviti-example",
            "committed_at": "2021-03-03T18:58:10Z"
         }
 
@@ -80,7 +80,7 @@ def list_tags(
         >>> list_tags(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST"
         ... )
         {
@@ -91,7 +91,7 @@ def list_tags(
                    "parent_commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
                    "title": "commit-1",
                    "description": "",
-                   "committer": "Graviti-example",
+                   "committer": "graviti-example",
                    "committed_at": "2021-03-03T18:58:10Z"
                }
            ],
@@ -129,7 +129,7 @@ def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) ->
         >>> get_tag(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     tag="tag-2"
         ... )
@@ -139,7 +139,7 @@ def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) ->
            "parent_commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
            "title": "commit-1",
            "description": "",
-           "committer": "Graviti-example",
+           "committer": "graviti-example",
            "committed_at": "2021-03-03T18:58:10Z"
         }
 
@@ -169,7 +169,7 @@ def delete_tag(
         >>> delete_tag(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     tag="tag-2"
         ... )

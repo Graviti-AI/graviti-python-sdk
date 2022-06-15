@@ -48,7 +48,7 @@ def create_dataset(
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
-           "owner": "Graviti-example",
+           "owner": "graviti-example",
            "is_public": false,
            "config": "exampleConfigName"
         }
@@ -83,7 +83,7 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
         >>> get_dataset(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "OxfordIIITPet"
         ... )
         {
@@ -95,7 +95,7 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
-           "owner": "Graviti-example",
+           "owner": "graviti-example",
            "is_public": false,
            "config": "exampleConfigName"
         }
@@ -136,7 +136,7 @@ def list_datasets(
                    "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
                    "created_at": "2021-03-03T18:58:10Z",
                    "updated_at": "2021-03-03T18:58:10Z",
-                   "owner": "Graviti-example",
+                   "owner": "graviti-example",
                    "is_public": false,
                    "config": "exampleConfigName"
                }
@@ -186,7 +186,7 @@ def update_dataset(
         >>> update_dataset(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "OxfordIIITPet",
         ...     name="OxfordIIITPets",
         ...     alias="Oxford-IIIT Pet",
@@ -201,7 +201,7 @@ def update_dataset(
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-04T18:58:10Z",
-           "owner": "Graviti-example",
+           "owner": "graviti-example",
            "is_public": false,
            "config": "exampleConfigName"
         }
@@ -242,7 +242,7 @@ def delete_dataset(
         >>> delete_dataset(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "OxfordIIITPet",
         ... )
 
