@@ -5,6 +5,7 @@
 
 """The implementation of the Commit and CommitManager."""
 
+from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple
 
 from tensorbay.utility import AttrsMixin, attr
@@ -107,6 +108,11 @@ class Commit(Sheets, AttrsMixin):
             sheet=sheet_name,
             with_record_count=True,
         )
+
+    def _init_dataframe(self, sheet_name: str) -> DataFrame:
+        dataframe = super()._init_dataframe(sheet_name)
+        dataframe.searcher = partial(self.search, sheet_name)
+        return dataframe
 
     def to_pyobj(self) -> Dict[str, str]:
         """Dump the instance to a python dict.
