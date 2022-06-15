@@ -23,34 +23,58 @@ First of all, it is necessary to get a dataset:
 **************
 
 SDK provides method :meth:`~graviti.manager.commit.CommitManager.list` to support listing
-commits preceding the given revision:
+commits preceding the given revision. The revision can be one commit ID:
+
+.. code:: python
+
+   dataset.commits.list(f"{COMMIT_ID}")
+
+Or the branch name:
+
+.. code:: python
+
+   dataset.commits.list(f"{BRANCH_NAME}")
+
+Or the tag name:
+
+.. code:: python
+
+   dataset.commits.list(f"{TAG_NAME}")
+
+If no revision is specified, all commits preceding the current commit will be returned:
 
 .. code:: python
 
    dataset.commits.list()
-   dataset.commits.list(f"{COMMIT_ID}")
-   dataset.commits.list(f"{BRANCH_NAME}")
-   dataset.commits.list(f"{TAG_NAME}")
-
-.. note::
-   If no revision is specified, all commits preceding the current commit wiil be returned.
 
 **************
  Get a Commit
 **************
 
 SDK provides method :meth:`~graviti.manager.commit.CommitManager.get` to support getting a
-commit by revision:
+commit by revision. The revision can be one commit ID:
+
+.. code:: python
+
+   dataset.commits.get(f"{COMMIT_ID}")
+
+Or the branch name:
+
+.. code:: python
+
+   dataset.commits.get(f"{BRANCH_NAME}")
+
+Or the tag name:
+
+.. code:: python
+
+   dataset.commits.get(f"{TAG_NAME}")
+
+If no revision is specified, the current commit of dataset will be returned:
 
 .. code:: python
 
    dataset.commits.get()
-   dataset.commits.get(f"{COMMIT_ID}")
-   dataset.commits.get(f"{BRANCH_NAME}")
-   dataset.commits.get(f"{TAG_NAME}")
-
-.. note::
-   If no revision is specified, the current commit of dataset wiil be returned.
 
 *****************
  Checkout Commit

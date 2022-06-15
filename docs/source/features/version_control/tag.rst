@@ -22,26 +22,31 @@ Before operating tags, a dataset with existing commits is needed:
 **************
 
 SDK provides method :meth:`~graviti.manager.tag.TagManager.create` to support creating a
-tag based on a commit:
+tag based on a revision. The revision can be one commit ID:
+
+.. code:: python
+
+   dataset.tags.create(f"{TAG_NAME}", f"{COMMIT_ID}")
+
+The revision can also be the branch name. In this situation, the tag will be created based
+on the latest commit of the branch:
+
+.. code:: python
+
+   dataset.tags.create(f"{TAG_NAME}", f"{BRANCH_NAME}")
+
+The revision can also be the tag name. SDK supports creating multiple tags based on the same commit:
+
+.. code:: python
+
+   dataset.tags.create(f"{TAG_NAME}", f"{SOURCE_TAG_NAME}")
+
+If no tag is specified, the created tag will be based on the current commit of the
+dataset, which can be viewed by ``dataset.HEAD.commit_id``.
 
 .. code:: python
 
    dataset.tags.create(f"{TAG_NAME}")
-   dataset.tags.create(f"{TAG_NAME}", f"{BRANCH_NAME}")
-   dataset.tags.create(f"{TAG_NAME}", f"{COMMIT_ID}")
-   dataset.tags.create(f"{TAG_NAME}", f"{TAG_NAME}")
-
-.. note::
-   If no tag is specified, the created tag will be based on the current commit of the
-   dataset, which can be viewed by ``dataset.HEAD.commit_id``.
-
-.. warning::
-   It is not allowed to create a new tag based on a branch with no commit history, for example:
-
-   .. code:: python
-
-      dataset = ws.datasets.create(f"{DATASET_NAME}")
-      dataset.tags.create(f"{TAG_NAME}")
 
 ***********
  List Tags
@@ -57,7 +62,7 @@ SDK provides method :meth:`~graviti.manager.tag.TagManager.list` to support list
  Get a Tag
 ***********
 
-SDK provides method :meth:`~graviti.manager.tag.TagManager.get` to support getting a tag:
+SDK provides method :meth:`~graviti.manager.tag.TagManager.get` to support getting a tag by name:
 
 .. code:: python
 
@@ -67,8 +72,8 @@ SDK provides method :meth:`~graviti.manager.tag.TagManager.get` to support getti
  Delete a Tag
 **************
 
-SDK provides method :meth:`~graviti.manager.tag.TagManager.delete` to support deleting a
-tag:
+SDK provides method :meth:`~graviti.manager.tag.TagManager.delete` to support deleting a tag by
+name:
 
 .. code:: python
 

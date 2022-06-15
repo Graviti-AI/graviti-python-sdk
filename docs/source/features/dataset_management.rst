@@ -19,11 +19,17 @@ operations require a dataset first. Of course, it is necessary to initialize a
 ******************
 
 SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.create` to support creating
-a dataset. In addition to the name, alias and storage config can also be specified:
+a dataset based on the given name:
 
 .. code:: python
 
    ws.datasets.create(f"{DATASET_NAME}")
+
+In addition to name, alias and storage config can also be specified:
+
+.. code:: python
+
+   ws.datasets.create(f"{DATASET_NAME}", f"{DATASET_ALIAS}", f"{STORAGE_CONFIG}")
 
 .. note::
    Unlike the operation on the web page, here SDK will not create an empty draft after
@@ -45,7 +51,7 @@ datasets on the workspace:
 ***************
 
 SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.get` to support getting
-a dataset:
+a dataset by name:
 
 .. code:: python
 
@@ -56,7 +62,7 @@ a dataset:
 ******************
 
 SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.delete` to support deleting
-a dataset:
+a dataset by name:
 
 .. code:: python
 
