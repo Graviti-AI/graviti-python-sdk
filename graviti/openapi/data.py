@@ -72,7 +72,7 @@ def list_draft_data(
         >>> list_draft_data(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     draft_number = 1,
         ...     sheet = "train",
@@ -173,7 +173,7 @@ def list_commit_data(
         >>> list_commit_data(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
         ...     sheet = "train",
@@ -262,7 +262,7 @@ def update_data(
         >>> update_data(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "OxfordIIITPet",
         ...     draft_number = 1,
         ...     sheet = "train",
@@ -330,7 +330,7 @@ def add_data(
         >>> add_data(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "OxfordIIITPet",
         ...     draft_number = 1,
         ...     sheet = "train",
@@ -402,7 +402,7 @@ def get_policy(
         >>> get_policy(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     draft_number = 1,
         ...     sheet = "train",

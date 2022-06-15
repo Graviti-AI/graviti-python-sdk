@@ -39,7 +39,7 @@ def update_schema(
         >>> update_schema(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
-        ...     "Graviti-example",
+        ...     "graviti-example",
         ...     "MNIST",
         ...     draft_number = 1,
         ...     sheet = "train",
