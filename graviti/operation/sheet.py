@@ -5,13 +5,9 @@
 
 """Definitions of different operations about the sheet on a draft."""
 
-import base64
-import json
-
-import pyarrow as pa
-
 from graviti.openapi import create_sheet, delete_sheet
-from graviti.portex import PortexType, convert_portex_schema_to_avro
+from graviti.operation.common import get_schema
+from graviti.portex import PortexType
 
 
 class SheetOperation:
@@ -82,10 +78,7 @@ class CreateSheet(SheetOperation):
             draft_number: The draft number.
 
         """
-        schema = self.schema.to_yaml()
-        pyarrow_schema = pa.schema(self.schema.fields.to_pyarrow())  # type: ignore[attr-defined]
-        arrow_schema = base64.encodebytes(pyarrow_schema.serialize().to_pybytes()).decode("ascii")
-        avro_schema = json.dumps(convert_portex_schema_to_avro(self.schema))
+        portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
 
         create_sheet(
             access_key,
@@ -94,7 +87,7 @@ class CreateSheet(SheetOperation):
             dataset,
             draft_number=draft_number,
             name=self.sheet,
-            schema=schema,
+            schema=portex_schema,
             _avro_schema=avro_schema,
             _arrow_schema=arrow_schema,
         )

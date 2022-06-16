@@ -30,7 +30,7 @@ from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
 from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.operation import AddData, DataFrameOperation, UpdateData
+from graviti.operation import AddData, DataFrameOperation, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
@@ -154,9 +154,8 @@ class DataFrame(Container):
         self._columns[key] = column
         if key not in self._column_names:
             self._column_names.append(key)
-        # TODO: Need add corresponding operations.
         if self.operations is not None:
-            self.operations.append(UpdateData(self[[key]]))
+            self.operations.extend((UpdateSchema(self.schema), UpdateData(self[[key]])))
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
