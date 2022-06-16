@@ -25,12 +25,13 @@ import pyarrow as pa
 
 import graviti.portex as pt
 from graviti.dataframe.column.series import ArraySeries, FileSeries
+from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
 from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
-from graviti.operation import AddData, DataFrameOperation
-from graviti.paging import LazyFactoryBase, PyArrowPagingList
+from graviti.operation import AddData, DataFrameOperation, UpdateData
+from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 _T = TypeVar("_T", bound="DataFrame")
@@ -73,7 +74,7 @@ class DataFrame(Container):
     has_keys = True
     _columns: Dict[str, Container]
     _column_names: List[str]
-    _record_key: Optional[PyArrowPagingList] = None
+    _record_key: Optional[ColumnSeries] = None
     schema: pt.PortexType
     operations: Optional[List[DataFrameOperation]] = None
 
@@ -129,7 +130,7 @@ class DataFrame(Container):
         if isinstance(key, Iterable):
             new_columns = {name: self._columns[name] for name in key}
             schema = pt.record({name: column.schema for name, column in new_columns.items()})
-            return self._construct(new_columns, schema)
+            return self._construct(new_columns, schema, self._record_key)
 
         raise KeyError(key)
 
@@ -154,6 +155,8 @@ class DataFrame(Container):
         if key not in self._column_names:
             self._column_names.append(key)
         # TODO: Need add corresponding operations.
+        if self.operations is not None:
+            self.operations.append(UpdateData(self[[key]]))
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
@@ -185,11 +188,17 @@ class DataFrame(Container):
         return lines
 
     @classmethod
-    def _construct(cls, columns: Dict[str, Container], schema: pt.record) -> "DataFrame":
+    def _construct(
+        cls,
+        columns: Dict[str, Container],
+        schema: pt.record,
+        record_key: Optional[ColumnSeries],
+    ) -> "DataFrame":
         obj: DataFrame = object.__new__(cls)
         obj._columns = columns
         obj._column_names = list(obj._columns.keys())
         obj.schema = schema
+        obj._record_key = record_key
         return obj
 
     @classmethod
@@ -235,7 +244,9 @@ class DataFrame(Container):
             obj._column_names.append(key)
 
         if RECORD_KEY in factory:
-            obj._record_key = factory[RECORD_KEY].create_pyarrow_list()
+            obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
+                factory[RECORD_KEY], pt.string(nullable=True)
+            )
 
         return obj
 
@@ -303,6 +314,17 @@ class DataFrame(Container):
     def _extend(self, values: "DataFrame") -> None:
         for key, value in self._columns.items():
             value._extend(values[key])  # pylint: disable=protected-access
+
+    def _to_patch_data(self) -> List[Dict[str, Any]]:
+        names = self._column_names.copy()
+        values = list(self._columns.values())
+
+        names.append(RECORD_KEY)
+        values.append(self._record_key.to_pyarrow())  # type: ignore[union-attr]
+
+        return [
+            dict(zip(names, value)) for value in zip(*(column.to_pylist() for column in values))
+        ]
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
@@ -628,12 +650,13 @@ class DataFrame(Container):
         elif self.operations is not None:
             values = values.copy()
 
+        values_length = len(values)
         self._extend(values)
         if self.operations is not None:
             self.operations.append(AddData(values))
 
         if self._record_key is not None:
-            self._record_key.extend_nulls(len(values))
+            self._record_key._data.extend_nulls(values_length)  # pylint: disable=protected-access
 
     @staticmethod
     def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:

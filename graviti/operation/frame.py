@@ -149,7 +149,7 @@ class UpdateData(DataFrameOperation):
         """
         dataframe = self.data
         arrays = _get_arrays(dataframe, "file.RemoteFile")
-        data = dataframe.to_pylist()
+        data = dataframe._to_patch_data()  # pylint: disable=protected-access
 
         for batch, *file_arrays in zip(
             *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
