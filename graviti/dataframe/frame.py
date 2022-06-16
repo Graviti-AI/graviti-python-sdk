@@ -128,7 +128,8 @@ class DataFrame(Container):
 
         if isinstance(key, Iterable):
             new_columns = {name: self._columns[name] for name in key}
-            return self._construct(new_columns)
+            schema = pt.record({name: column.schema for name, column in new_columns.items()})
+            return self._construct(new_columns, schema)
 
         raise KeyError(key)
 
@@ -183,10 +184,11 @@ class DataFrame(Container):
         return lines
 
     @classmethod
-    def _construct(cls, columns: Dict[str, Container]) -> "DataFrame":
+    def _construct(cls, columns: Dict[str, Container], schema: pt.record) -> "DataFrame":
         obj: DataFrame = object.__new__(cls)
         obj._columns = columns
         obj._column_names = list(obj._columns.keys())
+        obj.schema = schema
         return obj
 
     @classmethod
