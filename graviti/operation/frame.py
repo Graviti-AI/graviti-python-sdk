@@ -7,7 +7,9 @@
 
 from typing import TYPE_CHECKING, List
 
-from graviti.openapi import add_data, update_data, upload_files
+from graviti.openapi import add_data, update_data, update_schema, upload_files
+from graviti.operation.common import get_schema
+from graviti.portex import PortexType
 from graviti.utility import File, chunked
 
 if TYPE_CHECKING:
@@ -111,6 +113,55 @@ class AddData(DataFrameOperation):
                 sheet=sheet,
                 data=batch,
             )
+
+
+class UpdateSchema(DataFrameOperation):
+    """This class defines the operation that update the schema of a DataFrame.
+
+    Arguments:
+        schema: New portex schema after updated.
+
+    """
+
+    def __init__(self, schema: PortexType) -> None:
+        self.schema = schema
+
+    def do(  # pylint: disable=invalid-name, unused-argument
+        self,
+        access_key: str,
+        url: str,
+        owner: str,
+        dataset: str,
+        *,
+        draft_number: int,
+        sheet: str,
+        jobs: int,
+    ) -> None:
+        """Execute the OpenAPI update schema.
+
+        Arguments:
+            access_key: User's access key.
+            url: The URL of the graviti website.
+            owner: The owner of the dataset.
+            dataset: Name of the dataset, unique for a user.
+            draft_number: The draft number.
+            sheet: The sheet name.
+            jobs: The number of the max workers in multi-thread operation.
+
+        """
+        portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
+
+        update_schema(
+            access_key,
+            url,
+            owner,
+            dataset,
+            draft_number=draft_number,
+            sheet=sheet,
+            _schema=portex_schema,
+            _avro_schema=avro_schema,
+            _arrow_schema=arrow_schema,
+        )
 
 
 class UpdateData(DataFrameOperation):

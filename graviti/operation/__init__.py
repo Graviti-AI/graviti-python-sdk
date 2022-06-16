@@ -5,7 +5,7 @@
 
 """Operation module."""
 
-from graviti.operation.frame import AddData, DataFrameOperation, UpdateData
+from graviti.operation.frame import AddData, DataFrameOperation, UpdateData, UpdateSchema
 from graviti.operation.sheet import CreateSheet, DeleteSheet, SheetOperation
 
 __all__ = [
@@ -15,4 +15,5 @@ __all__ = [
     "DeleteSheet",
     "SheetOperation",
     "UpdateData",
+    "UpdateSchema",
 ]
