@@ -5,6 +5,7 @@
 """Template factory releated classes."""
 
 
+from itertools import groupby
 from typing import (
     Any,
     Callable,
@@ -15,16 +16,18 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
 
 import graviti.portex.ptype as PTYPE
-from graviti.portex.base import PortexType
-from graviti.portex.field import Fields
+from graviti.portex.base import PortexRecordBase, PortexType
+from graviti.portex.field import ConnectedFields, Fields, ImmutableFields
 from graviti.portex.package import Imports
 
 _C = TypeVar("_C", str, float, bool, None)
+_CFF = TypeVar("_CFF", bound="ConnectedFieldsFactory")
 
 
 class Factory:
@@ -41,6 +44,138 @@ class Factory:
 
         """
         ...
+
+
+class ImmutableFieldsFactory(Factory):
+    """The factory for ImmutableFields.
+
+    Arguments:
+        decl: The decalaration of immutable fields.
+        imports: The :class:`Imports` instance to specify the import scope of the fields.
+
+    """
+
+    def __init__(self, decl: Iterable[Dict[str, Any]], imports: Imports) -> None:
+        self._factories = [FieldFactory(field, imports) for field in decl]
+
+    def __call__(self, **kwargs: Any) -> ImmutableFields:
+        """Apply the input arguments to the ImmutableFields factory.
+
+        Arguments:
+            kwargs: The input arguments.
+
+        Returns:
+            The applied ImmutableFields.
+
+        """
+        return ImmutableFields(
+            filter(
+                bool,
+                (factory(**kwargs) for factory in self._factories),  # type: ignore[misc]
+            )
+        )
+
+
+class ImmutableFieldsFactoryWrapper(Factory):
+    """The factory for ImmutableFields which needs kwargs transformed.
+
+    Arguments:
+        factory: The factory of immutable fields.
+        kwargs_transformer: The method to transform the kwargs to the kwargs of base type.
+
+    """
+
+    def __init__(
+        self,
+        factory: Union[ImmutableFieldsFactory, "ImmutableFieldsFactoryWrapper"],
+        kwargs_transformer: Callable[..., Dict[str, Any]],
+    ) -> None:
+        self._factory = factory
+        self._kwargs_transformer = kwargs_transformer
+
+    def __call__(self, **kwargs: Any) -> ImmutableFields:
+        """Apply the input arguments to the base ImmutableFields factory.
+
+        Arguments:
+            kwargs: The input arguments.
+
+        Returns:
+            The applied ImmutableFields.
+
+        """
+        return self._factory(**self._kwargs_transformer(**kwargs))
+
+
+UnionFieldsFactory = Union["VariableFactory", ImmutableFieldsFactory, ImmutableFieldsFactoryWrapper]
+
+
+class ConnectedFieldsFactory:
+    """The factory for ConnectedFields.
+
+    Arguments:
+        decl: A dict which indicates a portex type.
+        class_: The base type.
+        imports: The :class:`Imports` instance to specify the import scope of the template.
+        kwargs_transformer: The method to transform the kwargs to the kwargs of base type.
+
+    """
+
+    _factories: List[UnionFieldsFactory]
+
+    def __init__(
+        self,
+        decl: Dict[str, Any],
+        class_: Type[PortexRecordBase],
+        imports: Imports,
+        kwargs_transformer: Callable[..., Dict[str, Any]],
+    ) -> None:
+        factories: List[UnionFieldsFactory] = []
+        for base_factory in class_._fields_factory._factories:
+            if not isinstance(base_factory, VariableFactory):
+                factories.append(ImmutableFieldsFactoryWrapper(base_factory, kwargs_transformer))
+                continue
+
+            fields_decl = decl[base_factory.key]
+            if isinstance(fields_decl, str) and fields_decl.startswith("$"):
+                factories.append(VariableFactory(fields_decl[1:]))
+                continue
+
+            groups = groupby(fields_decl, lambda x: isinstance(x, str) and x.startswith("+$"))
+            for is_mutable, fields in groups:
+                if is_mutable:
+                    for unpack_fields in fields:
+                        factories.append(VariableFactory(unpack_fields[2:]))
+                else:
+                    factories.append(ImmutableFieldsFactory(fields, imports))
+
+        self._factories = factories
+
+    def __call__(self, **kwargs: Any) -> ConnectedFields:
+        """Apply the input arguments to the ConnectedFields factory.
+
+        Arguments:
+            kwargs: The input arguments.
+
+        Returns:
+            The applied ConnectedFields.
+
+        """
+        return ConnectedFields(factory(**kwargs) for factory in self._factories)
+
+    @classmethod
+    def from_parameter_name(cls: Type[_CFF], name: str) -> _CFF:
+        """Create ConnectedFieldsFactory for MutableFields with the given parameter name.
+
+        Arguments:
+            name: The parameter name of the input fields.
+
+        Returns:
+            The created ConnectedFieldsFactory.
+
+        """
+        obj: _CFF = object.__new__(cls)
+        obj._factories = [VariableFactory(name)]
+        return obj
 
 
 class TypeFactory(Factory):
@@ -78,7 +213,7 @@ class TypeFactory(Factory):
 
         self._factories = factories
         self.keys = keys
-        self._class = class_
+        self.class_ = class_
 
     def __call__(self, **kwargs: Any) -> PortexType:
         """Apply the input arguments to the type template.
@@ -90,11 +225,23 @@ class TypeFactory(Factory):
             The applied Portex type.
 
         """
+        return self.class_(**self.transform_kwargs(**kwargs))  # type: ignore[call-arg]
+
+    def transform_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        """Transform the keyword arguments to what the base type needs.
+
+        Arguments:
+            kwargs: The input arguments.
+
+        Returns:
+            The transformed keyword arguments.
+
+        """
         type_kwargs: Dict[str, Any] = (
             self._unpack_factory(**kwargs) if hasattr(self, "_unpack_factory") else {}
         )
         type_kwargs.update({key: factory(**kwargs) for key, factory in self._factories.items()})
-        return self._class(**type_kwargs)  # type: ignore[call-arg]
+        return type_kwargs
 
 
 class ConstantFactory(Factory, Generic[_C]):
@@ -132,7 +279,7 @@ class VariableFactory(Factory):
     """
 
     def __init__(self, decl: str, ptype: PTYPE.PType = PTYPE.Any, is_unpack: bool = False) -> None:
-        self._key = decl
+        self.key = decl
         self.keys = {decl: ptype}
         self.is_unpack = is_unpack
 
@@ -146,7 +293,7 @@ class VariableFactory(Factory):
             The applied variable.
 
         """
-        return kwargs[self._key]
+        return kwargs[self.key]
 
 
 class ListFactory(Factory):

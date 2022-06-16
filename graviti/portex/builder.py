@@ -10,14 +10,15 @@ from pathlib import Path
 from shutil import rmtree
 from subprocess import PIPE, CalledProcessError, run
 from tempfile import gettempdir
-from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type, TypeVar
 
 import yaml
 
 import graviti.portex.ptype as PTYPE
 from graviti.exception import GitCommandError, GitNotFoundError
+from graviti.portex.base import PortexRecordBase
 from graviti.portex.external import PortexExternalType
-from graviti.portex.factory import type_factory_creator
+from graviti.portex.factory import ConnectedFieldsFactory, TypeFactory
 from graviti.portex.package import ExternalPackage, Imports, packages
 from graviti.portex.param import Param, Params
 from graviti.portex.register import ExternalContainerRegister
@@ -231,7 +232,7 @@ class TypeBuilder:
 
         imports = BuilderImports.from_pyobj(content.get("imports", []), self._builder)
 
-        factory = type_factory_creator(decl, imports)
+        factory = TypeFactory(decl, imports)
 
         keys = factory.keys
         params = Params.from_pyobj(params_pyobj)
@@ -241,15 +242,21 @@ class TypeBuilder:
 
         params.add(Param("nullable", False, ptype=PTYPE.Boolean))
 
-        package = self._builder.package
+        class_attrs: Dict[str, Any] = {
+            "params": params,
+            "factory": factory,
+            "package": self._builder.package,
+        }
+        if issubclass(factory.class_, PortexRecordBase):
+            bases: Tuple[Type["PortexType"], ...] = (PortexRecordBase, PortexExternalType)
+            class_attrs["_fields_factory"] = ConnectedFieldsFactory(
+                decl, factory.class_, imports, factory.transform_kwargs
+            )
+        else:
+            bases = (PortexExternalType,)
+        type_ = type(self._name, bases, class_attrs)
 
-        type_: Type[PortexExternalType] = type(
-            self._name,
-            (PortexExternalType,),
-            {"params": params, "factory": factory, "package": package},
-        )
-
-        package[self._name] = type_
+        self._builder.package[self._name] = type_
 
         return type_
 

@@ -7,18 +7,7 @@
 
 import json
 from copy import deepcopy
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 
 import pyarrow as pa
 import yaml
@@ -30,6 +19,7 @@ from graviti.utility import PathLike, UserMutableMapping
 if TYPE_CHECKING:
     from graviti.dataframe import Container
     from graviti.dataframe.sql.container import SearchContainer
+    from graviti.portex.factory import ConnectedFieldsFactory
     from graviti.portex.field import ConnectedFields
     from graviti.portex.param import Params
 
@@ -254,14 +244,11 @@ class PortexRecordBase(
 ):  # pylint: disable=abstract-method
     """The base class of record like Portex types."""
 
-    # _fields_factory: "ConnectedFieldsFactory"
-    _fields_factory: Callable[..., Any]
+    _fields_factory: "ConnectedFieldsFactory"
 
     @property
     def _data(self) -> "ConnectedFields":  # type: ignore[override]
-        return self._fields_factory(  # type: ignore[no-any-return]
-            **{name: getattr(self, name) for name in self.params}
-        )
+        return self._fields_factory(**{name: getattr(self, name) for name in self.params})
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
