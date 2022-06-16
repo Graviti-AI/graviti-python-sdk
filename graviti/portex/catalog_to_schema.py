@@ -311,7 +311,7 @@ def catalog_to_schema(catalog: Catalog, data_sample: RemoteData, notes: Notes) -
 
     imports = [
         {
-            "repo": "https://github.com/Project-OpenBytes/standard@v1.0.0",
+            "repo": "https://github.com/Project-OpenBytes/portex-standard@v1.0.0",
             "types": import_types,
         }
     ]

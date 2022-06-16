@@ -216,13 +216,13 @@ The template type can be created by giving the parameters and the declaration. A
 Graviti SDK provides :func:`~graviti.portex.base.read_yaml` and :func:`~graviti.portex.base.read_json` to read the Portex type from a yaml or a json file.
 Take the `VOC2012Detection schema file`_ as an example.
 
-.. _VOC2012Detection schema file: https://github.com/Project-OpenBytes/standard/blob/main/example/VOC2012Detection.yaml
+.. _VOC2012Detection schema file: https://github.com/Project-OpenBytes/portex-standard/blob/main/example/VOC2012Detection.yaml
 
 .. code:: python
 
    >>> import graviti.portex as pt
    >>> schema = pt.read_yaml("standard/example/VOC2012Detection.yaml")
-   Cloning repo 'https://github.com/Project-OpenBytes/standard@main'
+   Cloning repo 'https://github.com/Project-OpenBytes/portex-standard@main'
    Cloned to '/tmp/portex/abe871c44b7983baa2d135a72529230a'
    >>> schema
    record(
@@ -255,15 +255,15 @@ Graviti SDK supports to use external packages defined under a repo. By giving th
 SDK provides :func:`~graviti.portex.builder.build_package` to build an external Portex type package from the repo.
 Take `standard`_ as an example, which is used as the standard external package by Graviti.
 
-.. _standard: https://github.com/Project-OpenBytes/standard
+.. _standard: https://github.com/Project-OpenBytes/portex-standard
 
 .. code:: python
 
    >>> import graviti.portex as pt
-   >>> standard = pt.build_package("https://github.com/Project-OpenBytes/standard", "main")
-   Cloning repo 'https://github.com/Project-OpenBytes/standard@main'
+   >>> std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
+   Cloning repo 'https://github.com/Project-OpenBytes/portex-standard@main'
    Cloned to '/tmp/portex/2a656e669aea0b88dca87784a3963215'
-   >>> standard
+   >>> std
    ExternalPackage {
      'calibration.Intrinsic': <class 'graviti.portex.builder.calibration.Intrinsic'>,
      'calibration.Extrinsic': <class 'graviti.portex.builder.calibration.Extrinsic'>,
@@ -282,7 +282,7 @@ Take `standard`_ as an example, which is used as the standard external package b
      ... (25 items are folded),
      'tensor.Image': <class 'graviti.portex.builder.tensor.Image'>
    }
-   >>> box2d = standard.label.Box2D(categories=["cat", "dog"])
+   >>> box2d = std.label.Box2D(categories=["cat", "dog"])
    >>> box2d
    label.Box2D(
      coords=float32(),
@@ -354,8 +354,8 @@ For better comprehension and operations, SDK provides methods to expand external
 .. code:: python
 
    >>> import graviti.portex as pt
-   >>> standard = pt.build_package("https://github.com/Project-OpenBytes/standard", "main")
-   >>> box2d = standard.label.Box2D(categories=["cat", "dog"])
+   >>> std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
+   >>> box2d = std.label.Box2D(categories=["cat", "dog"])
    # Expand the first layer of the external type
    >>> box2d.internal_type
    label._Label(

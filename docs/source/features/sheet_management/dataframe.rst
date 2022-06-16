@@ -126,8 +126,8 @@ Load the local file into DataFrame:
    from graviti import DataFrame
    from graviti.utility import File
 
-   standard = pt.build_package("https://github.com/Project-OpenBytes/standard", "main")
-   schema = pt.record({"file": standard.file.RemoteFile()})
+   std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
+   schema = pt.record({"file": std.file.RemoteFile()})
    data = [
        {"file": File("PATH/TO/YOUR/FILE")},
        {"file": File("b.jpg")},
