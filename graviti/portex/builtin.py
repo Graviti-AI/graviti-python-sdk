@@ -12,7 +12,8 @@ from typing import Iterable, List, Mapping, Optional, Tuple, Type, TypeVar, Unio
 import pyarrow as pa
 
 import graviti.portex.ptype as PTYPE
-from graviti.portex.base import PortexType
+from graviti.portex.base import PortexRecordBase, PortexType
+from graviti.portex.factory import ConnectedFieldsFactory
 from graviti.portex.field import Fields
 from graviti.portex.package import packages
 from graviti.portex.param import Param, Params, param
@@ -241,7 +242,7 @@ class float64(PortexBuiltinType):  # pylint: disable=invalid-name
 
 
 @PyArrowConversionRegister(pa.lib.Type_STRUCT)  # pylint: disable=c-extension-no-member
-class record(PortexBuiltinType):  # pylint: disable=invalid-name
+class record(PortexBuiltinType, PortexRecordBase):  # pylint: disable=invalid-name
     """Portex complex type ``record``.
 
     Arguments:
@@ -276,6 +277,8 @@ class record(PortexBuiltinType):  # pylint: disable=invalid-name
     """
 
     _T = TypeVar("_T", bound="record")
+
+    _fields_factory = ConnectedFieldsFactory.from_parameter_name("fields")
 
     fields: Fields = param(ptype=PTYPE.Fields)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
