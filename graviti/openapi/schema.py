@@ -43,9 +43,9 @@ def update_schema(
         ...     "MNIST",
         ...     draft_number = 1,
         ...     sheet = "train",
-        ...     _schema = '{"imports": [{"repo": "https://github.com/Project-OpenBytes/standard@\
-main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name": "filename", \
-"type": "string"}, {"name": "image", "type": "file.Image"}]}',
+        ...     _schema = '{"imports": [{"repo": "https://github.com/Project-OpenBytes/portex-\
+standard@main", "types": [{"name": "file.Image"}]}], "type": "record", "fields": [{"name": \
+"filename", "type": "string"}, {"name": "image", "type": "file.Image"}]}',
         ...     _avro_schema = '{"type": "record", "name": "root", "namespace": "cn.graviti.portex"\
 , "aliases": [], "fields": [{"name": "filename", "type": "string"}, {"name": "image", "type": \
 {"type": "record", "name": "image", "namespace": "cn.graviti.portex.root", "aliases": [], \

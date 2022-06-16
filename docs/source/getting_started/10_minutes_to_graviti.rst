@@ -31,8 +31,8 @@ below, users can create a very simple dataset to experience Graviti SDK.
    dataset = ws.datasets.create("Graviti-dataset-demo")
    draft = dataset.drafts.create("Draft-1")
 
-   standard = pt.build_package("https://github.com/Project-OpenBytes/standard", "main")
-   box2ds = standard.label.Box2D(
+   std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
+   box2ds = std.label.Box2D(
        categories=["boat", "car"],
        attributes={
            "difficult": pt.boolean(),
