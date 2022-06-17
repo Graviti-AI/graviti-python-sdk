@@ -155,7 +155,9 @@ class DataFrame(Container):
         if key not in self._column_names:
             self._column_names.append(key)
         if self.operations is not None:
-            self.operations.extend((UpdateSchema(self.schema), UpdateData(self[[key]])))
+            dataframe = self.copy()
+            dataframe._record_key = self._record_key
+            self.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
@@ -316,10 +318,10 @@ class DataFrame(Container):
 
     def _to_patch_data(self) -> List[Dict[str, Any]]:
         names = self._column_names.copy()
-        values = list(self._columns.values())
+        values: List[Any] = list(self._columns.values())
 
         names.append(RECORD_KEY)
-        values.append(self._record_key.to_pyarrow())  # type: ignore[union-attr]
+        values.append(self._record_key)
 
         return [
             dict(zip(names, value)) for value in zip(*(column.to_pylist() for column in values))
