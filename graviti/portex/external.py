@@ -15,7 +15,7 @@ from graviti.portex.register import ExternalContainerRegister
 
 if TYPE_CHECKING:
     from graviti.portex.builtin import PortexBuiltinType
-    from graviti.portex.factory import Factory
+    from graviti.portex.factory import TypeFactory
     from graviti.portex.package import ExternalPackage
 
 EXTERNAL_TYPE_TO_CONTAINER = ExternalContainerRegister.EXTERNAL_TYPE_TO_CONTAINER
@@ -27,7 +27,7 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     _signature: ClassVar[Signature]
 
     package: ClassVar["ExternalPackage"]
-    factory: ClassVar["Factory"]
+    factory: ClassVar["TypeFactory"]
 
     def __init_subclass__(cls) -> None:
         cls._signature = cls.params.get_signature()
@@ -60,7 +60,7 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         """
         arguments = {name: getattr(self, name) for name in self.params}
-        return self.factory(**arguments)  # type: ignore[no-any-return]
+        return self.factory(**arguments)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
