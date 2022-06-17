@@ -172,15 +172,66 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = response["state"]
         self.updated_at = response["updated_at"]
 
-    def commit(self, title: str, description: Optional[str] = None) -> Branch:
+    def commit(
+        self, title: str, description: Optional[str] = None, update_dataset_head: bool = True
+    ) -> Branch:
         """Commit the current draft.
 
         Arguments:
             title: The commit title.
             description: The commit description.
+            update_dataset_head: Whether to update the dataset HEAD.
+
+                * | True (the default value): The dataset will be updated to the committed
+                    version. At this time, previous modifications to the dataset will be lost.
+                * | False: The HEAD of the dataset will not be updated. This can be set if
+                    the user needs to continue with some operations on the dataset.
 
         Returns:
             The :class:`~graviti.manager.branch.Branch` instance.
+
+        Examples:
+            The default scenario: ``update_dataset_head`` is True.
+
+            >>> dataset = ws.datasets.get("Graviti-dataset-demo")
+            >>> dataset.HEAD.name  # The version of the dataset is Branch("main").
+            "main"
+            >>> dataset.HEAD.commit_id
+            "524d110ecae7474eaec9471f4a6c28b0"
+            >>> draft = dataset.drafts.create("draft-4", branch="dev")
+            >>> draft.commit("commit-4")
+            Branch("dev")(
+              (commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
+              (parent_commit_id): '1b21a40f03ab4cec814ec47ee0d10b24',
+              (title): 'commit-4',
+              (committer): 'graviti-example',
+              (committed_at): '2022-06-17T07:57:03Z'
+            )
+            >>> dataset.HEAD.name  # The version of the dataset has been updated to Branch("dev").
+            "dev"
+            >>> dataset.HEAD.commit_id
+            "3db73ac2876a42c0bf43a0489ce1756a"
+
+            Set ``update_dataset_head`` to False.
+
+            >>> dataset = ws.datasets.get("Graviti-dataset-demo")
+            >>> dataset.HEAD.name  # The version of the dataset is Branch("main").
+            "main"
+            >>> dataset.HEAD.commit_id
+            "524d110ecae7474eaec9471f4a6c28b0"
+            >>> draft = dataset.drafts.create("draft-5", branch="dev")
+            >>> draft.commit("commit-5", update_dataset_head=False)
+            Branch("dev")(
+              (commit_id): '781007a41d1641859c87cb00f8e32bf3',
+              (parent_commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
+              (title): 'commit-5',
+              (committer): 'graviti-example',
+              (committed_at): '2022-06-17T08:01:37Z'
+            )
+            >>> dataset.HEAD.name  # The version of the dataset has not been updated.
+            "main"
+            >>> dataset.HEAD.commit_id
+            "524d110ecae7474eaec9471f4a6c28b0"
 
         """
         commit_info = commit_draft(
@@ -203,7 +254,11 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = draft_info["state"]
         self.updated_at = draft_info["updated_at"]
 
-        return Branch(self._dataset, name=self.branch, **commit_info)
+        branch = Branch(self._dataset, name=self.branch, **commit_info)
+        if update_dataset_head:
+            self._dataset._data = branch  # pylint: disable=protected-access
+
+        return branch
 
     def upload(self, jobs: int = 8) -> None:
         """Upload the local dataset to Graviti.
