@@ -206,6 +206,7 @@ class UpdateData(DataFrameOperation):
             *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
         ):
             for file_array in file_arrays:
+                local_files = filter(lambda x: isinstance(x, File), file_array)
                 upload_files(
                     access_key,
                     url,
@@ -213,7 +214,7 @@ class UpdateData(DataFrameOperation):
                     dataset,
                     draft_number=draft_number,
                     sheet=sheet,
-                    files=file_array,
+                    files=local_files,
                     jobs=jobs,
                 )
 
