@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
-from graviti.manager.commit import Commit
 from graviti.manager.common import ALL_BRANCHES, CURRENT_BRANCH, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
@@ -173,7 +172,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = response["state"]
         self.updated_at = response["updated_at"]
 
-    def commit(self, title: str, description: Optional[str] = None) -> Commit:
+    def commit(self, title: str, description: Optional[str] = None) -> Branch:
         """Commit the current draft.
 
         Arguments:
@@ -181,7 +180,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             description: The commit description.
 
         Returns:
-            The :class:`~graviti.manager.commit.Commit` instance.
+            The :class:`~graviti.manager.branch.Branch` instance.
 
         """
         commit_info = commit_draft(
@@ -204,7 +203,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = draft_info["state"]
         self.updated_at = draft_info["updated_at"]
 
-        return Commit(self._dataset, **commit_info)
+        return Branch(self._dataset, name=self.branch, **commit_info)
 
     def upload(self, jobs: int = 8) -> None:
         """Upload the local dataset to Graviti.
