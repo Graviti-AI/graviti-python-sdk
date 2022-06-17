@@ -151,7 +151,8 @@ class DataFrame(Container):
 
         # TODO: Need edit the schema.
         self._columns[key] = column
-        self._column_names.append(key)
+        if key not in self._column_names:
+            self._column_names.append(key)
         # TODO: Need add corresponding operations.
 
     def __repr__(self) -> str:
