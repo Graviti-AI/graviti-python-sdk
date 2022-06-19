@@ -21,6 +21,7 @@ More details about the ``DataFrame`` and ``Schema`` are as follows:
 
    dataframe
    schema
+   search
 
 In the Graviti SDK, the relationship between sheet name, DataFrame and dataset/draft is like the
 relationship between key, value and dict. Thus, SDK supports managing sheets like manipulating the
