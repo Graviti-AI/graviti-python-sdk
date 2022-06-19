@@ -73,14 +73,14 @@ class ScalarArray(SearchContainer, LogicalOperatorsMixin):
 
 
 @SearchContainerRegister(pt.boolean)
-class BooleanScalarArray(SearchContainer, LogicalOperatorsMixin):
+class BooleanScalarArray(ScalarArray, LogicalOperatorsMixin):
     """One-dimensional array for portex builtin type array with the boolean items."""
 
     item_container = BooleanScalar
 
 
 @SearchContainerRegister(pt.string, pt.enum)
-class StringScalarArray(SearchContainer, LogicalOperatorsMixin):
+class StringScalarArray(ScalarArray, LogicalOperatorsMixin):
     """One-dimensional array for portex builtin type array with the string and enum items."""
 
     item_container = StringScalar
