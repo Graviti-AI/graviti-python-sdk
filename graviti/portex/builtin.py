@@ -299,7 +299,7 @@ class record(PortexBuiltinType, PortexRecordBase):  # pylint: disable=invalid-na
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
-            The corresponding builtin PyArrow DataType.
+            The corresponding builtin PyArrow struct DataType.
 
         """
         return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member

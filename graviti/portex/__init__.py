@@ -6,7 +6,7 @@
 
 # https://github.com/python/mypy/issues/9318
 from graviti.portex.avro import convert_portex_schema_to_avro  # type: ignore[attr-defined]
-from graviti.portex.base import PortexType, read_json, read_yaml
+from graviti.portex.base import PortexRecordBase, PortexType, read_json, read_yaml
 from graviti.portex.builder import build_package
 from graviti.portex.builtin import (
     array,
@@ -27,6 +27,7 @@ __all__ = [
     "ContainerRegister",
     "ExternalContainerRegister",
     "PortexType",
+    "PortexRecordBase",
     "array",
     "binary",
     "boolean",

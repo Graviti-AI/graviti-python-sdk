@@ -76,14 +76,14 @@ class DataFrame(Container):
     _columns: Dict[str, Container]
     _column_names: List[str]
     _record_key: Optional[ColumnSeries] = None
-    schema: pt.PortexType
+    schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
     searcher: Optional[Callable[[Dict[str, Any]], "DataFrame"]] = None
 
     def __new__(
         cls: Type[_T],
         data: Union[List[Dict[str, Any]], _T, None] = None,
-        schema: Optional[pt.PortexType] = None,
+        schema: Optional[pt.PortexRecordBase] = None,
     ) -> _T:
         """Two-dimensional, size-mutable, potentially heterogeneous tabular data.
 
@@ -205,7 +205,9 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], array: pa.StructArray, schema: pt.PortexType) -> _T:
+    def _from_pyarrow(  # type: ignore[override]
+        cls: Type[_T], array: pa.StructArray, schema: pt.PortexRecordBase
+    ) -> _T:
         obj: _T = object.__new__(cls)
         obj.schema = schema
         obj._columns = {}
@@ -222,7 +224,9 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def _from_factory(cls: Type[_T], factory: LazyFactoryBase, schema: pt.PortexType) -> _T:
+    def _from_factory(  # type: ignore[override]
+        cls: Type[_T], factory: LazyFactoryBase, schema: pt.PortexRecordBase
+    ) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:
@@ -255,7 +259,7 @@ class DataFrame(Container):
 
     @classmethod
     def from_pyarrow(
-        cls: Type[_T], array: pa.StructArray, schema: Optional[pt.PortexType] = None
+        cls: Type[_T], array: pa.StructArray, schema: Optional[pt.PortexRecordBase] = None
     ) -> _T:
         """Create DataFrame with pyarrow struct array.
 
@@ -271,7 +275,7 @@ class DataFrame(Container):
 
         """
         if schema is None:
-            schema = pt.PortexType.from_pyarrow(array.type)
+            schema = pt.record.from_pyarrow(array.type)
         elif not array.type.equals(schema.to_pyarrow()):
             raise TypeError("The schema is mismatched with the pyarrow array")
 
@@ -713,7 +717,7 @@ class DataFrame(Container):
         return lambda x: {k: processors[k](v) for k, v in x.items()}, need_process
 
     @staticmethod
-    def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
+    def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexRecordBase) -> pa.StructArray:
 
         # In this case schema.to_builtin always returns record.
         processor, need_process = DataFrame._process_array(values, schema)

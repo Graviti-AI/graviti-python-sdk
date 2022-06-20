@@ -24,7 +24,7 @@ from graviti.openapi import (
     list_commits,
 )
 from graviti.paging import LazyFactory
-from graviti.portex import PortexType
+from graviti.portex import PortexRecordBase
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -160,7 +160,7 @@ class Commit(Sheets, AttrsMixin):
             sheet=sheet,
             criteria=count_criteria,
         )["data"][0]["count"]
-        schema = PortexType.from_yaml(self._get_sheet(sheet)["schema"])
+        schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
 
         factory = LazyFactory(
             total_count,
