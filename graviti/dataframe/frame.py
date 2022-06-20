@@ -79,6 +79,7 @@ class DataFrame(Container):
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
     searcher: Optional[Callable[[Dict[str, Any]], "DataFrame"]] = None
+    criteria: Optional[Dict[str, Any]] = None
 
     def __new__(
         cls: Type[_T],
@@ -777,8 +778,22 @@ class DataFrame(Container):
             raise TypeError("'query' is not supported for the DataFrame not in a Commit")
 
         result = func(SqlRowSeries(self.schema))
-        criteria = {"where": result.expr}
-        return self.searcher(criteria)  # pylint: disable=not-callable
+        if self.criteria is None:
+            criteria = {"where": result.expr}
+        else:
+            criteria = {
+                "where": {
+                    "$and": [
+                        self.criteria["where"],  # pylint: disable=unsubscriptable-object
+                        result.expr,
+                    ]
+                }
+            }
+
+        dataframe = self.searcher(criteria)  # pylint: disable=not-callable
+        dataframe.criteria = criteria
+        dataframe.searcher = self.searcher
+        return dataframe
 
     def apply(self, func: Callable[[Any], Any]) -> Container:
         """Apply a function to the DataFrame row by row.
@@ -808,7 +823,8 @@ class DataFrame(Container):
             raise TypeError("'apply' is not supported for the DataFrame not in a Commit")
 
         result = func(SqlRowSeries(self.schema))
-        criteria = {"select": [result.expr]}
+        criteria = {} if self.criteria is None else self.criteria.copy()
+        criteria["select"] = [result.expr]
         dataframe = self.searcher(criteria)  # pylint: disable=not-callable
         key = dataframe._column_names[0]  # pylint: disable=protected-access
         return dataframe[key]
