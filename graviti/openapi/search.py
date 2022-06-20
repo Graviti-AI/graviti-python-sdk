@@ -34,7 +34,8 @@ def create_search(
         sheet: The sheet name.
         criteria: The criteria of the search.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
-        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is to get
+            all search results.
 
     Returns:
         The response of OpenAPI.
@@ -86,7 +87,7 @@ def create_search(
                 },
                 ...(total 128 items)
             ],
-            "search_history_id": "5c7de503c88446e8b37a258f71783d7d"
+            "search_id": "5c7de503c88446e8b37a258f71783d7d"
         }
 
     """
