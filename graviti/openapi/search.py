@@ -23,7 +23,7 @@ def create_search(
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets\
-    /{sheet}/search?offset={offset}&limit={limit}`.
+    /{sheet}/search`.
 
     Arguments:
         access_key: User's access key.
@@ -48,30 +48,26 @@ def create_search(
         ...     commit_id = "fde63f357daf46088639e9f57fd81cad",
         ...     sheet = "train",
         ...     criteria = {
-        ...         "opt": "or",
-        ...         "value": [
-        ...             {
-        ...                 "opt": "eq",
-        ...                 "key": "filename",
-        ...                 "value": "0000f77c-6257be58.jpg"
-        ...             },
-        ...             {
-        ...                 "opt": "and",
-        ...                 "value": [
-        ...                     {
-        ...                         "opt": "eq",
-        ...                         "key": "attribute.weather",
-        ...                         "value": "clear"
-        ...                     },
-        ...                     {
-        ...                         "opt": "eq",
-        ...                         "key": "attribute.timeofday",
-        ...                         "value": "daytime"
-        ...                     }
-        ...                 ]
-        ...             }
-        ...         ]
-        ...     }
+        ...         "where": {
+        ...            "$or": [
+        ...                {
+        ...                    "$eq": ["$.filename", "0000f77c-6257be58.jpg"],
+        ...                },
+        ...                {
+        ...                    "$and": [
+        ...                        {
+        ...                            "$eq": ["$.attribute.weather", "clear"]
+        ...                        },
+        ...                        {
+        ...                            "$eq": ["$.attribute.timeofday", "daytime"]
+        ...                        }
+        ...                    ]
+        ...                }
+        ...            ]
+        ...        },
+        ...        "offset": 0,
+        ...        "limit": 128
+        ...    }
         ... )
         {
             "data": [
@@ -90,21 +86,17 @@ def create_search(
                 },
                 ...(total 128 items)
             ],
-            "offset": 0,
-            "record_size": 128,
-            "total_count": 200
+            "search_history_id": "5c7de503c88446e8b37a258f71783d7d"
         }
 
     """
     url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/search"
 
-    post_data = {"criteria": criteria}
-    params = {}
+    criteria = criteria.copy()
     if offset is not None:
-        params["offset"] = offset
+        criteria["offset"] = offset
     if limit is not None:
-        params["limit"] = limit
-
+        criteria["limit"] = limit
     return open_api_do(  # type: ignore[no-any-return]
-        "POST", access_key, url, json=post_data, params=params
+        "POST", access_key, url, json={"criteria": criteria}
     ).json()
