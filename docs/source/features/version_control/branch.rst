@@ -97,16 +97,12 @@ version of the dataset by branches:
 .. code:: python
 
    dataset.checkout(f"{BRANCH_NAME}")
-   # Check whether the dataset version is correct.
-   dataset.HEAD
+   dataset.HEAD  # Check whether the dataset version is correct.
 
-.. note::
-   This ``checkout`` method is often used to update the version of the local dataset, for
-   example:
+In addition, this ``checkout`` method is often used to update the version of the local dataset
+without getting the dataset again, for example:
 
-   .. code:: python
+.. code:: python
 
-      dataset.checkout(f"{BRANCH_NAME}")
-      draft = dataset.drafts.create(f"{DRAFT_TITLE}")
-      draft.commit(f"{COMMIT_TITLE}")
-      dataset.checkout(f"{BRANCH_NAME}")  # update the version of the dataset
+   # Other users committed a draft on the Branch("main").
+   dataset.checkout("main")  # Update the version of the dataset.
