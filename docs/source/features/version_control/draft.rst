@@ -127,23 +127,52 @@ In addition to title, it is also allowed to add description to the commit:
 
    draft.commit(f"{COMMIT_TITLE}", f"{COMMIT_DESCRIPTION}")
 
-.. important::
-   SDK does not automatically update the version of the dataset after committing the draft.
-   Therefore, the dataset may be some commits behind the server. In addition, other members
-   of the workspace may have committed drafts on this branch.
+In this case, SDK will automatically update the version of the dataset after committing the draft.
+And all modifications on the dataset will be lost.
 
-   So it is necessary to ``checkout`` the specified branch, commit or tag before proceeding to the
-   next step. For example, if the user needs to commit a draft and tag the commit: 
+.. code:: python
 
-   .. code:: python
-   
-      draft = dataset.drafts.get(DRAFT_NUMBER)
-      commit = draft.commit(f"{COMMIT_TITLE}")
-      # Checkout first.
-      dataset.checkout(commit.commit_id)
-      dataset.tags.create(f"{TAG_NAME}")
-      # Or specify the revision.
-      dataset.tag.create(f"{TAG_NAME}", commit.commit_id)
+   >>> dataset = ws.datasets.get("Graviti-dataset-demo")
+   >>> dataset.HEAD.name  # The version of the dataset is Branch("main").
+   "main"
+   >>> dataset.HEAD.commit_id
+   "524d110ecae7474eaec9471f4a6c28b0"
+   >>> draft = dataset.drafts.create("draft-4", branch="dev")
+   >>> draft.commit("commit-4")
+   Branch("dev")(
+     (commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
+     (parent_commit_id): '1b21a40f03ab4cec814ec47ee0d10b24',
+     (title): 'commit-4',
+     (committer): 'graviti-example',
+     (committed_at): '2022-06-17T07:57:03Z'
+   )
+   >>> dataset.HEAD.name  # The version of the dataset has been updated to Branch("dev").
+   "dev"
+   >>> dataset.HEAD.commit_id
+   "3db73ac2876a42c0bf43a0489ce1756a"
+
+Users can avoid the automatic update by setting ``update_dataset_head`` to False:
+
+.. code:: python
+
+   >>> dataset = ws.datasets.get("Graviti-dataset-demo")
+   >>> dataset.HEAD.name  # The version of the dataset is Branch("main").
+   "main"
+   >>> dataset.HEAD.commit_id
+   "524d110ecae7474eaec9471f4a6c28b0"
+   >>> draft = dataset.drafts.create("draft-5", branch="dev")
+   >>> draft.commit("commit-5", update_dataset_head=False)
+   Branch("dev")(
+     (commit_id): '781007a41d1641859c87cb00f8e32bf3',
+     (parent_commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
+     (title): 'commit-5',
+     (committer): 'graviti-example',
+     (committed_at): '2022-06-17T08:01:37Z'
+   )
+   >>> dataset.HEAD.name  # The version of the dataset has not been updated.
+   "main"
+   >>> dataset.HEAD.commit_id
+   "524d110ecae7474eaec9471f4a6c28b0"
 
 *****************
  Close the Draft
