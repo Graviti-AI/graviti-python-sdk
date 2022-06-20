@@ -96,6 +96,9 @@ Read a DataFrame cell:
  Edit the DataFrame
 ********************
 
+Extend Rows
+===========
+
 DataFrame supports method :py:meth:`~graviti.dataframe.frame.DataFrame.extend`.
 
 Extend rows to the end of the DataFrame:
@@ -110,6 +113,115 @@ Extend another Dataframe to the end of the DataFrame:
 
    df1 = DataFrame([{"filename": "a.jpg"}])
    df.extend(df1)
+
+Add Columns
+===========
+
+DataFrame supports adding columns by ``setitem``:
+
+.. code:: python
+
+   >>> from graviti import DataFrame
+   >>> data = [
+   ...    {"filename": "a.jpg"},
+   ...    {"filename": "b.jpg"},
+   ...    {"filename": "c.jpg"},
+   ... ]
+   >>> df = DataFrame(data)
+   >>> df
+      filename
+   0  a.jpg
+   1  b.jpg
+   2  c.jpg
+   >>> df["caption"] = ["a", "b", "c"]
+   >>> df
+      filename  caption
+   0  a.jpg     a
+   1  b.jpg     b
+   2  c.jpg     c
+   >>> df.schema
+   record(
+     fields={
+       'filename': string(),
+       'caption': string(),
+     },
+   )
+
+The above example shows adding a column of data with no specified type,
+and the schema of the column will be inferred.
+In this case, the column schema can only be Portex :ref:`features/sheet_management/schema:Primitive Types`.
+
+If specific Portex type is required, please add a Series as the column to the DataFrame.
+
+.. code:: python
+
+   >>> from graviti import DataFrame, Series
+   >>> data = [
+   ...    {"filename": "a.jpg"},
+   ...    {"filename": "b.jpg"},
+   ...    {"filename": "c.jpg"},
+   ... ]
+   >>> df = DataFrame(data)
+   >>> df
+      filename
+   0  a.jpg
+   1  b.jpg
+   2  c.jpg
+   >>> df["category"] = Series(["cat", "dog", "cat"], pt.enum(["cat", "dog"]))
+   >>> df
+      filename  category
+   0  a.jpg     cat
+   1  b.jpg     dog
+   2  c.jpg     cat
+   >>> df.schema
+   record(
+     fields={
+       'filename': string(),
+       'category': enum(
+         values=['cat', 'dog'],
+       ),
+     },
+   )
+
+Note that not all DataFrame can be modified.
+Only if the fields of the schema are from given arguments, the DataFrame can be changed, like the above example.
+If the fields are defined in a template, the DataFrame cannot be changed, and ``TypeError`` will be raised:
+
+.. code:: python
+
+   >>> from graviti import DataFrame, Workspace
+   >>> import graviti.portex as pt
+
+   >>> std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
+   >>> box2ds = std.label.Box2D(
+   ...     categories=["boat", "car"],
+   ...     attributes={
+   ...         "difficult": pt.boolean(),
+   ...         "occluded": pt.boolean(),
+   ...     },
+   ... )
+   >>> df = DataFrame(
+   ...     [
+   ...         {
+   ...             "xmin": 1,
+   ...             "ymin": 1,
+   ...             "xmax": 4,
+   ...             "ymax": 5,
+   ...             "category": "boat",
+   ...             "attribute": {
+   ...                 "difficult": False,
+   ...                 "occluded": False,
+   ...             },
+   ...         }
+   ...     ],
+   ...     schema=box2ds
+   ... )
+   >>> df
+      xmin  ymin  xmax  ymax  category  attribute
+                                        difficult  occluded
+   0  1.0   1.0   4.0   5.0   boat      False      False
+   >>> df["caption"] = ["a"]
+   TypeError: Cannot set item 'caption' in ImmutableFields
 
 ****************
  File Operation
