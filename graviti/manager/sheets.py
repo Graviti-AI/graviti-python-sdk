@@ -13,7 +13,7 @@ import pyarrow as pa
 from graviti.dataframe import RECORD_KEY, DataFrame
 from graviti.manager.common import LIMIT
 from graviti.paging import LazyFactory
-from graviti.portex import PortexType
+from graviti.portex import PortexRecordBase
 from graviti.utility import ReprMixin
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
     def _init_dataframe(self, sheet_name: str) -> DataFrame:
         sheet = self._get_sheet(sheet_name)
-        schema = PortexType.from_yaml(sheet["schema"])
+        schema = PortexRecordBase.from_yaml(sheet["schema"])
 
         patype = schema.to_pyarrow()
 

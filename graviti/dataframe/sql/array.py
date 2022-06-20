@@ -174,6 +174,7 @@ class DataFrame(SearchContainer):
 
     prefix = "$"
     item_container = RowSeries
+    schema: pt.PortexRecordBase
 
     def __getitem__(self, key: str) -> SearchContainer:
         field: pt.PortexType = self.schema.to_builtin().fields[key]  # type: ignore[attr-defined]

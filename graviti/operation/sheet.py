@@ -7,7 +7,7 @@
 
 from graviti.openapi import create_sheet, delete_sheet
 from graviti.operation.common import get_schema
-from graviti.portex import PortexType
+from graviti.portex import PortexRecordBase
 
 
 class SheetOperation:
@@ -55,7 +55,7 @@ class CreateSheet(SheetOperation):
 
     """
 
-    def __init__(self, sheet: str, schema: PortexType) -> None:
+    def __init__(self, sheet: str, schema: PortexRecordBase) -> None:
         super().__init__(sheet)
         self.schema = schema
 

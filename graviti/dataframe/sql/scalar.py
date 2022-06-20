@@ -150,7 +150,7 @@ class StringScalar(SearchScalarContainer, LogicalOperatorsMixin):
 class RowSeries(SearchScalarContainer):
     """The One-dimensional array for the search."""
 
-    def __init__(self, schema: pt.PortexType) -> None:
+    def __init__(self, schema: pt.PortexRecordBase) -> None:
         super().__init__("$", schema)
 
     def __getitem__(self, key: str) -> Union[SearchContainer, SearchScalarContainer]:
