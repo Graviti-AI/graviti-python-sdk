@@ -14,6 +14,7 @@ from graviti.utility.collections import (
     UserSequence,
 )
 from graviti.utility.common import locked, shorten, urlnorm
+from graviti.utility.engine import Mode, engine
 from graviti.utility.file import File, FileBase, RemoteFile
 from graviti.utility.itertools import chunked
 from graviti.utility.pyarrow import (
@@ -57,4 +58,6 @@ __all__ = [
     "urlnorm",
     "shorten",
     "submit_multithread_tasks",
+    "engine",
+    "Mode",
 ]

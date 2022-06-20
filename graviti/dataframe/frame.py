@@ -33,7 +33,7 @@ from graviti.dataframe.row.series import Series as RowSeries
 from graviti.dataframe.sql import RowSeries as SqlRowSeries
 from graviti.operation import AddData, DataFrameOperation, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
-from graviti.utility import MAX_REPR_ROWS, FileBase
+from graviti.utility import MAX_REPR_ROWS, FileBase, Mode, engine
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
@@ -774,6 +774,11 @@ class DataFrame(Container):
             0   a.jpg    1      1
 
         """
+        if engine.mode != Mode.ONLINE:
+            raise TypeError(
+                "Only online mode is supported now, "
+                "Please use 'engine.online' with block to enable the online mode."
+            )
         if self.searcher is None:
             raise TypeError("'query' is not supported for the DataFrame not in a Commit")
 
@@ -819,6 +824,11 @@ class DataFrame(Container):
             1   b.jpg    3      2
 
         """
+        if engine.mode != Mode.ONLINE:
+            raise TypeError(
+                "Only online mode is supported now, "
+                "Please use 'engine.online' with block to enable the online mode."
+            )
         if self.searcher is None:
             raise TypeError("'apply' is not supported for the DataFrame not in a Commit")
 
