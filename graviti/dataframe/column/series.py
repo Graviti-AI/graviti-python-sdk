@@ -7,7 +7,7 @@
 
 
 from itertools import islice
-from typing import Any, Iterable, List, Optional, Type, TypeVar, Union, overload
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -23,7 +23,7 @@ _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
 
 
-class SeriesBase(Container):
+class SeriesBase(Container):  # pylint: disable=abstract-method
     """One-dimensional array.
 
     Arguments:
@@ -47,12 +47,41 @@ class SeriesBase(Container):
     schema: pt.PortexType
     _data: PagingListBase
 
-    def __init__(
-        self,
-        data: Iterable[Any],
+    def __new__(
+        cls: Type[_SB],
+        data: Union[Iterable[Any], _SB],
         schema: Optional[pt.PortexType] = None,
-    ) -> None:
-        raise NotImplementedError("Not support initializing Series by __init__")
+    ) -> Any:
+        """One-dimensional data with schema.
+
+        Arguments:
+            data: The data that needs to be stored in column series.
+            schema: The schema of the column series. If None, will be inferred from `data`.
+
+        Raises:
+            ValueError: When both given schema and Series data.
+            ValueError: When using DataFrame as data to construct a Series.
+
+        Returns:
+            The created Series object.
+
+        """
+        if isinstance(data, cls):
+            if schema is not None:
+                raise ValueError("Only support the schema when data is not Series")
+
+            return data.copy()
+
+        if data.__class__.__name__ == "DataFrame":
+            raise ValueError("Do not support Constructing a Series through a DataFrame")
+
+        if schema is None:
+            array = pa.array(data)
+            schema = pt.PortexType.from_pyarrow(array.type)
+        else:
+            array = cls._pylist_to_pyarrow(data, schema)  # type: ignore[arg-type]
+
+        return schema.container._from_pyarrow(array, schema)
 
     # @overload
     # def __getitem__(self, key: slice) -> "Series":
@@ -140,6 +169,48 @@ class SeriesBase(Container):
 
     def _getitem_by_location(self, key: int) -> Any:
         return self.__getitem__(key)
+
+    @staticmethod
+    def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
+
+        # In this case schema.to_builtin always returns record.
+        processor, need_process = SeriesBase._process_array(values, schema)
+
+        if not need_process:
+            return pa.array(values, schema.to_pyarrow())
+
+        return pa.array(processor(values), schema.to_pyarrow())
+
+    @staticmethod
+    def _process_array(
+        values: Iterable[Any], schema: pt.PortexType
+    ) -> Tuple[Callable[[Any], Any], bool]:
+        for value in values:
+            if value is None:
+                continue
+            processor, need_process = SeriesBase._get_process(value, schema)
+            return lambda x: list(map(processor, x)), need_process
+
+        return lambda x: x, False
+
+    @staticmethod
+    def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:
+        container = schema.container
+        if value.__class__.__name__ == "DataFrame":
+            return lambda x: x.to_pylist(), True
+        if container == ArraySeries:
+            return SeriesBase._process_array(value, schema.items)  # type: ignore[attr-defined]
+        if container == FileSeries:
+            return SeriesBase._process_file(value)
+
+        return lambda x: x, False
+
+    @staticmethod
+    def _process_file(values: Iterable[Any]) -> Tuple[Callable[[Any], Any], bool]:
+        if isinstance(values, FileBase):
+            return lambda x: x.to_pyobj(), True
+
+        return lambda x: x, False
 
     def _extend(self: _SB, values: _SB) -> None:
         """Extend Series to itself row by row.
