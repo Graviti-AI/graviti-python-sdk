@@ -149,8 +149,23 @@ class Commit(Sheets, AttrsMixin):
         if self.commit_id is None:
             raise NoCommitsError("No commit on the current branch. Please commit a draft first")
 
-        def _getter(offset: int, limit: int) -> Dict[str, Any]:
-            return create_search(
+        count_criteria = criteria.copy()
+        count_criteria["select"] = [{"count": {"$count": ["$."]}}]
+        total_count = create_search(
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.owner,
+            self._dataset.name,
+            commit_id=self.commit_id,
+            sheet=sheet,
+            criteria=count_criteria,
+        )["data"][0]["count"]
+        schema = PortexType.from_yaml(self._get_sheet(sheet)["schema"])
+
+        factory = LazyFactory(
+            total_count,
+            LIMIT,
+            lambda offset, limit: create_search(
                 self._dataset.access_key,
                 self._dataset.url,
                 self._dataset.owner,
@@ -160,15 +175,7 @@ class Commit(Sheets, AttrsMixin):
                 criteria=criteria,
                 offset=offset,
                 limit=limit,
-            )
-
-        total_count = _getter(0, 1)["total_count"]
-        schema = PortexType.from_yaml(self._get_sheet(sheet)["schema"])
-
-        factory = LazyFactory(
-            total_count,
-            LIMIT,
-            lambda offset, limit: _getter(offset, limit)["data"],
+            )["data"],
             schema.to_pyarrow(),
         )
 
