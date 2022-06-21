@@ -107,7 +107,7 @@ repos:
         exclude: "(^docs/source/_templates/)"
         args:
           [
-            "--ignore-directives=automodule",
+            "--ignore-directives=tabs",
             "--ignore-messages",
             'Hyperlink target ".+?" is not referenced.',
           ]

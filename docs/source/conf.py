@@ -46,6 +46,7 @@ extensions = [
     "sphinx.ext.napoleon",  # used for being compatible with Google and Numpy doc style
     "sphinx.ext.coverage",  # used for generating doc coverage report
     "autoapi.extension",
+    "sphinx_tabs.tabs",  # used for creating tabbed code
 ]
 
 # extensions_config
@@ -70,6 +71,9 @@ autoapi_options = [
     "imported-members",
 ]
 autoapi_template_dir = "../source/_templates"
+
+# The default options for tab
+sphinx_tabs_disable_tab_closing = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

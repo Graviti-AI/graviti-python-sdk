@@ -5,3 +5,4 @@
 furo == 2022.4.7
 sphinx == 4.2.0
 sphinx-autoapi == 1.8.4
+sphinx-tabs == 3.3.1
