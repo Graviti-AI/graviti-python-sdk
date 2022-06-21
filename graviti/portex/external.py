@@ -34,9 +34,14 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         container = EXTERNAL_TYPE_TO_CONTAINER.get(
             (cls.package.url, cls.package.revision, cls.__name__)
-        )
+        ) or getattr(cls.factory.class_, "container", None)
+
         if container:
             cls.container = container
+
+        search_container = getattr(cls.factory.class_, "search_container", None)
+        if search_container:
+            cls.search_container = search_container
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         bound_arguments = self._signature.bind(*args, **kwargs)
@@ -47,13 +52,6 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
             arguments[key] = self.params[key].check(value)
 
         self.__dict__.update(arguments)
-
-        internal_type = self.internal_type
-        if not hasattr(self.__class__, "container"):
-            self.container = internal_type.container
-
-        if not hasattr(self.__class__, "search_container"):
-            self.search_container = internal_type.search_container
 
     @property
     def internal_type(self) -> PortexType:
