@@ -35,10 +35,8 @@ _T = TypeVar("_T", bound="Fields")
 class FrozenFields(FrozenNameOrderedDict[PortexType]):
     """Represents a frozen fields dict."""
 
-    @classmethod
-    def _check_value(cls, value: PortexType) -> None:
-        if not isinstance(value, PortexType):
-            raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
+    def __repr__(self) -> str:
+        return self._repr1(0)
 
     def __setitem__(self, key: Union[int, str], value: PortexType) -> None:
         raise TypeError(f"Cannot set item '{key}' in {self.__class__.__name__}")
@@ -46,9 +44,26 @@ class FrozenFields(FrozenNameOrderedDict[PortexType]):
     def __delitem__(self, key: Union[int, str]) -> None:
         raise TypeError(f"Cannot delete item '{key}' in {self.__class__.__name__}")
 
+    @classmethod
+    def _check_value(cls, value: PortexType) -> None:
+        if not isinstance(value, PortexType):
+            raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
+
     def _setitem(self, key: str, value: PortexType) -> None:
         self._check_value(value)
         super()._setitem(key, value)
+
+    def _repr1(self, level: int) -> str:
+        indent = level * _INDENT
+        lines = ["{"]
+        for name, portex_type in self.items():
+            lines.append(
+                f"{_INDENT}'{name}': "  # pylint: disable=protected-access
+                f"{portex_type._repr1(level + 1)},"
+            )
+
+        lines.append("}")
+        return f"\n{indent}".join(lines)
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
@@ -227,35 +242,11 @@ class ConnectedFields(MutableMapping[str, PortexType]):
         self._get_fields(old_name).rename(old_name, new_name)
 
 
-class Fields(NameOrderedDict[PortexType]):
+class Fields(NameOrderedDict[PortexType], FrozenFields):  # type: ignore[misc]
     """Represents a Portex ``record`` fields dict."""
 
     def __init__(self, fields: Union[Iterable[Tuple[str, PortexType]], Mapping[str, PortexType]]):
         super().__init__(fields)
-
-    def __repr__(self) -> str:
-        return self._repr1(0)
-
-    @classmethod
-    def _check_value(cls, value: PortexType) -> None:
-        if not isinstance(value, PortexType):
-            raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
-
-    def _repr1(self, level: int) -> str:
-        indent = level * _INDENT
-        lines = ["{"]
-        for name, portex_type in self.items():
-            lines.append(
-                f"{_INDENT}'{name}': "  # pylint: disable=protected-access
-                f"{portex_type._repr1(level + 1)},"
-            )
-
-        lines.append("}")
-        return f"\n{indent}".join(lines)
-
-    def _setitem(self, key: str, value: PortexType) -> None:
-        self._check_value(value)
-        super()._setitem(key, value)
 
     @property
     def imports(self) -> Imports:
