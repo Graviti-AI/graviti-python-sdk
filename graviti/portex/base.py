@@ -36,8 +36,8 @@ class PortexType:
     nullable: bool
     package: ClassVar[Package[Any]]
     params: ClassVar["Params"]
-    container: Type["Container"]
-    search_container: Type["SearchContainer"]
+    container: ClassVar[Type["Container"]]
+    search_container: ClassVar[Type["SearchContainer"]]
 
     def __repr__(self) -> str:
         return self._repr1(0)
