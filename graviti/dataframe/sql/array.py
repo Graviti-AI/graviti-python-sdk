@@ -181,18 +181,18 @@ class DataFrame(SearchContainer):
         expr = f"{self.expr}.{key}"
         return field.search_container(expr, field, self.upper_expr)
 
-    def query(self, func: Callable[[Any], Any]) -> "ScalarArray":
+    def query(self, func: Callable[[Any], Any]) -> "DataFrame":
         """Query the data of an ArraySeries with a lambda function.
 
         Arguments:
             func: The query function.
 
         Returns:
-            The ArraySeries with the query expression.
+            The DataFrame with the query expression.
 
         """
         expr = {"$filter": [self.upper_expr, func(RowSeries(self.schema)).expr]}
-        return ScalarArray(expr, self.schema, self.upper_expr)
+        return DataFrame(expr, self.schema, self.upper_expr)
 
 
 class ArrayDistributor(SearchContainer):
