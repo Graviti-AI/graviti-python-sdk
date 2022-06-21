@@ -203,8 +203,7 @@ class DataFrame(Container):
         obj._columns = {}
         obj._column_names = []
 
-        # In this case schema.to_builtin always returns record.
-        for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
+        for key, value in schema.items():
             obj._columns[key] = value.container._from_pyarrow(  # pylint: disable=protected-access
                 array.field(key), schema=value
             )
@@ -232,8 +231,7 @@ class DataFrame(Container):
         obj._columns = {}
         obj._column_names = []
 
-        # In this case schema.to_builtin always returns record.
-        for key, value in schema.to_builtin().fields.items():  # type: ignore[attr-defined]
+        for key, value in schema.items():
             obj._columns[key] = value.container._from_factory(  # pylint: disable=protected-access
                 factory[key], schema=value
             )
@@ -714,12 +712,11 @@ class DataFrame(Container):
 
     @staticmethod
     def _process_record(
-        values: Dict[str, Any], schema: pt.record
+        values: Dict[str, Any], schema: pt.PortexRecordBase
     ) -> Tuple[Callable[[Any], Any], bool]:
         processors: Dict[str, Callable[[Any], Any]] = {}
         need_process, sub_need_process = False, False
-        fields = schema.to_builtin().fields
-        for name, field in fields.items():
+        for name, field in schema.items():
             item = values[name]
             if item is None:
                 processors[name] = lambda x: x
@@ -732,7 +729,6 @@ class DataFrame(Container):
     @staticmethod
     def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexRecordBase) -> pa.StructArray:
 
-        # In this case schema.to_builtin always returns record.
         processor, need_process = DataFrame._process_array(values, schema)
 
         if not need_process:

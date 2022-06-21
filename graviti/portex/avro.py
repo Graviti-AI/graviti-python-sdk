@@ -229,7 +229,7 @@ def convert_portex_schema_to_avro(_schema: record):
     name = "root"
     names = []
 
-    for i, (sub_name, typ) in enumerate(_schema.to_builtin().fields.items()):
+    for i, (sub_name, typ) in enumerate(_schema.items()):
         sub_namespace = f"{namespace}.{name}"
         sub_schema = _on_type(names, sub_namespace, sub_name, i, typ.to_builtin())
         avro_record_field = AvroField(

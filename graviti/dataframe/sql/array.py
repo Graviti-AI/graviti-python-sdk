@@ -177,7 +177,7 @@ class DataFrame(SearchContainer):
     schema: pt.PortexRecordBase
 
     def __getitem__(self, key: str) -> SearchContainer:
-        field: pt.PortexType = self.schema.to_builtin().fields[key]  # type: ignore[attr-defined]
+        field = self.schema[key]
         expr = f"{self.expr}.{key}"
         return field.search_container(expr, field, self.upper_expr)
 
