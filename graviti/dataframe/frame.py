@@ -40,6 +40,7 @@ _C = TypeVar("_C", bound="Container")
 
 
 RECORD_KEY = "__record_key"
+APPLY_KEY = "apply_result"
 
 
 @pt.ContainerRegister(pt.record)
@@ -834,7 +835,6 @@ class DataFrame(Container):
 
         result = func(SqlRowSeries(self.schema))
         criteria = {} if self.criteria is None else self.criteria.copy()
-        criteria["select"] = [result.expr]
+        criteria["select"] = [{APPLY_KEY: result.expr}]
         dataframe = self.searcher(criteria)  # pylint: disable=not-callable
-        key = dataframe._column_names[0]  # pylint: disable=protected-access
-        return dataframe[key]
+        return dataframe[APPLY_KEY]
