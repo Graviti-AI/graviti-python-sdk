@@ -32,8 +32,8 @@ from graviti.utility import FrozenNameOrderedDict, NameOrderedDict
 _T = TypeVar("_T", bound="Fields")
 
 
-class ImmutableFields(FrozenNameOrderedDict[PortexType]):
-    """Represents an immutable fields dict."""
+class FrozenFields(FrozenNameOrderedDict[PortexType]):
+    """Represents a frozen fields dict."""
 
     @classmethod
     def _check_value(cls, value: PortexType) -> None:
@@ -59,7 +59,7 @@ class ImmutableFields(FrozenNameOrderedDict[PortexType]):
             portex_type: The portex_type of the field to be inserted.
 
         Raises:
-            TypeError: When calling this method of ImmutableFields.
+            TypeError: When calling this method of FrozenFields.
 
         """
         raise TypeError(f"Cannot insert in {self.__class__.__name__}")
@@ -72,7 +72,7 @@ class ImmutableFields(FrozenNameOrderedDict[PortexType]):
             portex_type: The new PortexType of the field to convert to.
 
         Raises:
-            TypeError: When calling this method of ImmutableFields.
+            TypeError: When calling this method of FrozenFields.
 
         """
         raise TypeError(f"Cannot change the type of '{name}' in {self.__class__.__name__}")
@@ -85,79 +85,23 @@ class ImmutableFields(FrozenNameOrderedDict[PortexType]):
             new_name: The new name of the field to assign.
 
         Raises:
-            TypeError: When calling this method of ImmutableFields.
+            TypeError: When calling this method of FrozenFields.
 
         """
         raise TypeError(f"Cannot rename '{old_name}' in {self.__class__.__name__}")
 
 
-class MutableFields(NameOrderedDict[PortexType], ImmutableFields):  # type: ignore[misc]
-    """Represents a mutable fields dict."""
-
-    def insert(self, index: int, name: str, portex_type: PortexType) -> None:
-        """Insert the name and portex_type at the index.
-
-        Arguments:
-            index: The index to insert the field.
-            name: The name of the field to be inserted.
-            portex_type: The portex_type of the field to be inserted.
-
-        Raises:
-            KeyError: When the name already exists in the Fields.
-
-        """
-        self._check_key(name)
-        self._check_value(portex_type)
-
-        if self.__contains__(name):
-            raise KeyError(f'"{name}" already exists in the Fields')
-
-        self._keys.insert(index, name)
-        self._data.__setitem__(name, portex_type)
-
-    def astype(self, name: str, portex_type: PortexType) -> None:
-        """Convert the type of the field with the given name to the new PortexType.
-
-        Arguments:
-            name: The name of the field to convert.
-            portex_type: The new PortexType of the field to convert to.
-
-        Raises:
-            KeyError: When the name does not exist in the Fields.
-
-        """
-        self._check_value(portex_type)
-
-        if not self.__contains__(name):
-            raise KeyError(f'"{name}" does not exist in the Fields')
-
-        self._data.__setitem__(name, portex_type)
-
-    def rename(self, old_name: str, new_name: str) -> None:
-        """Rename the name of a field.
-
-        Arguments:
-            old_name: The current name of the field to be renamed.
-            new_name: The new name of the field to assign.
-
-        """
-        self._check_key(new_name)
-
-        self._data.__setitem__(new_name, self._data.pop(old_name))
-        self._keys.__setitem__(self._keys.index(old_name), new_name)
-
-
-UnionFields = Union[ImmutableFields, MutableFields]
+UnionFields = Union[FrozenFields, "Fields"]
 
 
 class ConnectedFields(MutableMapping[str, PortexType]):
-    """Fields composed of ImmutableFields and MutableFields.
+    """Fields composed of FrozenFields and Fields.
 
     Raises:
         ValueError: When there as repeated field names.
 
     Arguments:
-        multi_fields: The ImmutableFields and MutableFields.
+        multi_fields: The FrozenFields and Fields.
 
     """
 
@@ -238,7 +182,7 @@ class ConnectedFields(MutableMapping[str, PortexType]):
 
         Raises:
             ValueError: When the name already exists in the fields.
-            TypeError: When trying to insert a field into ImmutableFields.
+            TypeError: When trying to insert a field into FrozenFields.
 
         """
         if name in self._mapping:
@@ -260,7 +204,7 @@ class ConnectedFields(MutableMapping[str, PortexType]):
             except TypeError:
                 pass
 
-        raise TypeError(f"Cannot insert at index {index} due to immutable fields") from None
+        raise TypeError(f"Cannot insert at index {index} due to frozen fields") from None
 
     def astype(self, name: str, portex_type: PortexType) -> None:
         """Convert the type of the field with the given name to the new PortexType.
