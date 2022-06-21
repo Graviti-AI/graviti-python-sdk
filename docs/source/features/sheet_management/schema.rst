@@ -19,23 +19,63 @@ Graviti SDK supports the python interaction with the Portex schema.
 
 Graviti SDK provides classes to initialize Portex primitive types:
 
-.. code:: python
+.. tabs::
 
-   >>> import graviti.portex as pt
-   >>> pt.boolean()
-   boolean()
-   >>> pt.binary()
-   binary()
-   >>> pt.string()
-   string()
-   >>> pt.int32()
-   int32()
-   >>> pt.int64()
-   int64()
-   >>> pt.float32()
-   float32()
-   >>> pt.float64()
-   float64()
+   .. tab:: boolean
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.boolean()
+         boolean()
+
+   .. tab:: binary
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.binary()
+         binary()
+
+   .. tab:: string
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.string()
+         string()
+
+   .. tab:: int32
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.int32()
+         int32()
+
+   .. tab:: int64
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.int64()
+         int64()
+
+   .. tab:: float32
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.float32()
+         float32()
+
+   .. tab:: float64
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> pt.float64()
+         float64()
 
 ***************
  Complex Types
@@ -89,53 +129,71 @@ and all the primitive and complex types mentioned above can be used here for eac
 The names and types can be accessed by ``fields``,
 which acts like a dict whose key is the column name and the value is column type.
 
-.. code:: python
 
-   >>> import graviti.portex as pt
-   # Init record with list
-   >>> record = pt.record(
-   ...    [
-   ...       ("x", pt.int32()),
-   ...       ("y", pt.int32()),
-   ...       ("categories", pt.enum(values=["cat", "dog"]))
-   ...    ]
-   ... )
-   >>> record
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
-   # Init record with dict
-   >>> record = pt.record(
-   ...    {
-   ...       "x": pt.int32(),
-   ...       "y": pt.int32(),
-   ...       "categories": pt.enum(values=["cat", "dog"]),
-   ...    }
-   ... )
-   >>> record
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
-   >>> record.fields
-   {
-     'x': int32(),
-     'y': int32(),
-     'categories': enum(
-       values=['cat', 'dog'],
-     ),
-   }
+.. tabs::
+
+   .. tab:: Init record with list
+
+      .. code:: python
+      
+         >>> import graviti.portex as pt
+         >>> record = pt.record(
+         ...    [
+         ...       ("x", pt.int32()),
+         ...       ("y", pt.int32()),
+         ...       ("categories", pt.enum(values=["cat", "dog"]))
+         ...    ]
+         ... )
+         >>> record
+         record(
+           fields={
+             'x': int32(),
+             'y': int32(),
+             'categories': enum(
+               values=['cat', 'dog'],
+             ),
+           },
+         )
+         >>> record.fields
+         {
+           'x': int32(),
+           'y': int32(),
+           'categories': enum(
+             values=['cat', 'dog'],
+           ),
+         }
+
+
+   .. tab:: Init record with dict
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> record = pt.record(
+         ...    {
+         ...       "x": pt.int32(),
+         ...       "y": pt.int32(),
+         ...       "categories": pt.enum(values=["cat", "dog"]),
+         ...    }
+         ... )
+         >>> record
+         record(
+           fields={
+             'x': int32(),
+             'y': int32(),
+             'categories': enum(
+               values=['cat', 'dog'],
+             ),
+           },
+         )
+         >>> record.fields
+         {
+           'x': int32(),
+           'y': int32(),
+           'categories': enum(
+             values=['cat', 'dog'],
+           ),
+         }
 
 
 ***************
@@ -196,111 +254,111 @@ The template type can be created by giving the parameters and the declaration. A
 
 Graviti SDK provides :func:`~graviti.portex.base.read_yaml` and :func:`~graviti.portex.base.read_json` to read the Portex type from a yaml or a json file.
 
-YAML File
-=========
+.. tabs::
 
-Take the following ``schema.yaml`` file as an example:
+   .. tab:: YAML File
 
-.. code:: yaml
+      Take the following ``schema.yaml`` file as an example:
 
-   ---
-   type: record
-   fields:
-     - name: filename
-       type: string
+      .. code:: yaml
 
-     - name: category
-       type: int32
+         ---
+         type: record
+         fields:
+           - name: filename
+             type: string
 
-     - name: attribute
-       type: record
-       fields:
-         - name: weather
-           type: enum
-           values: ["sunny", "rainy", "windy"]
+           - name: category
+             type: int32
 
-         - name: distorted
-           type: boolean
+           - name: attribute
+             type: record
+             fields:
+               - name: weather
+                 type: enum
+                 values: ["sunny", "rainy", "windy"]
 
-.. code:: python
+               - name: distorted
+                 type: boolean
 
-   >>> import graviti.portex as pt
-   >>> schema = pt.read_yaml("schema.yaml")
-   >>> schema
-   record(
-     fields={
-       'filename': string(),
-       'category': int32(),
-       'attribute': record(
-         fields={
-           'weather': enum(
-             values=['sunny', 'rainy', 'windy'],
-           ),
-           'distorted': boolean(),
-         },
-       ),
-     },
-   )
+      .. code:: python
 
-JSON File
-=========
-
-Take the following ``schema.json`` file as an example:
-
-.. code:: yaml
-
-   {
-       "type": "record",
-       "fields": [
-           {
-               "name": "filename",
-               "type": "string"
+         >>> import graviti.portex as pt
+         >>> schema = pt.read_yaml("schema.yaml")
+         >>> schema
+         record(
+           fields={
+             'filename': string(),
+             'category': int32(),
+             'attribute': record(
+               fields={
+                 'weather': enum(
+                   values=['sunny', 'rainy', 'windy'],
+                 ),
+                 'distorted': boolean(),
+               },
+             ),
            },
-           {
-               "name": "category",
-               "type": "int32"
+         )
+
+   .. tab:: JSON File
+
+      Take the following ``schema.json`` file as an example:
+
+      .. code:: yaml
+
+         {
+             "type": "record",
+             "fields": [
+                 {
+                     "name": "filename",
+                     "type": "string"
+                 },
+                 {
+                     "name": "category",
+                     "type": "int32"
+                 },
+                 {
+                     "name": "attribute",
+                     "type": "record",
+                     "fields": [
+                         {
+                             "name": "weather",
+                             "type": "enum",
+                             "values": [
+                                 "sunny",
+                                 "rainy",
+                                 "windy"
+                             ]
+                         },
+                         {
+                             "name": "distorted",
+                             "type": "boolean"
+                         }
+                     ]
+                 }
+             ]
+         }
+
+      .. code:: python
+
+         >>> import graviti.portex as pt
+         >>> schema = pt.read_json("schema.json")
+         >>> schema
+         record(
+           fields={
+             'filename': string(),
+             'category': int32(),
+             'attribute': record(
+               fields={
+                 'weather': enum(
+                   values=['sunny', 'rainy', 'windy'],
+                 ),
+                 'distorted': boolean(),
+               },
+             ),
            },
-           {
-               "name": "attribute",
-               "type": "record",
-               "fields": [
-                   {
-                       "name": "weather",
-                       "type": "enum",
-                       "values": [
-                           "sunny",
-                           "rainy",
-                           "windy"
-                       ]
-                   },
-                   {
-                       "name": "distorted",
-                       "type": "boolean"
-                   }
-               ]
-           }
-       ]
-   }
-
-.. code:: python
-
-   >>> import graviti.portex as pt
-   >>> schema = pt.read_json("schema.json")
-   >>> schema
-   record(
-     fields={
-       'filename': string(),
-       'category': int32(),
-       'attribute': record(
-         fields={
-           'weather': enum(
-             values=['sunny', 'rainy', 'windy'],
-           ),
-           'distorted': boolean(),
-         },
-       ),
-     },
-   )
+         )
 
 ****************
  Schema Package
@@ -378,9 +436,11 @@ Please see :ref:`features/sheet_management/dataframe:File Operation` for more de
  Schema Methods
 ****************
 
-to/from Python Object
-=====================
-PortexType provides methods to convert to or init from python object:
+Convert
+=======
+
+PortexType provides methods to convert to or init from python object, json string and yaml string.
+Take the following schema as an example:
 
 .. code:: python
 
@@ -402,102 +462,68 @@ PortexType provides methods to convert to or init from python object:
        ),
      },
    )
-   >>> pyobj = schema.to_pyobj()
-   >>> pyobj
-   {'type': 'record',
-    'fields': [{'name': 'x', 'type': 'int32'},
-     {'name': 'y', 'type': 'int32'},
-     {'name': 'categories', 'type': 'enum', 'values': ['cat', 'dog']}]}
 
-   >>> pt.PortexType.from_pyobj(pyobj)
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
+.. tabs::
 
-to/from JSON String
-===================
-PortexType provides methods to convert to or init from json string:
+   .. tab:: Python Object
 
-.. code:: python
+      .. code:: python
 
-   >>> import graviti.portex as pt
-   >>> schema = pt.record(
-   ...    {
-   ...       "x": pt.int32(),
-   ...       "y": pt.int32(),
-   ...       "categories": pt.enum(values=["cat", "dog"]),
-   ...    }
-   ... )
-   >>> schema
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
-   >>> json_string = schema.to_json()
-   >>> json_string
-   '{"type": "record", "fields": [{"name": "x", "type": "int32"}, {"name": "y", "type": "int32"}, {"name": "categories", "type": "enum", "values": ["cat", "dog"]}]}'
+         >>> pyobj = schema.to_pyobj()
+         >>> pyobj
+         {'type': 'record',
+          'fields': [{'name': 'x', 'type': 'int32'},
+           {'name': 'y', 'type': 'int32'},
+           {'name': 'categories', 'type': 'enum', 'values': ['cat', 'dog']}]}
+      
+         >>> pt.PortexType.from_pyobj(pyobj)
+         record(
+           fields={
+             'x': int32(),
+             'y': int32(),
+             'categories': enum(
+               values=['cat', 'dog'],
+             ),
+           },
+         )
 
-   >>> pt.PortexType.from_json(json_string)
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
+   .. tab:: JSON String
 
-to/from YAML String
-===================
-PortexType provides methods to convert to or init from yaml string:
+      .. code:: python
 
-.. code:: python
+          >>> json_string = schema.to_json()
+          >>> json_string
+          '{"type": "record", "fields": [{"name": "x", "type": "int32"}, {"name": "y", "type": "int32"}, {"name": "categories", "type": "enum", "values": ["cat", "dog"]}]}'
 
-   >>> import graviti.portex as pt
-   >>> schema = pt.record(
-   ...    {
-   ...       "x": pt.int32(),
-   ...       "y": pt.int32(),
-   ...       "categories": pt.enum(values=["cat", "dog"]),
-   ...    }
-   ... )
-   >>> schema
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
-   >>> yaml_string = schema.to_yaml()
-   >>> yaml_string
-   'type: record\nfields:\n- name: x\n  type: int32\n- name: y\n  type: int32\n- name: categories\n  type: enum\n  values:\n  - cat\n  - dog\n'
+          >>> pt.PortexType.from_json(json_string)
+          record(
+            fields={
+              'x': int32(),
+              'y': int32(),
+              'categories': enum(
+                values=['cat', 'dog'],
+              ),
+            },
+          )
 
-   >>> pt.PortexType.from_yaml(yaml_string)
-   record(
-     fields={
-       'x': int32(),
-       'y': int32(),
-       'categories': enum(
-         values=['cat', 'dog'],
-       ),
-     },
-   )
+   .. tab:: YAML String
 
+      .. code:: python
+
+          >>> yaml_string = schema.to_yaml()
+          >>> yaml_string
+          'type: record\nfields:\n- name: x\n  type: int32\n- name: y\n  type: int32\n- name: categories\n  type: enum\n  values:\n  - cat\n  - dog\n'
+
+          >>> pt.PortexType.from_yaml(yaml_string)
+          record(
+            fields={
+              'x': int32(),
+              'y': int32(),
+              'categories': enum(
+                values=['cat', 'dog'],
+              ),
+            },
+          )
 
 Expand
 ======
