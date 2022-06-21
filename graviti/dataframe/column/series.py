@@ -173,7 +173,6 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     @staticmethod
     def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
 
-        # In this case schema.to_builtin always returns record.
         processor, need_process = SeriesBase._process_array(values, schema)
 
         if not need_process:

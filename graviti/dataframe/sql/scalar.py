@@ -150,9 +150,11 @@ class StringScalar(SearchScalarContainer, LogicalOperatorsMixin):
 class RowSeries(SearchScalarContainer):
     """The One-dimensional array for the search."""
 
+    schema: pt.PortexRecordBase
+
     def __init__(self, schema: pt.PortexRecordBase) -> None:
         super().__init__("$", schema)
 
     def __getitem__(self, key: str) -> Union[SearchContainer, SearchScalarContainer]:
-        field: pt.PortexType = self.schema.to_builtin().fields[key]  # type: ignore[attr-defined]
+        field = self.schema[key]
         return field.search_container.item_container.from_upper(f"{self.expr}.{key}", field)
