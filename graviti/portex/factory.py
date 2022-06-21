@@ -23,7 +23,7 @@ from typing import (
 
 import graviti.portex.ptype as PTYPE
 from graviti.portex.base import PortexRecordBase, PortexType
-from graviti.portex.field import ConnectedFields, Fields, ImmutableFields
+from graviti.portex.field import ConnectedFields, Fields, FrozenFields
 from graviti.portex.package import Imports
 
 _C = TypeVar("_C", str, float, bool, None)
@@ -46,11 +46,11 @@ class Factory:
         ...
 
 
-class ImmutableFieldsFactory(Factory):
-    """The factory for ImmutableFields.
+class FrozenFieldsFactory(Factory):
+    """The factory for FrozenFields.
 
     Arguments:
-        decl: The decalaration of immutable fields.
+        decl: The decalaration of frozen fields.
         imports: The :class:`Imports` instance to specify the import scope of the fields.
 
     """
@@ -58,17 +58,17 @@ class ImmutableFieldsFactory(Factory):
     def __init__(self, decl: Iterable[Dict[str, Any]], imports: Imports) -> None:
         self._factories = [FieldFactory(field, imports) for field in decl]
 
-    def __call__(self, **kwargs: Any) -> ImmutableFields:
-        """Apply the input arguments to the ImmutableFields factory.
+    def __call__(self, **kwargs: Any) -> FrozenFields:
+        """Apply the input arguments to the FrozenFields factory.
 
         Arguments:
             kwargs: The input arguments.
 
         Returns:
-            The applied ImmutableFields.
+            The applied FrozenFields.
 
         """
-        return ImmutableFields(
+        return FrozenFields(
             filter(
                 bool,
                 (factory(**kwargs) for factory in self._factories),  # type: ignore[misc]
@@ -76,37 +76,37 @@ class ImmutableFieldsFactory(Factory):
         )
 
 
-class ImmutableFieldsFactoryWrapper(Factory):
-    """The factory for ImmutableFields which needs kwargs transformed.
+class FrozenFieldsFactoryWrapper(Factory):
+    """The factory for FrozenFields which needs kwargs transformed.
 
     Arguments:
-        factory: The factory of immutable fields.
+        factory: The factory of frozen fields.
         kwargs_transformer: The method to transform the kwargs to the kwargs of base type.
 
     """
 
     def __init__(
         self,
-        factory: Union[ImmutableFieldsFactory, "ImmutableFieldsFactoryWrapper"],
+        factory: Union[FrozenFieldsFactory, "FrozenFieldsFactoryWrapper"],
         kwargs_transformer: Callable[..., Dict[str, Any]],
     ) -> None:
         self._factory = factory
         self._kwargs_transformer = kwargs_transformer
 
-    def __call__(self, **kwargs: Any) -> ImmutableFields:
-        """Apply the input arguments to the base ImmutableFields factory.
+    def __call__(self, **kwargs: Any) -> FrozenFields:
+        """Apply the input arguments to the base FrozenFields factory.
 
         Arguments:
             kwargs: The input arguments.
 
         Returns:
-            The applied ImmutableFields.
+            The applied FrozenFields.
 
         """
         return self._factory(**self._kwargs_transformer(**kwargs))
 
 
-UnionFieldsFactory = Union["VariableFactory", ImmutableFieldsFactory, ImmutableFieldsFactoryWrapper]
+UnionFieldsFactory = Union["VariableFactory", FrozenFieldsFactory, FrozenFieldsFactoryWrapper]
 
 
 class ConnectedFieldsFactory:
@@ -132,7 +132,7 @@ class ConnectedFieldsFactory:
         factories: List[UnionFieldsFactory] = []
         for base_factory in class_._fields_factory._factories:
             if not isinstance(base_factory, VariableFactory):
-                factories.append(ImmutableFieldsFactoryWrapper(base_factory, kwargs_transformer))
+                factories.append(FrozenFieldsFactoryWrapper(base_factory, kwargs_transformer))
                 continue
 
             fields_decl = decl[base_factory.key]
@@ -146,7 +146,7 @@ class ConnectedFieldsFactory:
                     for unpack_fields in fields:
                         factories.append(VariableFactory(unpack_fields[2:]))
                 else:
-                    factories.append(ImmutableFieldsFactory(fields, imports))
+                    factories.append(FrozenFieldsFactory(fields, imports))
 
         self._factories = factories
 
@@ -164,7 +164,7 @@ class ConnectedFieldsFactory:
 
     @classmethod
     def from_parameter_name(cls: Type[_CFF], name: str) -> _CFF:
-        """Create ConnectedFieldsFactory for MutableFields with the given parameter name.
+        """Create ConnectedFieldsFactory for Fields with the given parameter name.
 
         Arguments:
             name: The parameter name of the input fields.
