@@ -79,7 +79,7 @@ class DataFrame(Container):
     _record_key: Optional[ColumnSeries] = None
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
-    searcher: Optional[Callable[[Dict[str, Any]], "DataFrame"]] = None
+    searcher: Optional[Callable[[Dict[str, Any], pt.PortexRecordBase], "DataFrame"]] = None
     criteria: Optional[Dict[str, Any]] = None
 
     def __new__(
@@ -796,7 +796,7 @@ class DataFrame(Container):
                 }
             }
 
-        dataframe = self.searcher(criteria)  # pylint: disable=not-callable
+        dataframe = self.searcher(criteria, self.schema)  # pylint: disable=not-callable
         dataframe.criteria = criteria
         dataframe.searcher = self.searcher
         return dataframe
@@ -836,5 +836,7 @@ class DataFrame(Container):
         result = func(SqlRowSeries(self.schema))
         criteria = {} if self.criteria is None else self.criteria.copy()
         criteria["select"] = [{APPLY_KEY: result.expr}]
-        dataframe = self.searcher(criteria)  # pylint: disable=not-callable
+        dataframe = self.searcher(  # pylint: disable=not-callable
+            criteria, pt.record({APPLY_KEY: pt.array(result.schema)})
+        )
         return dataframe[APPLY_KEY]

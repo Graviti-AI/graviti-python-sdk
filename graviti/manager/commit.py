@@ -132,12 +132,15 @@ class Commit(Sheets, AttrsMixin):
         """
         return self._dumps()
 
-    def search(self, sheet: str, criteria: Dict[str, Any]) -> DataFrame:
+    def search(
+        self, sheet: str, criteria: Dict[str, Any], schema: Optional[PortexRecordBase] = None
+    ) -> DataFrame:
         """Create a search.
 
         Arguments:
             sheet: The sheet name.
             criteria: The criteria of search.
+            schema: The schema of the search result DataFrame.
 
         Raises:
             NoCommitsError: When there is no commit on the current branch.
@@ -160,7 +163,8 @@ class Commit(Sheets, AttrsMixin):
             sheet=sheet,
             criteria=count_criteria,
         )["data"][0]["count"]
-        schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
+        if schema is None:
+            schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
 
         factory = LazyFactory(
             total_count,
