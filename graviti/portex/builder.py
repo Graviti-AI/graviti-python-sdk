@@ -243,6 +243,7 @@ class TypeBuilder:
         params.add(Param("nullable", False, ptype=PTYPE.Boolean))
 
         class_attrs: Dict[str, Any] = {
+            "__module__": __name__,
             "params": params,
             "factory": factory,
             "package": self._builder.package,
