@@ -25,21 +25,21 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     """The base class of Portex external type."""
 
     _signature: ClassVar[Signature]
+    _factory: ClassVar["TypeFactory"]
 
     package: ClassVar["ExternalPackage"]
-    factory: ClassVar["TypeFactory"]
 
     def __init_subclass__(cls) -> None:
         cls._signature = cls.params.get_signature()
 
         container = EXTERNAL_TYPE_TO_CONTAINER.get(
             (cls.package.url, cls.package.revision, cls.__name__)
-        ) or getattr(cls.factory.class_, "container", None)
+        ) or getattr(cls._factory.class_, "container", None)
 
         if container:
             cls.container = container
 
-        search_container = getattr(cls.factory.class_, "search_container", None)
+        search_container = getattr(cls._factory.class_, "search_container", None)
         if search_container:
             cls.search_container = search_container
 
@@ -62,7 +62,7 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         """
         arguments = {name: getattr(self, name) for name in self.params}
-        return self.factory(**arguments)
+        return self._factory(**arguments)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
