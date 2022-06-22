@@ -244,8 +244,8 @@ class TypeBuilder:
 
         class_attrs: Dict[str, Any] = {
             "__module__": __name__,
+            "_factory": factory,
             "params": params,
-            "factory": factory,
             "package": self._builder.package,
         }
         if issubclass(factory.class_, PortexRecordBase):
