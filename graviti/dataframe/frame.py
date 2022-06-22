@@ -75,7 +75,6 @@ class DataFrame(Container):
 
     has_keys = True
     _columns: Dict[str, Container]
-    _column_names: List[str]
     _record_key: Optional[ColumnSeries] = None
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
@@ -143,7 +142,7 @@ class DataFrame(Container):
             self._setitem(key, value)
             return
 
-        if key in self._column_names:
+        if key in self.schema:
             raise NotImplementedError("Replacing a column in a sheet is not supported yet")
 
         self._setitem(key, value)
@@ -165,7 +164,7 @@ class DataFrame(Container):
         return "\n".join(lines)
 
     def __len__(self) -> int:
-        return self._columns[self._column_names[0]].__len__()
+        return next(self._columns.values().__iter__()).__len__()
 
     @staticmethod
     def _get_repr_header(flatten_header: List[Tuple[str, ...]]) -> List[List[str]]:
@@ -189,7 +188,6 @@ class DataFrame(Container):
     ) -> "DataFrame":
         obj: DataFrame = object.__new__(cls)
         obj._columns = columns
-        obj._column_names = list(obj._columns.keys())
         obj.schema = schema
         obj._record_key = record_key
         return obj
@@ -200,15 +198,12 @@ class DataFrame(Container):
     ) -> _T:
         obj: _T = object.__new__(cls)
         obj.schema = schema
-        obj._columns = {}
-        obj._column_names = []
-
-        for key, value in schema.items():
-            obj._columns[key] = value.container._from_pyarrow(  # pylint: disable=protected-access
+        obj._columns = {
+            key: value.container._from_pyarrow(  # pylint: disable=protected-access
                 array.field(key), schema=value
             )
-
-            obj._column_names.append(key)
+            for key, value in schema.items()
+        }
 
         return obj
 
@@ -228,15 +223,12 @@ class DataFrame(Container):
         """
         obj: _T = object.__new__(cls)
         obj.schema = schema
-        obj._columns = {}
-        obj._column_names = []
-
-        for key, value in schema.items():
-            obj._columns[key] = value.container._from_factory(  # pylint: disable=protected-access
+        obj._columns = {
+            key: value.container._from_factory(  # pylint: disable=protected-access
                 factory[key], schema=value
             )
-
-            obj._column_names.append(key)
+            for key, value in schema.items()
+        }
 
         if RECORD_KEY in factory:
             obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
@@ -289,8 +281,6 @@ class DataFrame(Container):
 
         self.schema[key] = schema
         self._columns[key] = column
-        if key not in self._column_names:
-            self._column_names.append(key)
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeriesBase]]:
         header: List[Tuple[str, ...]] = []
@@ -334,7 +324,7 @@ class DataFrame(Container):
             value._extend(values[key])  # pylint: disable=protected-access
 
     def _to_patch_data(self) -> List[Dict[str, Any]]:
-        names = self._column_names.copy()
+        names = list(self.schema.keys())
         values: List[Any] = list(self._columns.values())
 
         names.append(RECORD_KEY)
@@ -423,7 +413,7 @@ class DataFrame(Container):
             (3, 2)
 
         """
-        return (self.__len__(), len(self._column_names))
+        return (self.__len__(), len(self.schema))
 
     # @property
     # def size(self) -> int:
@@ -452,7 +442,7 @@ class DataFrame(Container):
     #     ...
 
     def _getitem_by_location(self, key: int) -> RowSeries:
-        indices_data = {name: self._columns[name].iloc[key] for name in self._column_names}
+        indices_data = {name: self._columns[name].iloc[key] for name in self.schema}
         return RowSeries._construct(indices_data)  # pylint: disable=protected-access
 
     # @overload
@@ -601,7 +591,6 @@ class DataFrame(Container):
 
         # pylint: disable=protected-access
         obj._columns = columns
-        obj._column_names = self._column_names.copy()
         return obj
 
     # def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
@@ -746,7 +735,7 @@ class DataFrame(Container):
 
         """
         return [
-            dict(zip(self._column_names, values))
+            dict(zip(self.schema, values))
             for values in zip(*(column.to_pylist() for column in self._columns.values()))
         ]
 
