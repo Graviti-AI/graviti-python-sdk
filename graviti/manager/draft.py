@@ -287,8 +287,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
                     sheet=sheet_name,
                     jobs=jobs,
                 )
-
-        delattr(self, "_data")
+                dataframe.operations = []
 
 
 class DraftManager:
