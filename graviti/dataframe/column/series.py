@@ -135,6 +135,9 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             lines.append(f"...({self.__len__()})")
         return "\n".join(lines)
 
+    def _repr_folding(self) -> str:
+        return f"{self.__class__.__name__}({self.__len__()})"
+
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
 

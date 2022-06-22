@@ -322,7 +322,7 @@ class DataFrame(Container):
                 item = column[i]
                 name = (
                     item._repr_folding()  # pylint: disable=protected-access
-                    if isinstance(item, DataFrame)
+                    if isinstance(item, Container)
                     else str(item)
                 )
                 line.append(name)

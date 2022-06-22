@@ -35,6 +35,9 @@ class Container:
     def _extend(self: _T, values: _T) -> None:
         raise NotImplementedError
 
+    def _repr_folding(self) -> str:
+        raise NotImplementedError
+
     # TODO: Defines a base indexer for the iloc return type.
     @property
     def iloc(self) -> Any:
