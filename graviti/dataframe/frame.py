@@ -682,7 +682,9 @@ class DataFrame(Container):
         if container == DataFrame:
             return DataFrame._process_record(value, schema)  # type: ignore[arg-type]
         if container == ArraySeries:
-            return DataFrame._process_array(value, schema.items)  # type: ignore[attr-defined]
+            return DataFrame._process_array(
+                value, schema.to_builtin().items  # type: ignore[attr-defined]
+            )
         if container == FileSeries:
             return DataFrame._process_file(value)
 
