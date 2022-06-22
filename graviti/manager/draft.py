@@ -275,6 +275,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
                 self._dataset.name,
                 draft_number=self.number,
             )
+        self.operations = []
 
         for sheet_name, dataframe in self.items():
             for df_operation in dataframe.operations:  # type: ignore[union-attr]
