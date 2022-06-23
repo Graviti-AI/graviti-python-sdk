@@ -249,7 +249,7 @@ class PortexRecordBase(
 
     @property
     def _data(self) -> "ConnectedFields":  # type: ignore[override]
-        return self._fields_factory(**{name: getattr(self, name) for name in self.params})
+        return self._fields_factory({name: getattr(self, name) for name in self.params})
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
