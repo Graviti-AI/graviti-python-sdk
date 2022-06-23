@@ -36,7 +36,7 @@ class Factory:
     is_unpack: bool = False
     keys: Dict[str, Any]
 
-    def __call__(self, **_: Any) -> Any:
+    def __call__(self, _: Dict[str, Any]) -> Any:
         """Apply the input arguments to the template.
 
         Arguments:
@@ -58,7 +58,7 @@ class FrozenFieldsFactory(Factory):
     def __init__(self, decl: Iterable[Dict[str, Any]], imports: Imports) -> None:
         self._factories = [FieldFactory(field, imports) for field in decl]
 
-    def __call__(self, **kwargs: Any) -> FrozenFields:
+    def __call__(self, kwargs: Dict[str, Any]) -> FrozenFields:
         """Apply the input arguments to the FrozenFields factory.
 
         Arguments:
@@ -71,7 +71,7 @@ class FrozenFieldsFactory(Factory):
         return FrozenFields(
             filter(
                 bool,
-                (factory(**kwargs) for factory in self._factories),  # type: ignore[misc]
+                (factory(kwargs) for factory in self._factories),  # type: ignore[misc]
             )
         )
 
@@ -93,7 +93,7 @@ class FrozenFieldsFactoryWrapper(Factory):
         self._factory = factory
         self._kwargs_transformer = kwargs_transformer
 
-    def __call__(self, **kwargs: Any) -> FrozenFields:
+    def __call__(self, kwargs: Dict[str, Any]) -> FrozenFields:
         """Apply the input arguments to the base FrozenFields factory.
 
         Arguments:
@@ -103,7 +103,7 @@ class FrozenFieldsFactoryWrapper(Factory):
             The applied FrozenFields.
 
         """
-        return self._factory(**self._kwargs_transformer(**kwargs))
+        return self._factory(self._kwargs_transformer(kwargs))
 
 
 UnionFieldsFactory = Union["VariableFactory", FrozenFieldsFactory, FrozenFieldsFactoryWrapper]
@@ -150,7 +150,7 @@ class ConnectedFieldsFactory:
 
         self._factories = factories
 
-    def __call__(self, **kwargs: Any) -> ConnectedFields:
+    def __call__(self, kwargs: Dict[str, Any]) -> ConnectedFields:
         """Apply the input arguments to the ConnectedFields factory.
 
         Arguments:
@@ -160,7 +160,7 @@ class ConnectedFieldsFactory:
             The applied ConnectedFields.
 
         """
-        return ConnectedFields(factory(**kwargs) for factory in self._factories)
+        return ConnectedFields(factory(kwargs) for factory in self._factories)
 
     @classmethod
     def from_parameter_name(cls: Type[_CFF], name: str) -> _CFF:
@@ -215,7 +215,7 @@ class TypeFactory(Factory):
         self.keys = keys
         self.class_ = class_
 
-    def __call__(self, **kwargs: Any) -> PortexType:
+    def __call__(self, kwargs: Dict[str, Any]) -> PortexType:
         """Apply the input arguments to the type template.
 
         Arguments:
@@ -225,9 +225,9 @@ class TypeFactory(Factory):
             The applied Portex type.
 
         """
-        return self.class_(**self.transform_kwargs(**kwargs))  # type: ignore[call-arg]
+        return self.class_(**self.transform_kwargs(kwargs))  # type: ignore[call-arg]
 
-    def transform_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+    def transform_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Transform the keyword arguments to what the base type needs.
 
         Arguments:
@@ -238,9 +238,9 @@ class TypeFactory(Factory):
 
         """
         type_kwargs: Dict[str, Any] = (
-            self._unpack_factory(**kwargs) if hasattr(self, "_unpack_factory") else {}
+            self._unpack_factory(kwargs) if hasattr(self, "_unpack_factory") else {}
         )
-        type_kwargs.update({key: factory(**kwargs) for key, factory in self._factories.items()})
+        type_kwargs.update({key: factory(kwargs) for key, factory in self._factories.items()})
         return type_kwargs
 
 
@@ -256,7 +256,7 @@ class ConstantFactory(Factory, Generic[_C]):
         self._constant: _C = decl
         self.keys: Dict[str, Any] = {}
 
-    def __call__(self, **_: Any) -> _C:
+    def __call__(self, _: Dict[str, Any]) -> _C:
         """Get the constant stored in the factory.
 
         Arguments:
@@ -283,7 +283,7 @@ class VariableFactory(Factory):
         self.keys = {decl: ptype}
         self.is_unpack = is_unpack
 
-    def __call__(self, **kwargs: Any) -> Any:
+    def __call__(self, kwargs: Dict[str, Any]) -> Any:
         """Apply the input arguments to the variable template.
 
         Arguments:
@@ -316,7 +316,7 @@ class ListFactory(Factory):
         self._factories = factories
         self.keys = keys
 
-    def __call__(self, **kwargs: Any) -> List[Any]:
+    def __call__(self, kwargs: Dict[str, Any]) -> List[Any]:
         """Apply the input arguments to the list template.
 
         Arguments:
@@ -358,7 +358,7 @@ class DictFactory(Factory):
         self._factories = factories
         self.keys = keys
 
-    def __call__(self, **kwargs: Any) -> Dict[str, Any]:
+    def __call__(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Apply the input arguments to the dict template.
 
         Arguments:
@@ -369,9 +369,9 @@ class DictFactory(Factory):
 
         """
         items: Dict[str, Any] = (
-            self._unpack_factory(**kwargs) if hasattr(self, "_unpack_factory") else {}
+            self._unpack_factory(kwargs) if hasattr(self, "_unpack_factory") else {}
         )
-        items.update({key: factory(**kwargs) for key, factory in self._factories.items()})
+        items.update({key: factory(kwargs) for key, factory in self._factories.items()})
         return items
 
 
@@ -403,7 +403,7 @@ class FieldFactory(Factory):
         self._type_factory = type_factory
         self.keys = keys
 
-    def __call__(self, **kwargs: Any) -> Optional[Tuple[str, PortexType]]:
+    def __call__(self, kwargs: Dict[str, Any]) -> Optional[Tuple[str, PortexType]]:
         """Apply the input arguments to the template.
 
         Arguments:
@@ -413,10 +413,10 @@ class FieldFactory(Factory):
             The applied tuple of name and PortexType.
 
         """
-        if self._condition(**kwargs) is None:
+        if self._condition(kwargs) is None:
             return None
 
-        return self._name_factory(**kwargs), self._type_factory(**kwargs)
+        return self._name_factory(kwargs), self._type_factory(kwargs)
 
 
 class FieldsFactory(Factory):
@@ -444,7 +444,7 @@ class FieldsFactory(Factory):
 
         self.keys = keys
 
-    def __call__(self, **kwargs: Any) -> Fields:
+    def __call__(self, kwargs: Dict[str, Any]) -> Fields:
         """Apply the input arguments to the ``Fields`` template.
 
         Arguments:
@@ -468,7 +468,7 @@ def _generate_factory_items(
     unpack_item_processer: Callable[[Any], Any] = lambda x: x,
 ) -> Iterator[Any]:
     for factory in factories:
-        item = factory(**kwargs)
+        item = factory(kwargs)
         if factory.is_unpack:
             yield from unpack_item_processer(item)
         else:

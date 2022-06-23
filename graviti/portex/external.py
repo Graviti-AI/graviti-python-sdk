@@ -61,8 +61,7 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
             The internal type of the PortexExternalType.
 
         """
-        arguments = {name: getattr(self, name) for name in self.params}
-        return self._factory(**arguments)
+        return self._factory({name: getattr(self, name) for name in self.params})
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
