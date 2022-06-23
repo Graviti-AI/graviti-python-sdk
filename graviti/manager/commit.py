@@ -6,7 +6,7 @@
 """The implementation of the Commit and CommitManager."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
 from tensorbay.utility import AttrsMixin, attr
 
@@ -152,34 +152,47 @@ class Commit(Sheets, AttrsMixin):
         if self.commit_id is None:
             raise NoCommitsError("No commit on the current branch. Please commit a draft first")
 
-        count_criteria = criteria.copy()
-        count_criteria["select"] = [{"count": {"$count": ["$."]}}]
-        total_count = create_search(
+        search_id = create_search(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
             self._dataset.name,
             commit_id=self.commit_id,
             sheet=sheet,
-            criteria=count_criteria,
-        )["data"][0]["count"]
-        if schema is None:
-            schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
+            criteria=criteria,
+            offset=0,
+            limit=1,
+        )["search_id"]
 
-        factory = LazyFactory(
-            total_count,
-            LIMIT,
-            lambda offset, limit: create_search(
+        def _getter(
+            offset: Optional[int] = None,
+            limit: Optional[int] = None,
+            getter_criteria: Dict[str, Any] = criteria,
+        ) -> List[Dict[str, Any]]:
+            return create_search(  # type: ignore[no-any-return]
                 self._dataset.access_key,
                 self._dataset.url,
                 self._dataset.owner,
                 self._dataset.name,
                 commit_id=self.commit_id,
                 sheet=sheet,
-                criteria=criteria,
+                search_id=search_id,
+                criteria=getter_criteria,
                 offset=offset,
                 limit=limit,
-            )["data"],
+            )["data"]
+
+        count_criteria = criteria.copy()
+        count_criteria["select"] = [{"count": {"$count": ["$."]}}]
+        total_count = _getter(getter_criteria=count_criteria)[0]["count"]
+
+        if schema is None:
+            schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
+
+        factory = LazyFactory(
+            total_count,
+            LIMIT,
+            _getter,
             schema.to_pyarrow(),
         )
 
