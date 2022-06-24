@@ -5,6 +5,7 @@
 """Portex type builder related classes."""
 
 
+import os
 from hashlib import md5
 from pathlib import Path
 from shutil import rmtree
@@ -43,7 +44,22 @@ class PackageRepo:
 
     """
 
-    _env: Dict[str, Any] = {}
+    _env: Dict[str, Any] = {
+        k: v
+        for k, v in os.environ.items()
+        if not k.startswith("GIT_")
+        or k.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))
+        or k
+        in {
+            "GIT_EXEC_PATH",
+            "GIT_SSH",
+            "GIT_SSH_COMMAND",
+            "GIT_SSL_CAINFO",
+            "GIT_SSL_NO_VERIFY",
+            "GIT_CONFIG_COUNT",
+            "GIT_HTTP_PROXY_AUTHMETHOD",
+        }
+    }
 
     def __init__(self, url: str, revision: str) -> None:
         tempdir = Path(gettempdir()) / "portex"
