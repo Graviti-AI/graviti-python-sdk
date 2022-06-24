@@ -24,6 +24,7 @@ from graviti.openapi import (
     update_draft,
 )
 from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
+from graviti.utility import convert_iso_to_datetime
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -69,8 +70,8 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = state
         self.parent_commit_id = parent_commit_id
         self.creator = creator
-        self.created_at = created_at
-        self.updated_at = updated_at
+        self.created_at = convert_iso_to_datetime(created_at)
+        self.updated_at = convert_iso_to_datetime(updated_at)
         self.description = description
         self.operations: List[SheetOperation] = []
 
@@ -157,7 +158,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         )
         self.title = response["title"]
         self.description = response["description"]
-        self.updated_at = response["updated_at"]
+        self.updated_at = convert_iso_to_datetime(response["updated_at"])
 
     def close(self) -> None:
         """Close the draft."""
@@ -170,7 +171,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             state="CLOSED",
         )
         self.state = response["state"]
-        self.updated_at = response["updated_at"]
+        self.updated_at = convert_iso_to_datetime(response["updated_at"])
 
     def commit(
         self, title: str, description: Optional[str] = None, update_dataset_head: bool = True
@@ -254,7 +255,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             draft_number=self.number,
         )
         self.state = draft_info["state"]
-        self.updated_at = draft_info["updated_at"]
+        self.updated_at = convert_iso_to_datetime(draft_info["updated_at"])
 
         if update_dataset_head:
             self._dataset._data = branch  # pylint: disable=protected-access

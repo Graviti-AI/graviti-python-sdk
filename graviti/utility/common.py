@@ -6,6 +6,7 @@
 """Common tools."""
 
 from collections import defaultdict
+from datetime import datetime
 from functools import wraps
 from threading import Lock
 from typing import Any, Callable, DefaultDict, TypeVar
@@ -67,3 +68,16 @@ def shorten(origin: str) -> str:
 
     """
     return origin[:7]
+
+
+def convert_iso_to_datetime(iso: str) -> datetime:
+    """Convert iso 8601 format string to datetime format time.
+
+    Arguments:
+        iso: The iso 8601 format string.
+
+    Returns:
+        The datetime format time.
+
+    """
+    return datetime.fromisoformat(iso.replace("Z", "+00:00"))

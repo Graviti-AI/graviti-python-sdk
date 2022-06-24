@@ -26,7 +26,7 @@ from graviti.openapi import (
     list_datasets,
     update_dataset,
 )
-from graviti.utility import ReprMixin, ReprType, UserMutableMapping
+from graviti.utility import ReprMixin, ReprType, UserMutableMapping, convert_iso_to_datetime
 
 
 class RevisionType(Enum):
@@ -79,8 +79,6 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     name: str = attr()
     alias: str = attr()
     default_branch: str = attr()
-    created_at: str = attr()
-    updated_at: str = attr()
     owner: str = attr()
     is_public: bool = attr()
     config: str = attr()
@@ -107,8 +105,8 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.name = name
         self.alias = alias
         self.default_branch = default_branch
-        self.created_at = created_at
-        self.updated_at = updated_at
+        self.created_at = convert_iso_to_datetime(created_at)
+        self.updated_at = convert_iso_to_datetime(updated_at)
         self.owner = owner
         self.is_public = is_public
         self.config = config
@@ -144,6 +142,8 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
 
         """
         dataset = common_loads(cls, contents)
+        dataset.created_at = convert_iso_to_datetime(contents["created_at"])
+        dataset.updated_at = convert_iso_to_datetime(contents["updated_at"])
         dataset._data = Branch(dataset, contents["default_branch"], contents["commit_id"])
         return dataset
 
@@ -245,7 +245,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.name = response["name"]
         self.alias = response["alias"]
         self.default_branch = response["default_branch"]
-        self.updated_at = response["updated_at"]
+        self.updated_at = convert_iso_to_datetime(response["updated_at"])
 
 
 class DatasetManager:

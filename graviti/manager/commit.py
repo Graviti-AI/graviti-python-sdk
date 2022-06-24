@@ -5,6 +5,7 @@
 
 """The implementation of the Commit and CommitManager."""
 
+from datetime import datetime
 from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar, Union
 
@@ -24,6 +25,7 @@ from graviti.openapi import (
 )
 from graviti.paging import LazyFactory
 from graviti.portex import PortexRecordBase
+from graviti.utility import convert_iso_to_datetime
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -62,13 +64,15 @@ class Commit(Sheets):
                 "This attribute is not available due to this branch has no commit history."
             )
         if not hasattr(self, "_commit_info"):
-            self._commit_info = get_commit(
+            commit_info = get_commit(
                 self._dataset.access_key,
                 self._dataset.url,
                 self._dataset.owner,
                 self._dataset.name,
                 commit_id=self.commit_id,
             )
+            commit_info["committed_at"] = convert_iso_to_datetime(commit_info["committed_at"])
+            self._commit_info = commit_info
         return self._commit_info
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
@@ -133,7 +137,9 @@ class Commit(Sheets):
 
         """
         obj = cls(dataset, contents["commit_id"])
-        obj._commit_info = contents
+        commit_info = contents.copy()
+        commit_info["committed_at"] = convert_iso_to_datetime(contents["committed_at"])
+        obj._commit_info = commit_info
         return obj
 
     @property
@@ -144,8 +150,7 @@ class Commit(Sheets):
             The parent commit ID of the commit.
 
         """
-        parent_commit_id: Optional[str] = self._get_commit_info()["parent_commit_id"]
-        return parent_commit_id
+        return self._get_commit_info()["parent_commit_id"]  # type: ignore[no-any-return]
 
     @property
     def title(self) -> str:
@@ -155,8 +160,7 @@ class Commit(Sheets):
             The title of the commit.
 
         """
-        title: str = self._get_commit_info()["title"]
-        return title
+        return self._get_commit_info()["title"]  # type: ignore[no-any-return]
 
     @property
     def description(self) -> str:
@@ -166,8 +170,7 @@ class Commit(Sheets):
             The description of the commit.
 
         """
-        description: str = self._get_commit_info()["description"]
-        return description
+        return self._get_commit_info()["description"]  # type: ignore[no-any-return]
 
     @property
     def committer(self) -> str:
@@ -177,19 +180,17 @@ class Commit(Sheets):
             The committer of the commit.
 
         """
-        committer: str = self._get_commit_info()["committer"]
-        return committer
+        return self._get_commit_info()["committer"]  # type: ignore[no-any-return]
 
     @property
-    def committed_at(self) -> str:
+    def committed_at(self) -> datetime:
         """Return the time when the draft is committed.
 
         Returns:
             The time when the draft is committed.
 
         """
-        committed_at: str = self._get_commit_info()["committed_at"]
-        return committed_at
+        return self._get_commit_info()["committed_at"]  # type: ignore[no-any-return]
 
     def search(
         self, sheet: str, criteria: Dict[str, Any], schema: Optional[PortexRecordBase] = None
@@ -308,7 +309,9 @@ class NamedCommit(Commit):
 
         """
         obj = cls(dataset, contents["name"], contents["commit_id"])
-        obj._commit_info = contents
+        commit_info = contents.copy()
+        commit_info["committed_at"] = convert_iso_to_datetime(contents["committed_at"])
+        obj._commit_info = commit_info
         return obj
 
 
