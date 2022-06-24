@@ -15,7 +15,7 @@ from requests_toolbelt import MultipartEncoder
 
 from graviti.openapi.data import get_policy
 from graviti.openapi.requests import do
-from graviti.utility import File, config, locked, submit_multithread_tasks
+from graviti.utility import File, config, convert_iso_to_datetime, locked, submit_multithread_tasks
 
 _EXPIRED_IN_SECOND = 240
 
@@ -43,9 +43,7 @@ def _request_upload_permission(
         is_internal=config.is_internal,
         expired=_EXPIRED_IN_SECOND,
     )
-    permission["expire_at"] = datetime.fromisoformat(
-        permission.pop("expire_at").replace("Z", "+00:00")
-    )
+    permission["expire_at"] = convert_iso_to_datetime(permission.pop("expire_at"))
 
     _PERMISSIONS[access_key, dataset, draft_number] = permission
 
