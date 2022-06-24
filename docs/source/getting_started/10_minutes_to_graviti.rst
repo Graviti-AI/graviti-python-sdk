@@ -184,32 +184,3 @@ Get the data by rows or columns:
       xmin  ymin  xmax  ymax  category  attribute
                                         difficult  occluded
    0  1.0   1.0   4.0   5.0   boat      False      False
-
-
-*****************
- Search the Data
-*****************
-
-Search the data within a specified sheet:
-
-.. code:: python
-
-   >>> criteria = {
-   ...     "opt": "or",
-   ...     "value": [
-   ...         {
-   ...             "opt": "eq",
-   ...             "key": "filename",
-   ...             "value": "a.jpg"
-   ...         },
-   ...         {
-   ...             "opt": "eq",
-   ...             "key": "filename",
-   ...             "value": "b.jpg"
-   ...         }
-   ...     ]
-   ... }
-   >>> dataset.search("train", criteria)
-      filename  box2ds
-   0  a.jpg     DataFrame(1, 6)
-   1  b.jpg     DataFrame(1, 6)
