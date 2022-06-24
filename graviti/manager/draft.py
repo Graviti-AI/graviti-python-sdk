@@ -234,7 +234,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             "524d110ecae7474eaec9471f4a6c28b0"
 
         """
-        commit_info = commit_draft(
+        branch_info = commit_draft(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
@@ -243,6 +243,8 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             title=title,
             description=description,
         )
+        branch_info["name"] = self.branch
+        branch = Branch.from_response(self._dataset, branch_info)
 
         draft_info = get_draft(
             self._dataset.access_key,
@@ -254,7 +256,6 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.state = draft_info["state"]
         self.updated_at = draft_info["updated_at"]
 
-        branch = Branch(self._dataset, name=self.branch, **commit_info)
         if update_dataset_head:
             self._dataset._data = branch  # pylint: disable=protected-access
 

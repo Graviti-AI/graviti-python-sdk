@@ -18,7 +18,7 @@ def create_branch(
     *,
     name: str,
     revision: str,
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/branches`.
 
     Arguments:
@@ -125,7 +125,7 @@ def get_branch(
     dataset: str,
     *,
     branch: str,
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/branches/{branch}`.
 
     Arguments:

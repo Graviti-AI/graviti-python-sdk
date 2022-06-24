@@ -49,6 +49,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         name: The name of the dataset, unique for a user.
         alias: Dataset alias.
         default_branch: The default branch of dataset.
+        commit_id: The commit ID of the dataset.
         created_at: The time when the dataset was created.
         updated_at: The time when the dataset was last modified.
         owner: The owner of the dataset.
@@ -93,6 +94,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         *,
         alias: str,
         default_branch: str,
+        commit_id: str,
         created_at: str,
         updated_at: str,
         owner: str,
@@ -110,7 +112,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.owner = owner
         self.is_public = is_public
         self.config = config
-        self._data: Commit = self.branches.get(default_branch)
+        self._data: Commit = Branch(self, name, commit_id)
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
@@ -142,8 +144,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
 
         """
         dataset = common_loads(cls, contents)
-        default_branch = dataset.default_branch
-        dataset._data = dataset.branches.get(default_branch)
+        dataset._data = Branch(dataset, contents["default_branch"], contents["commit_id"])
         return dataset
 
     @property
@@ -212,11 +213,10 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
             revision=revision,
         )
 
-        revision_type = RevisionType[response.pop("type")]
-        if revision_type != RevisionType.COMMIT:
-            response["name"] = revision
+        response["name"] = revision
+        revision_type = RevisionType[response["type"]]
 
-        self._data = revision_type.value(self, **response)
+        self._data = revision_type.value.from_response(self, response)
 
     def edit(
         self,

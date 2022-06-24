@@ -6,7 +6,7 @@
 """Common tools."""
 
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from graviti.manager.commit import Commit
@@ -57,7 +57,9 @@ class StatusWarning(Warning):
         )
 
 
-def check_head_status(head: "Commit", remote_revision: str, remote_commit_id: str) -> None:
+def check_head_status(
+    head: "Commit", remote_revision: str, remote_commit_id: Optional[str]
+) -> None:
     """Check if the commit for the HEAD of the current dataset is up-to-date.
 
     Arguments:
