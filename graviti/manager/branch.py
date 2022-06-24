@@ -134,7 +134,7 @@ class BranchManager:
             branch=name,
         )
 
-        if getattr(self._dataset, "HEAD", None):
+        if getattr(self._dataset, "HEAD", None) is not None:
             check_head_status(self._dataset.HEAD, name, response["commit_id"])
 
         return Branch(self._dataset, **response)
