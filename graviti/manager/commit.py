@@ -6,9 +6,7 @@
 """The implementation of the Commit and CommitManager."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
-
-from tensorbay.utility import AttrsMixin, attr
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar, Union
 
 from graviti.dataframe import DataFrame
 from graviti.exception import NoCommitsError
@@ -17,6 +15,7 @@ from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
     create_search,
+    get_commit,
     get_commit_sheet,
     get_revision,
     list_commit_data,
@@ -29,50 +28,48 @@ from graviti.portex import PortexRecordBase
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
 
+_C = TypeVar("_C", bound="Commit")
+_NC = TypeVar("_NC", bound="NamedCommit")
 
-class Commit(Sheets, AttrsMixin):
+
+class Commit(Sheets):
     """This class defines the structure of a commit.
 
     Arguments:
         dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         commit_id: The commit id.
-        parent_commit_id: The parent commit id.
-        title: The commit title.
-        description: The commit description.
-        committer: The commit user.
-        committed_at: The time when the draft is committed.
 
     """
 
     _repr_attrs: Tuple[str, ...] = ("parent_commit_id", "title", "committer", "committed_at")
 
-    commit_id: str = attr()
-    parent_commit_id: Optional[str] = attr()
-    title: str = attr()
-    description: str = attr(default="")
-    committer: str = attr()
-    committed_at: str = attr()
+    _commit_info: Dict[str, Any]
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         dataset: "Dataset",
-        commit_id: str,
-        parent_commit_id: Optional[str],
-        title: str,
-        description: str,
-        committer: str,
-        committed_at: str,
+        commit_id: Optional[str],
     ) -> None:
         self._dataset = dataset
         self.commit_id = commit_id
-        self.parent_commit_id = parent_commit_id
-        self.title = title
-        self.description = description
-        self.committer = committer
-        self.committed_at = committed_at
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.commit_id}")'
+
+    def _get_commit_info(self) -> Dict[str, Any]:
+        if self.commit_id is None:
+            raise AttributeError(
+                "This attribute is not available due to this branch has no commit history."
+            )
+        if not hasattr(self, "_commit_info"):
+            self._commit_info = get_commit(
+                self._dataset.access_key,
+                self._dataset.url,
+                self._dataset.owner,
+                self._dataset.name,
+                commit_id=self.commit_id,
+            )
+        return self._commit_info
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         return list_commit_data(  # type: ignore[no-any-return]
@@ -80,7 +77,7 @@ class Commit(Sheets, AttrsMixin):
             url=self._dataset.url,
             owner=self._dataset.owner,
             dataset=self._dataset.name,
-            commit_id=self.commit_id,
+            commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             offset=offset,
             limit=limit,
@@ -104,7 +101,7 @@ class Commit(Sheets, AttrsMixin):
             url=self._dataset.url,
             owner=self._dataset.owner,
             dataset=self._dataset.name,
-            commit_id=self.commit_id,
+            commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             with_record_count=True,
         )
@@ -114,11 +111,13 @@ class Commit(Sheets, AttrsMixin):
         dataframe.searcher = partial(self.search, sheet_name)
         return dataframe
 
-    def to_pyobj(self) -> Dict[str, str]:
-        """Dump the instance to a python dict.
+    @classmethod
+    def from_response(cls: Type[_C], dataset: "Dataset", contents: Dict[str, Any]) -> _C:
+        """Create a :class:`Commit` instance from python dict.
 
-        Returns:
-            A python dict containing all the information of the commit::
+        Arguments:
+            dataset: The dataset of the commit.
+            contents: A python dict containing all the information of the commit::
 
                 {
                     "commit_id": <str>
@@ -129,8 +128,68 @@ class Commit(Sheets, AttrsMixin):
                     "committed_at": <str>
                 }
 
+        Returns:
+            A :class:`Commit` instance created from the input python dict.
+
         """
-        return self._dumps()
+        obj = cls(dataset, contents["commit_id"])
+        obj._commit_info = contents
+        return obj
+
+    @property
+    def parent_commit_id(self) -> Optional[str]:
+        """Return the parent commit ID of the commit.
+
+        Returns:
+            The parent commit ID of the commit.
+
+        """
+        parent_commit_id: Optional[str] = self._get_commit_info()["parent_commit_id"]
+        return parent_commit_id
+
+    @property
+    def title(self) -> str:
+        """Return the title of the commit.
+
+        Returns:
+            The title of the commit.
+
+        """
+        title: str = self._get_commit_info()["title"]
+        return title
+
+    @property
+    def description(self) -> str:
+        """Return the description of the commit.
+
+        Returns:
+            The description of the commit.
+
+        """
+        description: str = self._get_commit_info()["description"]
+        return description
+
+    @property
+    def committer(self) -> str:
+        """Return the committer of the commit.
+
+        Returns:
+            The committer of the commit.
+
+        """
+        committer: str = self._get_commit_info()["committer"]
+        return committer
+
+    @property
+    def committed_at(self) -> str:
+        """Return the time when the draft is committed.
+
+        Returns:
+            The time when the draft is committed.
+
+        """
+        committed_at: str = self._get_commit_info()["committed_at"]
+        return committed_at
 
     def search(
         self, sheet: str, criteria: Dict[str, Any], schema: Optional[PortexRecordBase] = None
@@ -174,7 +233,7 @@ class Commit(Sheets, AttrsMixin):
                 self._dataset.url,
                 self._dataset.owner,
                 self._dataset.name,
-                commit_id=self.commit_id,
+                commit_id=self.commit_id,  # type: ignore[arg-type]
                 sheet=sheet,
                 search_id=search_id,
                 criteria=getter_criteria,
@@ -199,7 +258,7 @@ class Commit(Sheets, AttrsMixin):
         return DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
 
 
-class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
+class NamedCommit(Commit):
     """This class defines the structure of a named commit.
 
     :class:`NamedCommit` is the base class of :class:`~graviti.manager.branch.Branch`
@@ -209,50 +268,30 @@ class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
         dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         name: The name of the named commit.
         commit_id: The commit id.
-        parent_commit_id: The parent commit id.
-        title: The commit title.
-        description: The commit description.
-        committer: The commit user.
-        committed_at: The time when the draft is committed.
 
     """
 
     _repr_attrs = ("commit_id",) + Commit._repr_attrs
 
-    name: str = attr()
-    commit_id: Optional[str] = attr()  # type: ignore[assignment]
-
-    def __init__(  # pylint: disable=too-many-arguments, super-init-not-called
+    def __init__(
         self,
         dataset: "Dataset",
         name: str,
         commit_id: Optional[str],
-        parent_commit_id: Optional[str],
-        title: str,
-        description: str,
-        committer: str,
-        committed_at: str,
     ) -> None:
-        self._dataset = dataset
+        super().__init__(dataset, commit_id)
         self.name = name
-        self.commit_id = commit_id
-        if self.commit_id is None:
-            return
-
-        self.parent_commit_id = parent_commit_id
-        self.title = title
-        self.description = description
-        self.committer = committer
-        self.committed_at = committed_at
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.name}")'
 
-    def to_pyobj(self) -> Dict[str, str]:
-        """Dump the instance to a python dict.
+    @classmethod
+    def from_response(cls: Type[_NC], dataset: "Dataset", contents: Dict[str, Any]) -> _NC:
+        """Create a :class:`NamedCommit` instance from python dict.
 
-        Returns:
-            A python dict containing all the information of the named commit::
+        Arguments:
+            dataset: The dataset of the NamedCommit.
+            contents: A python dict containing all the information of the NamedCommit::
 
                 {
                     "name": <str>
@@ -264,8 +303,13 @@ class NamedCommit(Commit):  # pylint: disable=too-many-instance-attributes
                     "committed_at": <str>
                 }
 
+        Returns:
+            A :class:`NamedCommit` instance created from the input python dict.
+
         """
-        return self._dumps()
+        obj = cls(dataset, contents["name"], contents["commit_id"])
+        obj._commit_info = contents
+        return obj
 
 
 class CommitManager:
@@ -297,7 +341,7 @@ class CommitManager:
             check_head_status(head, revision, commits[0]["commit_id"])
 
         for item in commits:
-            yield Commit(self._dataset, **item)
+            yield Commit.from_response(self._dataset, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -319,26 +363,29 @@ class CommitManager:
         """
         head = self._dataset.HEAD
         if revision is CURRENT_COMMIT:
-            revision = head.commit_id
-            if revision is None:
+            _revision = head.commit_id
+            if _revision is None:
                 raise NoCommitsError("No commits on the default branch yet")
+        else:
+            _revision = revision
 
         response = get_revision(
             self._dataset.access_key,
             self._dataset.url,
             self._dataset.owner,
             self._dataset.name,
-            revision=revision,
+            revision=_revision,
         )
         if response["commit_id"] is None:
             raise NoCommitsError("No commits on the default branch yet")
 
-        del response["type"]
-        check_head_status(head, revision, response["commit_id"])
+        check_head_status(head, _revision, response["commit_id"])
 
-        return Commit(self._dataset, **response)
+        return Commit.from_response(self._dataset, response)
 
-    def list(self, revision: str = CURRENT_COMMIT) -> LazyPagingList[Commit]:
+    def list(
+        self, revision: str = CURRENT_COMMIT
+    ) -> Union[LazyPagingList[Commit], List[Optional[Commit]]]:
         """List the commits.
 
         Arguments:
@@ -352,8 +399,15 @@ class CommitManager:
 
         """
         if revision is CURRENT_COMMIT:
-            revision = self._dataset.HEAD.commit_id
-            if revision is None:
-                return []  # type: ignore[unreachable]
+            _revision = self._dataset.HEAD.commit_id
+            if _revision is None:
+                return []
+        else:
+            _revision = revision
 
-        return LazyPagingList(lambda offset, limit: self._generate(revision, offset, limit), LIMIT)
+        return LazyPagingList(
+            lambda offset, limit: self._generate(
+                _revision, offset, limit  # type: ignore[arg-type]
+            ),
+            LIMIT,
+        )

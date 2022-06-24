@@ -19,7 +19,7 @@ def commit_draft(
     draft_number: int,
     title: str,
     description: Optional[str] = None,
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits`.
 
     Arguments:
@@ -128,7 +128,7 @@ def list_commits(
 
 def get_commit(
     access_key: str, url: str, owner: str, dataset: str, *, commit_id: str
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}`.
 
     Arguments:
@@ -159,13 +159,13 @@ def get_commit(
         }
 
     """
-    url = f"{url}/v2/{owner}/{dataset}/commits/{commit_id}"
+    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def get_revision(
     access_key: str, url: str, owner: str, dataset: str, *, revision: str
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/revisions/{revision}`.
 
     Arguments:

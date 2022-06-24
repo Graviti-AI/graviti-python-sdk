@@ -24,11 +24,6 @@ class Tag(NamedCommit):
         dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         name: The name of the tag.
         commit_id: The commit id.
-        parent_commit_id: The parent commit id.
-        title: The commit title.
-        description: The commit description.
-        committer: The commit user.
-        committed_at: The time when the draft is committed.
 
     """
 
@@ -57,7 +52,7 @@ class TagManager:
         head = self._dataset.HEAD
         for item in response["tags"]:
             check_head_status(head, item["name"], item["commit_id"])
-            yield Tag(self._dataset, **item)
+            yield Tag.from_response(self._dataset, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -79,12 +74,14 @@ class TagManager:
         """
         head = self._dataset.HEAD
         if revision is CURRENT_COMMIT:
-            revision = head.commit_id
-            if revision is None:
+            _revision = head.commit_id
+            if _revision is None:
                 raise NoCommitsError(
                     "Creating tags on the default branch without commit history is not allowed."
                     "Please commit a draft first"
                 )
+        else:
+            _revision = revision
 
         response = create_tag(
             self._dataset.access_key,
@@ -92,11 +89,11 @@ class TagManager:
             self._dataset.owner,
             self._dataset.name,
             name=name,
-            revision=revision,
+            revision=_revision,
         )
 
-        check_head_status(head, revision, response["commit_id"])
-        return Tag(self._dataset, **response)
+        check_head_status(head, _revision, response["commit_id"])
+        return Tag.from_response(self._dataset, response)
 
     def get(self, name: str) -> Tag:
         """Get the certain tag with the given name.
@@ -124,7 +121,7 @@ class TagManager:
         )
 
         check_head_status(head, name, response["commit_id"])
-        return Tag(self._dataset, **response)
+        return Tag.from_response(self._dataset, response)
 
     def list(self) -> LazyPagingList[Tag]:
         """List the information of tags.

@@ -12,7 +12,7 @@ from graviti.openapi.requests import open_api_do
 
 def create_tag(
     access_key: str, url: str, owner: str, dataset: str, *, name: str, revision: str
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/tags`.
 
     Arguments:
@@ -112,7 +112,7 @@ def list_tags(
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
-def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) -> Dict[str, str]:
+def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags/{tag}`.
 
     Arguments:

@@ -6,7 +6,7 @@
 """The implementation of the Branch and BranchManager."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Generator, Optional
+from typing import TYPE_CHECKING, Generator
 
 from tensorbay.utility import attr
 
@@ -30,19 +30,8 @@ class Branch(NamedCommit):
         dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
         name: The name of the branch.
         commit_id: The commit id.
-        parent_commit_id: The parent commit id.
-        title: The commit title.
-        description: The commit description.
-        committer: The commit user.
-        committed_at: The time when the draft is committed.
 
     """
-
-    parent_commit_id: Optional[str] = _attr()
-    title: str = _attr()
-    description: str = _attr()
-    committer: str = _attr()
-    committed_at: str = _attr()
 
 
 class BranchManager:
@@ -69,7 +58,7 @@ class BranchManager:
         head = self._dataset.HEAD
         for item in response["branches"]:
             check_head_status(head, item["name"], item["commit_id"])
-            yield Branch(self._dataset, **item)
+            yield Branch.from_response(self._dataset, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -91,12 +80,14 @@ class BranchManager:
         """
         head = self._dataset.HEAD
         if revision is CURRENT_COMMIT:
-            revision = head.commit_id
-            if revision is None:
+            _revision = head.commit_id
+            if _revision is None:
                 raise NoCommitsError(
                     "Creating branches on the default branch without commit history is not allowed."
                     "Please commit a draft first"
                 )
+        else:
+            _revision = revision
 
         response = create_branch(
             self._dataset.access_key,
@@ -104,11 +95,11 @@ class BranchManager:
             self._dataset.owner,
             self._dataset.name,
             name=name,
-            revision=revision,
+            revision=_revision,
         )
 
-        check_head_status(head, revision, response["commit_id"])
-        return Branch(self._dataset, **response)
+        check_head_status(head, _revision, response["commit_id"])
+        return Branch.from_response(self._dataset, response)
 
     def get(self, name: str) -> Branch:
         """Get the branch with the given name.
@@ -133,12 +124,9 @@ class BranchManager:
             self._dataset.name,
             branch=name,
         )
+        check_head_status(self._dataset.HEAD, name, response["commit_id"])
 
-        head = getattr(self._dataset, "HEAD", None)
-        if head is not None:
-            check_head_status(head, name, response["commit_id"])
-
-        return Branch(self._dataset, **response)
+        return Branch.from_response(self._dataset, response)
 
     def list(self) -> LazyPagingList[Branch]:
         """List the information of branches.
