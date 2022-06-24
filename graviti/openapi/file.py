@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, Tuple
 
 import filetype
 from requests_toolbelt import MultipartEncoder
+from tqdm import tqdm
 
 from graviti.openapi.data import get_policy
 from graviti.openapi.requests import do
@@ -81,6 +82,7 @@ def upload_files(
     sheet: str,
     files: Iterable[File],
     jobs: int,
+    pbar: tqdm,
 ) -> None:
     """Upload multiple local files with multithread.
 
@@ -93,6 +95,7 @@ def upload_files(
         sheet: The sheet name.
         files: The local files to upload.
         jobs: The number of the max workers in multi-thread uploading procession.
+        pbar: The process bar for uploading binary files.
 
     """
     submit_multithread_tasks(
@@ -104,6 +107,7 @@ def upload_files(
             draft_number=draft_number,
             sheet=sheet,
             file=file,
+            pbar=pbar,
         ),
         files,
         jobs=jobs,
@@ -119,6 +123,7 @@ def upload_file(
     draft_number: int,
     sheet: str,
     file: File,
+    pbar: tqdm,
 ) -> None:
     """Upload one local file.
 
@@ -130,6 +135,7 @@ def upload_file(
         draft_number: The draft number.
         sheet: The sheet name.
         file: The local file to upload.
+        pbar: The process bar for uploading binary files.
 
     """
     permission = _get_upload_permission(
@@ -172,6 +178,8 @@ def upload_file(
             local_path,
             post_data,
         )
+
+    pbar.update()
 
 
 def _post_multipart_formdata(

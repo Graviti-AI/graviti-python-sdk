@@ -5,7 +5,9 @@
 
 """Definitions of different operations on a DataFrame."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
+from tqdm import tqdm
 
 from graviti.openapi import add_data, update_data, update_schema, upload_files
 from graviti.operation.common import get_schema
@@ -13,13 +15,31 @@ from graviti.portex import PortexType
 from graviti.utility import File, chunked
 
 if TYPE_CHECKING:
-    from graviti.dataframe import DataFrame
+    from graviti.dataframe import DataFrame, FileSeries
 
 _MAX_BATCH_SIZE = 2048
 
 
 class DataFrameOperation:
     """This class defines the basic method of the operation on a DataFrame."""
+
+    def get_file_arrays(self) -> List["FileSeries"]:  # pylint: disable=no-self-use
+        """Get the list of FileSeries.
+
+        Returns:
+            The list of FileSeries.
+
+        """
+        return []
+
+    def get_upload_count(self) -> int:  # pylint: disable=no-self-use
+        """Get the data amount to be uploaded.
+
+        Returns:
+            The data amount to be uploaded.
+
+        """
+        return 0
 
     def do(  # pylint: disable=invalid-name
         self,
@@ -31,6 +51,8 @@ class DataFrameOperation:
         draft_number: int,
         sheet: str,
         jobs: int,
+        data_pbar: tqdm,
+        file_pbar: tqdm,
     ) -> None:
         """Execute the OpenAPI create sheet.
 
@@ -42,6 +64,8 @@ class DataFrameOperation:
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
+            data_pbar: The process bar for uploading structured data.
+            file_pbar: The process bar for uploading binary files.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -50,16 +74,43 @@ class DataFrameOperation:
         raise NotImplementedError
 
 
-class AddData(DataFrameOperation):
+class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
+    """This class defines the basic method of the data operation on a DataFrame."""
+
+    _file_arrays: List["FileSeries"]
+
+    def __init__(self, data: "DataFrame") -> None:
+        self._data = data
+
+    def get_file_arrays(self) -> List["FileSeries"]:
+        """Get the list of FileSeries.
+
+        Returns:
+            The list of FileSeries.
+
+        """
+        if not hasattr(self, "_file_arrays"):
+            self._file_arrays = self._data._get_file_columns()  # pylint: disable=protected-access
+
+        return self._file_arrays
+
+    def get_upload_count(self) -> int:
+        """Get the data amount to be uploaded.
+
+        Returns:
+            The data amount to be uploaded.
+
+        """
+        return len(self._data)
+
+
+class AddData(DataOperation):
     """This class defines the operation that add data to a DataFrame.
 
     Arguments:
         data: The data to be added.
 
     """
-
-    def __init__(self, data: "DataFrame") -> None:
-        self.data = data
 
     def do(  # pylint: disable=invalid-name
         self,
@@ -71,6 +122,8 @@ class AddData(DataFrameOperation):
         draft_number: int,
         sheet: str,
         jobs: int,
+        data_pbar: tqdm,
+        file_pbar: tqdm,
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -82,14 +135,17 @@ class AddData(DataFrameOperation):
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
+            data_pbar: The process bar for uploading structured data.
+            file_pbar: The process bar for uploading binary files.
 
         """
-        dataframe = self.data
-        arrays = dataframe._get_file_columns()  # pylint: disable=protected-access
-        data = dataframe.to_pylist()
+        data = self._data.to_pylist()
 
         for batch, *file_arrays in zip(
-            *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
+            *map(
+                lambda x: chunked(x, _MAX_BATCH_SIZE),  # type: ignore[arg-type]
+                (data, *self.get_file_arrays()),
+            )
         ):
             for file_array in file_arrays:
                 local_files = filter(lambda x: isinstance(x, File), file_array)
@@ -102,6 +158,7 @@ class AddData(DataFrameOperation):
                     sheet=sheet,
                     files=local_files,
                     jobs=jobs,
+                    pbar=file_pbar,
                 )
 
             add_data(
@@ -113,6 +170,7 @@ class AddData(DataFrameOperation):
                 sheet=sheet,
                 data=batch,
             )
+            data_pbar.update(len(batch))
 
 
 class UpdateSchema(DataFrameOperation):
@@ -136,6 +194,8 @@ class UpdateSchema(DataFrameOperation):
         draft_number: int,
         sheet: str,
         jobs: int,
+        data_pbar: tqdm,
+        file_pbar: tqdm,
     ) -> None:
         """Execute the OpenAPI update schema.
 
@@ -147,6 +207,8 @@ class UpdateSchema(DataFrameOperation):
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
+            data_pbar: The process bar for uploading structured data.
+            file_pbar: The process bar for uploading binary files.
 
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
@@ -164,7 +226,7 @@ class UpdateSchema(DataFrameOperation):
         )
 
 
-class UpdateData(DataFrameOperation):
+class UpdateData(DataOperation):
     """This class defines the operation that updates the data of a DataFrame.
 
     Arguments:
@@ -172,8 +234,7 @@ class UpdateData(DataFrameOperation):
 
     """
 
-    def __init__(self, data: "DataFrame") -> None:
-        self.data = data
+    _file_arrays: List["FileSeries"]
 
     def do(  # pylint: disable=invalid-name
         self,
@@ -185,6 +246,8 @@ class UpdateData(DataFrameOperation):
         draft_number: int,
         sheet: str,
         jobs: int,
+        data_pbar: tqdm,
+        file_pbar: tqdm,
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -196,14 +259,17 @@ class UpdateData(DataFrameOperation):
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
+            data_pbar: The process bar for uploading structured data.
+            file_pbar: The process bar for uploading binary files.
 
         """
-        dataframe = self.data
-        arrays = dataframe._get_file_columns()  # pylint: disable=protected-access
-        data = dataframe._to_patch_data()  # pylint: disable=protected-access
+        data = self._data._to_patch_data()  # pylint: disable=protected-access
 
         for batch, *file_arrays in zip(
-            *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
+            *map(
+                lambda x: chunked(x, _MAX_BATCH_SIZE),  # type: ignore[arg-type]
+                (data, *self.get_file_arrays()),
+            )
         ):
             for file_array in file_arrays:
                 local_files = filter(lambda x: isinstance(x, File), file_array)
@@ -216,6 +282,7 @@ class UpdateData(DataFrameOperation):
                     sheet=sheet,
                     files=local_files,
                     jobs=jobs,
+                    pbar=file_pbar,
                 )
 
             update_data(
@@ -227,3 +294,4 @@ class UpdateData(DataFrameOperation):
                 sheet=sheet,
                 data=batch,
             )
+            data_pbar.update(len(batch))

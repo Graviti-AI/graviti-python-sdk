@@ -7,6 +7,8 @@
 
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
+from tqdm import tqdm
+
 from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
@@ -262,11 +264,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
         return branch
 
-    def upload(self, jobs: int = 8) -> None:
+    def upload(self, jobs: int = 8, quiet: bool = False) -> None:
         """Upload the local dataset to Graviti.
 
         Arguments:
             jobs: The number of the max workers in multi-thread upload, the default is 8.
+            quiet: Set to True to stop showing the upload process bar.
 
         """
         for sheet_operation in self.operations:
@@ -279,18 +282,33 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             )
         self.operations = []
 
-        for sheet_name, dataframe in self.items():
+        df_total = 0
+        file_total = 0
+        for dataframe in self.values():
             for df_operation in dataframe.operations:  # type: ignore[union-attr]
-                df_operation.do(
-                    self._dataset.access_key,
-                    self._dataset.url,
-                    self._dataset.owner,
-                    self._dataset.name,
-                    draft_number=self.number,
-                    sheet=sheet_name,
-                    jobs=jobs,
-                )
-                dataframe.operations = []
+                df_total += df_operation.get_upload_count()
+                file_total += sum(map(len, df_operation.get_file_arrays()))
+
+        # Note that after done uploading, the two process bars will switch position due to the tqdm
+        # bug https://github.com/tqdm/tqdm/issues/1000.
+        with tqdm(
+            total=file_total, disable=(file_total == 0 or quiet), desc="uploading binary files"
+        ) as file_pbar:
+            with tqdm(total=df_total, disable=quiet, desc="uploading structured data") as data_pbar:
+                for sheet_name, dataframe in self.items():
+                    for df_operation in dataframe.operations:  # type: ignore[union-attr]
+                        df_operation.do(
+                            self._dataset.access_key,
+                            self._dataset.url,
+                            self._dataset.owner,
+                            self._dataset.name,
+                            draft_number=self.number,
+                            sheet=sheet_name,
+                            jobs=jobs,
+                            data_pbar=data_pbar,
+                            file_pbar=file_pbar,
+                        )
+                        dataframe.operations = []
 
 
 class DraftManager:
