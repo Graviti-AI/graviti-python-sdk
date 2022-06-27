@@ -6,9 +6,7 @@
 """The implementation of the Dataset and DatasetManager."""
 
 from enum import Enum
-from typing import Any, Dict, Generator, Optional, Tuple, Type, TypeVar
-
-from tensorbay.utility import AttrsMixin, attr, common_loads
+from typing import Any, Dict, Generator, Optional, Tuple, TypeVar
 
 from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNameError
@@ -38,13 +36,30 @@ class RevisionType(Enum):
 
 
 class Dataset(  # pylint: disable=too-many-instance-attributes
-    UserMutableMapping[str, DataFrame], AttrsMixin, ReprMixin
+    UserMutableMapping[str, DataFrame], ReprMixin
 ):
     """This class defines the basic concept of the dataset on Graviti.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
+        response: The response of the OpenAPI associated with the dataset::
+
+                {
+                    "id": <str>
+                    "name": <str>
+                    "alias": <str>
+                    "default_branch": <str>
+                    "commit_id": <Optional[str]>
+                    "cover_url": <str>
+                    "created_at": <str>
+                    "updated_at": <str>
+                    "owner": <str>
+                    "is_public": <bool>
+                    "config": <str>
+                }
+
+    Attributes:
         dataset_id: Dataset ID.
         name: The name of the dataset, unique for a user.
         alias: Dataset alias.
@@ -72,80 +87,22 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         "branch",
     )
 
-    _dataset_id: str = attr(key="id")
-
-    access_key: str = attr()
-    url: str = attr()
-    name: str = attr()
-    alias: str = attr()
-    default_branch: str = attr()
-    owner: str = attr()
-    is_public: bool = attr()
-    config: str = attr()
-
-    def __init__(
-        self,
-        access_key: str,
-        url: str,
-        dataset_id: str,
-        name: str,
-        *,
-        alias: str,
-        default_branch: str,
-        commit_id: str,
-        created_at: str,
-        updated_at: str,
-        owner: str,
-        is_public: bool,
-        config: str,
-    ) -> None:
+    def __init__(self, access_key: str, url: str, response: Dict[str, Any]) -> None:
         self.access_key = access_key
         self.url = url
-        self._dataset_id = dataset_id
-        self.name = name
-        self.alias = alias
-        self.default_branch = default_branch
-        self.created_at = convert_iso_to_datetime(created_at)
-        self.updated_at = convert_iso_to_datetime(updated_at)
-        self.owner = owner
-        self.is_public = is_public
-        self.config = config
-        self._data: Commit = Branch(self, name, commit_id)
+        self._dataset_id = response["id"]
+        self.name = response["name"]
+        self.alias = response["alias"]
+        self.default_branch = response["default_branch"]
+        self.created_at = convert_iso_to_datetime(response["created_at"])
+        self.updated_at = convert_iso_to_datetime(response["updated_at"])
+        self.owner = response["owner"]
+        self.is_public = response["is_public"]
+        self.config = response["config"]
+        self._data: Commit = Branch(self, response["name"], response["commit_id"])
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
-
-    @classmethod
-    def from_pyobj(cls: Type[_T], contents: Dict[str, Any]) -> _T:
-        """Create a :class:`Dataset` instance from python dict.
-
-        Arguments:
-            contents: A python dict containing all the information of the dataset::
-
-                    {
-                        "access_key": <str>
-                        "url": <str>
-                        "id": <str>
-                        "name": <str>
-                        "alias": <str>
-                        "default_branch": <str>
-                        "commit_id": <Optional[str]>
-                        "created_at": <str>
-                        "updated_at": <str>
-                        "owner": <str>
-                        "is_public": <bool>
-                        "config": <str>
-                    }
-
-        Returns:
-            A :class:`Dataset` instance created from the input python dict.
-
-        """
-        dataset = common_loads(cls, contents)
-        dataset.created_at = convert_iso_to_datetime(contents["created_at"])
-        dataset.updated_at = convert_iso_to_datetime(contents["updated_at"])
-        dataset._data = Branch(dataset, contents["default_branch"], contents["commit_id"])
-        return dataset
 
     @property
     def HEAD(self) -> Commit:  # pylint: disable=invalid-name
@@ -263,12 +220,12 @@ class DatasetManager:
         self.owner = owner
 
     def _generate(self, offset: int, limit: int) -> Generator[Dataset, None, int]:
-        arguments = {"access_key": self.access_key, "url": self.url}
-        response = list_datasets(**arguments, limit=limit, offset=offset)
+        access_key = self.access_key
+        url = self.url
+        response = list_datasets(access_key, url, limit=limit, offset=offset)
 
         for item in response["datasets"]:
-            item.update(arguments)
-            yield Dataset.from_pyobj(item)
+            yield Dataset(access_key, url, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -289,17 +246,16 @@ class DatasetManager:
             The created :class:`~graviti.manager.dataset.Dataset` instance.
 
         """
-        arguments = {"access_key": self.access_key, "url": self.url}
         response = create_dataset(
-            **arguments,
+            self.access_key,
+            self.url,
             name=name,
             alias=alias,
             config=config,
             with_draft=False,
         )
-        response.update(arguments)
 
-        return Dataset.from_pyobj(response)
+        return Dataset(self.access_key, self.url, response)
 
     def get(self, dataset: str) -> Dataset:
         """Get a Graviti dataset with given name.
@@ -317,11 +273,9 @@ class DatasetManager:
         if not dataset:
             raise ResourceNameError("dataset", dataset)
 
-        arguments = {"access_key": self.access_key, "url": self.url}
-        response = get_dataset(**arguments, owner=self.owner, dataset=dataset)
-        response.update(arguments)
+        response = get_dataset(self.access_key, self.url, owner=self.owner, dataset=dataset)
 
-        return Dataset.from_pyobj(response)
+        return Dataset(self.access_key, self.url, response)
 
     def list(self) -> LazyPagingList[Dataset]:
         """List Graviti datasets.

@@ -5,10 +5,7 @@
 
 """The implementation of the Branch and BranchManager."""
 
-from functools import partial
 from typing import TYPE_CHECKING, Generator
-
-from tensorbay.utility import attr
 
 from graviti.exception import NoCommitsError, ResourceNameError
 from graviti.manager.commit import NamedCommit
@@ -18,9 +15,6 @@ from graviti.openapi import create_branch, delete_branch, get_branch, list_branc
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
-
-_ERROR_MESSAGE = "The '{attr_name}' is not available due to this branch has no commit history."
-_attr = partial(attr, is_dynamic=True, error_message=_ERROR_MESSAGE)
 
 
 class Branch(NamedCommit):
