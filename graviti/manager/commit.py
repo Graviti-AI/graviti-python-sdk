@@ -43,7 +43,7 @@ class Commit(Sheets):
 
     """
 
-    _repr_attrs: Tuple[str, ...] = ("parent_commit_id", "title", "committer", "committed_at")
+    _repr_attrs: Tuple[str, ...] = ("parent", "title", "committer", "committed_at")
 
     _commit_info: Dict[str, Any]
 
@@ -58,6 +58,14 @@ class Commit(Sheets):
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.commit_id}")'
 
+    def _process_commit_info(self, commit_info: Dict[str, Any]) -> Dict[str, Any]:
+        commit_info["committed_at"] = convert_iso_to_datetime(commit_info["committed_at"])
+        parent_commit_id = commit_info.pop("parent_commit_id")
+        commit_info["parent"] = (
+            None if parent_commit_id is None else Commit(self._dataset, parent_commit_id)
+        )
+        return commit_info
+
     def _get_commit_info(self) -> Dict[str, Any]:
         if self.commit_id is None:
             raise AttributeError(
@@ -71,8 +79,7 @@ class Commit(Sheets):
                 self._dataset.name,
                 commit_id=self.commit_id,
             )
-            commit_info["committed_at"] = convert_iso_to_datetime(commit_info["committed_at"])
-            self._commit_info = commit_info
+            self._commit_info = self._process_commit_info(commit_info)
         return self._commit_info
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
@@ -137,20 +144,18 @@ class Commit(Sheets):
 
         """
         obj = cls(dataset, contents["commit_id"])
-        commit_info = contents.copy()
-        commit_info["committed_at"] = convert_iso_to_datetime(contents["committed_at"])
-        obj._commit_info = commit_info
+        obj._commit_info = obj._process_commit_info(contents.copy())
         return obj
 
     @property
-    def parent_commit_id(self) -> Optional[str]:
-        """Return the parent commit ID of the commit.
+    def parent(self) -> Optional["Commit"]:
+        """Return the parent of the commit.
 
         Returns:
-            The parent commit ID of the commit.
+            The parent of the commit.
 
         """
-        return self._get_commit_info()["parent_commit_id"]  # type: ignore[no-any-return]
+        return self._get_commit_info()["parent"]  # type: ignore[no-any-return]
 
     @property
     def title(self) -> str:
@@ -309,9 +314,7 @@ class NamedCommit(Commit):
 
         """
         obj = cls(dataset, contents["name"], contents["commit_id"])
-        commit_info = contents.copy()
-        commit_info["committed_at"] = convert_iso_to_datetime(contents["committed_at"])
-        obj._commit_info = commit_info
+        obj._commit_info = obj._process_commit_info(contents.copy())
         return obj
 
 
