@@ -150,6 +150,11 @@ class DataFrame(Container):
         dataframe._record_key = self._record_key
         self.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
 
+    def __delitem__(self, key: str) -> None:
+        del self._columns[key]
+        del self.schema[key]
+        # TODO: Need add delete operations.
+
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
         header = self._get_repr_header(flatten_header)
