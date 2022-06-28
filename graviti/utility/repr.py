@@ -293,7 +293,7 @@ def _repr_attrs(obj: Any, level: int, maxlevel: int, folding: bool) -> str:
 
     """
     # pylint: disable=protected-access
-    if not obj._repr_attrs:
+    if not obj._repr_attrs or level <= 0:
         return ""
 
     attributes = []
@@ -304,9 +304,6 @@ def _repr_attrs(obj: Any, level: int, maxlevel: int, folding: bool) -> str:
 
     if not attributes:
         return "()"
-
-    if level <= 0:
-        return "(...)"
 
     newlevel = level - 1
     pieces = (f"({key}): {_repr1(value, newlevel, maxlevel, folding)}" for key, value in attributes)
