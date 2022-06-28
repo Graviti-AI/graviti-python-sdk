@@ -6,6 +6,7 @@
 """Repr related methods."""
 
 from abc import ABC
+from datetime import datetime
 from enum import Enum, auto
 from typing import (
     Any,
@@ -277,6 +278,11 @@ def _repr_builtin_dict(obj: Mapping[Any, Any], level: int, maxlevel: int, foldin
         pieces.append(f"{repr(key)}: {_repr1(obj[key], newlevel, maxlevel, folding)}")
 
     return _join_with_indent(pieces, level, maxlevel, "{", "}")
+
+
+@_PrinterRegister(datetime)
+def _repr_datetime(obj: datetime, _: int, __: int, ___: bool) -> str:
+    return str(obj)
 
 
 def _repr_attrs(obj: Any, level: int, maxlevel: int, folding: bool) -> str:
