@@ -99,7 +99,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.owner = response["owner"]
         self.is_public = response["is_public"]
         self.config = response["config"]
-        self._data: Commit = Branch(self, response["name"], response["commit_id"])
+        self._data: Commit = Branch(self, response["default_branch"], response["commit_id"])
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
