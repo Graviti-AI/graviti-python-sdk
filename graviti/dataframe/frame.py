@@ -194,28 +194,35 @@ class DataFrame(Container):
 
     @classmethod
     def _from_pyarrow(  # type: ignore[override]
-        cls: Type[_T], array: pa.StructArray, schema: pt.PortexRecordBase
+        cls: Type[_T],
+        array: pa.StructArray,
+        schema: pt.PortexRecordBase,
+        parent: Optional["DataFrame"] = None,
     ) -> _T:
         obj: _T = object.__new__(cls)
         obj.schema = schema
+        obj._parent = parent
         obj._columns = {
             key: value.container._from_pyarrow(  # pylint: disable=protected-access
-                array.field(key), schema=value
+                array.field(key), schema=value, parent=obj
             )
             for key, value in schema.items()
         }
-
         return obj
 
     @classmethod
     def _from_factory(  # type: ignore[override]
-        cls: Type[_T], factory: LazyFactoryBase, schema: pt.PortexRecordBase
+        cls: Type[_T],
+        factory: LazyFactoryBase,
+        schema: pt.PortexRecordBase,
+        parent: Optional["DataFrame"] = None,
     ) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:
             factory: The LazyFactory instance for creating the PagingList.
             schema: The schema of the DataFrame.
+            parent: The parent of the created DataFrame.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
@@ -223,13 +230,13 @@ class DataFrame(Container):
         """
         obj: _T = object.__new__(cls)
         obj.schema = schema
+        obj._parent = parent
         obj._columns = {
             key: value.container._from_factory(  # pylint: disable=protected-access
-                factory[key], schema=value
+                factory[key], schema=value, parent=obj
             )
             for key, value in schema.items()
         }
-
         if RECORD_KEY in factory:
             obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
                 factory[RECORD_KEY], pt.string(nullable=True)
@@ -278,8 +285,8 @@ class DataFrame(Container):
                 f"Length of values ({len(column)}) does not match length of "
                 f"self DataFrame ({len(self)})"
             )
-
         self.schema[key] = schema
+        column._parent = self  # pylint: disable=protected-access
         self._columns[key] = column
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeriesBase]]:
@@ -584,10 +591,11 @@ class DataFrame(Container):
         obj: _T = object.__new__(self.__class__)
 
         obj.schema = self.schema.copy()
-
         columns = {}
         for key, value in self._columns.items():
-            columns[key] = value.copy()
+            value = value.copy()
+            value._parent = obj  # pylint: disable=protected-access
+            columns[key] = value
 
         # pylint: disable=protected-access
         obj._columns = columns
@@ -618,6 +626,7 @@ class DataFrame(Container):
             values: A sequence object or DataFrame.
 
         Raises:
+            TypeError: When the self is the member of another Dataframe.
             TypeError: When the given Dataframe mismatched with the self schema.
 
         Examples:
@@ -648,6 +657,10 @@ class DataFrame(Container):
             2   d.jpg    4      4
 
         """
+        if self._parent is not None:
+            raise TypeError(
+                "'extend' is not supported for the DataFrame which is a member of another DataFrame"
+            )
         if not isinstance(values, DataFrame):
             values = DataFrame._from_pyarrow(  # pylint: disable=protected-access
                 self._pylist_to_pyarrow(values, self.schema), self.schema

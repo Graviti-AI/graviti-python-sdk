@@ -5,12 +5,15 @@
 """The table-structured data container related classes."""
 
 
-from typing import Any, ClassVar, List, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Type, TypeVar
 
 import pyarrow as pa
 
 from graviti.paging import LazyFactoryBase
 from graviti.portex import PortexType
+
+if TYPE_CHECKING:
+    from graviti.dataframe.frame import DataFrame
 
 _T = TypeVar("_T", bound="Container")
 
@@ -20,16 +23,24 @@ class Container:
 
     has_keys: ClassVar[bool]
     schema: PortexType
+    _parent: Optional["DataFrame"] = None
 
     def __len__(self) -> int:
         raise NotImplementedError
 
     @classmethod
-    def _from_factory(cls: Type[_T], factory: LazyFactoryBase, schema: PortexType) -> _T:
+    def _from_factory(
+        cls: Type[_T],
+        factory: LazyFactoryBase,
+        schema: PortexType,
+        parent: Optional["DataFrame"] = None,
+    ) -> _T:
         raise NotImplementedError
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], array: pa.Array, schema: PortexType) -> _T:
+    def _from_pyarrow(
+        cls: Type[_T], array: pa.Array, schema: PortexType, parent: Optional["DataFrame"] = None
+    ) -> _T:
         raise NotImplementedError
 
     def _extend(self: _T, values: _T) -> None:

@@ -7,7 +7,19 @@
 
 
 from itertools import islice
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import pyarrow as pa
 
@@ -17,6 +29,9 @@ from graviti.dataframe.container import Container
 from graviti.paging import LazyFactoryBase, PagingList, PyArrowPagingList
 from graviti.paging.lists import PagingListBase
 from graviti.utility import MAX_REPR_ROWS, FileBase
+
+if TYPE_CHECKING:
+    from graviti.dataframe.frame import DataFrame
 
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
@@ -370,17 +385,26 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key].as_py()
 
     @classmethod
-    def _from_factory(cls: Type[_S], factory: LazyFactoryBase, schema: pt.PortexType) -> _S:
+    def _from_factory(
+        cls: Type[_S],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        parent: Optional["DataFrame"] = None,
+    ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()
         obj.schema = schema
+        obj._parent = parent
         return obj
 
     @classmethod
-    def _from_pyarrow(cls: Type[_S], array: pa.Array, schema: pt.PortexType) -> _S:
+    def _from_pyarrow(
+        cls: Type[_S], array: pa.Array, schema: pt.PortexType, parent: Optional["DataFrame"] = None
+    ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = PyArrowPagingList.from_pyarrow(array)
         obj.schema = schema
+        obj._parent = parent
         return obj
 
     def to_pylist(self) -> List[Any]:
@@ -403,7 +427,12 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key]
 
     @classmethod
-    def _from_factory(cls: Type[_A], factory: LazyFactoryBase, schema: pt.PortexType) -> _A:
+    def _from_factory(
+        cls: Type[_A],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        parent: Optional["DataFrame"] = None,
+    ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
@@ -413,11 +442,14 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
             lambda array: tuple(_item_creator(item.values, _item_schema) for item in array)
         )
         obj.schema = schema
+        obj._parent = parent
 
         return obj
 
     @classmethod
-    def _from_pyarrow(cls: Type[_A], array: pa.Array, schema: pt.PortexType) -> _A:
+    def _from_pyarrow(
+        cls: Type[_A], array: pa.Array, schema: pt.PortexType, parent: Optional["DataFrame"] = None
+    ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
@@ -425,6 +457,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj: _A = object.__new__(cls)
         obj._data = PagingList(_item_creator(item.values, _item_schema) for item in array)
         obj.schema = schema
+        obj._parent = parent
         return obj
 
     # TODO: copy method will be implementated sooner.
