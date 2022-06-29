@@ -5,7 +5,7 @@
 
 """Definitions of different operations on a DataFrame."""
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from graviti.openapi import add_data, update_data, update_schema, upload_files
 from graviti.operation.common import get_schema
@@ -13,7 +13,7 @@ from graviti.portex import PortexType
 from graviti.utility import File, chunked
 
 if TYPE_CHECKING:
-    from graviti.dataframe import Container, DataFrame
+    from graviti.dataframe import DataFrame
 
 _MAX_BATCH_SIZE = 2048
 
@@ -85,7 +85,7 @@ class AddData(DataFrameOperation):
 
         """
         dataframe = self.data
-        arrays = _get_arrays(dataframe, "file.RemoteFile")
+        arrays = dataframe._get_file_columns()  # pylint: disable=protected-access
         data = dataframe.to_pylist()
 
         for batch, *file_arrays in zip(
@@ -199,7 +199,7 @@ class UpdateData(DataFrameOperation):
 
         """
         dataframe = self.data
-        arrays = _get_arrays(dataframe, "file.RemoteFile")
+        arrays = dataframe._get_file_columns()  # pylint: disable=protected-access
         data = dataframe._to_patch_data()  # pylint: disable=protected-access
 
         for batch, *file_arrays in zip(
@@ -227,13 +227,3 @@ class UpdateData(DataFrameOperation):
                 sheet=sheet,
                 data=batch,
             )
-
-
-def _get_arrays(dataframe: "DataFrame", type_name: str) -> List["Container"]:
-    arrays = []
-    for key in dataframe.schema.get_keys(type_name):
-        array: "Container" = dataframe
-        for subkey in key:
-            array = array[subkey]  # type: ignore[index]
-        arrays.append(array)
-    return arrays

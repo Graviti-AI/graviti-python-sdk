@@ -5,7 +5,7 @@
 """The table-structured data container related classes."""
 
 
-from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, List, Optional, Type, TypeVar
 
 import pyarrow as pa
 
@@ -21,7 +21,6 @@ _T = TypeVar("_T", bound="Container")
 class Container:
     """The base class for the table-structured data container."""
 
-    has_keys: ClassVar[bool]
     schema: PortexType
     _parent: Optional["DataFrame"] = None
 

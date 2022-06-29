@@ -6,7 +6,7 @@
 
 
 from inspect import Signature
-from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import pyarrow as pa
 
@@ -80,18 +80,3 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         """
         return self.internal_type.to_builtin()  # type: ignore[attr-defined, no-any-return]
-
-    def get_keys(self, type_name: Optional[str] = None) -> List[Tuple[str, ...]]:
-        """Get the keys to locate all data, or only get keys of one type if type_name is given.
-
-        Arguments:
-            type_name: The name of the target PortexType.
-
-        Returns:
-            A list of keys to locate the data.
-
-        """
-        if not self.container.has_keys:
-            return []
-
-        return self.to_builtin().get_keys(type_name)
