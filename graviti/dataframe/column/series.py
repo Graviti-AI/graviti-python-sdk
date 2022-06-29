@@ -26,6 +26,7 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
+from graviti.operation import UpdateData
 from graviti.paging import LazyFactoryBase, PagingList, PyArrowPagingList
 from graviti.paging.lists import PagingListBase
 from graviti.utility import MAX_REPR_ROWS, FileBase
@@ -136,6 +137,23 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             raise TypeError("The schema of the given Series is mismatched")
 
         self._set_item_by_slice(key, value)
+        if self._root is not None and self._root.operations is not None:
+            value = value.copy()
+            root = self._root
+            _record_key = root._record_key
+            # TODO: support slicing methods for record_key
+            record_key = [
+                _record_key[i]  # type: ignore[index]
+                for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
+            ]
+            name = self._name
+            dataframe = root._construct(
+                {name[0]: value},
+                pt.record({name[0]: value.schema}),
+                Series(record_key),
+                name[1:],
+            )
+            root.operations.append(UpdateData(dataframe))  # type: ignore[union-attr]
 
     def __len__(self) -> int:
         return self._data.__len__()
@@ -269,11 +287,19 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         """
         self._data.extend(values._data)  # pylint: disable=protected-access
 
-    def _copy(self: _SB, schema: pt.PortexType) -> _SB:
+    def _copy(
+        self: _SB,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _SB:
         obj: _SB = object.__new__(self.__class__)
 
         obj.schema = schema
-        obj._data = self._data.copy()  # pylint: disable=protected-access
+        # pylint: disable=protected-access
+        obj._root = root
+        obj._data = self._data.copy()
+        obj._name = name
 
         return obj
 
@@ -397,22 +423,29 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         cls: Type[_S],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
-        parent: Optional["DataFrame"] = None,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()
         obj.schema = schema
-        obj._parent = parent
+        obj._root = root
+        obj._name = name
         return obj
 
     @classmethod
     def _from_pyarrow(
-        cls: Type[_S], array: pa.Array, schema: pt.PortexType, parent: Optional["DataFrame"] = None
+        cls: Type[_S],
+        array: pa.Array,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = PyArrowPagingList.from_pyarrow(array)
         obj.schema = schema
-        obj._parent = parent
+        obj._root = root
+        obj._name = name
         return obj
 
     def to_pylist(self) -> List[Any]:
@@ -440,7 +473,8 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         cls: Type[_A],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
-        parent: Optional["DataFrame"] = None,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
@@ -451,14 +485,19 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
             lambda array: tuple(_item_creator(item.values, _item_schema) for item in array)
         )
         obj.schema = schema
-        obj._parent = parent
+        obj._root = root
         obj._item_schema = _item_schema  # pylint: disable=protected-access
+        obj._name = name
 
         return obj
 
     @classmethod
     def _from_pyarrow(
-        cls: Type[_A], array: pa.Array, schema: pt.PortexType, parent: Optional["DataFrame"] = None
+        cls: Type[_A],
+        array: pa.Array,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
@@ -466,9 +505,12 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         obj: _A = object.__new__(cls)
         obj._data = PagingList(_item_creator(item.values, _item_schema) for item in array)
+
         obj.schema = schema
-        obj._parent = parent
+        obj._root = root
         obj._item_schema = _item_schema  # pylint: disable=protected-access
+        obj._name = name
+
         return obj
 
     # TODO: copy method will be implementated sooner.

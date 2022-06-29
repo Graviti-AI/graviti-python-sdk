@@ -125,7 +125,8 @@ class DataFrame(Container):
         raise KeyError(key)
 
     def __setitem__(self, key: str, value: Union[Iterable[Any], _C]) -> None:
-        if self.operations is None:
+        root = self if self._root is None else self._root
+        if root.operations is None:
             self._setitem(key, value)
             return
 
@@ -133,9 +134,12 @@ class DataFrame(Container):
             raise NotImplementedError("Replacing a column in a sheet is not supported yet")
 
         self._setitem(key, value)
-        dataframe = self.copy()
-        dataframe._record_key = self._record_key
-        self.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
+        # TODO: Use self[[key]] to replace DataFrame._construct
+        _value = self[key].copy()
+        dataframe = DataFrame._construct(
+            {key: _value}, pt.record({key: _value.schema}), root._record_key, self._name
+        )
+        root.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
@@ -172,11 +176,13 @@ class DataFrame(Container):
         columns: Dict[str, Container],
         schema: pt.record,
         record_key: Optional[ColumnSeries],
+        name: Tuple[str, ...] = (),
     ) -> "DataFrame":
         obj: DataFrame = object.__new__(cls)
         obj._columns = columns
         obj.schema = schema
         obj._record_key = record_key
+        obj._name = name
         return obj
 
     @classmethod
@@ -184,14 +190,20 @@ class DataFrame(Container):
         cls: Type[_T],
         array: pa.StructArray,
         schema: pt.PortexRecordBase,
-        parent: Optional["DataFrame"] = None,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _T:
         obj: _T = object.__new__(cls)
         obj.schema = schema
-        obj._parent = parent
+        obj._root = root
+        obj._name = name
+
         obj._columns = {
             key: value.container._from_pyarrow(  # pylint: disable=protected-access
-                array.field(key), schema=value, parent=obj
+                array.field(key),
+                schema=value,
+                root=obj if root is None else root,
+                name=(key,) + name,
             )
             for key, value in schema.items()
         }
@@ -202,14 +214,16 @@ class DataFrame(Container):
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: pt.PortexRecordBase,
-        parent: Optional["DataFrame"] = None,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:
             factory: The LazyFactory instance for creating the PagingList.
             schema: The schema of the DataFrame.
-            parent: The parent of the created DataFrame.
+            root: The root of the created DataFrame.
+            name: The name of the created DataFrame.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
@@ -217,13 +231,19 @@ class DataFrame(Container):
         """
         obj: _T = object.__new__(cls)
         obj.schema = schema
-        obj._parent = parent
+        obj._root = root
+        obj._name = name
+
         obj._columns = {
             key: value.container._from_factory(  # pylint: disable=protected-access
-                factory[key], schema=value, parent=obj
+                factory[key],
+                schema=value,
+                root=obj if root is None else root,
+                name=(key,) + name,
             )
             for key, value in schema.items()
         }
+
         if RECORD_KEY in factory:
             obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
                 factory[RECORD_KEY], pt.string(nullable=True)
@@ -256,15 +276,18 @@ class DataFrame(Container):
         return cls._from_pyarrow(array, schema)
 
     def _setitem(self, key: str, value: Union[Iterable[Any], _C]) -> None:
+        root = self if self._root is None else self._root
         if isinstance(value, Container):
             schema = value.schema.copy()
-            column = value.copy()
+            column = value._copy(  # pylint: disable=protected-access
+                schema, root, (key,) + self._name
+            )
         else:
             # TODO: Need to support the case where iterable elements are subclass of Container.
             array = pa.array(value)
             schema = pt.PortexType.from_pyarrow(array.type)
             column = schema.container._from_pyarrow(  # pylint: disable=protected-access
-                array, schema
+                array, schema, root, (key,) + self._name
             )
 
         if len(column) != len(self):
@@ -273,7 +296,6 @@ class DataFrame(Container):
                 f"self DataFrame ({len(self)})"
             )
         self.schema[key] = schema
-        column._parent = self  # pylint: disable=protected-access
         self._columns[key] = column
 
     def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeriesBase]]:
@@ -318,15 +340,17 @@ class DataFrame(Container):
             value._extend(values[key])  # pylint: disable=protected-access
 
     def _to_patch_data(self) -> List[Dict[str, Any]]:
-        names = list(self.schema.keys())
-        values: List[Any] = list(self._columns.values())
-
-        names.append(RECORD_KEY)
-        values.append(self._record_key)
-
-        return [
-            dict(zip(names, value)) for value in zip(*(column.to_pylist() for column in values))
-        ]
+        patch_data = []
+        for record_key, values in zip(
+            self._record_key.to_pylist(),  # type: ignore[union-attr]
+            zip(*(column.to_pylist() for column in self._columns.values())),
+        ):
+            row_patch_data = dict(zip(self.schema, values))
+            for name in self._name:
+                row_patch_data = {name: row_patch_data}
+            row_patch_data[RECORD_KEY] = record_key
+            patch_data.append(row_patch_data)
+        return patch_data
 
     def _set_item_by_slice(self, key: slice, value: "DataFrame") -> None:
         for name, column in self._columns.items():
@@ -572,20 +596,27 @@ class DataFrame(Container):
     #
     #     """
 
-    def _copy(self: _T, schema: pt.PortexRecordBase) -> _T:  # type: ignore[override]
+    def _copy(  # type: ignore[override]
+        self: _T,
+        schema: pt.PortexRecordBase,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
         obj: _T = object.__new__(self.__class__)
 
+        _root = obj if root is None else root
         _columns = self._columns
         columns = {}
 
         # pylint: disable=protected-access
         for key, value in schema.items():
-            column = _columns[key]._copy(value)
-            column._parent = obj
+            column = _columns[key]._copy(value, _root, (key,) + name)  # type: ignore[arg-type]
             columns[key] = column
 
         obj._columns = columns
         obj.schema = schema
+        obj._root = root
+        obj._name = name
         return obj
 
     # def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
@@ -644,7 +675,7 @@ class DataFrame(Container):
             2   d.jpg    4      4
 
         """
-        if self._parent is not None:
+        if self._root is not None:
             raise TypeError(
                 "'extend' is not supported for the DataFrame which is a member of another DataFrame"
             )

@@ -5,7 +5,7 @@
 """The table-structured data container related classes."""
 
 
-from typing import TYPE_CHECKING, Any, List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, TypeVar
 
 import pyarrow as pa
 
@@ -22,7 +22,8 @@ class Container:
     """The base class for the table-structured data container."""
 
     schema: PortexType
-    _parent: Optional["DataFrame"] = None
+    _root: Optional["DataFrame"] = None
+    _name: Tuple[str, ...] = ()
 
     def __len__(self) -> int:
         raise NotImplementedError
@@ -32,13 +33,18 @@ class Container:
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: PortexType,
-        parent: Optional["DataFrame"] = None,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _T:
         raise NotImplementedError
 
     @classmethod
     def _from_pyarrow(
-        cls: Type[_T], array: pa.Array, schema: PortexType, parent: Optional["DataFrame"] = None
+        cls: Type[_T],
+        array: pa.Array,
+        schema: PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _T:
         raise NotImplementedError
 
@@ -48,7 +54,9 @@ class Container:
     def _repr_folding(self) -> str:
         raise NotImplementedError
 
-    def _copy(self: _T, schema: PortexType) -> _T:
+    def _copy(
+        self: _T, schema: PortexType, root: Optional["DataFrame"] = None, name: Tuple[str, ...] = ()
+    ) -> _T:
         raise NotImplementedError
 
     def _set_item_by_slice(self, key: slice, value: Any) -> None:
