@@ -7,19 +7,7 @@
 
 
 from itertools import chain, islice, zip_longest
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
 
@@ -117,23 +105,23 @@ class DataFrame(Container):
 
         raise ValueError("DataFrame only supports creating from list object now")
 
-    @overload
-    def __getitem__(self, key: str) -> Union[ColumnSeriesBase, "DataFrame"]:  # type: ignore[misc]
-        # https://github.com/python/mypy/issues/5090
-        ...
+    # @overload
+    # def __getitem__(self, key: str) -> Union[ColumnSeriesBase, "DataFrame"]:  # type: ignore[misc]
+    #     # https://github.com/python/mypy/issues/5090
+    #     ...
 
-    @overload
-    def __getitem__(self, key: Iterable[str]) -> "DataFrame":
-        ...
+    # @overload
+    # def __getitem__(self, key: Iterable[str]) -> "DataFrame":
+    #     ...
 
-    def __getitem__(self, key: Union[str, Iterable[str]]) -> Container:
+    def __getitem__(self, key: str) -> Container:
         if isinstance(key, str):
             return self._columns[key]
 
-        if isinstance(key, Iterable):
-            new_columns = {name: self._columns[name] for name in key}
-            schema = pt.record({name: column.schema for name, column in new_columns.items()})
-            return self._construct(new_columns, schema, self._record_key)
+        # if isinstance(key, Iterable):
+        #     new_columns = {name: self._columns[name] for name in key}
+        #     schema = pt.record({name: column.schema for name, column in new_columns.items()})
+        #     return self._construct(new_columns, schema, self._record_key)
 
         raise KeyError(key)
 
