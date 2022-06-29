@@ -569,24 +569,20 @@ class DataFrame(Container):
     #
     #     """
 
-    def copy(self: _T) -> _T:
-        """Get a copy of the dataframe.
-
-        Returns:
-            A copy of the dataframe.
-
-        """
+    def _copy(self: _T, schema: pt.PortexRecordBase) -> _T:  # type: ignore[override]
         obj: _T = object.__new__(self.__class__)
 
-        obj.schema = self.schema.copy()
+        _columns = self._columns
         columns = {}
-        for key, value in self._columns.items():
-            value = value.copy()
-            value._parent = obj  # pylint: disable=protected-access
-            columns[key] = value
 
         # pylint: disable=protected-access
+        for key, value in schema.items():
+            column = _columns[key]._copy(value)
+            column._parent = obj
+            columns[key] = column
+
         obj._columns = columns
+        obj.schema = schema
         return obj
 
     # def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":

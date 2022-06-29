@@ -258,6 +258,14 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         """
         self._data.extend(values._data)  # pylint: disable=protected-access
 
+    def _copy(self: _SB, schema: pt.PortexType) -> _SB:
+        obj: _SB = object.__new__(self.__class__)
+
+        obj.schema = schema
+        obj._data = self._data.copy()  # pylint: disable=protected-access
+
+        return obj
+
     @property
     def iloc(self) -> ColumnSeriesILocIndexer:
         """Purely integer-location based indexing for selection by position.
@@ -333,20 +341,6 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             raise TypeError("The schema is mismatched with the pyarrow array")
 
         return cls._from_pyarrow(array, schema)
-
-    def copy(self: _SB) -> _SB:
-        """Get a copy of the series.
-
-        Returns:
-            A copy of the series.
-
-        """
-        obj: _SB = object.__new__(self.__class__)
-
-        obj.schema = self.schema.copy()
-        obj._data = self._data.copy()  # pylint: disable=protected-access
-
-        return obj
 
 
 @pt.ContainerRegister(
