@@ -49,6 +49,9 @@ class Container:
     def _repr_folding(self) -> str:
         raise NotImplementedError
 
+    def _copy(self: _T, schema: PortexType) -> _T:
+        raise NotImplementedError
+
     # TODO: Defines a base indexer for the iloc return type.
     @property
     def iloc(self) -> Any:
@@ -72,8 +75,8 @@ class Container:
     def copy(self: _T) -> _T:
         """Get a copy of the container.
 
-        Raises:
-            NotImplementedError: The method of the base class should not be called.
+        Returns:
+            A copy of the container.
 
         """
-        raise NotImplementedError
+        return self._copy(self.schema.copy())
