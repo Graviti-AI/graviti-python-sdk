@@ -61,7 +61,6 @@ class DataFrame(Container):
 
     """
 
-    has_keys = True
     _columns: Dict[str, Container]
     _record_key: Optional[ColumnSeries] = None
     schema: pt.PortexRecordBase
@@ -723,6 +722,21 @@ class DataFrame(Container):
             return pa.array(values, schema.to_pyarrow())
 
         return pa.array(processor(values), schema.to_pyarrow())
+
+    def _get_file_columns(self) -> List[FileSeries]:
+        """Get the FileSeries columns of the DataFrame.
+
+        Returns:
+            The FileSeries columns.
+
+        """
+        file_columns = []
+        for column in self._columns.values():
+            if isinstance(column, FileSeries):
+                file_columns.append(column)
+            elif isinstance(column, DataFrame):
+                file_columns.extend(column._get_file_columns())  # pylint: disable=protected-access
+        return file_columns
 
     def to_pylist(self) -> List[Dict[str, Any]]:
         """Convert the DataFrame to a python list.

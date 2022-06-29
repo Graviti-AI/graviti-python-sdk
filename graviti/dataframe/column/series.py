@@ -58,7 +58,6 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     """
 
-    has_keys = False
     schema: pt.PortexType
     _data: PagingListBase
 

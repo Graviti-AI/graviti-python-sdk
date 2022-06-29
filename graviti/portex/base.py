@@ -7,7 +7,7 @@
 
 import json
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional, Type, TypeVar
 
 import pyarrow as pa
 import yaml
@@ -64,17 +64,6 @@ class PortexType:
             return f"\n{indent}".join(lines)
 
         return f"{lines[0]})"
-
-    def get_keys(  # pylint: disable=no-self-use
-        self, _: Optional[str] = None
-    ) -> List[Tuple[str, ...]]:
-        """Get the keys to locate the data.
-
-        Returns:
-            The keys to locate the data.
-
-        """
-        return []
 
     @property
     def imports(self) -> Imports:
