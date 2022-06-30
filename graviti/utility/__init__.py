@@ -17,34 +17,20 @@ from graviti.utility.common import convert_iso_to_datetime, locked, shorten, url
 from graviti.utility.engine import Mode, engine
 from graviti.utility.file import File, FileBase, RemoteFile
 from graviti.utility.itertools import chunked
-from graviti.utility.pyarrow import (
-    BuiltinExtension,
-    ExtensionBase,
-    ExternalExtension,
-    GravitiExtension,
-    RemoteFileArray,
-    RemoteFileType,
-)
 from graviti.utility.repr import MAX_REPR_ROWS, ReprMixin, ReprType
 from graviti.utility.requests import config, get_session, submit_multithread_tasks
 from graviti.utility.typing import NestedDict, PathLike
 
 __all__ = [
     "AttrDict",
-    "BuiltinExtension",
-    "ExtensionBase",
-    "ExternalExtension",
     "File",
     "FileBase",
-    "GravitiExtension",
     "FrozenNameOrderedDict",
     "MAX_REPR_ROWS",
     "NameOrderedDict",
     "NestedDict",
     "PathLike",
     "RemoteFile",
-    "RemoteFileArray",
-    "RemoteFileType",
     "ReprMixin",
     "ReprType",
     "UserMapping",
