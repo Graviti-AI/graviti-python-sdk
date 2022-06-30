@@ -186,6 +186,11 @@ class TypeFactory(Factory):
 
     """
 
+    # After removing utility/pyarrow.py in pull request #420,
+    # mypy raises error: Cannot determine type of "class_"  [has-type].
+    # This is a workaround for the above mentioned error.
+    class_: Type[PortexType]
+
     def __init__(self, decl: Dict[str, Any], imports: Imports) -> None:
         class_ = imports[decl["type"]]
 
