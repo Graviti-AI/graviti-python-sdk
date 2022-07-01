@@ -51,6 +51,9 @@ class Container:
     def _copy(self: _T, schema: PortexType) -> _T:
         raise NotImplementedError
 
+    def _set_item_by_slice(self, key: slice, value: Any) -> None:
+        raise NotImplementedError
+
     # TODO: Defines a base indexer for the iloc return type.
     @property
     def iloc(self) -> Any:
