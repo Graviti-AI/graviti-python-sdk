@@ -344,9 +344,7 @@ class PagingList(PagingListBase):
             LazyPage(ranging, pos, get_array)
             for pos, ranging in enumerate(factory.get_page_ranges())
         ]
-        obj._offsets = Offsets(
-            factory._total_count, factory._limit  # pylint: disable=protected-access
-        )
+        obj._offsets = factory.get_offsets()
 
         return obj
 
@@ -404,9 +402,7 @@ class PyArrowPagingList(PagingListBase):
             LazyPage(ranging, pos, array_getter)
             for pos, ranging in enumerate(factory.get_page_ranges())
         ]
-        obj._offsets = Offsets(
-            factory._total_count, factory._limit  # pylint: disable=protected-access
-        )
+        obj._offsets = factory.get_offsets()
         obj._patype = patype
 
         return obj
