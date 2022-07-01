@@ -89,7 +89,7 @@ List datasets on the workspace:
 
    >>> ws.datasets.list()
    LazyPagingList [
-     Dataset("graviti-example/Graviti-dataset-demo")(...)
+     Dataset("graviti-example/Graviti-dataset-demo")
    ]
 
 Get one dataset:
@@ -133,7 +133,6 @@ Get the DataFrame:
    0  a.jpg     DataFrame(1, 6)
    1  b.jpg     DataFrame(1, 6)
    2  c.jpg     DataFrame(1, 6)
-
 
 View the schema of the sheet:
 

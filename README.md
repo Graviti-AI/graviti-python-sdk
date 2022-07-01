@@ -57,7 +57,7 @@ List datasets on the workspace:
 ```python
 >>> ws.datasets.list()
 LazyPagingList [
-  Dataset("graviti-example/Graviti-dataset-demo")(...)
+  Dataset("graviti-example/Graviti-dataset-demo")
 ]
 ```
 
@@ -96,7 +96,7 @@ List history commits:
 ```python
 >>> dataset.commits.list()
 LazyPagingList [
-  Commit("47293b32f28c4008bc0f25b847b97d6f")(...)
+  Commit("47293b32f28c4008bc0f25b847b97d6f")
 ]
 ```
 
@@ -105,8 +105,8 @@ List all branches:
 ```python
 >>> dataset.branches.list()
 LazyPagingList [
-  Branch("main")(...),
-  Branch("dev")(...)
+  Branch("main"),
+  Branch("dev")
 ]
 ```
 
@@ -115,7 +115,7 @@ List all tags:
 ```python
 >>> dataset.tags.list()
 LazyPagingList [
-  Tag("v1.0")(...)
+  Tag("v1.0")
 ]
 ```
 
