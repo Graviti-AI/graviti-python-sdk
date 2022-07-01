@@ -12,6 +12,7 @@ from typing import Any, Callable, Iterator, List, Optional, Tuple
 import pyarrow as pa
 
 from graviti.paging.lists import PagingList, PyArrowPagingList
+from graviti.paging.offset import Offsets
 
 
 class LazyFactoryBase:
@@ -174,6 +175,15 @@ class LazyFactory(LazyFactoryBase):
         yield from repeat(range(self._limit), div)
         if mod != 0:
             yield range(mod)
+
+    def get_offsets(self) -> Offsets:
+        """Get the Offsets instance created by the total_count and limit of this factory.
+
+        Returns:
+            The Offsets instance created by the total_count and limit of this factory.
+
+        """
+        return Offsets(self._total_count, self._limit)
 
 
 class LazySubFactory(LazyFactoryBase):
