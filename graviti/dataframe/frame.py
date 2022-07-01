@@ -328,6 +328,10 @@ class DataFrame(Container):
             dict(zip(names, value)) for value in zip(*(column.to_pylist() for column in values))
         ]
 
+    def _set_item_by_slice(self, key: slice, value: "DataFrame") -> None:
+        for name, column in self._columns.items():
+            column._set_item_by_slice(key, value[name])  # pylint: disable=protected-access
+
     @property
     def iloc(self) -> DataFrameILocIndexer:
         """Purely integer-location based indexing for selection by position.
