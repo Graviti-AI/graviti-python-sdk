@@ -112,6 +112,31 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def __getitem__(self, key: int) -> Any:
         return self._data[key]
 
+    @overload
+    def __setitem__(self, key: slice, value: Union[Iterable[Any], _SB]) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, key: int, value: Any) -> None:
+        ...
+
+    def __setitem__(
+        self,
+        key: Union[int, slice],
+        value: Union[Iterable[Any], _SB, Any],
+    ) -> None:
+        if isinstance(key, int):
+            value = self._from_pyarrow(self._pylist_to_pyarrow([value], self.schema), self.schema)
+            key = slice(key, key + 1)
+        elif not isinstance(value, self.__class__):
+            value = self._from_pyarrow(
+                self._pylist_to_pyarrow(value, self.schema), self.schema  # type: ignore[arg-type]
+            )
+        elif not self.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
+            raise TypeError("The schema of the given Series is mismatched")
+
+        self._set_item_by_slice(key, value)
+
     def __len__(self) -> int:
         return self._data.__len__()
 
@@ -252,10 +277,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return obj
 
-    def _set_item(self, key: int, value: Any) -> None:
-        self._data.set_item(key, value)
-
-    def _set_slice(self, key: slice, value: _SB) -> None:
+    def _set_item_by_slice(self, key: slice, value: _SB) -> None:
         self._data.set_slice(key, value._data)  # pylint: disable=protected-access
 
     @property
@@ -370,30 +392,6 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
     def __getitem__(self, key: int) -> Any:
         return self._data[key].as_py()
 
-    @overload
-    def __setitem__(self, key: slice, value: Union[Iterable[Any], "Series"]) -> None:
-        ...
-
-    @overload
-    def __setitem__(self, key: int, value: Any) -> None:
-        ...
-
-    def __setitem__(
-        self,
-        key: Union[int, slice],
-        value: Union[Iterable[Any], "Series", Any],
-    ) -> None:
-        if isinstance(key, int):
-            self._set_item(key, value)
-            return
-
-        if not isinstance(value, Series):
-            value = Series._from_pyarrow(self._pylist_to_pyarrow(value, self.schema), self.schema)
-        elif not self.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
-            raise TypeError("The schema of the given Series is mismatched")
-
-        self._set_slice(key, value)
-
     @classmethod
     def _from_factory(
         cls: Type[_S],
@@ -436,41 +434,6 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
     def __getitem__(self, key: int) -> Any:
         return self._data[key]
-
-    @overload
-    def __setitem__(self, key: slice, value: Union[Iterable[Any], "ArraySeries"]) -> None:
-        ...
-
-    @overload
-    def __setitem__(self, key: int, value: Any) -> None:
-        ...
-
-    def __setitem__(
-        self,
-        key: Union[int, slice],
-        value: Union[Iterable[Any], "ArraySeries", Any],
-    ) -> None:
-        _item_container = self._item_schema.container
-
-        if isinstance(key, int):
-            if not isinstance(value, _item_container):
-                value = _item_container._from_pyarrow(
-                    pa.array(value, self._item_schema.to_pyarrow()), self._item_schema
-                )
-            elif not self._item_schema.to_pyarrow().equals(value.schema.to_pyarrow()):
-                raise TypeError(f"Expected \n{self._item_schema}\n, got \n{value.schema}")
-
-            self._set_item(key, value)
-            return
-
-        if not isinstance(value, ArraySeries):
-            value = ArraySeries._from_pyarrow(
-                self._pylist_to_pyarrow(value, self.schema), self.schema
-            )
-        elif not self.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
-            raise TypeError("The schema of the given Series is mismatched")
-
-        self._set_slice(key, value)
 
     @classmethod
     def _from_factory(
@@ -550,30 +513,3 @@ class FileSeries(Series):  # pylint: disable=abstract-method
             return None
 
         return FileBase.from_pyarrow(scalar)
-
-    @overload  # type: ignore[override]
-    def __setitem__(self, key: slice, value: Union[Iterable[FileBase], "FileSeries"]) -> None:
-        ...
-
-    @overload
-    def __setitem__(self, key: int, value: FileBase) -> None:
-        ...
-
-    def __setitem__(
-        self,
-        key: Union[int, slice],
-        value: Union[FileBase, Iterable[FileBase], "FileSeries"],
-    ) -> None:
-        if isinstance(key, int):
-            if not isinstance(value, FileBase):
-                raise TypeError(f"Expected File object, got {value}") from None
-
-            self._set_item(key, value.to_pyobj())
-            return
-
-        if not isinstance(value, FileSeries):
-            value = FileSeries._from_pyarrow(
-                self._pylist_to_pyarrow(value, self.schema), self.schema  # type: ignore[arg-type]
-            )
-
-        self._set_slice(key, value)
