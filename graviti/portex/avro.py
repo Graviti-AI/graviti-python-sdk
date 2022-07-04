@@ -49,7 +49,7 @@ class AvroField:
         typ: AvroSchema,
         name,
         index,
-        optional=False,
+        optional=True,
         has_default=False,
         default=None,
     ):
@@ -195,7 +195,6 @@ def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
             index=i,
             has_default=False,
             name_registry=names,
-            optional=sub_type.nullable,
         )
         avro_record_fields.append(avro_record_field)
 
@@ -238,7 +237,6 @@ def convert_portex_schema_to_avro(_schema: record):
             index=i,
             has_default=False,
             name_registry=names,
-            optional=typ.nullable,
         )
 
         avro_record_fields.append(avro_record_field)
