@@ -11,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -37,6 +38,7 @@ if TYPE_CHECKING:
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
+_E = TypeVar("_E", bound="EnumSeries")
 
 
 class SeriesBase(Container):  # pylint: disable=abstract-method
@@ -248,6 +250,13 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             )
         if container == FileSeries:
             return SeriesBase._process_file(value)
+        if container == EnumSeries:
+            values_to_indices: Dict[Union[int, float, str, bool, None], Optional[int]] = {
+                k: v for v, k in enumerate(schema.to_builtin().values)  # type: ignore[attr-defined]
+            }
+            if None not in values_to_indices:
+                values_to_indices[None] = None
+            return lambda x: values_to_indices[x], True
 
         return lambda x: x, False
 
@@ -382,11 +391,13 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return cls._from_pyarrow(array, schema)
 
+    def _to_request_data(self, need_record_key: bool = True) -> List[Any]:
+        return self.to_pylist()
+
 
 @pt.ContainerRegister(
     pt.binary,
     pt.boolean,
-    pt.enum,
     pt.float32,
     pt.float64,
     pt.int32,
@@ -555,3 +566,77 @@ class FileSeries(Series):  # pylint: disable=abstract-method
             return None
 
         return FileBase.from_pyarrow(scalar)
+
+
+@pt.ContainerRegister(pt.enum)
+class EnumSeries(Series):
+    """One-dimensional array for portex builtin type enum."""
+
+    _indices_to_values: Dict[Optional[pa.Scalar], Union[int, float, str, bool, None]]
+
+    def __getitem__(self, key: int) -> Any:
+        return self._indices_to_values[self._data[key]]
+
+    def _to_request_data(self, need_record_key: bool = True) -> List[int]:
+        return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
+
+    @classmethod
+    def _from_factory(
+        cls: Type[_E],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _E:
+        obj: _E = object.__new__(cls)
+        obj._data = factory.create_pyarrow_list()
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        obj._indices_to_values = cls._create_indices_to_values(
+            schema.to_builtin().values,  # type: ignore[attr-defined]
+            obj._data._patype,  # pylint: disable=protected-access
+        )
+        return obj
+
+    @classmethod
+    def _from_pyarrow(
+        cls: Type[_E],
+        array: pa.Array,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _E:
+        obj: _E = object.__new__(cls)
+        obj._data = PyArrowPagingList.from_pyarrow(array)
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        obj._indices_to_values = cls._create_indices_to_values(
+            schema.to_builtin().values,  # type: ignore[attr-defined]
+            obj._data._patype,  # pylint: disable=protected-access
+        )
+        return obj
+
+    @staticmethod
+    def _create_indices_to_values(
+        enum_values: List[Union[int, float, str, bool, None]], patype: pa.DataType
+    ) -> Dict[Optional[pa.Scalar], Union[int, float, str, bool, None]]:
+        indices_to_values = dict(
+            zip(
+                pa.array(range(len(enum_values)), patype),  # pylint: disable=protected-access
+                enum_values,
+            )
+        )
+        if None not in indices_to_values:
+            indices_to_values[pa.scalar(None, patype)] = None
+        return indices_to_values
+
+    def to_pylist(self) -> List[Any]:
+        """Convert the Series to a python list.
+
+        Returns:
+            The python list representing the Series.
+
+        """
+        return [self._indices_to_values[i] for i in self._data]
