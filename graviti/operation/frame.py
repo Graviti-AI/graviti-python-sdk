@@ -146,7 +146,9 @@ class AddData(DataOperation):
             file_pbar: The process bar for uploading binary files.
 
         """
-        data = self._data.to_pylist()
+        data = self._data._to_request_data(  # pylint: disable=protected-access
+            need_record_key=False
+        )
 
         for batch, *file_arrays in zip(
             *map(
@@ -270,7 +272,7 @@ class UpdateData(DataOperation):
             file_pbar: The process bar for uploading binary files.
 
         """
-        data = self._data._to_patch_data()  # pylint: disable=protected-access
+        data = self._data._to_request_data()  # pylint: disable=protected-access
 
         for batch, *file_arrays in zip(
             *map(

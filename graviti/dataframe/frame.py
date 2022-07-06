@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, T
 import pyarrow as pa
 
 import graviti.portex as pt
-from graviti.dataframe.column.series import ArraySeries, FileSeries
+from graviti.dataframe.column.series import ArraySeries, EnumSeries, FileSeries
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
 from graviti.dataframe.container import Container
@@ -339,19 +339,31 @@ class DataFrame(Container):
         for key, value in self._columns.items():
             value._extend(values[key])  # pylint: disable=protected-access
 
-    def _to_patch_data(self) -> List[Dict[str, Any]]:
-        patch_data = []
+    def _to_request_data(self, need_record_key: bool = True) -> List[Dict[str, Any]]:
         column_names = self.schema.keys()
-        for record_key, values in zip(
-            self._record_key.to_pylist(),  # type: ignore[union-attr]
-            zip(*(column.to_pylist() for column in self._columns.values())),
-        ):
-            row_patch_data = dict(zip(column_names, values))
-            for name in self._name:
-                row_patch_data = {name: row_patch_data}
-            row_patch_data[RECORD_KEY] = record_key
-            patch_data.append(row_patch_data)
-        return patch_data
+        if need_record_key:
+            patch_data = []
+            for record_key, values in zip(
+                # pylint: disable=protected-access
+                self._record_key._to_request_data(),  # type: ignore[union-attr]
+                zip(*(column._to_request_data() for column in self._columns.values())),
+            ):
+                row_patch_data = dict(zip(column_names, values))
+                for name in self._name:
+                    row_patch_data = {name: row_patch_data}
+                row_patch_data[RECORD_KEY] = record_key
+                patch_data.append(row_patch_data)
+            return patch_data
+
+        return [
+            dict(zip(column_names, values))
+            for values in zip(
+                *(
+                    column._to_request_data()  # pylint: disable=protected-access
+                    for column in self._columns.values()
+                )
+            )
+        ]
 
     def _set_item_by_slice(self, key: slice, value: "DataFrame") -> None:
         for name, column in self._columns.items():
@@ -708,6 +720,13 @@ class DataFrame(Container):
             )
         if container == FileSeries:
             return DataFrame._process_file(value)
+        if container == EnumSeries:
+            values_to_indices: Dict[Union[int, float, str, bool, None], Optional[int]] = {
+                k: v for v, k in enumerate(schema.to_builtin().values)  # type: ignore[attr-defined]
+            }
+            if None not in values_to_indices:
+                values_to_indices[None] = None
+            return lambda x: values_to_indices[x], True
 
         return lambda x: x, False
 
