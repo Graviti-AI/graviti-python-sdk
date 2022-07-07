@@ -53,6 +53,15 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
 
         self.__dict__.update(arguments)
 
+    def _get_column_count(self) -> int:
+        """Get the total column count of the portex type.
+
+        Returns:
+            The total column count.
+
+        """
+        return self.to_builtin()._get_column_count()  # pylint: disable=protected-access
+
     @property
     def internal_type(self) -> PortexType:
         """Get the internal type of the PortexExternalType.

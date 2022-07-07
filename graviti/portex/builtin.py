@@ -409,6 +409,15 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
             getattr(pyarrow_type, "list_size", None),
         )
 
+    def _get_column_count(self) -> int:
+        """Get the total column count of the portex type.
+
+        Returns:
+            The total column count.
+
+        """
+        return self.items._get_column_count()  # pylint: disable=protected-access
+
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 

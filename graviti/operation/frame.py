@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from graviti.dataframe import Container, DataFrame
 
 _MAX_BATCH_SIZE = 2048
+_MAX_ITEMS = 60000
 
 
 class DataFrameOperation:
@@ -61,6 +62,12 @@ class AddData(DataFrameOperation):
     def __init__(self, data: "DataFrame") -> None:
         self.data = data
 
+    def _get_max_batch_size(self) -> int:
+        return min(
+            _MAX_BATCH_SIZE,
+            _MAX_ITEMS // self.data.schema._get_column_count(),  # pylint: disable=protected-access
+        )
+
     def do(  # pylint: disable=invalid-name
         self,
         access_key: str,
@@ -89,7 +96,7 @@ class AddData(DataFrameOperation):
         data = dataframe.to_pylist()
 
         for batch, *file_arrays in zip(
-            *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
+            *map(lambda x: chunked(x, self._get_max_batch_size()), (data, *arrays))  # type: ignore[arg-type]
         ):
             for file_array in file_arrays:
                 local_files = filter(lambda x: isinstance(x, File), file_array)
@@ -175,6 +182,12 @@ class UpdateData(DataFrameOperation):
     def __init__(self, data: "DataFrame") -> None:
         self.data = data
 
+    def _get_max_batch_size(self) -> int:
+        return min(
+            _MAX_BATCH_SIZE,
+            _MAX_ITEMS // self.data.schema._get_column_count(),  # pylint: disable=protected-access
+        )
+
     def do(  # pylint: disable=invalid-name
         self,
         access_key: str,
@@ -203,7 +216,7 @@ class UpdateData(DataFrameOperation):
         data = dataframe._to_patch_data()  # pylint: disable=protected-access
 
         for batch, *file_arrays in zip(
-            *map(lambda x: chunked(x, _MAX_BATCH_SIZE), (data, *arrays))  # type: ignore[arg-type]
+            *map(lambda x: chunked(x, self._get_max_batch_size()), (data, *arrays))  # type: ignore[arg-type]
         ):
             for file_array in file_arrays:
                 local_files = filter(lambda x: isinstance(x, File), file_array)
