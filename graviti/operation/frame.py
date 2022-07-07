@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from graviti.dataframe import DataFrame, FileSeries
 
 _MAX_BATCH_SIZE = 2048
+_MAX_ITEMS = 60000
 
 
 class DataFrameOperation:
@@ -82,6 +83,12 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
     def __init__(self, data: "DataFrame") -> None:
         self._data = data
 
+    def _get_max_batch_size(self) -> int:
+        return min(
+            _MAX_BATCH_SIZE,
+            _MAX_ITEMS // self._data.schema._get_column_count(),  # pylint: disable=protected-access
+        )
+
     def get_file_arrays(self) -> List["FileSeries"]:
         """Get the list of FileSeries.
 
@@ -143,7 +150,7 @@ class AddData(DataOperation):
 
         for batch, *file_arrays in zip(
             *map(
-                lambda x: chunked(x, _MAX_BATCH_SIZE),  # type: ignore[arg-type]
+                lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
                 (data, *self.get_file_arrays()),
             )
         ):
@@ -267,7 +274,7 @@ class UpdateData(DataOperation):
 
         for batch, *file_arrays in zip(
             *map(
-                lambda x: chunked(x, _MAX_BATCH_SIZE),  # type: ignore[arg-type]
+                lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
                 (data, *self.get_file_arrays()),
             )
         ):

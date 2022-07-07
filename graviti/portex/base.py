@@ -65,6 +65,15 @@ class PortexType:
 
         return f"{lines[0]})"
 
+    def _get_column_count(self) -> int:  # pylint: disable=no-self-use
+        """Get the total column count of the portex type.
+
+        Returns:
+            The total column count.
+
+        """
+        return 1
+
     @property
     def imports(self) -> Imports:
         """Get the PortexType imports.
@@ -239,6 +248,18 @@ class PortexRecordBase(
     @property
     def _data(self) -> "ConnectedFields":  # type: ignore[override]
         return self._fields_factory({name: getattr(self, name) for name in self.params})
+
+    def _get_column_count(self) -> int:
+        """Get the total column count of the record base type.
+
+        Returns:
+            The total column count.
+
+        """
+        return sum(
+            portex_type._get_column_count()  # pylint: disable=protected-access
+            for portex_type in self._data.values()
+        )
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
