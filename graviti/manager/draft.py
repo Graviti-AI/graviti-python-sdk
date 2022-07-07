@@ -12,6 +12,7 @@ from tqdm import tqdm
 from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
+from graviti.manager.commit import Commit
 from graviti.manager.common import ALL_BRANCHES, CURRENT_BRANCH, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
@@ -47,6 +48,9 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         updated_at: The time of last update.
         description: The draft description.
 
+    Attributes:
+        parent: The parent of the draft.
+
     """
 
     _repr_attrs: Tuple[str, ...] = ("state", "branch", "creator", "created_at", "updated_at")
@@ -70,7 +74,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.title = title
         self.branch = branch
         self.state = state
-        self.parent_commit_id = parent_commit_id
+        self.parent = None if parent_commit_id is None else Commit(dataset, parent_commit_id)
         self.creator = creator
         self.created_at = convert_iso_to_datetime(created_at)
         self.updated_at = convert_iso_to_datetime(updated_at)
