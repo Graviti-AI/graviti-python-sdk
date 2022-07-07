@@ -20,6 +20,7 @@ from graviti.portex.param import Param, Params, param
 from graviti.portex.register import PyArrowConversionRegister
 
 builtins = packages.builtins
+_E = Union[int, float, str, bool, None]
 
 
 class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
@@ -321,10 +322,10 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
-    values: List[str] = param(ptype=PTYPE.Enum)
+    values: List[_E] = param(ptype=PTYPE.Enum)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def __init__(self, values: Iterable[str], nullable: bool = False) -> None:
+    def __init__(self, values: Iterable[_E], nullable: bool = False) -> None:
         self.values = PTYPE.Enum.check(values)
         super().__init__(nullable=nullable)
 
@@ -335,7 +336,14 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
             The corresponding builtin PyArrow DataType.
 
         """
-        return pa.dictionary(pa.int32(), pa.string())
+        length = len(self.values)
+        if length < 128:
+            return pa.int8()
+
+        if length < 32768:
+            return pa.int16()
+
+        return pa.int32()
 
 
 @PyArrowConversionRegister(
