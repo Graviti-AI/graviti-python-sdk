@@ -210,8 +210,8 @@ def _on_fixed_shape_list(names, namespace, name, _pa_ist: tensor) -> AvroFixedAr
     return AvroFixedArraySchema(items=items, shape=_pa_ist.shape)
 
 
-def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroSchema:
-    return AvroEnumSchema(namespace, name, _filed.values)
+def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchema:
+    return AvroPrimitiveSchema("int")
 
 
 def _on_type(names, namespace, name, _type_index, _portex_type):

@@ -5,7 +5,6 @@
 """Parameter type releated classes."""
 
 
-import re
 from typing import Any as TypingAny
 from typing import ClassVar, Dict, Iterable, List
 from typing import Mapping as TypingMapping
@@ -130,7 +129,7 @@ class Enum(ParameterType):
     """Parameter type for Portex enum values."""
 
     @staticmethod
-    def check(arg: TypingAny) -> List[str]:
+    def check(arg: TypingAny) -> List[Union[int, float, str, bool, None]]:
         """Check and transfer the parameter type.
 
         Arguments:
@@ -139,7 +138,6 @@ class Enum(ParameterType):
         Raises:
             TypeError: When the argument is not iterable or
                 the value of the input argument is not string type.
-            ValueError: When the value of the input argument does not fit the pattern.
 
         Returns:
             A list of enum values created by the input argument.
@@ -150,13 +148,9 @@ class Enum(ParameterType):
 
         values = list(arg)
         for value in values:
-            if not isinstance(value, str):
-                raise TypeError("The value of enum must be of string type")
+            if not isinstance(value, (str, int, float, bool, type(None))):
+                raise TypeError("The value of enum must be string, int, float, bool or None type")
 
-            if re.match("[A-Za-z_][A-Za-z0-9_]*$", value) is None:
-                raise ValueError(
-                    "The value of enum type must match the format [A-Za-z_][A-Za-z0-9_]*"
-                )
         return values
 
 
