@@ -7,6 +7,8 @@
 
 from typing import TYPE_CHECKING, Any, Iterable, Union, overload
 
+from graviti.dataframe.column.series import Series as ColumnSeries
+from graviti.operation import UpdateData
 from graviti.utility import NestedDict
 
 if TYPE_CHECKING:
@@ -66,6 +68,16 @@ class DataFrameILocIndexer:
             raise TypeError("The schema of the given DataFrame is mismatched")
 
         self.obj._set_item_by_slice(key, value)
+        if self.obj.operations is not None:
+            dataframe = value.copy()
+            _record_key = self.obj._record_key
+            # TODO: support slicing methods for record_key
+            record_key = [
+                _record_key[i]  # type: ignore[index]
+                for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
+            ]
+            dataframe._record_key = ColumnSeries(record_key)
+            self.obj.operations.append(UpdateData(dataframe))
 
 
 class DataFrameLocIndexer:
@@ -120,3 +132,13 @@ class DataFrameLocIndexer:
             raise TypeError("The schema of the given DataFrame is mismatched")
 
         self.obj._set_item_by_slice(key, value)
+        if self.obj.operations is not None:
+            dataframe = value.copy()
+            _record_key = self.obj._record_key
+            # TODO: support slicing methods for record_key
+            record_key = [
+                _record_key[i]  # type: ignore[index]
+                for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
+            ]
+            dataframe._record_key = ColumnSeries(record_key)
+            self.obj.operations.append(UpdateData(dataframe))
