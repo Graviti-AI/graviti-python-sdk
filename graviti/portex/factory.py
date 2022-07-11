@@ -390,6 +390,11 @@ class FieldFactory(Factory):
 
     def __init__(self, decl: Dict[str, Any], imports: Imports) -> None:
         self.creator: Callable[..., Tuple[str, PortexType]]
+        if "+" in decl and len(decl) == 1:
+            raise ValueError(
+                "Use object unpack for entire record field is not allowed. "
+                "Please use list unpack for fields"
+            )
 
         item = decl.copy()
         keys = {}

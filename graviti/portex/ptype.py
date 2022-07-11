@@ -154,60 +154,6 @@ class Enum(ParameterType):
         return values
 
 
-class Field(ParameterType):
-    """Parameter type for Portex record field."""
-
-    @staticmethod
-    def check(arg: TypingAny) -> Tuple[str, ClassPortexType]:
-        """Check and transfer the parameter type.
-
-        Arguments:
-            arg: The argument which needs to be checked.
-
-        Raises:
-            TypeError: When the input argument is not a tuple of a str and a PortexType.
-
-        Returns:
-            A tuple of str and PortexType created by the input argument.
-
-        """
-        name, portex_type = arg
-        if isinstance(name, str) and isinstance(portex_type, ClassPortexType):
-            return name, portex_type
-
-        raise TypeError("Argument should be a tuple of a str and a PortexType")
-
-    @staticmethod
-    def load(
-        content: Dict[str, TypingAny], imports: Optional[Imports] = None
-    ) -> Tuple[str, ClassPortexType]:
-        """Create Portex field instance from python dict.
-
-        Arguments:
-            content: A python dict representing a Portex field.
-            imports: The imports of the Portex field.
-
-        Returns:
-            A tuple of name and PortexType created from the input python dict.
-
-        """
-        return content["name"], ClassPortexType.from_pyobj(content, imports)
-
-    @staticmethod
-    def dump(arg: Tuple[str, ClassPortexType]) -> Dict[str, TypingAny]:
-        """Dump the input Portex field instance to a python dict.
-
-        Arguments:
-            arg: A tuple of name and PortexType.
-
-        Returns:
-            A Python dict representation of the Portex field.
-
-        """
-        name, portex_type = arg
-        return {"name": name, **portex_type.to_pyobj(False)}
-
-
 class Fields(ParameterType):
     """Parameter type for Portex record fields."""
 
