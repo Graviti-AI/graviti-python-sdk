@@ -418,7 +418,7 @@ class FieldFactory(Factory):
             The applied tuple of name and PortexType.
 
         """
-        if self._condition(kwargs) is None:
+        if not self._condition(kwargs):
             return None
 
         return self._name_factory(kwargs), self._type_factory(kwargs)
