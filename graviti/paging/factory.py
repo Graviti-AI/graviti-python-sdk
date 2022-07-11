@@ -30,11 +30,11 @@ class LazyFactoryBase:
         except KeyError:
             return False
 
-    def create_list(self, converter: Callable[[pa.Array], Tuple[Any, ...]]) -> PagingList:
+    def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
         """Create a paging list from the factory.
 
         Arguments:
-            converter: A callable object to convert pyarrow array to python tuple.
+            mapper: A callable object to convert every item in the pyarrow array.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -143,17 +143,17 @@ class LazyFactory(LazyFactoryBase):
 
         return array
 
-    def create_list(self, converter: Callable[[pa.Array], Tuple[Any, ...]]) -> PagingList:
+    def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
         """Create a paging list from the factory.
 
         Arguments:
-            converter: A callable object to convert pyarrow array to python tuple.
+            mapper: A callable object to convert every item in the pyarrow array.
 
         Returns:
             A paging list created from the factory.
 
         """
-        return PagingList.from_factory(self, (), converter)
+        return PagingList.from_factory(self, (), mapper)
 
     def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
@@ -204,17 +204,17 @@ class LazySubFactory(LazyFactoryBase):
     def __getitem__(self, key: str) -> "LazySubFactory":
         return LazySubFactory(self._factory, self._keys + (key,), self._patype[key].type)
 
-    def create_list(self, converter: Callable[[pa.Array], Tuple[Any, ...]]) -> PagingList:
+    def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
         """Create a paging list from the factory.
 
         Arguments:
-            converter: A callable object to convert pyarrow array to python tuple.
+            mapper: A callable object to convert every item in the pyarrow array.
 
         Returns:
             A paging list created from the factory.
 
         """
-        return PagingList.from_factory(self._factory, self._keys, converter)
+        return PagingList.from_factory(self._factory, self._keys, mapper)
 
     def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.

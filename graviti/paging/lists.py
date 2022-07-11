@@ -26,7 +26,7 @@ from typing import (
 import pyarrow as pa
 
 from graviti.paging.offset import Offsets
-from graviti.paging.page import LazyPage, Page, PageBase
+from graviti.paging.page import LazyPage, MappedLazyPage, Page, PageBase
 
 if TYPE_CHECKING:
     from graviti.paging.factory import LazyFactory
@@ -322,14 +322,14 @@ class PagingList(PagingListBase):
         cls: Type[_PL],
         factory: "LazyFactory",
         keys: Tuple[str, ...],
-        converter: Callable[[pa.Array], Tuple[Any, ...]],
+        mapper: Callable[[Any], Any],
     ) -> _PL:
         """Create PagingList from LazyFactory.
 
         Arguments:
             factory: The parent :class:`LazyFactory` instance.
             keys: The keys to access the array from factory.
-            converter: A callable object to convert pyarrow array to python tuple.
+            mapper: A callable object to convert every item in the pyarrow array.
 
         Returns:
             The PagingList instance created from given factory.
@@ -337,11 +337,10 @@ class PagingList(PagingListBase):
         """
         obj: _PL = object.__new__(cls)
 
-        def get_array(pos: int) -> Sequence[Any]:
-            return converter(factory.get_array(pos, keys))
+        array_getter = partial(factory.get_array, keys=keys)
 
         obj._pages = [
-            LazyPage(ranging, pos, get_array)
+            MappedLazyPage(ranging, pos, array_getter, mapper)
             for pos, ranging in enumerate(factory.get_page_ranges())
         ]
         obj._offsets = factory.get_offsets()

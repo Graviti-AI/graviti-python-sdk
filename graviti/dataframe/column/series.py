@@ -6,6 +6,7 @@
 """The implementation of the Graviti Series."""
 
 
+from functools import partial
 from itertools import islice
 from typing import (
     TYPE_CHECKING,
@@ -481,9 +482,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
         obj: _A = object.__new__(cls)
-        obj._data = factory.create_list(
-            lambda array: tuple(_item_creator(item.values, _item_schema) for item in array)
-        )
+        obj._data = factory.create_list(partial(_item_creator, schema=_item_schema))
         obj.schema = schema
         obj._root = root
         obj._item_schema = _item_schema  # pylint: disable=protected-access
