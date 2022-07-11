@@ -390,7 +390,7 @@ def get_policy(
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The sheet name.
-        is_internal: Whether to return the intranet upload address, the default value i
+        is_internal: Whether to return the intranet upload address, the default value in
             the OpenAPI is False.
         expired: Token expiry time in seconds. It cannot be negative. The default value in
             the OpenAPI is 60. If it is greater than 300, it will be processed as 300.
