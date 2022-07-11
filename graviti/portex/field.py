@@ -49,6 +49,14 @@ class FrozenFields(FrozenNameOrderedDict[PortexType]):
         if not isinstance(value, PortexType):
             raise TypeError(f'The value in "{cls.__name__}" should be a PortexType')
 
+    @classmethod
+    def _check_key(cls, key: str) -> None:
+        super()._check_key(key)
+        if not key.lower() == key:
+            raise ValueError(
+                f'All cased characters in the key of "{cls.__name__}" should be lowercase'
+            )
+
     def _setitem(self, key: str, value: PortexType) -> None:
         self._check_value(value)
         super()._setitem(key, value)
