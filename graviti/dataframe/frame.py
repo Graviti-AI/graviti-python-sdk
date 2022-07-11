@@ -341,11 +341,12 @@ class DataFrame(Container):
 
     def _to_patch_data(self) -> List[Dict[str, Any]]:
         patch_data = []
+        column_names = self.schema.keys()
         for record_key, values in zip(
             self._record_key.to_pylist(),  # type: ignore[union-attr]
             zip(*(column.to_pylist() for column in self._columns.values())),
         ):
-            row_patch_data = dict(zip(self.schema, values))
+            row_patch_data = dict(zip(column_names, values))
             for name in self._name:
                 row_patch_data = {name: row_patch_data}
             row_patch_data[RECORD_KEY] = record_key
@@ -780,8 +781,9 @@ class DataFrame(Container):
             The python list representing the DataFrame.
 
         """
+        column_names = self.schema.keys()
         return [
-            dict(zip(self.schema, values))
+            dict(zip(column_names, values))
             for values in zip(*(column.to_pylist() for column in self._columns.values()))
         ]
 
