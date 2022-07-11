@@ -5,7 +5,7 @@
 
 """Page related class."""
 
-from typing import Callable, Iterator, Optional, Sequence, TypeVar, Union, overload
+from typing import Any, Callable, Iterator, Optional, Sequence, TypeVar, Union, overload
 
 _T = TypeVar("_T")
 
@@ -240,6 +240,91 @@ class LazySlicedPage(LazyPage[_T]):
         if array is None:
             ranging = self._ranging
             array = self._array_getter(self._pos)[ranging.start : ranging.stop : ranging.step]
+
+            self._array = array
+            self._patch(array)
+
+        return array
+
+
+class MappedLazyPage(PageBase[_T]):
+    """LazyPage with a mapper for converting every item in the source array.
+
+    Arguments:
+        pos: The page number.
+        ranging: The range instance of this page.
+        array_getter: A callable object to get the source array.
+        mapper: A callable object to convert every item in the source array.
+
+    """
+
+    _array: Optional[Sequence[_T]] = None
+
+    def __init__(
+        self,
+        ranging: range,
+        pos: int,
+        array_getter: Callable[[int], Sequence[_T]],
+        mapper: Callable[[Any], Any],
+    ) -> None:
+        self._ranging = ranging
+        self._pos = pos
+        self._array_getter = array_getter
+        self._mapper = mapper
+
+    def get_slice(
+        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
+    ) -> "Union[MappedLazySlicedPage[_T], SlicedPage[_T]]":
+        """Return a lazy sliced page according to the given start and stop index.
+
+        Arguments:
+            start: The start index.
+            stop: The stop index.
+            step: The slice step.
+
+        Returns:
+            A sliced page according to the given start and stop index.
+
+        """
+        if self._array is not None:
+            return SlicedPage(self._ranging[start:stop:step], self._array)
+
+        return MappedLazySlicedPage(
+            self._ranging[start:stop:step], self._pos, self._array_getter, self._mapper
+        )
+
+    def get_array(self) -> Sequence[_T]:
+        """Get the array inside the page.
+
+        Returns:
+            The array inside the page.
+
+        """
+        array = self._array
+        if array is None:
+            array = self._array_getter(self._pos)
+            array = tuple(map(self._mapper, array))
+            self._array = array
+            self._patch(array)
+
+        return array
+
+
+class MappedLazySlicedPage(MappedLazyPage[_T]):
+    """LazySlicedPage with a mapper for converting every item in the source array."""
+
+    def get_array(self) -> Sequence[_T]:
+        """Get the array inside the page.
+
+        Returns:
+            The array inside the page.
+
+        """
+        array = self._array
+        if array is None:
+            ranging = self._ranging
+            array = self._array_getter(self._pos)[ranging.start : ranging.stop : ranging.step]
+            array = tuple(map(self._mapper, array))
 
             self._array = array
             self._patch(array)
