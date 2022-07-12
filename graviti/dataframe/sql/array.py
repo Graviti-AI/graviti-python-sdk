@@ -16,6 +16,7 @@ from graviti.dataframe.sql.container import (
 from graviti.dataframe.sql.scalar import (
     BooleanScalar,
     ComparisonArithmeticOperatorsMixin,
+    EnumScalar,
     LogicalOperatorsMixin,
     NumberScalar,
     RowSeries,
@@ -79,11 +80,38 @@ class BooleanScalarArray(ScalarArray, LogicalOperatorsMixin):
     item_container = BooleanScalar
 
 
-@SearchContainerRegister(pt.string, pt.enum)
+@SearchContainerRegister(pt.string)
 class StringScalarArray(ScalarArray, LogicalOperatorsMixin):
     """One-dimensional array for portex builtin type array with the string and enum items."""
 
     item_container = StringScalar
+
+
+@SearchContainerRegister(pt.enum)
+class EnumScalarArray(ScalarArray, LogicalOperatorsMixin):
+    """One-dimensional array for portex builtin type array with the string and enum items."""
+
+    item_container = EnumScalar
+
+    def __eq__(self, other: Any) -> BooleanScalarArray:  # type: ignore[override]
+        if isinstance(other, SearchScalarContainer):
+            expr = {"$eq": [self.expr, other.expr]}
+        else:
+            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+            if other in values:
+                other = values.index(other)
+            expr = {"$eq": [self.expr, other]}
+        return BooleanScalarArray(expr, pt.boolean(), self.upper_expr)
+
+    def __ne__(self, other: Any) -> BooleanScalarArray:  # type: ignore[override]
+        if isinstance(other, SearchScalarContainer):
+            expr = {"$ne": [self.expr, other.expr]}
+        else:
+            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+            if other in values:
+                other = values.index(other)
+            expr = {"$ne": [self.expr, other]}
+        return BooleanScalarArray(expr, pt.boolean(), self.upper_expr)
 
 
 @SearchContainerRegister(

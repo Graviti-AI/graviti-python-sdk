@@ -147,6 +147,30 @@ class StringScalar(SearchScalarContainer, LogicalOperatorsMixin):
     """One-dimensional array for portex builtin type string."""
 
 
+class EnumScalar(SearchScalarContainer):
+    """One-dimensional array for portex builtin type enum."""
+
+    def __eq__(self, other: Any) -> BooleanScalar:  # type: ignore[override]
+        if isinstance(other, SearchScalarContainer):
+            expr = {"$eq": [self.expr, other.expr]}
+        else:
+            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+            if other in values:
+                other = values.index(other)
+            expr = {"$eq": [self.expr, other]}
+        return BooleanScalar(expr)
+
+    def __ne__(self, other: Any) -> BooleanScalar:  # type: ignore[override]
+        if isinstance(other, SearchScalarContainer):
+            expr = {"$ne": [self.expr, other.expr]}
+        else:
+            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+            if other in values:
+                other = values.index(other)
+            expr = {"$ne": [self.expr, other]}
+        return BooleanScalar(expr)
+
+
 class RowSeries(SearchScalarContainer):
     """The One-dimensional array for the search."""
 
