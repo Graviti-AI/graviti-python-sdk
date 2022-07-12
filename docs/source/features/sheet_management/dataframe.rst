@@ -96,6 +96,36 @@ Read a DataFrame cell:
  Edit the DataFrame
 ********************
 
+Edit Rows
+=========
+
+Edit one row:
+
+.. code:: python
+
+   df.loc[0] = {"filename": "d.jpg"}
+
+Edit multiple rows:
+
+.. code:: python
+
+   df.loc[0:2] = [{"filename": "d.jpg"}, {"filename": "e.jpg"}]
+
+Edit the Items of Column
+========================
+
+Edit one item:
+
+.. code:: python
+
+   df[f"{COLUMN_NAME}"][0] = "d.jpg"
+
+Edit multiple items:
+
+.. code:: python
+
+   df[f"{COLUMN_NAME}"][0:2] = ["d.jpg", "e.jpg"]
+
 Extend Rows
 ===========
 
