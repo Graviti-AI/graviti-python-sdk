@@ -6,6 +6,7 @@
 
 
 from collections import OrderedDict
+from copy import deepcopy
 from inspect import Parameter, Signature
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
@@ -116,11 +117,8 @@ class Param(Parameter):
             ValueError: Raise when the argument is not in options.
 
         """
-        if arg == self.default:
-            try:
-                return self.ptype.load(arg)
-            except (TypeError, AttributeError):
-                return arg
+        if arg is self.default:
+            return deepcopy(arg)
 
         arg = self.ptype.check(arg)
         # https://github.com/PyCQA/pylint/issues/3045
