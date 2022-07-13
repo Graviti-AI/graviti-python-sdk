@@ -50,7 +50,8 @@ def create_dataset(
            "updated_at": "2021-03-03T18:58:10Z",
            "owner": "graviti-example",
            "is_public": false,
-           "config": "exampleConfigName"
+           "config": "exampleConfigName",
+           "backend_type": "OSS"
         }
 
     """
@@ -97,7 +98,8 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
            "updated_at": "2021-03-03T18:58:10Z",
            "owner": "graviti-example",
            "is_public": false,
-           "config": "exampleConfigName"
+           "config": "exampleConfigName",
+           "backend_type": "OSS"
         }
 
     """
@@ -138,7 +140,8 @@ def list_datasets(
                    "updated_at": "2021-03-03T18:58:10Z",
                    "owner": "graviti-example",
                    "is_public": false,
-                   "config": "exampleConfigName"
+                   "config": "exampleConfigName",
+                   "backend_type": "OSS"
                }
             ],
            "offset": 0,
@@ -203,7 +206,8 @@ def update_dataset(
            "updated_at": "2021-03-04T18:58:10Z",
            "owner": "graviti-example",
            "is_public": false,
-           "config": "exampleConfigName"
+           "config": "exampleConfigName",
+           "backend_type": "OSS"
         }
 
     """
