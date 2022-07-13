@@ -33,7 +33,7 @@ class ColumnSeriesILocIndexer:
         return self.obj._getitem_by_location(key)
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[Any]) -> None:
+    def __setitem__(self, key: slice, value: Union[Iterable[Any], "SeriesBase"]) -> None:
         ...
 
     @overload
@@ -43,9 +43,9 @@ class ColumnSeriesILocIndexer:
     def __setitem__(
         self,
         key: Union[int, slice],
-        value: Union[Iterable[Any], Any],
+        value: Union[Any, Iterable[Any], "SeriesBase"],
     ) -> None:
-        pass
+        self.obj.__setitem__(key, value)
 
 
 class ColumnSeriesLocIndexer:
@@ -70,7 +70,7 @@ class ColumnSeriesLocIndexer:
         return self.obj[key]
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[Any]) -> None:
+    def __setitem__(self, key: slice, value: Union[Iterable[Any], "SeriesBase"]) -> None:
         ...
 
     @overload
@@ -80,6 +80,6 @@ class ColumnSeriesLocIndexer:
     def __setitem__(
         self,
         key: Union[int, slice],
-        value: Union[Iterable[Any], Any],
+        value: Union[Any, Iterable[Any], "SeriesBase"],
     ) -> None:
-        pass
+        self.obj.__setitem__(key, value)
