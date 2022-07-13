@@ -5,6 +5,7 @@
 """Template factory releated classes."""
 
 
+from copy import deepcopy
 from itertools import groupby
 from typing import (
     Any,
@@ -106,7 +107,9 @@ class FrozenFieldsFactoryWrapper(Factory):
         return self._factory(self._kwargs_transformer(kwargs))
 
 
-UnionFieldsFactory = Union["VariableFactory", FrozenFieldsFactory, FrozenFieldsFactoryWrapper]
+UnionFieldsFactory = Union[
+    "VariableFactory", "ConstantFactory", FrozenFieldsFactory, FrozenFieldsFactoryWrapper
+]
 
 
 class ConnectedFieldsFactory:
@@ -132,10 +135,20 @@ class ConnectedFieldsFactory:
         factories: List[UnionFieldsFactory] = []
         for base_factory in class_._fields_factory._factories:
             if not isinstance(base_factory, VariableFactory):
-                factories.append(FrozenFieldsFactoryWrapper(base_factory, kwargs_transformer))
+                if isinstance(base_factory, ConstantFactory):
+                    factories.append(base_factory)
+                else:
+                    factories.append(FrozenFieldsFactoryWrapper(base_factory, kwargs_transformer))
                 continue
 
-            fields_decl = decl[base_factory.key]
+            key = base_factory.key
+            if key not in decl:
+                factories.append(
+                    ConstantFactory(FrozenFields(deepcopy(class_.params[key].default)))
+                )
+                continue
+
+            fields_decl = decl[key]
             if isinstance(fields_decl, str) and fields_decl.startswith("$"):
                 factories.append(VariableFactory(fields_decl[1:]))
                 continue
