@@ -96,7 +96,10 @@ class AddData(DataFrameOperation):
         data = dataframe.to_pylist()
 
         for batch, *file_arrays in zip(
-            *map(lambda x: chunked(x, self._get_max_batch_size()), (data, *arrays))  # type: ignore[arg-type]
+            *map(
+                lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
+                (data, *arrays),
+            )
         ):
             for file_array in file_arrays:
                 local_files = filter(lambda x: isinstance(x, File), file_array)
@@ -216,7 +219,10 @@ class UpdateData(DataFrameOperation):
         data = dataframe._to_patch_data()  # pylint: disable=protected-access
 
         for batch, *file_arrays in zip(
-            *map(lambda x: chunked(x, self._get_max_batch_size()), (data, *arrays))  # type: ignore[arg-type]
+            *map(
+                lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
+                (data, *arrays),
+            )
         ):
             for file_array in file_arrays:
                 local_files = filter(lambda x: isinstance(x, File), file_array)
