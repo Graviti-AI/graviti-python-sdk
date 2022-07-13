@@ -65,10 +65,20 @@ class Container:
     def _to_request_data(self, need_record_key: bool = True) -> List[Any]:
         raise NotImplementedError
 
-    # TODO: Defines a base indexer for the iloc return type.
+    # TODO: Defines a base indexer for the loc and iloc return type.
     @property
     def iloc(self) -> Any:
         """Purely integer-location based indexing for selection by position.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    @property
+    def loc(self) -> Any:
+        """Access the row by index.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.

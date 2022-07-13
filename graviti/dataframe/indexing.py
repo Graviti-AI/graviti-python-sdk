@@ -5,7 +5,7 @@
 
 """The implementation of the Graviti indexing related class."""
 
-from typing import TYPE_CHECKING, Any, Iterable, Union, overload
+from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union, overload
 
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.operation import UpdateData
@@ -23,18 +23,22 @@ class DataFrameILocIndexer:
         self.obj = obj
 
     # @overload
-    # def __getitem__(self, key: Union[Tuple[int, str], Iterable[bool], slice]) -> Any:
-    #     ...
-
-    # @overload
-    # def __getitem__(self, key: int) -> "RowSeries":
-    #     ...
-
-    # @overload
     # def __getitem__(self, key: Iterable[int]) -> "DataFrame":
     #     ...
 
+    @overload
+    def __getitem__(self, key: Tuple[int, str]) -> Any:
+        ...
+
+    @overload
     def __getitem__(self, key: int) -> "RowSeries":
+        ...
+
+    def __getitem__(self, key: Union[int, Tuple[int, str]]) -> Union[Any, "RowSeries"]:
+        if isinstance(key, tuple):
+            index, name = key
+            return self.obj[name].loc[index]
+
         return self.obj._getitem_by_location(key)
 
     @overload
@@ -87,18 +91,22 @@ class DataFrameLocIndexer:
         self.obj: "DataFrame" = obj
 
     # @overload
-    # def __getitem__(self, key: Union[Tuple[int, str], Iterable[bool], slice]) -> Any:
-    #     ...
-
-    # @overload
-    # def __getitem__(self, key: int) -> "RowSeries":
-    #     ...
-
-    # @overload
     # def __getitem__(self, key: Iterable[int]) -> "DataFrame":
     #     ...
 
+    @overload
+    def __getitem__(self, key: Tuple[int, str]) -> Any:
+        ...
+
+    @overload
     def __getitem__(self, key: int) -> "RowSeries":
+        ...
+
+    def __getitem__(self, key: Union[int, Tuple[int, str]]) -> Union[Any, "RowSeries"]:
+        if isinstance(key, tuple):
+            index, name = key
+            return self.obj[name].iloc[index]
+
         return self.obj._getitem_by_location(key)
 
     @overload

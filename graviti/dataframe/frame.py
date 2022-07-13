@@ -376,9 +376,7 @@ class DataFrame(Container):
         Allowed inputs are:
 
         - An integer, e.g. ``5``.
-        - A list or array of integers, e.g. ``[4, 3, 0]``.
-        - A slice object with ints, e.g. ``1:7``.
-        - A boolean array of the same length as the axis being sliced.
+        - A tuple, e.g. ``(5, "COLUMN_NAME")``
 
         Returns:
             The instance of the ILocIndexer.
@@ -389,23 +387,20 @@ class DataFrame(Container):
             col1    1
             col2    3
             Name: 0, dtype: int64
-            >>> df.iloc[[0]]
-               col1  col2
-            0     1     3
+            >>> df.iloc[0, "col1"]
+            1
 
         """
         return DataFrameILocIndexer(self)
 
     @property
     def loc(self) -> DataFrameLocIndexer:
-        """Access a group of rows and columns by indexes or a boolean array.
+        """Access the row by indexes.
 
         Allowed inputs are:
 
         - A single index, e.g. ``5``.
-        - A list or array of indexes, e.g. ``[4, 3, 0]``.
-        - A slice object with indexes, e.g. ``1:7``.
-        - A boolean array of the same length as the axis being sliced.
+        - A tuple, e.g. ``(5, "COLUMN_NAME")``
 
         Returns:
             The instance of the LocIndexer.
@@ -416,9 +411,8 @@ class DataFrame(Container):
             col1    1
             col2    3
             Name: 0, dtype: int64
-            >>> df.loc[[0]]
-               col1  col2
-            0     1     3
+            >>> df.loc[0, "col1"]
+            1
 
         """
         return DataFrameLocIndexer(self)
