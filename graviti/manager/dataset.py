@@ -17,6 +17,8 @@ from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
+    ObjectPolicy,
+    OSSObjectPolicy,
     create_dataset,
     delete_dataset,
     get_dataset,
@@ -41,6 +43,14 @@ class RevisionType(Enum):
     TAG = Tag
 
 
+class ObjectPolicyType(Enum):
+    """ObjectPolicyType is an enumeration type including "OSS", "S3" and "AZURE"."""
+
+    OSS = OSSObjectPolicy
+    S3 = ObjectPolicy
+    AZURE = ObjectPolicy
+
+
 class Dataset(  # pylint: disable=too-many-instance-attributes
     UserMutableMapping[str, DataFrame], ReprMixin
 ):
@@ -63,6 +73,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                     "owner": <str>
                     "is_public": <bool>
                     "config": <str>
+                    "backend_type": <str>
                 }
 
     Attributes:
@@ -76,6 +87,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         owner: The owner of the dataset.
         is_public: Whether the dataset is public.
         config: The config of dataset.
+        backend_type: The backend type of dataset storage.
 
     """
 
@@ -105,6 +117,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.owner = response["owner"]
         self.is_public = response["is_public"]
         self.config = response["config"]
+        self.object_policy = ObjectPolicyType[response["backend_type"]].value(self)
         self._data: Commit = Branch(self, response["default_branch"], response["commit_id"])
 
     def _repr_head(self) -> str:
