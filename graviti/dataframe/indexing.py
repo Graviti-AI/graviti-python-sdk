@@ -8,6 +8,7 @@
 from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union, overload
 
 from graviti.dataframe.column.series import Series as ColumnSeries
+from graviti.dataframe.column.series import SeriesBase
 from graviti.operation import UpdateData
 from graviti.utility import NestedDict
 
@@ -51,11 +52,31 @@ class DataFrameILocIndexer:
     ) -> None:
         ...
 
+    @overload
+    def __setitem__(self, key: Tuple[int, str], value: Any) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, key: Tuple[slice, str], value: Union[Iterable[Any], SeriesBase]) -> None:
+        ...
+
     def __setitem__(
         self,
-        key: Union[int, slice],
-        value: Union[NestedDict[str, Any], "DataFrame", Iterable[NestedDict[str, Any]]],
+        key: Union[int, slice, Tuple[int, str], Tuple[slice, str]],
+        value: Union[
+            NestedDict[str, Any],
+            "DataFrame",
+            Iterable[NestedDict[str, Any]],
+            Any,
+            Iterable[Any],
+            SeriesBase,
+        ],
     ) -> None:
+        if isinstance(key, tuple):
+            index, name = key
+            self.obj[name].loc[index] = value
+            return
+
         if isinstance(key, int):
             # pylint: disable=protected-access
             value = self.obj._from_pyarrow(
@@ -119,11 +140,31 @@ class DataFrameLocIndexer:
     ) -> None:
         ...
 
+    @overload
+    def __setitem__(self, key: Tuple[int, str], value: Any) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, key: Tuple[slice, str], value: Union[Iterable[Any], SeriesBase]) -> None:
+        ...
+
     def __setitem__(
         self,
-        key: Union[int, slice],
-        value: Union[NestedDict[str, Any], "DataFrame", Iterable[NestedDict[str, Any]]],
+        key: Union[int, slice, Tuple[int, str], Tuple[slice, str]],
+        value: Union[
+            NestedDict[str, Any],
+            "DataFrame",
+            Iterable[NestedDict[str, Any]],
+            Any,
+            Iterable[Any],
+            SeriesBase,
+        ],
     ) -> None:
+        if isinstance(key, tuple):
+            index, name = key
+            self.obj[name].iloc[index] = value
+            return
+
         if isinstance(key, int):
             # pylint: disable=protected-access
             value = self.obj._from_pyarrow(
