@@ -62,7 +62,7 @@ class Container:
     def _set_item_by_slice(self, key: slice, value: Any) -> None:
         raise NotImplementedError
 
-    def _to_request_data(self, need_record_key: bool = True) -> List[Any]:
+    def _to_post_data(self) -> List[Any]:
         raise NotImplementedError
 
     # TODO: Defines a base indexer for the loc and iloc return type.
