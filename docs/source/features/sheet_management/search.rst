@@ -115,6 +115,18 @@ SDK use ``any()`` to match points in rows where at least one category is boat:
    1  b.jpg     DataFrame(2, 3)
    2  c.jpg     DataFrame(2, 3)
 
+SDK use ``all()`` to match points in rows whose category are all boat:
+
+.. code:: python
+
+   >>> from graviti import engine
+   >>> with engine.online():
+   ...    result = df.query(lambda x: (x["points"]["category"]=="boat").all())
+   >>> result
+      filename  points
+   0  b.jpg     DataFrame(2, 3)
+   1  c.jpg     DataFrame(2, 3)
+
 *******
  Apply
 *******

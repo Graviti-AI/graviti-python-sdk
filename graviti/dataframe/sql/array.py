@@ -72,6 +72,16 @@ class ScalarArray(SearchContainer, LogicalOperatorsMixin):
         expr = {"$any_match": [self.upper_expr, self.expr]}
         return BooleanScalar(expr)
 
+    def all(self) -> "BooleanScalar":
+        """Whether all elements are True.
+
+        Returns:
+            The BooleanSeries with the all expression.
+
+        """
+        expr = {"$all_match": [self.upper_expr, self.expr]}
+        return BooleanScalar(expr)
+
 
 @SearchContainerRegister(pt.boolean)
 class BooleanScalarArray(ScalarArray, LogicalOperatorsMixin):
