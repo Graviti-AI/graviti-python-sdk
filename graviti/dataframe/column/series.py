@@ -391,7 +391,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return cls._from_pyarrow(array, schema)
 
-    def _to_request_data(self, need_record_key: bool = True) -> List[Any]:
+    def _to_post_data(self) -> List[Any]:
         return self.to_pylist()
 
 
@@ -545,6 +545,9 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         """
         return [item.to_pylist() for item in self._data]
 
+    def _to_post_data(self) -> List[Any]:
+        return [item._to_post_data() for item in self._data]  # pylint: disable=protected-access
+
 
 @pt.ExternalContainerRegister(
     "https://github.com/Project-OpenBytes/portex-standard",
@@ -577,7 +580,7 @@ class EnumSeries(Series):
     def __getitem__(self, key: int) -> Any:
         return self._indices_to_values[self._data[key]]
 
-    def _to_request_data(self, need_record_key: bool = True) -> List[int]:
+    def _to_post_data(self) -> List[int]:
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
     @classmethod

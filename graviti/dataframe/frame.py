@@ -339,27 +339,28 @@ class DataFrame(Container):
         for key, value in self._columns.items():
             value._extend(values[key])  # pylint: disable=protected-access
 
-    def _to_request_data(self, need_record_key: bool = True) -> List[Dict[str, Any]]:
+    def _to_patch_data(self) -> List[Dict[str, Any]]:
         column_names = self.schema.keys()
-        if need_record_key:
-            patch_data = []
-            for record_key, values in zip(
-                # pylint: disable=protected-access
-                self._record_key._to_request_data(),  # type: ignore[union-attr]
-                zip(*(column._to_request_data() for column in self._columns.values())),
-            ):
-                row_patch_data = dict(zip(column_names, values))
-                for name in self._name:
-                    row_patch_data = {name: row_patch_data}
-                row_patch_data[RECORD_KEY] = record_key
-                patch_data.append(row_patch_data)
-            return patch_data
+        patch_data = []
+        for record_key, values in zip(
+            # pylint: disable=protected-access
+            self._record_key._to_post_data(),  # type: ignore[union-attr]
+            zip(*(column._to_post_data() for column in self._columns.values())),
+        ):
+            row_patch_data = dict(zip(column_names, values))
+            for name in self._name:
+                row_patch_data = {name: row_patch_data}
+            row_patch_data[RECORD_KEY] = record_key
+            patch_data.append(row_patch_data)
+        return patch_data
 
+    def _to_post_data(self) -> List[Dict[str, Any]]:
+        column_names = self.schema.keys()
         return [
             dict(zip(column_names, values))
             for values in zip(
                 *(
-                    column._to_request_data()  # pylint: disable=protected-access
+                    column._to_post_data()  # pylint: disable=protected-access
                     for column in self._columns.values()
                 )
             )
