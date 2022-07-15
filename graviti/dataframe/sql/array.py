@@ -17,30 +17,45 @@ from graviti.dataframe.sql.scalar import (
     BooleanScalar,
     ComparisonArithmeticOperatorsMixin,
     EnumScalar,
-    LogicalOperatorsMixin,
     NumberScalar,
     RowSeries,
     StringScalar,
 )
 
 
-class ScalarArray(SearchContainer, LogicalOperatorsMixin):
-    """One-dimensional array for portex builtin type array."""
+class LogicalOperatorsMixin:
+    """A mixin for dynamically implementing logical operators."""
 
-    prefix = "$."
+    expr: Union[str, Dict[str, Any]]
+    schema: pt.PortexType
+    logical_operators: Dict[str, str] = {
+        "__eq__": "eq",
+        "__ne__": "ne",
+        "__and__": "and",
+        "__or__": "or",
+    }
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        for meth, opt in cls.logical_operators.items():
+            setattr(cls, meth, cls._get_logical_operator(opt))
 
     @classmethod
-    def _get_logical_operator(  # type: ignore[override]
-        cls, opt: str
-    ) -> Callable[["ScalarArray", Any], "ScalarArray"]:
-        def func(self: "ScalarArray", other: Any) -> "ScalarArray":
+    def _get_logical_operator(cls, opt: str) -> Callable[["ScalarArray", Any], "ScalarArray"]:
+        def func(self: "ScalarArray", other: Any) -> "BooleanScalarArray":
             if isinstance(other, SearchScalarContainer):
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
-            return cls(expr, pt.boolean(), self.upper_expr)
+            return BooleanScalarArray(expr, pt.boolean(), self.upper_expr)
 
         return func
+
+
+class ScalarArray(SearchContainer):
+    """One-dimensional array for portex builtin type array."""
+
+    prefix = "$."
 
     def query(self, func: Callable[[Any], Any]) -> "ScalarArray":
         """Query the data of an ArraySeries with a lambda function.
