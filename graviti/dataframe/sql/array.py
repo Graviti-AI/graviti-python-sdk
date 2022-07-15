@@ -113,7 +113,7 @@ class StringScalarArray(ScalarArray, LogicalOperatorsMixin):
 
 
 @SearchContainerRegister(pt.enum)
-class EnumScalarArray(ScalarArray, LogicalOperatorsMixin):
+class EnumScalarArray(ScalarArray):
     """One-dimensional array for portex builtin type array with the string and enum items."""
 
     item_container = EnumScalar
