@@ -176,7 +176,6 @@ class LazyPage(PageBase[_T]):
     """LazyPage is a placeholder when the paging list page is not loaded yet.
 
     Arguments:
-        pos: The page number.
         ranging: The range instance of this page.
         parent: The parent paging list.
 
@@ -184,11 +183,8 @@ class LazyPage(PageBase[_T]):
 
     _array: Optional[Sequence[_T]] = None
 
-    def __init__(
-        self, ranging: range, pos: int, array_getter: Callable[[int], Sequence[_T]]
-    ) -> None:
+    def __init__(self, ranging: range, array_getter: Callable[[], Sequence[_T]]) -> None:
         self._ranging = ranging
-        self._pos = pos
         self._array_getter = array_getter
 
     def get_slice(
@@ -208,7 +204,7 @@ class LazyPage(PageBase[_T]):
         if self._array is not None:
             return SlicedPage(self._ranging[start:stop:step], self._array)
 
-        return LazySlicedPage(self._ranging[start:stop:step], self._pos, self._array_getter)
+        return LazySlicedPage(self._ranging[start:stop:step], self._array_getter)
 
     def get_array(self) -> Sequence[_T]:
         """Get the array inside the page.
@@ -219,7 +215,7 @@ class LazyPage(PageBase[_T]):
         """
         array = self._array
         if array is None:
-            array = self._array_getter(self._pos)
+            array = self._array_getter()
             self._array = array
             self._patch(array)
 
@@ -239,7 +235,7 @@ class LazySlicedPage(LazyPage[_T]):
         array = self._array
         if array is None:
             ranging = self._ranging
-            array = self._array_getter(self._pos)[ranging.start : ranging.stop : ranging.step]
+            array = self._array_getter()[ranging.start : ranging.stop : ranging.step]
 
             self._array = array
             self._patch(array)
@@ -251,7 +247,6 @@ class MappedLazyPage(PageBase[_T]):
     """LazyPage with a mapper for converting every item in the source array.
 
     Arguments:
-        pos: The page number.
         ranging: The range instance of this page.
         array_getter: A callable object to get the source array.
         mapper: A callable object to convert every item in the source array.
@@ -263,12 +258,10 @@ class MappedLazyPage(PageBase[_T]):
     def __init__(
         self,
         ranging: range,
-        pos: int,
-        array_getter: Callable[[int], Sequence[_T]],
+        array_getter: Callable[[], Sequence[_T]],
         mapper: Callable[[Any], Any],
     ) -> None:
         self._ranging = ranging
-        self._pos = pos
         self._array_getter = array_getter
         self._mapper = mapper
 
@@ -290,7 +283,7 @@ class MappedLazyPage(PageBase[_T]):
             return SlicedPage(self._ranging[start:stop:step], self._array)
 
         return MappedLazySlicedPage(
-            self._ranging[start:stop:step], self._pos, self._array_getter, self._mapper
+            self._ranging[start:stop:step], self._array_getter, self._mapper
         )
 
     def get_array(self) -> Sequence[_T]:
@@ -302,7 +295,7 @@ class MappedLazyPage(PageBase[_T]):
         """
         array = self._array
         if array is None:
-            array = self._array_getter(self._pos)
+            array = self._array_getter()
             array = tuple(map(self._mapper, array))
             self._array = array
             self._patch(array)
@@ -323,7 +316,7 @@ class MappedLazySlicedPage(MappedLazyPage[_T]):
         array = self._array
         if array is None:
             ranging = self._ranging
-            array = self._array_getter(self._pos)[ranging.start : ranging.stop : ranging.step]
+            array = self._array_getter()[ranging.start : ranging.stop : ranging.step]
             array = tuple(map(self._mapper, array))
 
             self._array = array
