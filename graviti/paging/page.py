@@ -177,7 +177,7 @@ class LazyPage(PageBase[_T]):
 
     Arguments:
         ranging: The range instance of this page.
-        parent: The parent paging list.
+        array_getter: A callable object to get the source array.
 
     """
 

@@ -81,8 +81,8 @@ class LazyFactory(LazyFactoryBase):
         ...     ]
         ...
         >>> factory = LazyFactory(TOTAL_COUNT, 128, getter, patype)
-        >>> paths = factory["remotePath"].create_list()
-        >>> categories = factory["label"]["CLASSIFICATION"]["category"].create_list()
+        >>> paths = factory["remotePath"].create_pyarrow_list()
+        >>> categories = factory["label"]["CLASSIFICATION"]["category"].create_pyarrow_list()
         >>> len(paths)
         1000
         >>> list(paths)
