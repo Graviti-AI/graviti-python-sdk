@@ -100,7 +100,7 @@ class Page(PageBase[_T]):
 
     def get_slice(
         self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> "SlicedPage[_T]":
+    ) -> "LazySlicedPage[_T]":
         """Return a sliced page according to the given start and stop index.
 
         Arguments:
@@ -112,7 +112,7 @@ class Page(PageBase[_T]):
             A sliced page according to the given start and stop index.
 
         """
-        return SlicedPage(self._ranging[start:stop:step], self._array)
+        return LazySlicedPage(self._ranging[start:stop:step], self.get_array)
 
     def get_array(self) -> Sequence[_T]:
         """Get the array inside the page.
@@ -122,54 +122,6 @@ class Page(PageBase[_T]):
 
         """
         return self._array
-
-
-class SlicedPage(PageBase[_T]):
-    """SlicedPage is an array wrapper and represents a sliced page in paging list.
-
-    Arguments:
-        ranging: The range instance of this page.
-        array: The internal sequence of page.
-
-    """
-
-    _array: Optional[Sequence[_T]] = None
-
-    def __init__(self, ranging: range, source_array: Sequence[_T]) -> None:
-        self._ranging = ranging
-        self._source_array = source_array
-
-    def get_slice(
-        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> "SlicedPage[_T]":
-        """Return a sliced page according to the given start and stop index.
-
-        Arguments:
-            start: The start index.
-            stop: The stop index.
-            step: The slice step.
-
-        Returns:
-            A sliced page according to the given start and stop index.
-
-        """
-        return SlicedPage(self._ranging[start:stop:step], self._source_array)
-
-    def get_array(self) -> Sequence[_T]:
-        """Get the array inside the page.
-
-        Returns:
-            The array inside the page.
-
-        """
-        array = self._array
-        if array is None:
-            ranging = self._ranging
-            array = self._source_array[ranging.start : ranging.stop : ranging.step]
-            self._array = array
-            self._patch(array)
-
-        return array
 
 
 class LazyPage(PageBase[_T]):
@@ -189,7 +141,7 @@ class LazyPage(PageBase[_T]):
 
     def get_slice(
         self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> "Union[LazySlicedPage[_T], SlicedPage[_T]]":
+    ) -> "LazySlicedPage[_T]":
         """Return a lazy sliced page according to the given start and stop index.
 
         Arguments:
@@ -201,9 +153,6 @@ class LazyPage(PageBase[_T]):
             A sliced page according to the given start and stop index.
 
         """
-        if self._array is not None:
-            return SlicedPage(self._ranging[start:stop:step], self._array)
-
         return LazySlicedPage(self._ranging[start:stop:step], self._array_getter)
 
     def get_array(self) -> Sequence[_T]:
@@ -267,7 +216,7 @@ class MappedLazyPage(PageBase[_T]):
 
     def get_slice(
         self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> "Union[MappedLazySlicedPage[_T], SlicedPage[_T]]":
+    ) -> "Union[MappedLazySlicedPage[_T], LazySlicedPage[_T]]":
         """Return a lazy sliced page according to the given start and stop index.
 
         Arguments:
@@ -280,7 +229,7 @@ class MappedLazyPage(PageBase[_T]):
 
         """
         if self._array is not None:
-            return SlicedPage(self._ranging[start:stop:step], self._array)
+            return LazySlicedPage(self._ranging[start:stop:step], self.get_array)
 
         return MappedLazySlicedPage(
             self._ranging[start:stop:step], self._array_getter, self._mapper
