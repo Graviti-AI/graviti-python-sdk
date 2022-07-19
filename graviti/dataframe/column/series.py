@@ -244,7 +244,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:
         container = schema.container
         if value.__class__.__name__ == "DataFrame":
-            return lambda x: x.to_pylist(), True
+            return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
         if container == ArraySeries:
             return SeriesBase._process_array(
                 value, schema.to_builtin().items  # type: ignore[attr-defined]
