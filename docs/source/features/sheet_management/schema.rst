@@ -95,9 +95,6 @@ An enum type can be created by giving the values:
    >>> enum.values
    ['a', 'b', 'c']
 
-.. note::
-   The values of the enum type must be strings with the format ``[A-Za-z_][A-Za-z0-9_]*``.
-
 array
 =====
 
