@@ -65,19 +65,6 @@ Then users need to :ref:`features/sheet_management/dataframe:Initialize a DataFr
    1  b.jpg
    2  c.jpg
  
-Or getting a dataframe by copying other sheets:
-
-.. code:: python
-
-   >>> list(draft.keys())
-   ["train"]
-   >>> df2 = draft["train"].copy()
-   >>> df2
-      filename
-   0  a.jpg
-   1  b.jpg
-   2  c.jpg
-
 Next, users can create a new sheet:
 
 .. code:: python
