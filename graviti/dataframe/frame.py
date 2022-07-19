@@ -730,7 +730,7 @@ class DataFrame(Container):
         values: Iterable[Any], schema: pt.PortexType
     ) -> Tuple[Callable[[Any], Any], bool]:
         if isinstance(values, DataFrame):
-            return lambda x: x.to_pylist(), True
+            return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
 
         for value in values:
             if value is None:
