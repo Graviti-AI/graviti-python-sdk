@@ -15,8 +15,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type, TypeVar
 
 import yaml
 
-import graviti.portex.ptype as PTYPE
 from graviti.exception import GitCommandError, GitNotFoundError
+from graviti.portex import ptype as PTYPE
 from graviti.portex.base import PortexRecordBase
 from graviti.portex.external import PortexExternalType
 from graviti.portex.factory import ConnectedFieldsFactory, TypeFactory
