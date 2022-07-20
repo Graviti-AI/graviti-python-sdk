@@ -26,13 +26,14 @@ from typing import (
 import pyarrow as pa
 
 from graviti.paging.offset import Offsets
-from graviti.paging.page import LazyPage, MappedLazyPage, Page, PageBase
+from graviti.paging.page import LazyPage, MappedLazyPage, MappedPage, MappedPageBase, Page, PageBase
 
 if TYPE_CHECKING:
     from graviti.paging.factory import LazyFactory
 
 _PLB = TypeVar("_PLB", bound="PagingListBase")
 _PL = TypeVar("_PL", bound="PagingList")
+_MPL = TypeVar("_MPL", bound="MappedPagingList")
 _PPL = TypeVar("_PPL", bound="PyArrowPagingList")
 
 
@@ -343,6 +344,66 @@ class PagingList(PagingListBase):
         ]
         obj._offsets = factory.get_offsets()
 
+        return obj
+
+
+class MappedPagingList(PagingListBase):
+    """MappedPagingList is a list composed of multiple mapped pages."""
+
+    _pages: List[MappedPageBase[Any]]  # type: ignore[assignment]
+
+    def _init(self, array: Sequence[Any]) -> None:
+        length = len(array)
+        self._pages = [MappedPage(array)] if length != 0 else []
+        self._offsets = Offsets(length, length)
+
+    @classmethod
+    def from_factory(
+        cls: Type[_MPL],
+        factory: "LazyFactory",
+        keys: Tuple[str, ...],
+        mapper: Callable[[Any], Any],
+    ) -> _MPL:
+        """Create MappedPagingList from LazyFactory.
+
+        Arguments:
+            factory: The parent :class:`LazyFactory` instance.
+            keys: The keys to access the array from factory.
+            mapper: A callable object to convert every item in the pyarrow array.
+
+        Returns:
+            The PagingList instance created from given factory.
+
+        """
+        obj: _MPL = object.__new__(cls)
+
+        obj._pages = [
+            MappedLazyPage(ranging, partial(factory.get_array, pos, keys), mapper)
+            for pos, ranging in enumerate(factory.get_page_ranges())
+        ]
+        obj._offsets = factory.get_offsets()
+
+        return obj
+
+    def copy(  # type: ignore[override] # pylint: disable=arguments-differ
+        self: _MPL,
+        copier: Callable[[Any], Any],
+        mapper: Callable[[Any], Any],
+    ) -> _MPL:
+        """Return a copy of the paging list.
+
+        Arguments:
+            copier: A callable object to convert loaded items in the source page to the copied page.
+            mapper: The mapper of the new mapped page.
+
+        Returns:
+            A copy of the paging list.
+
+        """
+        obj: _MPL = object.__new__(self.__class__)
+        # pylint: disable=protected-access
+        obj._offsets = self._offsets.copy()
+        obj._pages = [page.copy(copier, mapper) for page in self._pages]
         return obj
 
 
