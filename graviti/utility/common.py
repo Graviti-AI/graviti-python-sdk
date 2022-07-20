@@ -99,3 +99,13 @@ def convert_datetime_to_gmt(utctime: datetime) -> str:
         f"{_WEEKS[utctime.weekday()]}, {utctime.day:02d} {_MONTHS[utctime.month - 1]}"
         f" {utctime.year:04d} {utctime.hour:02d}:{utctime.minute:02d}:{utctime.second:02d} GMT"
     )
+
+
+class ImageMocker:
+    """Raise import PIL error for data loader."""
+
+    def __init__(self, message: str) -> None:
+        self._message = message
+
+    def __getattribute__(self, name: str) -> Any:
+        raise ModuleNotFoundError(self._message)

@@ -27,6 +27,14 @@ class GravitiException(Exception):
         return self._message if self._message else ""
 
 
+class UtilityError(GravitiException):
+    """This is the base class for custom exceptions in Graviti utility module."""
+
+
+class ImageDecodeError(UtilityError):
+    """This class defines the exception for the image decode errors."""
+
+
 class PortexError(GravitiException):
     """This is the base class for custom exceptions in Graviti portex module."""
 

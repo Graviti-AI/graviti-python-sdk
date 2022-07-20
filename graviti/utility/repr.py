@@ -40,6 +40,8 @@ class ReprType(Enum):
 class ReprMixin:
     """ReprMixin provides customized repr config and method."""
 
+    __slots__ = ()
+
     _repr_type: ClassVar[ReprType] = ReprType.INSTANCE
     _repr_attrs: Iterable[str] = ()
     _repr_maxlevel = 1
