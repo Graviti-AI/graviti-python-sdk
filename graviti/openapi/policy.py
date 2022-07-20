@@ -6,9 +6,11 @@
 """Interfaces about the dataset policy."""
 
 import base64
-import hashlib
 import hmac
+import mimetypes
 from datetime import datetime, timezone
+from hashlib import sha1
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 from xml.etree import ElementTree
 
@@ -33,24 +35,64 @@ class ObjectPolicy:
 
     """
 
-    _get_policy: Optional[Dict[str, str]] = None
+    _get_policy: Optional[Dict[str, Any]] = None
+    _put_policy: Optional[Dict[str, Any]] = None
 
     def __init__(self, dataset: "Dataset") -> None:
         self._dataset = dataset
 
-    def _request_get_policy(self) -> Dict[str, str]:
+    def _request_policy(self, actions: str) -> Dict[str, str]:
         dataset = self._dataset
         return get_object_policy(  # type: ignore[no-any-return]
             dataset.access_key,
             dataset.url,
             dataset.owner,
             dataset.name,
-            actions="GET",
+            actions=actions,
             is_internal=config.is_internal,
             expired=_EXPIRED_IN_SECOND,
         )["policy"]
 
-    def _init_get_policy(self) -> Dict[str, str]:
+    def _clear_get_policy(self) -> None:
+        """Clear the get policy."""
+        delattr(self, "_get_policy")
+
+    def _clear_put_policy(self) -> None:
+        """Clear the put policy."""
+        delattr(self, "_put_policy")
+
+    def get_object(self, key: str, _allow_retry: bool = True) -> UserResponse:
+        """Get the object from graviti.
+
+        Arguments:
+            key: The key of the file.
+            _allow_retry: Whether requesting the get policy again is allowed.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    def put_object(self, key: str, path: Path, _allow_retry: bool = True) -> None:
+        """Put the object to OSS.
+
+        Arguments:
+            key: The key of the file.
+            path: The path of the file.
+            _allow_retry: Whether requesting the put policy again is allowed.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+
+class OSSObjectPolicy(ObjectPolicy):
+    """The basic structure of the object policy of the dataset stored in OSS."""
+
+    def _init_get_policy(self) -> Dict[str, Any]:
         """Initialize and return the get policy.
 
         Returns:
@@ -58,67 +100,70 @@ class ObjectPolicy:
 
         """
         if self._get_policy is None:
-            self._get_policy = self._request_get_policy()
+            get_policy: Dict[str, Any] = self._request_policy("GET")
+            get_policy["hmac"] = hmac.new(
+                get_policy["AccessKeySecret"].encode("utf-8"),
+                digestmod=sha1,
+            )
+            self._get_policy = get_policy
         return self._get_policy
 
-    def _clear_get_policy(self) -> None:
-        """Clear the get policy."""
-        delattr(self, "_get_policy")
+    def _init_put_policy(self) -> Dict[str, Any]:
+        """Initialize and return the put policy.
 
+        Returns:
+            The put policy.
 
-class OSSObjectPolicy(ObjectPolicy):
-    """The basic structure of the object policy of the dataset stored in oss."""
+        """
+        if self._put_policy is None:
+            put_policy: Dict[str, Any] = self._request_policy("PUT")
+            put_policy["hmac"] = hmac.new(
+                put_policy["AccessKeySecret"].encode("utf-8"),
+                digestmod=sha1,
+            )
+            self._put_policy = put_policy
+        return self._put_policy
 
-    _get_hmac: hmac.HMAC
-
-    def _request_get_policy(self) -> Dict[str, str]:
-        get_policy = super()._request_get_policy()
-        self._get_hmac = hmac.new(
-            get_policy["AccessKeySecret"].encode("utf-8"),
-            digestmod=hashlib.sha1,
-        )
-        return get_policy
-
-    def _get_authorization(
-        self,
-        policy: Dict[str, str],
+    @staticmethod
+    def _get_headers(
+        policy: Dict[str, Any],
         verb: str,
-        date: str,
         key: str,
-    ) -> str:
+    ) -> Dict[str, str]:
+        date = _from_datetime_to_gmt(datetime.now(timezone.utc))
         signature = (
             f"{verb}\n\n\n{date}\nx-oss-security-token:{policy['SecurityToken']}\n"
             f"/{policy['bucket']}/{key}"
         )
-        get_hmac = self._get_hmac.copy()
-        get_hmac.update(signature.encode("utf-8"))
-        signature = base64.b64encode(get_hmac.digest()).decode("utf-8")
-        return f"OSS {policy['AccessKeyId']}:{signature}"
+        _hmac = policy["hmac"].copy()
+        _hmac.update(signature.encode("utf-8"))
+        signature = base64.b64encode(_hmac.digest()).decode("utf-8")
+        authorization = f"OSS {policy['AccessKeyId']}:{signature}"
+
+        return {
+            "Authorization": authorization,
+            "x-oss-security-token": policy["SecurityToken"],
+            "Date": date,
+        }
 
     def get_object(self, key: str, _allow_retry: bool = True) -> UserResponse:
-        """Read the object from oss.
+        """Get the object from OSS.
 
         Arguments:
-            key: The object name of the remote file.
+            key: The key of the file.
             _allow_retry: Whether requesting the get policy again is allowed.
 
         Raises:
             ResponseError: If post response error.
 
         Returns:
-            The response of oss get object API.
+            The response of OSS get object API.
 
         """
         policy = self._init_get_policy()
-        date = _from_datetime_to_gmt(datetime.now(timezone.utc))
         verb = "GET"
 
-        authorization = self._get_authorization(policy, verb, date, key)
-        headers = {
-            "Authorization": authorization,
-            "x-oss-security-token": policy["SecurityToken"],
-            "Date": date,
-        }
+        headers = self._get_headers(policy, verb, key)
         url = f"https://{policy['bucket']}.{policy['endpoint']}/{key}"
 
         try:
@@ -129,6 +174,37 @@ class OSSObjectPolicy(ObjectPolicy):
             if _allow_retry and code in _OSS_RETRY_CODE:
                 self._clear_get_policy()
                 return self.get_object(key, False)
+            raise error from None
+
+    def put_object(self, key: str, path: Path, _allow_retry: bool = True) -> None:
+        """Put the object to OSS.
+
+        Arguments:
+            key: The key of the file.
+            path: The path of the file.
+            _allow_retry: Whether requesting the put policy again is allowed.
+
+        Raises:
+            ResponseError: If post response error.
+
+        """
+        policy = self._init_put_policy()
+        verb = "PUT"
+
+        headers: Dict[str, Any] = self._get_headers(policy, verb, key)
+        url = f"https://{policy['bucket']}.{policy['endpoint']}/{key}"
+        mime_type = mimetypes.guess_type(path)[0]
+        if mime_type is not None:
+            headers["Content-Type"] = mime_type
+
+        try:
+            with path.open("rb") as fp:
+                do(verb, url, headers=headers, data=fp)
+        except ResponseError as error:
+            code = ElementTree.fromstring(error.response.text)[0].text
+            if _allow_retry and code in _OSS_RETRY_CODE:
+                self._clear_put_policy()
+                self.put_object(key, path, False)
             raise error from None
 
 
