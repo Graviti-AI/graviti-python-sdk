@@ -11,7 +11,7 @@ from typing import Iterable, List, Mapping, Optional, Tuple, Type, TypeVar, Unio
 
 import pyarrow as pa
 
-import graviti.portex.ptype as PTYPE
+from graviti.portex import ptype as PTYPE
 from graviti.portex.base import PortexRecordBase, PortexType
 from graviti.portex.factory import ConnectedFieldsFactory
 from graviti.portex.field import Fields
