@@ -28,8 +28,7 @@ import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
 from graviti.operation import UpdateData
-from graviti.paging import LazyFactoryBase, PagingList, PyArrowPagingList
-from graviti.paging.lists import PagingListBase
+from graviti.paging import LazyFactoryBase, MappedPagingList, PagingListBase, PyArrowPagingList
 from graviti.utility import MAX_REPR_ROWS, FileBase
 
 if TYPE_CHECKING:
@@ -473,7 +472,7 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
 class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     """One-dimensional array for portex builtin type array."""
 
-    _data: PagingList
+    _data: MappedPagingList
     _item_schema: pt.PortexType
 
     def __getitem__(self, key: int) -> Any:
@@ -492,7 +491,9 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
         obj: _A = object.__new__(cls)
-        obj._data = factory.create_list(lambda scalar: _item_creator(scalar.values, _item_schema))
+        obj._data = factory.create_mapped_list(
+            lambda scalar: _item_creator(scalar.values, _item_schema)
+        )
         obj.schema = schema
         obj._root = root
         obj._item_schema = _item_schema  # pylint: disable=protected-access
@@ -513,7 +514,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
         obj: _A = object.__new__(cls)
-        obj._data = PagingList(_item_creator(item.values, _item_schema) for item in array)
+        obj._data = MappedPagingList(_item_creator(item.values, _item_schema) for item in array)
 
         obj.schema = schema
         obj._root = root
@@ -522,17 +523,29 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         return obj
 
-    # TODO: copy method will be implementated sooner.
-    # def copy(self: _A) -> _A:
-    #     """Get a copy of the series.
+    def _copy(
+        self: _A,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _A:
+        obj: _A = object.__new__(self.__class__)
 
-    #     Returns:
-    #         A copy of the series.
+        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
+        _item_schema = builtin_schema.items
+        _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
-    #     """
-    #     obj = super().copy()
+        obj.schema = schema
+        # pylint: disable=protected-access
+        obj._item_schema = _item_schema
+        obj._root = root
+        obj._data = self._data.copy(
+            lambda df: df._copy(_item_schema),
+            lambda scalar: _item_creator(scalar.values, _item_schema),
+        )
+        obj._name = name
 
-    #     return obj
+        return obj
 
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
