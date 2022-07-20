@@ -15,10 +15,9 @@ from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.common import LIMIT
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
+from graviti.manager.policy import ObjectPolicyManager, OSSObjectPolicyManager
 from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
-    ObjectPolicy,
-    OSSObjectPolicy,
     create_dataset,
     delete_dataset,
     get_dataset,
@@ -43,12 +42,12 @@ class RevisionType(Enum):
     TAG = Tag
 
 
-class ObjectPolicyType(Enum):
-    """ObjectPolicyType is an enumeration type including "OSS", "S3" and "AZURE"."""
+class ObjectPolicyManagerType(Enum):
+    """ObjectPolicyManagerType is an enumeration type including "OSS", "S3" and "AZURE"."""
 
-    OSS = OSSObjectPolicy
-    S3 = ObjectPolicy
-    AZURE = ObjectPolicy
+    OSS = OSSObjectPolicyManager
+    S3 = ObjectPolicyManager
+    AZURE = ObjectPolicyManager
 
 
 class Dataset(  # pylint: disable=too-many-instance-attributes
@@ -117,7 +116,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.owner = response["owner"]
         self.is_public = response["is_public"]
         self.config = response["config"]
-        self.object_policy = ObjectPolicyType[response["backend_type"]].value(self)
+        self.object_policy_manager = ObjectPolicyManagerType[response["backend_type"]].value(self)
         self._data: Commit = Branch(self, response["default_branch"], response["commit_id"])
 
     def _repr_head(self) -> str:

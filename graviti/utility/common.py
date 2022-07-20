@@ -12,6 +12,8 @@ from threading import Lock
 from typing import Any, Callable, DefaultDict, TypeVar
 
 _CallableWithoutReturnValue = TypeVar("_CallableWithoutReturnValue", bound=Callable[..., None])
+_WEEKS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 locks: DefaultDict[int, Lock] = defaultdict(Lock)
 
@@ -81,3 +83,19 @@ def convert_iso_to_datetime(iso: str) -> datetime:
 
     """
     return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+
+
+def convert_datetime_to_gmt(utctime: datetime) -> str:
+    """Convert datetime to gmt format string.
+
+    Arguments:
+        utctime: The datetime with utc timezone.
+
+    Returns:
+        The gmt format string.
+
+    """
+    return (
+        f"{_WEEKS[utctime.weekday()]}, {utctime.day:02d} {_MONTHS[utctime.month - 1]}"
+        f" {utctime.year:04d} {utctime.hour:02d}:{utctime.minute:02d}:{utctime.second:02d} GMT"
+    )

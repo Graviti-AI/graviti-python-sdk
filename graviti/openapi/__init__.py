@@ -17,7 +17,8 @@ from graviti.openapi.dataset import (
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
 from graviti.openapi.file import upload_files
-from graviti.openapi.policy import ObjectPolicy, OSSObjectPolicy
+from graviti.openapi.policy import get_object_policy
+from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
 from graviti.openapi.search import create_search
 from graviti.openapi.sheet import (
@@ -32,8 +33,6 @@ from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 
 __all__ = [
-    "ObjectPolicy",
-    "OSSObjectPolicy",
     "add_data",
     "commit_draft",
     "create_branch",
@@ -46,6 +45,7 @@ __all__ = [
     "delete_dataset",
     "delete_sheet",
     "delete_tag",
+    "do",
     "get_branch",
     "get_commit",
     "get_commit_sheet",
@@ -53,6 +53,7 @@ __all__ = [
     "get_dataset",
     "get_draft",
     "get_draft_sheet",
+    "get_object_policy",
     "get_revision",
     "get_tag",
     "list_branches",
