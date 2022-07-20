@@ -141,10 +141,10 @@ And all modifications on the dataset will be lost.
    >>> draft.commit("commit-4")
    Branch("dev")(
      (commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
-     (parent_commit_id): '1b21a40f03ab4cec814ec47ee0d10b24',
+     (parent): Commit("1b21a40f03ab4cec814ec47ee0d10b24"),
      (title): 'commit-4',
      (committer): 'graviti-example',
-     (committed_at): '2022-06-17T07:57:03Z'
+     (committed_at): 2022-07-21 04:23:45+00:00
    )
    >>> dataset.HEAD.name  # The version of the dataset has been updated to Branch("dev").
    "dev"
@@ -164,10 +164,10 @@ Users can avoid the automatic update by setting ``update_dataset_head`` to False
    >>> draft.commit("commit-5", update_dataset_head=False)
    Branch("dev")(
      (commit_id): '781007a41d1641859c87cb00f8e32bf3',
-     (parent_commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
+     (parent): Commit("3db73ac2876a42c0bf43a0489ce1756a"),
      (title): 'commit-5',
      (committer): 'graviti-example',
-     (committed_at): '2022-06-17T08:01:37Z'
+     (committed_at): 2022-07-21 04:24:45+00:00
    )
    >>> dataset.HEAD.name  # The version of the dataset has not been updated.
    "main"
