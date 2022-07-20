@@ -9,7 +9,7 @@ from collections import OrderedDict
 from inspect import Parameter, Signature
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
-import graviti.portex.ptype as PTYPE
+from graviti.portex import ptype as PTYPE
 from graviti.portex.package import Imports
 from graviti.utility import UserMapping
 

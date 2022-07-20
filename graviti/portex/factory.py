@@ -21,7 +21,7 @@ from typing import (
     Union,
 )
 
-import graviti.portex.ptype as PTYPE
+from graviti.portex import ptype as PTYPE
 from graviti.portex.base import PortexRecordBase, PortexType
 from graviti.portex.field import ConnectedFields, Fields, FrozenFields
 from graviti.portex.package import Imports
