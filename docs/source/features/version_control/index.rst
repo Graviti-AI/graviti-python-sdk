@@ -23,10 +23,10 @@ SDK supports viewing the version of the dataset through property
    >>> dataset.HEAD
    Branch("main")(
      (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): None,
+     (parent): None,
      (title): 'Commit-1',
      (committer): 'graviti-example',
-     (committed_at): '2022-05-26T02:57:00Z'
+     (committed_at): 2022-07-20 04:23:45+00:00
    )
    >>> dataset.HEAD.name
    "main"
@@ -51,18 +51,18 @@ Checkout the ``Branch("dev")``:
    >>> dataset.HEAD
    Branch("main")(
      (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-     (parent_commit_id): None,
+     (parent): None,
      (title): 'Commit-1',
      (committer): 'graviti-example',
-     (committed_at): '2022-05-26T02:57:00Z'
+     (committed_at): 2022-07-20 04:23:45+00:00
    )
    >>> dataset.checkout("dev")
    Branch("dev")(
      (commit_id): '781007a41d1641859c87cb00f8e32bf3',
-     (parent_commit_id): '3db73ac2876a42c0bf43a0489ce1756a',
+     (parent): Commit("3db73ac2876a42c0bf43a0489ce1756a"),
      (title): 'commit-5',
      (committer): 'graviti-example',
-     (committed_at): '2022-06-17T08:01:37Z'
+     (committed_at): 2022-07-19 04:23:45+00:00
    )
 
 Checkout the ``Tag("v1.0")``:
@@ -72,10 +72,10 @@ Checkout the ``Tag("v1.0")``:
    >>> dataset.checkout("v1.0")
    Tag("v1.0")(
      (commit_id): '2cd44960e0bf486c950536f7eeebc482',
-     (parent_commit_id): 'e8dc893eb2344b9a98bddce71a1c0eab',
+     (parent): Commit("e8dc893eb2344b9a98bddce71a1c0eab"),
      (title): 'commit-7',
      (committer): 'graviti-example',
-     (committed_at): '2022-06-09T09:34:46Z'
+     (committed_at): 2022-07-19 04:25:45+00:00
    )
 
 Checkout the ``Commit("2cd4496")``:
@@ -84,10 +84,10 @@ Checkout the ``Commit("2cd4496")``:
  
    >>> dataset.checkout("2cd44960e0bf486c950536f7eeebc482")
    Commit("2cd44960e0bf486c950536f7eeebc482")(
-     (parent_commit_id): 'e8dc893eb2344b9a98bddce71a1c0eab',
+     (parent): Commit("e8dc893eb2344b9a98bddce71a1c0eab"),
      (title): 'commit-7',
      (committer): 'graviti-example',
-     (committed_at): '2022-06-09T09:34:46Z'
+     (committed_at): 2022-07-19 04:25:45+00:00
    )
 
 **************
