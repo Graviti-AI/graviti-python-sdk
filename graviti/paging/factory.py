@@ -11,7 +11,7 @@ from typing import Any, Callable, Iterator, List, Optional, Tuple
 
 import pyarrow as pa
 
-from graviti.paging.lists import PagingList, PyArrowPagingList
+from graviti.paging.lists import MappedPagingList, PagingList, PyArrowPagingList
 from graviti.paging.offset import Offsets
 
 
@@ -31,6 +31,18 @@ class LazyFactoryBase:
             return False
 
     def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
+        """Create a paging list from the factory.
+
+        Arguments:
+            mapper: A callable object to convert every item in the pyarrow array.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    def create_mapped_list(self, mapper: Callable[[Any], Any]) -> MappedPagingList:
         """Create a paging list from the factory.
 
         Arguments:
@@ -155,6 +167,18 @@ class LazyFactory(LazyFactoryBase):
         """
         return PagingList.from_factory(self, (), mapper)
 
+    def create_mapped_list(self, mapper: Callable[[Any], Any]) -> MappedPagingList:
+        """Create a paging list from the factory.
+
+        Arguments:
+            mapper: A callable object to convert every item in the pyarrow array.
+
+        Returns:
+            A paging list created from the factory.
+
+        """
+        return MappedPagingList.from_factory(self, (), mapper)
+
     def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
 
@@ -215,6 +239,18 @@ class LazySubFactory(LazyFactoryBase):
 
         """
         return PagingList.from_factory(self._factory, self._keys, mapper)
+
+    def create_mapped_list(self, mapper: Callable[[Any], Any]) -> MappedPagingList:
+        """Create a paging list from the factory.
+
+        Arguments:
+            mapper: A callable object to convert every item in the pyarrow array.
+
+        Returns:
+            A paging list created from the factory.
+
+        """
+        return MappedPagingList.from_factory(self._factory, self._keys, mapper)
 
     def create_pyarrow_list(self) -> PyArrowPagingList:
         """Create a paging list from the factory.
