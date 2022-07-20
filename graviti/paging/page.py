@@ -256,7 +256,60 @@ class LazySlicedPage(LazyPage[_T]):
         return array
 
 
-class MappedLazyPage(PageBase[_T]):
+class MappedPageBase(PageBase[_T]):
+    """MappedPageBase is the base class of the page with mapper, is used for nested DataFrame."""
+
+    def copy(
+        self, copier: Callable[[Any], Any], mapper: Callable[[Any], Any]
+    ) -> "MappedPageBase[_T]":
+        """Return a copy of the mapped page.
+
+        Arguments:
+            copier: A callable object to convert loaded items in the source page to the copied page.
+            mapper: The mapper of the new mapped page.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+
+class MappedPage(MappedPageBase[_T], Page[_T]):
+    """MappedPage is an array wrapper and represents a page in paging list."""
+
+    def copy(self, copier: Callable[[_T], _T], mapper: Callable[[Any], Any]) -> "MappedPage[_T]":
+        """Return a copy of the mapped page.
+
+        Arguments:
+            copier: A callable object to convert loaded items in the source page to the copied page.
+            mapper: The mapper of the new mapped page.
+
+        Returns:
+            A copy of the mapped page.
+
+        """
+        return MappedPage(tuple(map(copier, self._array)))
+
+
+class MappedSlicedPage(MappedPageBase[_T], SlicedPage[_T]):
+    """MappedSlicedPage is an array wrapper and represents a sliced page in paging list."""
+
+    def copy(self, copier: Callable[[Any], Any], mapper: Callable[[Any], Any]) -> MappedPage[_T]:
+        """Return a copy of the mapped page.
+
+        Arguments:
+            copier: A callable object to convert loaded items in the source page to the copied page.
+            mapper: The mapper of the new mapped page.
+
+        Returns:
+            A copy of the mapped page.
+
+        """
+        return MappedPage(tuple(map(copier, self.get_array())))
+
+
+class MappedLazyPage(MappedPageBase[_T]):
     """LazyPage with a mapper for converting every item in the source array.
 
     Arguments:
@@ -293,7 +346,7 @@ class MappedLazyPage(PageBase[_T]):
 
         """
         if self._array is not None:
-            return SlicedPage(self._ranging[start:stop:step], self._array)
+            return MappedSlicedPage(self._ranging[start:stop:step], self._array)
 
         return MappedLazySlicedPage(
             self._ranging[start:stop:step], self._array_getter, self._mapper
@@ -314,6 +367,24 @@ class MappedLazyPage(PageBase[_T]):
             self._patch(array)
 
         return array
+
+    def copy(
+        self, copier: Callable[[Any], Any], mapper: Callable[[Any], Any]
+    ) -> "Union[MappedPage[_T], MappedLazyPage[_T]]":
+        """Return a copy of the mapped page.
+
+        Arguments:
+            copier: A callable object to convert loaded items in the source page to the copied page.
+            mapper: The mapper of the new mapped page.
+
+        Returns:
+            A copy of the mapped page.
+
+        """
+        if self._array is not None:
+            return MappedPage(tuple(map(copier, self._array)))
+
+        return MappedLazyPage(self._ranging, self._array_getter, mapper)
 
 
 class MappedLazySlicedPage(MappedLazyPage[_T]):
@@ -336,3 +407,21 @@ class MappedLazySlicedPage(MappedLazyPage[_T]):
             self._patch(array)
 
         return array
+
+    def copy(
+        self, copier: Callable[[Any], Any], mapper: Callable[[Any], Any]
+    ) -> "Union[MappedPage[_T], MappedLazySlicedPage[_T]]":
+        """Return a copy of the mapped page.
+
+        Arguments:
+            copier: A callable object to convert loaded items in the source page to the copied page.
+            mapper: The mapper of the new mapped page.
+
+        Returns:
+            A copy of the mapped page.
+
+        """
+        if self._array is not None:
+            return MappedPage(tuple(map(copier, self._array)))
+
+        return MappedLazySlicedPage(self._ranging, self._array_getter, mapper)
