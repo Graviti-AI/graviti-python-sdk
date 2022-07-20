@@ -69,8 +69,8 @@ Get one dataset:
 Dataset("graviti-example/Graviti-dataset-demo")(
   (alias): '',
   (default_branch): 'main',
-  (created_at): '2022-05-26T02:55:36Z',
-  (updated_at): '2022-05-26T02:57:55Z',
+  (created_at): 2022-07-20 04:22:35+00:00,
+  (updated_at): 2022-07-20 04:23:45+00:00,
   (is_public): False,
   (config): 'AmazonS3-us-west-1'
 )
@@ -84,10 +84,10 @@ View the current version of the dataset:
 >>> dataset.HEAD
 Branch("main")(
   (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-  (parent_commit_id): None,
+  (parent): None,
   (title): 'Commit-1',
   (committer): 'graviti-example',
-  (committed_at): '2022-05-26T02:57:00Z'
+  (committed_at): 2022-07-20 04:22:35+00:00,
 )
 ```
 
@@ -125,10 +125,10 @@ Checkout commit/branch/tag:
 >>> dataset.checkout("47293b32f28c4008bc0f25b847b97d6f")  # commit id
 >>> dataset.HEAD
 Commit("47293b32f28c4008bc0f25b847b97d6f")(
-  (parent_commit_id): None,
+  (parent): None,
   (title): 'Commit-1',
   (committer): 'graviti-example',
-  (committed_at): '2022-05-26T02:57:00Z'
+  (committed_at): 2022-07-20 04:22:35+00:00,
 )
 ```
 
@@ -137,10 +137,10 @@ Commit("47293b32f28c4008bc0f25b847b97d6f")(
 >>> dataset.HEAD
 Branch("dev")(
   (commit_id): '47293b32f28c4008bc0f25b847b97d6f',
-  (parent_commit_id): None,
+  (parent): None,
   (title): 'Commit-1',
   (committer): 'graviti-example',
-  (committed_at): '2022-05-26T02:57:00Z'
+  (committed_at): 2022-07-20 04:22:35+00:00,
 )
 ```
 
@@ -148,10 +148,10 @@ Branch("dev")(
 >>> dataset.checkout("v1.0")  # tag name
 >>> dataset.HEAD
 Commit("47293b32f28c4008bc0f25b847b97d6f")(
-  (parent_commit_id): None,
+  (parent): None,
   (title): 'Commit-1',
   (committer): 'graviti-example',
-  (committed_at): '2022-05-26T02:57:00Z'
+  (committed_at): 2022-07-20 04:22:35+00:00,
 )
 ```
 
