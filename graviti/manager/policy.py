@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from graviti.manager import Dataset
 
 _EXPIRED_IN_SECOND = 600
-_OSS_RETRY_CODE = {"InvalidAccessKeyId", "AccessDenied"}
 
 
 class ObjectPolicyManager:
@@ -89,6 +88,8 @@ class ObjectPolicyManager:
 
 class OSSObjectPolicyManager(ObjectPolicyManager):
     """The basic structure of the object policy of the dataset stored in OSS."""
+
+    _RETRY_CODE = {"InvalidAccessKeyId", "AccessDenied"}
 
     def _init_get_policy(self) -> Dict[str, Any]:
         """Initialize and return the get policy.
@@ -169,7 +170,7 @@ class OSSObjectPolicyManager(ObjectPolicyManager):
             return UserResponse(response)
         except ResponseError as error:
             code = ElementTree.fromstring(error.response.text)[0].text
-            if _allow_retry and code in _OSS_RETRY_CODE:
+            if _allow_retry and code in self._RETRY_CODE:
                 self._clear_get_policy()
                 return self.get_object(key, False)
             raise error from None
@@ -200,7 +201,95 @@ class OSSObjectPolicyManager(ObjectPolicyManager):
                 do(verb, url, headers=headers, data=fp)
         except ResponseError as error:
             code = ElementTree.fromstring(error.response.text)[0].text
-            if _allow_retry and code in _OSS_RETRY_CODE:
+            if _allow_retry and code in self._RETRY_CODE:
+                self._clear_put_policy()
+                self.put_object(key, path, False)
+            raise error from None
+
+
+class AZUREObjectPolicyManager(ObjectPolicyManager):
+    """The basic structure of the object policy of the dataset stored in AZURE."""
+
+    _RETRY_CODE = "AuthenticationFailed"
+
+    def _init_get_policy(self) -> Dict[str, Any]:
+        """Initialize and return the get policy.
+
+        Returns:
+            The get policy.
+
+        """
+        if self._get_policy is None:
+            self._get_policy = self._request_policy("GET")
+        return self._get_policy
+
+    def _init_put_policy(self) -> Dict[str, Any]:
+        """Initialize and return the put policy.
+
+        Returns:
+            The put policy.
+
+        """
+        if self._put_policy is None:
+            self._put_policy = self._request_policy("PUT")
+        return self._put_policy
+
+    def get_object(self, key: str, _allow_retry: bool = True) -> UserResponse:
+        """Get the object from AZURE.
+
+        Arguments:
+            key: The key of the file.
+            _allow_retry: Whether requesting the get policy again is allowed.
+
+        Raises:
+            ResponseError: If post response error.
+
+        Returns:
+            The response of AZURE get object API.
+
+        """
+        policy = self._init_get_policy()
+        verb = "GET"
+
+        url = f"{policy['endpoint_prefix']}/{key}?{policy['sas_param']}"
+
+        try:
+            response = do(verb, url, timeout=config.timeout, stream=True)
+            return UserResponse(response)
+        except ResponseError as error:
+            code = ElementTree.fromstring(error.response.text)[0].text
+            if _allow_retry and code == self._RETRY_CODE:
+                self._clear_get_policy()
+                return self.get_object(key, False)
+            raise error from None
+
+    def put_object(self, key: str, path: Path, _allow_retry: bool = True) -> None:
+        """Put the object to AZURE.
+
+        Arguments:
+            key: The key of the file.
+            path: The path of the file.
+            _allow_retry: Whether requesting the put policy again is allowed.
+
+        Raises:
+            ResponseError: If post response error.
+
+        """
+        policy = self._init_put_policy()
+        verb = "PUT"
+
+        url = f"{policy['endpoint_prefix']}/{key}?{policy['sas_param']}"
+        headers = {"x-ms-blob-type": "BlockBlob"}
+        mime_type = mimetypes.guess_type(path)[0]
+        if mime_type is not None:
+            headers["Content-Type"] = mime_type
+
+        try:
+            with path.open("rb") as fp:
+                do(verb, url, headers=headers, data=fp)
+        except ResponseError as error:
+            code = ElementTree.fromstring(error.response.text)[0].text
+            if _allow_retry and code == self._RETRY_CODE:
                 self._clear_put_policy()
                 self.put_object(key, path, False)
             raise error from None
