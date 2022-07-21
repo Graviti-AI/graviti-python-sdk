@@ -358,6 +358,30 @@ class MappedPagingList(PagingListBase):
         self._offsets = Offsets(length, length)
 
     @classmethod
+    def from_array(
+        cls: Type[_MPL],
+        array: Sequence[Any],
+        mapper: Callable[[Any], Any],
+    ) -> _MPL:
+        """Create MappedPagingList from the source array.
+
+        Arguments:
+            array: The source array of the paging list.
+            mapper: A callable object to convert every item in the pyarrow array.
+
+        Returns:
+            The PagingList instance created from the given array.
+
+        """
+        length = len(array)
+        obj: _MPL = object.__new__(cls)
+
+        obj._pages = [MappedLazyPage(range(length), lambda: array, mapper)]
+        obj._offsets = Offsets(length, length)
+
+        return obj
+
+    @classmethod
     def from_factory(
         cls: Type[_MPL],
         factory: "LazyFactory",
