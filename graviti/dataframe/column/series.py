@@ -128,18 +128,20 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         value: Union[Iterable[Any], _SB, Any],
     ) -> None:
         if isinstance(key, int):
-            value = self._from_pyarrow(self._pylist_to_pyarrow([value], self.schema), self.schema)
+            series = self._from_pyarrow(self._pylist_to_pyarrow([value], self.schema), self.schema)
             key = slice(key, key + 1)
         elif not isinstance(value, self.__class__):
-            value = self._from_pyarrow(
+            series = self._from_pyarrow(
                 self._pylist_to_pyarrow(value, self.schema), self.schema  # type: ignore[arg-type]
             )
-        elif not self.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
+        elif self.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
+            series = value
+        else:
             raise TypeError("The schema of the given Series is mismatched")
 
-        self._set_item_by_slice(key, value)
+        self._set_item_by_slice(key, series)
         if self._root is not None and self._root.operations is not None:
-            value = value.copy()
+            value = series.copy()
             root = self._root
             _record_key = root._record_key
             # TODO: support slicing methods for record_key
@@ -149,8 +151,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             ]
             name = self._name
             dataframe = root._construct(
-                {name[0]: value},
-                pt.record({name[0]: value.schema}),
+                {name[0]: series},
+                pt.record({name[0]: series.schema}),
                 Series(record_key),
                 name[1:],
             )
@@ -311,7 +313,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return obj
 
-    def _set_item_by_slice(self, key: slice, value: _SB) -> None:
+    def _set_item_by_slice(self, key: slice, value: "SeriesBase") -> None:
         self._data.set_slice(key, value._data)  # pylint: disable=protected-access
 
     @property
