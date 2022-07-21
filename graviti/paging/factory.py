@@ -188,17 +188,17 @@ class LazyFactory(LazyFactoryBase):
         """
         return PyArrowPagingList.from_factory(self, (), self._patype)
 
-    def get_page_ranges(self) -> Iterator[range]:
-        """A Generator which generates the range of the pages in the factory.
+    def get_page_lengths(self) -> Iterator[int]:
+        """A Generator which generates the length of the pages in the factory.
 
         Yields:
-            The page ranges.
+            The page lengths.
 
         """
         div, mod = divmod(self._total_count, self._limit)
-        yield from repeat(range(self._limit), div)
+        yield from repeat(self._limit, div)
         if mod != 0:
-            yield range(mod)
+            yield mod
 
     def get_offsets(self) -> Offsets:
         """Get the Offsets instance created by the total_count and limit of this factory.

@@ -339,8 +339,8 @@ class PagingList(PagingListBase):
         obj: _PL = object.__new__(cls)
 
         obj._pages = [
-            MappedLazyPage(ranging, partial(factory.get_array, pos, keys), mapper)
-            for pos, ranging in enumerate(factory.get_page_ranges())
+            MappedLazyPage(length, partial(factory.get_array, pos, keys), mapper)
+            for pos, length in enumerate(factory.get_page_lengths())
         ]
         obj._offsets = factory.get_offsets()
 
@@ -376,7 +376,7 @@ class MappedPagingList(PagingListBase):
         length = len(array)
         obj: _MPL = object.__new__(cls)
 
-        obj._pages = [MappedLazyPage(range(length), lambda: array, mapper)]
+        obj._pages = [MappedLazyPage(length, lambda: array, mapper)]
         obj._offsets = Offsets(length, length)
 
         return obj
@@ -402,8 +402,8 @@ class MappedPagingList(PagingListBase):
         obj: _MPL = object.__new__(cls)
 
         obj._pages = [
-            MappedLazyPage(ranging, partial(factory.get_array, pos, keys), mapper)
-            for pos, ranging in enumerate(factory.get_page_ranges())
+            MappedLazyPage(length, partial(factory.get_array, pos, keys), mapper)
+            for pos, length in enumerate(factory.get_page_lengths())
         ]
         obj._offsets = factory.get_offsets()
 
@@ -480,8 +480,8 @@ class PyArrowPagingList(PagingListBase):
         """
         obj: _PPL = object.__new__(cls)
         obj._pages = [
-            LazyPage(ranging, partial(factory.get_array, pos, keys))
-            for pos, ranging in enumerate(factory.get_page_ranges())
+            LazyPage(length, partial(factory.get_array, pos, keys))
+            for pos, length in enumerate(factory.get_page_lengths())
         ]
         obj._offsets = factory.get_offsets()
         obj._patype = patype
