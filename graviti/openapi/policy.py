@@ -48,13 +48,13 @@ def get_object_policy(
         ... )
         {
             "backend_type":"OSS",
+            "expire_at":"2022-07-12T06:07:52Z",
             "policy": {
                 "AccessKeyId":"LTAI4FjgXD3yFJUaasdasd",
                 "AccessKeySecret":"LTAI4FjgXD3yFJJKasdad",
                 "SecurityToken":"CAISrgJ1q6Ft5B2yfSjIr5bkKILdaseqw",
                 "bucket":"content-store-dev",
-                "endpoint":"content-store-dev.oss-cn-qingdao.aliyuncs.com",
-                "expireAt":"2022-07-12T06:07:52Z"
+                "endpoint":"content-store-dev.oss-cn-qingdao.aliyuncs.com"
             }
         }
 
@@ -69,13 +69,13 @@ def get_object_policy(
         ... )
         {
             "backend_type":"OSS",
+            "expire_at":"2022-07-12T06:07:52Z",
             "policy": {
                 "AccessKeyId":"LTAI4FjgXD3yFJUaasdasd",
                 "AccessKeySecret":"LTAI4FjgXD3yFJJKasdad",
                 "SecurityToken":"CAISrgJ1q6Ft5B2yfSjIr5bkKILdaseqw",
                 "bucket":"content-store-dev",
                 "endpoint":"content-store-dev.oss-cn-qingdao.aliyuncs.com",
-                "expireAt":"2022-07-12T06:07:52Z",
                 "prefix":"051dd0676cc74f548a7e9b7ace45c26b/"
             }
         }
@@ -91,12 +91,12 @@ def get_object_policy(
         ... )
         {
             "backend_type":"AZURE",
+            "expire_at":"2022-07-12T06:07:52Z",
             "policy": {
-                "expire_at":"2022-07-12T06:07:52Z",
                 "container_name":"graviti210304",
                 "account_name":"gra220303",
                 "sas_param":"se=2022-07-21T10%3A07Z&sig=*******",
-                "endpoint_prefix":"https://gra220303.blob.core.window.net/graviti210304/",
+                "endpoint_prefix":"https://gra220303.blob.core.window.net/graviti210304/"
             }
         }
 
@@ -111,13 +111,58 @@ def get_object_policy(
         ... )
         {
             "backend_type":"AZURE",
+            "expire_at":"2022-07-12T06:07:52Z",
             "policy": {
-                "expire_at":"2022-07-12T06:07:52Z",
                 "container_name":"graviti210304",
                 "account_name":"gra220303",
                 "prefix":"examplePrefix/",
                 "sas_param":"se=2022-07-21T10%3A07Z&sig=*******",
-                "endpoint_prefix":"https://gra220303.blob.core.window.net/graviti210304/",
+                "endpoint_prefix":"https://gra220303.blob.core.window.net/graviti210304/"
+            }
+        }
+
+        Request permission to get dataset data from S3:
+
+        >>> get_policy(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "graviti-example",
+        ...     "MNIST",
+        ...     actions="GET",
+        ... )
+        {
+            "backend_type":"S3",
+            "expire_at":"2022-07-12T06:07:52Z",
+            "policy": {
+                "AccessKeyId":"ASIAQHT******",
+                "AccessKeySecret":"Y6x2a2cHIlJdx******",
+                "SecurityToken":"FwoGZXIvYXdzEH0aDGYBu******",
+                "bucket":"fat-dataplatform",
+                "endpoint":"s3.amazonaws.com",
+                "region":"us-west-1"
+            }
+        }
+
+        Request permission to put dataset data to S3:
+
+        >>> get_policy(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "graviti-example",
+        ...     "MNIST",
+        ...     actions="PUT",
+        ... )
+        {
+            "backend_type":"S3",
+            "expire_at":"2022-07-12T06:07:52Z",
+            "policy": {
+                "AccessKeyId":"ASIAQHT******",
+                "AccessKeySecret":"Y6x2a2cHIlJdx******",
+                "SecurityToken":"FwoGZXIvYXdzEH0aDGYBu******",
+                "bucket":"fat-dataplatform",
+                "endpoint":"s3.amazonaws.com",
+                "prefix":"051dd0676cc74f548a7e9b7ace45c26b/",
+                "region":"us-west-1"
             }
         }
 
