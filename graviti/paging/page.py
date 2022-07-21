@@ -299,6 +299,22 @@ class MappedPageBase(PageBase[_T]):
 class MappedPage(MappedPageBase[_T], Page[_T]):
     """MappedPage is an array wrapper and represents a page in paging list."""
 
+    def get_slice(
+        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
+    ) -> "MappedSlicedPage[_T]":
+        """Return a sliced page according to the given start and stop index.
+
+        Arguments:
+            start: The start index.
+            stop: The stop index.
+            step: The slice step.
+
+        Returns:
+            A sliced page according to the given start and stop index.
+
+        """
+        return MappedSlicedPage(range(len(self._array))[start:stop:step], self._array)
+
     def copy(self, copier: Callable[[_T], _T], mapper: Callable[[Any], Any]) -> "MappedPage[_T]":
         """Return a copy of the mapped page.
 
@@ -315,6 +331,22 @@ class MappedPage(MappedPageBase[_T], Page[_T]):
 
 class MappedSlicedPage(MappedPageBase[_T], SlicedPage[_T]):
     """MappedSlicedPage is an array wrapper and represents a sliced page in paging list."""
+
+    def get_slice(
+        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
+    ) -> "MappedSlicedPage[_T]":
+        """Return a sliced page according to the given start and stop index.
+
+        Arguments:
+            start: The start index.
+            stop: The stop index.
+            step: The slice step.
+
+        Returns:
+            A sliced page according to the given start and stop index.
+
+        """
+        return MappedSlicedPage(self._ranging[start:stop:step], self._source_array)
 
     def copy(self, copier: Callable[[Any], Any], mapper: Callable[[Any], Any]) -> MappedPage[_T]:
         """Return a copy of the mapped page.
@@ -357,7 +389,7 @@ class MappedLazyPage(MappedPageBase[_T]):
 
     def get_slice(
         self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> "Union[MappedLazySlicedPage[_T], SlicedPage[_T]]":
+    ) -> "Union[MappedLazySlicedPage[_T], MappedSlicedPage[_T]]":
         """Return a lazy sliced page according to the given start and stop index.
 
         Arguments:
