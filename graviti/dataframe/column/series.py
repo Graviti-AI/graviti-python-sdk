@@ -313,7 +313,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return obj
 
-    def _set_item_by_slice(self, key: slice, value: "SeriesBase") -> None:
+    def _set_item_by_slice(self: _SB, key: slice, value: _SB) -> None:
         self._data.set_slice(key, value._data)  # pylint: disable=protected-access
 
     @property
@@ -526,6 +526,24 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj._name = name
 
         return obj
+
+    def _extract_paging_list(self: _A, values: _A) -> MappedPagingList:
+        # pylint: disable=protected-access
+        _item_schema = self._item_schema
+        if values._item_schema is _item_schema and values is not self:
+            return values._data
+
+        _item_creator = _item_schema.container._from_pyarrow
+        return values._data.copy(
+            lambda df: df._copy(_item_schema),
+            lambda scalar: _item_creator(scalar.values, _item_schema),
+        )
+
+    def _set_item_by_slice(self: _A, key: slice, value: _A) -> None:
+        self._data.set_slice(key, self._extract_paging_list(value))
+
+    def _extend(self: _A, values: _A) -> None:
+        self._data.extend(self._extract_paging_list(values))
 
     def _copy(
         self: _A,
