@@ -12,6 +12,7 @@ from graviti.manager.policy import (
     AZUREObjectPolicyManager,
     ObjectPolicyManager,
     OSSObjectPolicyManager,
+    S3ObjectPolicyManager,
 )
 from graviti.manager.tag import TagManager
 
@@ -26,5 +27,6 @@ __all__ = [
     "DraftManager",
     "ObjectPolicyManager",
     "OSSObjectPolicyManager",
+    "S3ObjectPolicyManager",
     "TagManager",
 ]

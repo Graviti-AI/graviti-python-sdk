@@ -17,8 +17,8 @@ from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.policy import (
     AZUREObjectPolicyManager,
-    ObjectPolicyManager,
     OSSObjectPolicyManager,
+    S3ObjectPolicyManager,
 )
 from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
@@ -50,7 +50,7 @@ class ObjectPolicyManagerType(Enum):
     """ObjectPolicyManagerType is an enumeration type including "OSS", "S3" and "AZURE"."""
 
     OSS = OSSObjectPolicyManager
-    S3 = ObjectPolicyManager
+    S3 = S3ObjectPolicyManager
     AZURE = AZUREObjectPolicyManager
 
 
