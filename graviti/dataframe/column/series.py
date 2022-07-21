@@ -594,6 +594,16 @@ class EnumSeries(Series):
     def _to_post_data(self) -> List[int]:
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
+    def _copy(
+        self,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> "EnumSeries":
+        obj = super()._copy(schema, root, name)
+        obj._indices_to_values = self._indices_to_values.copy()  # pylint: disable=protected-access
+        return obj
+
     @classmethod
     def _from_factory(
         cls: Type[_E],
