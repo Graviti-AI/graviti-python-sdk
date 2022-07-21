@@ -516,7 +516,9 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
         obj: _A = object.__new__(cls)
-        obj._data = MappedPagingList(_item_creator(item.values, _item_schema) for item in array)
+        obj._data = MappedPagingList.from_array(
+            array, lambda scalar: _item_creator(scalar.values, _item_schema)
+        )
 
         obj.schema = schema
         obj._root = root
