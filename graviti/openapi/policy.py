@@ -37,7 +37,7 @@ def get_object_policy(
         The response of OpenAPI.
 
     Examples:
-        Request permission to get dataset data:
+        Request permission to get dataset data from OSS:
 
         >>> get_policy(
         ...     "ACCESSKEY-********",
@@ -58,7 +58,7 @@ def get_object_policy(
             }
         }
 
-        Request permission to put dataset data:
+        Request permission to put dataset data to OSS:
 
         >>> get_policy(
         ...     "ACCESSKEY-********",
@@ -77,6 +77,47 @@ def get_object_policy(
                 "endpoint":"content-store-dev.oss-cn-qingdao.aliyuncs.com",
                 "expireAt":"2022-07-12T06:07:52Z",
                 "prefix":"051dd0676cc74f548a7e9b7ace45c26b/"
+            }
+        }
+
+        Request permission to get dataset data from AZURE:
+
+        >>> get_policy(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "graviti-example",
+        ...     "MNIST",
+        ...     actions="GET",
+        ... )
+        {
+            "backend_type":"AZURE",
+            "policy": {
+                "expire_at":"2022-07-12T06:07:52Z",
+                "container_name":"graviti210304",
+                "account_name":"gra220303",
+                "sas_param":"se=2022-07-21T10%3A07Z&sig=*******",
+                "endpoint_prefix":"https://gra220303.blob.core.window.net/graviti210304/",
+            }
+        }
+
+        Request permission to put dataset data to AZURE:
+
+        >>> get_policy(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "graviti-example",
+        ...     "MNIST",
+        ...     actions="PUT",
+        ... )
+        {
+            "backend_type":"AZURE",
+            "policy": {
+                "expire_at":"2022-07-12T06:07:52Z",
+                "container_name":"graviti210304",
+                "account_name":"gra220303",
+                "prefix":"examplePrefix/",
+                "sas_param":"se=2022-07-21T10%3A07Z&sig=*******",
+                "endpoint_prefix":"https://gra220303.blob.core.window.net/graviti210304/",
             }
         }
 

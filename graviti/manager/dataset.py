@@ -15,7 +15,11 @@ from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.common import LIMIT
 from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
-from graviti.manager.policy import ObjectPolicyManager, OSSObjectPolicyManager
+from graviti.manager.policy import (
+    AZUREObjectPolicyManager,
+    ObjectPolicyManager,
+    OSSObjectPolicyManager,
+)
 from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
     create_dataset,
@@ -47,7 +51,7 @@ class ObjectPolicyManagerType(Enum):
 
     OSS = OSSObjectPolicyManager
     S3 = ObjectPolicyManager
-    AZURE = ObjectPolicyManager
+    AZURE = AZUREObjectPolicyManager
 
 
 class Dataset(  # pylint: disable=too-many-instance-attributes
