@@ -7,7 +7,7 @@
 
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
