@@ -114,6 +114,9 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def __getitem__(self, key: int) -> Any:
         return self._data[key]
 
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        self._data.__delitem__(key)
+
     @overload
     def __setitem__(self, key: slice, value: Union[Iterable[Any], _SB]) -> None:
         ...

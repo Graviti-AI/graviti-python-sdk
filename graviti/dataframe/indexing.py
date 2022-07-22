@@ -104,6 +104,9 @@ class DataFrameILocIndexer:
             dataframe._record_key = ColumnSeries(record_key)
             self.obj.operations.append(UpdateData(dataframe))
 
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        self.obj._del_item_by_location(key)
+
 
 class DataFrameLocIndexer:
     """Index class for DataFrame.loc."""
@@ -191,3 +194,6 @@ class DataFrameLocIndexer:
             ]
             dataframe._record_key = ColumnSeries(record_key)
             self.obj.operations.append(UpdateData(dataframe))
+
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        self.obj._del_item_by_location(key)
