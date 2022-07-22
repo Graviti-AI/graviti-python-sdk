@@ -370,6 +370,10 @@ class DataFrame(Container):
         for name, column in self._columns.items():
             column._set_item_by_slice(key, value[name])  # pylint: disable=protected-access
 
+    def _del_item_by_location(self, key: Union[int, slice]) -> None:
+        for column in self._columns.values():
+            column.loc.__delitem__(key)
+
     @property
     def iloc(self) -> DataFrameILocIndexer:
         """Purely integer-location based indexing for selection by position.

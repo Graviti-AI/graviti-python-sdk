@@ -47,6 +47,9 @@ class ColumnSeriesILocIndexer:
     ) -> None:
         self.obj.__setitem__(key, value)
 
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        self.obj.__delitem__(key)
+
 
 class ColumnSeriesLocIndexer:
     """Index class for ColumnSeries.loc."""
@@ -83,3 +86,6 @@ class ColumnSeriesLocIndexer:
         value: Union[Any, Iterable[Any], "SeriesBase"],
     ) -> None:
         self.obj.__setitem__(key, value)
+
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        self.obj.__delitem__(key)
