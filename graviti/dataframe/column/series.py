@@ -142,7 +142,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         else:
             raise TypeError("The schema of the given Series is mismatched")
 
-        self._set_item_by_slice(key, series)
+        self._set_slice(key, series)
         if self._root is not None and self._root.operations is not None:
             value = series.copy()
             root = self._root
@@ -316,7 +316,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return obj
 
-    def _set_item_by_slice(self: _SB, key: slice, value: _SB) -> None:
+    def _set_slice(self, key: slice, value: _SB) -> None:
         self._data.set_slice(key, value._data)  # pylint: disable=protected-access
 
     @property

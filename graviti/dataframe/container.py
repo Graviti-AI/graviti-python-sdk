@@ -59,9 +59,6 @@ class Container:
     ) -> _T:
         raise NotImplementedError
 
-    def _set_item_by_slice(self, key: slice, value: Any) -> None:
-        raise NotImplementedError
-
     def _to_post_data(self) -> List[Any]:
         raise NotImplementedError
 
