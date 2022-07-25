@@ -23,6 +23,7 @@ from graviti.openapi import (
     list_commit_sheets,
     list_commits,
 )
+from graviti.operation import SheetOperation
 from graviti.paging import LazyFactory
 from graviti.portex import PortexRecordBase
 from graviti.utility import check_type, convert_iso_to_datetime
@@ -54,6 +55,7 @@ class Commit(Sheets):
     ) -> None:
         self._dataset = dataset
         self.commit_id = commit_id
+        self.operations: List[SheetOperation] = []
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.commit_id}")'
