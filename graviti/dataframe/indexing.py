@@ -92,7 +92,7 @@ class DataFrameILocIndexer:
         elif not self.obj.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
             raise TypeError("The schema of the given DataFrame is mismatched")
 
-        self.obj._set_item_by_slice(key, value)
+        self.obj._set_slice_by_location(key, value)
         if self.obj.operations is not None:
             dataframe = value.copy()
             _record_key = self.obj._record_key
@@ -183,7 +183,7 @@ class DataFrameLocIndexer:
         elif not self.obj.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
             raise TypeError("The schema of the given DataFrame is mismatched")
 
-        self.obj._set_item_by_slice(key, value)
+        self.obj._set_slice_by_location(key, value)
         if self.obj.operations is not None:
             dataframe = value.copy()
             _record_key = self.obj._record_key

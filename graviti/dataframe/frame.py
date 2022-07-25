@@ -366,9 +366,9 @@ class DataFrame(Container):
             )
         ]
 
-    def _set_item_by_slice(self, key: slice, value: "DataFrame") -> None:
+    def _set_slice_by_location(self, key: slice, value: "DataFrame") -> None:
         for name, column in self._columns.items():
-            column._set_item_by_slice(key, value[name])  # pylint: disable=protected-access
+            column.loc[key] = value[name]
 
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         for column in self._columns.values():
