@@ -19,7 +19,7 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.dataframe.sql import RowSeries as SqlRowSeries
-from graviti.operation import AddData, DataFrameOperation, UpdateData, UpdateSchema
+from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, FileBase, Mode, engine
 
@@ -373,6 +373,17 @@ class DataFrame(Container):
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         for column in self._columns.values():
             column.loc.__delitem__(key)
+        if self.operations is not None:
+            record_key = self._record_key
+            if isinstance(key, int):
+                record_keys = [record_key[key]]  # type: ignore[index]
+            else:
+                # TODO: support slicing methods for record_key
+                record_keys = [
+                    record_key[i]  # type: ignore[index]
+                    for i in range(len(record_key))[key]  # type: ignore[arg-type]
+                ]
+            self.operations.append(DeleteData(record_keys))
 
     @property
     def iloc(self) -> DataFrameILocIndexer:

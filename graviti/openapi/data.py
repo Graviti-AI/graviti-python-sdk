@@ -369,6 +369,44 @@ def add_data(
     open_api_do("POST", access_key, url, json=post_data)
 
 
+def delete_data(
+    access_key: str,
+    url: str,
+    owner: str,
+    dataset: str,
+    *,
+    draft_number: int,
+    sheet: str,
+    record_keys: List[str],
+) -> None:
+    """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
+    /sheets/{sheet}/data`.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        dataset: Name of the dataset, unique for a user.
+        draft_number: The draft number.
+        sheet: The sheet name.
+        record_keys: The record keys of the data to be deleted.
+
+    Examples:
+        >>> delete_data(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "graviti-example",
+        ...     "OxfordIIITPet",
+        ...     draft_number = 1,
+        ...     sheet = "train",
+        ...     record_keys = ["123750493121329585", "123750493121329586"],
+        ... )
+
+    """
+    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/data"
+    open_api_do("DELETE", access_key, url, json={"record_keys": record_keys})
+
+
 def get_policy(
     access_key: str,
     url: str,
