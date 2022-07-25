@@ -7,9 +7,6 @@
 
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
-from tqdm.auto import tqdm
-
-from graviti.dataframe import DataFrame
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
@@ -26,7 +23,7 @@ from graviti.openapi import (
     list_drafts,
     update_draft,
 )
-from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
+from graviti.operation import SheetOperation
 from graviti.utility import check_type, convert_iso_to_datetime
 
 if TYPE_CHECKING:
@@ -81,30 +78,6 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self.description = description
         self.operations: List[SheetOperation] = []
 
-    def __setitem__(self, key: str, value: DataFrame) -> None:
-        is_replace = False
-        if key in self:
-            is_replace = True
-
-        super().__setitem__(key, value)
-        if is_replace:
-            self.operations.append(DeleteSheet(key))
-
-        if value.operations is None:
-            value.operations = [AddData(value.copy())]
-        else:
-            raise NotImplementedError(
-                "Not support assigning one DataFrame to multiple sheets."
-                " Please use method 'copy' first."
-            )
-        self.operations.append(CreateSheet(key, value.schema.copy()))
-
-    def __delitem__(self, key: str) -> None:
-        dataframe = self[key]
-        super().__delitem__(key)
-        del dataframe.operations
-        self.operations.append(DeleteSheet(key))
-
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("#{self.number}: {self.title}")'
 
@@ -139,11 +112,6 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             sheet=sheet_name,
             with_record_count=True,
         )
-
-    def _init_dataframe(self, sheet_name: str) -> DataFrame:
-        dataframe = super()._init_dataframe(sheet_name)
-        dataframe.operations = []
-        return dataframe
 
     def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:
         """Update title and description of the draft.
@@ -276,43 +244,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             quiet: Set to True to stop showing the upload process bar.
 
         """
-        for sheet_operation in self.operations:
-            sheet_operation.do(
-                self._dataset.access_key,
-                self._dataset.url,
-                self._dataset.owner,
-                self._dataset.name,
-                draft_number=self.number,
-            )
-        self.operations = []
-
-        df_total = 0
-        file_total = 0
-        for dataframe in self.values():
-            for df_operation in dataframe.operations:  # type: ignore[union-attr]
-                df_total += df_operation.get_upload_count()
-                file_total += sum(map(len, df_operation.get_file_arrays()))
-
-        # Note that after done uploading, the two process bars will switch position due to the tqdm
-        # bug https://github.com/tqdm/tqdm/issues/1000.
-        with tqdm(
-            total=file_total, disable=(file_total == 0 or quiet), desc="uploading binary files"
-        ) as file_pbar:
-            with tqdm(total=df_total, disable=quiet, desc="uploading structured data") as data_pbar:
-                for sheet_name, dataframe in self.items():
-                    for df_operation in dataframe.operations:  # type: ignore[union-attr]
-                        df_operation.do(
-                            self._dataset.access_key,
-                            self._dataset.url,
-                            self._dataset.owner,
-                            self._dataset.name,
-                            draft_number=self.number,
-                            sheet=sheet_name,
-                            jobs=jobs,
-                            data_pbar=data_pbar,
-                            file_pbar=file_pbar,
-                        )
-                        dataframe.operations = []
+        self._upload_to_draft(self.number, jobs, quiet)
 
 
 class DraftManager:
