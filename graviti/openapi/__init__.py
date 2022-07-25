@@ -7,7 +7,13 @@
 
 from graviti.openapi.branch import create_branch, delete_branch, get_branch, list_branches
 from graviti.openapi.commit import commit_draft, get_commit, get_revision, list_commits
-from graviti.openapi.data import add_data, list_commit_data, list_draft_data, update_data
+from graviti.openapi.data import (
+    add_data,
+    delete_data,
+    list_commit_data,
+    list_draft_data,
+    update_data,
+)
 from graviti.openapi.dataset import (
     create_dataset,
     delete_dataset,
@@ -42,6 +48,7 @@ __all__ = [
     "create_sheet",
     "create_tag",
     "delete_branch",
+    "delete_data",
     "delete_dataset",
     "delete_sheet",
     "delete_tag",

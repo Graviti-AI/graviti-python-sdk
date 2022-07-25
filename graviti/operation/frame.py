@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List
 
 from tqdm import tqdm
 
-from graviti.openapi import add_data, update_data, update_schema, upload_files
+from graviti.openapi import add_data, delete_data, update_data, update_schema, upload_files
 from graviti.operation.common import get_schema
 from graviti.portex import PortexType
 from graviti.utility import File, chunked
@@ -302,3 +302,52 @@ class UpdateData(DataOperation):
                 data=batch,
             )
             data_pbar.update(len(batch))
+
+
+class DeleteData(DataFrameOperation):
+    """This class defines the operation that delete the data of a DataFrame.
+
+    Arguments:
+        record_keys: The record keys of the data to be deleted.
+
+    """
+
+    def __init__(self, record_keys: List[str]) -> None:
+        self.record_keys = record_keys
+
+    def do(  # pylint: disable=invalid-name, unused-argument
+        self,
+        access_key: str,
+        url: str,
+        owner: str,
+        dataset: str,
+        *,
+        draft_number: int,
+        sheet: str,
+        jobs: int,
+        data_pbar: tqdm,
+        file_pbar: tqdm,
+    ) -> None:
+        """Execute the OpenAPI delete data.
+
+        Arguments:
+            access_key: User's access key.
+            url: The URL of the graviti website.
+            owner: The owner of the dataset.
+            dataset: Name of the dataset, unique for a user.
+            draft_number: The draft number.
+            sheet: The sheet name.
+            jobs: The number of the max workers in multi-thread operation.
+            data_pbar: The process bar for uploading structured data.
+            file_pbar: The process bar for uploading binary files.
+
+        """
+        delete_data(
+            access_key,
+            url,
+            owner,
+            dataset,
+            draft_number=draft_number,
+            sheet=sheet,
+            record_keys=self.record_keys,
+        )
