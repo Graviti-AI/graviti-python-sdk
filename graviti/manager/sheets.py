@@ -6,12 +6,14 @@
 """The implementation of the Sheets."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Iterator, MutableMapping
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, MutableMapping
 
 import pyarrow as pa
+from tqdm.auto import tqdm
 
 from graviti.dataframe import RECORD_KEY, DataFrame
 from graviti.manager.common import LIMIT
+from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
 from graviti.paging import LazyFactory
 from graviti.portex import PortexRecordBase
 from graviti.utility import ReprMixin
@@ -25,6 +27,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
     _data: Dict[str, DataFrame]
     _dataset: "Dataset"
+    operations: List[SheetOperation] = []
 
     def __len__(self) -> int:
         return self._get_data().__len__()
@@ -33,10 +36,28 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         return self._get_data().__getitem__(key)
 
     def __setitem__(self, key: str, value: DataFrame) -> None:
+        is_replace = False
+        if key in self:
+            is_replace = True
+
         self._get_data().__setitem__(key, value)
+        if is_replace:
+            self.operations.append(DeleteSheet(key))
+
+        if value.operations is None:
+            value.operations = [AddData(value.copy())]
+        else:
+            raise NotImplementedError(
+                "Not support assigning one DataFrame to multiple sheets."
+                " Please use method 'copy' first."
+            )
+        self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
+        dataframe = self[key]
         self._get_data().__delitem__(key)
+        del dataframe.operations
+        self.operations.append(DeleteSheet(key))
 
     def __iter__(self) -> Iterator[str]:
         return self._get_data().__iter__()
@@ -63,7 +84,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
 
-        return DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        dataframe = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        dataframe.operations = []
+        return dataframe
 
     def _init_data(self) -> None:
         self._data = {}
@@ -78,3 +101,51 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self._init_data()
 
         return self._data
+
+    def _upload_to_draft(self, draft_number: int, jobs: int, quiet: bool) -> None:
+        """Upload the local dataset to Graviti.
+
+        Arguments:
+            draft_number: The number of the draft.
+            jobs: The number of the max workers in multi-thread upload, the default is 8.
+            quiet: Set to True to stop showing the upload process bar.
+
+        """
+        dataset = self._dataset
+        for sheet_operation in self.operations:
+            sheet_operation.do(
+                dataset.access_key,
+                dataset.url,
+                dataset.owner,
+                dataset.name,
+                draft_number=draft_number,
+            )
+        self.operations = []
+
+        df_total = 0
+        file_total = 0
+        for dataframe in self.values():
+            for df_operation in dataframe.operations:  # type: ignore[union-attr]
+                df_total += df_operation.get_upload_count()
+                file_total += sum(map(len, df_operation.get_file_arrays()))
+
+        # Note that after done uploading, the two process bars will switch position due to the tqdm
+        # bug https://github.com/tqdm/tqdm/issues/1000.
+        with tqdm(
+            total=file_total, disable=(file_total == 0 or quiet), desc="uploading binary files"
+        ) as file_pbar:
+            with tqdm(total=df_total, disable=quiet, desc="uploading structured data") as data_pbar:
+                for sheet_name, dataframe in self.items():
+                    for df_operation in dataframe.operations:  # type: ignore[union-attr]
+                        df_operation.do(
+                            dataset.access_key,
+                            dataset.url,
+                            dataset.owner,
+                            dataset.name,
+                            draft_number=draft_number,
+                            sheet=sheet_name,
+                            jobs=jobs,
+                            data_pbar=data_pbar,
+                            file_pbar=file_pbar,
+                        )
+                        dataframe.operations = []

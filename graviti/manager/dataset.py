@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Any, Dict, Generator, Optional, Tuple, TypeVar
 
 from graviti.dataframe import DataFrame
-from graviti.exception import ResourceNameError
+from graviti.exception import ResourceNameError, StatusError
 from graviti.manager.branch import Branch, BranchManager
 from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.common import LIMIT
@@ -225,6 +225,35 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.alias = response["alias"]
         self.default_branch = response["default_branch"]
         self.updated_at = convert_iso_to_datetime(response["updated_at"])
+
+    def commit(
+        self, title: str, description: Optional[str] = None, jobs: int = 8, quiet: bool = False
+    ) -> None:
+        """Create, upload and commit the draft to push the local dataset to Graviti.
+
+        Arguments:
+            title: The commit title.
+            description: The commit description.
+            jobs: The number of the max workers in multi-thread upload, the default is 8.
+            quiet: Set to True to stop showing the upload process bar.
+
+        Raises:
+            StatusError: When the HEAD of the dataset is not a branch.
+            StatusError: When the dataset has no modifications.
+
+        """
+        head = self.HEAD
+        if not isinstance(head, Branch):
+            raise StatusError(
+                "It is not allowed to commit a dataset whose HEAD is not a branch. "
+                "Please checkout a branch first"
+            )
+        if not head.operations:
+            raise StatusError("It is not allowed to commit a dataset without any modifications")
+
+        draft = self.drafts.create(title, description, head.name)
+        head._upload_to_draft(draft.number, jobs, quiet)  # pylint: disable=protected-access
+        draft.commit(title, description)
 
 
 class DatasetManager:
