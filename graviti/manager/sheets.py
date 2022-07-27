@@ -51,6 +51,14 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                 "Not support assigning one DataFrame to multiple sheets."
                 " Please use method 'copy' first."
             )
+        old_object_policy_manager = value.object_policy_manager
+        new_object_policy_manager = self._dataset.object_policy_manager
+        if old_object_policy_manager is None:
+            value.object_policy_manager = self._dataset.object_policy_manager
+        elif old_object_policy_manager is not new_object_policy_manager:
+            raise NotImplementedError(
+                "Copying online DataFrame to another dataset is not supported."
+            )
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
@@ -84,7 +92,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
 
-        dataframe = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        dataframe = DataFrame._from_factory(  # pylint: disable=protected-access
+            factory, schema, self._dataset.object_policy_manager
+        )
         dataframe.operations = []
         return dataframe
 
