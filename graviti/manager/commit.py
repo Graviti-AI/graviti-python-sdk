@@ -263,7 +263,9 @@ class Commit(Sheets):
             schema.to_pyarrow(),
         )
 
-        return DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        return DataFrame._from_factory(  # pylint: disable=protected-access
+            factory, schema, self._dataset.object_policy_manager
+        )
 
 
 class NamedCommit(Commit):

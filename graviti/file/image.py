@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Dict, Union
 
 from graviti.file.base import File, RemoteFile
 from graviti.file.image_size import get_image_size
+from graviti.portex import RemoteFileTypeResgister
 
 if TYPE_CHECKING:
-    # from graviti.openapi import ObjectPolicy
-    ...
+    from graviti.manager import ObjectPolicyManager
 
 
 class Image(File):
@@ -59,6 +59,9 @@ class Image(File):
         return self._width
 
 
+@RemoteFileTypeResgister(
+    "https://github.com/Project-OpenBytes/portex-standard", "main", "file.Image"
+)
 class RemoteImage(RemoteFile):
     """This class represents remote image files.
 
@@ -68,7 +71,7 @@ class RemoteImage(RemoteFile):
         size: The size of the image file.
         height: The height of the image.
         width: The width of the image.
-        object_policy: The policy to access the file.
+        object_policy_manager: The policy to access the file.
 
     """
 
@@ -84,10 +87,9 @@ class RemoteImage(RemoteFile):
         size: int,
         height: int,
         width: int,
-        # object_policy: "ObjectPolicy",
+        object_policy_manager: "ObjectPolicyManager",
     ) -> None:
-        # RemoteFile.__init__(self, key, extension, size, object_policy)
-        RemoteFile.__init__(self, key, extension, size)
+        RemoteFile.__init__(self, key, extension, size, object_policy_manager)
         self._height = height
         self._width = width
 

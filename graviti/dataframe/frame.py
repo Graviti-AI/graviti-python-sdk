@@ -229,18 +229,18 @@ class DataFrame(Container):
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: pt.PortexRecordBase,
+        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _T:
         """Create DataFrame with paging lists.
 
         Arguments:
             factory: The LazyFactory instance for creating the PagingList.
             schema: The schema of the DataFrame.
+            object_policy_manager: The object policy manager of the dataset.
             root: The root of the created DataFrame.
             name: The name of the created DataFrame.
-            object_policy_manager: The object policy manager of the dataset.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
@@ -255,16 +255,16 @@ class DataFrame(Container):
             key: value.container._from_factory(  # pylint: disable=protected-access
                 factory[key],
                 schema=value,
+                object_policy_manager=object_policy_manager,
                 root=obj if root is None else root,
                 name=(key,) + name,
-                object_policy_manager=object_policy_manager,
             )
             for key, value in schema.items()
         }
 
         if RECORD_KEY in factory:
             obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
-                factory[RECORD_KEY], pt.string(nullable=True)
+                factory[RECORD_KEY], pt.string(nullable=True), object_policy_manager
             )
 
         return obj

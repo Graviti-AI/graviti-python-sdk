@@ -6,6 +6,7 @@
 """Graviti audio file class."""
 
 from graviti.file.base import File, RemoteFile
+from graviti.portex import RemoteFileTypeResgister
 
 
 class Audio(File):
@@ -14,6 +15,9 @@ class Audio(File):
     __slots__ = File.__slots__
 
 
+@RemoteFileTypeResgister(
+    "https://github.com/Project-OpenBytes/portex-standard", "main", "file.Audio"
+)
 class RemoteAudio(RemoteFile):
     """This class represents remote audio files."""
 

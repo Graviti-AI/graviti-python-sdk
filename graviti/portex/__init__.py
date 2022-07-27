@@ -21,13 +21,18 @@ from graviti.portex.builtin import (
     string,
     tensor,
 )
-from graviti.portex.register import ContainerRegister, ExternalContainerRegister
+from graviti.portex.register import (
+    ContainerRegister,
+    ExternalContainerRegister,
+    RemoteFileTypeResgister,
+)
 
 __all__ = [
     "ContainerRegister",
     "ExternalContainerRegister",
     "PortexType",
     "PortexRecordBase",
+    "RemoteFileTypeResgister",
     "array",
     "binary",
     "boolean",
