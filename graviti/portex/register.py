@@ -12,10 +12,12 @@ from graviti.utility import urlnorm
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
+    from graviti.file import RemoteFile
     from graviti.portex.base import PortexType
 
 _P = TypeVar("_P", bound="PortexType")
 _C = TypeVar("_C", bound="Container")
+_F = TypeVar("_F", bound="RemoteFile")
 
 
 class ContainerRegister:
@@ -111,3 +113,34 @@ class PyArrowConversionRegister:
             mapping[pyarrow_type_id] = portex_type
 
         return portex_type
+
+
+class RemoteFileTypeResgister:
+    """The class decorator to portex external type and the remote file type.
+
+    Arguments:
+        url: The git repo url of the external package.
+        revision: The git repo revision (tag/commit) of the external package.
+        name: The portex external type name.
+
+    """
+
+    SCHEMA_TO_REMOTE_FILE: ClassVar[Dict[Tuple[str, str], Type["RemoteFile"]]] = {}
+
+    def __init__(self, url: str, revision: str, *names: str) -> None:
+        self._repo = f"{urlnorm(url)}@{revision}"
+        self._names = names
+
+    def __call__(self, file: Type[_F]) -> Type[_F]:
+        """Connect remote file type with the portex external types.
+
+        Arguments:
+            file: The remote file type needs to be connected.
+
+        Returns:
+            The input remote file class unchanged.
+
+        """
+        for name in self._names:
+            self.SCHEMA_TO_REMOTE_FILE[self._repo, name] = file
+        return file

@@ -12,12 +12,12 @@ from typing import TYPE_CHECKING, Dict, Union
 
 from _io import BufferedReader
 
+from graviti.portex import RemoteFileTypeResgister
 from graviti.utility.repr import ReprMixin
 from graviti.utility.requests import UserResponse
 
 if TYPE_CHECKING:
-    # from graviti.openapi import ObjectPolicy
-    ...
+    from graviti.manager import ObjectPolicyManager
 
 _ENCODINGS = mimetypes.encodings_map
 
@@ -173,6 +173,9 @@ class File(FileBase):
         return self._path.open("rb")
 
 
+@RemoteFileTypeResgister(
+    "https://github.com/Project-OpenBytes/portex-standard", "main", "file.File"
+)
 class RemoteFile(FileBase):
     """This class represents the file on Graviti platform.
 
@@ -180,20 +183,23 @@ class RemoteFile(FileBase):
         key: The key of the file.
         extension: The extension of the file.
         size: The size of the file.
-        object_policy: The policy to access the file.
+        object_policy_manager: The policy to access the file.
 
     """
 
     __slots__ = FileBase.__slots__ + ("_object_policy",)
 
-    # def __init__(
-    #     self, key: str, extension: str, size: int, object_policy: "ObjectPolicy"
-    # ) -> None:
-    def __init__(self, key: str, extension: str, size: int) -> None:
+    def __init__(
+        self,
+        key: str,
+        extension: str,
+        size: int,
+        object_policy_manager: "ObjectPolicyManager",
+    ) -> None:
         self._key = key
         self._extension = extension
         self._size = size
-        # self._object_policy = object_policy
+        self._object_policy = object_policy_manager
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.key}")'

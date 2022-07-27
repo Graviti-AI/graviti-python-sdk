@@ -27,9 +27,16 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
+from graviti.file import FileBase
 from graviti.operation import UpdateData
-from graviti.paging import LazyFactoryBase, MappedPagingList, PagingListBase, PyArrowPagingList
-from graviti.utility import MAX_REPR_ROWS, FileBase
+from graviti.paging import (
+    LazyFactoryBase,
+    MappedPagingList,
+    PagingList,
+    PagingListBase,
+    PyArrowPagingList,
+)
+from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
@@ -38,6 +45,7 @@ if TYPE_CHECKING:
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
+_F = TypeVar("_F", bound="FileSeries")
 _E = TypeVar("_E", bound="EnumSeries")
 
 
@@ -447,9 +455,9 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         cls: Type[_S],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
+        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()
@@ -498,9 +506,9 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         cls: Type[_A],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
+        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
@@ -599,6 +607,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 @pt.ExternalContainerRegister(
     "https://github.com/Project-OpenBytes/portex-standard",
     "main",
+    "file.File",
     "file.Audio",
     "file.Image",
     "file.PointCloud",
@@ -610,12 +619,61 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 class FileSeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
-    def __getitem__(self, key: int) -> Optional[FileBase]:
-        scalar = self._data[key]
-        if not scalar.is_valid:
-            return None
+    _data: PagingList  # type: ignore[assignment]
 
-        return FileBase.from_pyarrow(scalar)
+    def __getitem__(self, key: int) -> Any:
+        return self._data[key]
+
+    @classmethod
+    def _from_factory(  # pylint: disable=too-many-arguments
+        cls: Type[_F],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        object_policy_manager: "ObjectPolicyManager",
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _F:
+        obj: _F = object.__new__(cls)
+        remote_file_type = pt.RemoteFileTypeResgister.SCHEMA_TO_REMOTE_FILE[
+            schema.package.repo, schema.__class__.__name__  # type: ignore[index]
+        ]
+        obj._data = factory.create_list(
+            lambda scalar: remote_file_type(
+                **scalar.as_py(), object_policy_manager=object_policy_manager
+            )
+        )
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+
+        return obj
+
+    @classmethod
+    def _from_iterable(
+        cls: Type[_F],
+        array: Iterable[FileBase],
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _F:
+        obj: _F = object.__new__(cls)
+        obj._data = PagingList(array)
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        return obj
+
+    def _to_post_data(self) -> List[Dict[str, Any]]:
+        return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
+
+    def to_pylist(self) -> List[FileBase]:
+        """Convert the BinaryFileSeries to python list.
+
+        Returns:
+            The python list.
+
+        """
+        return list(self._data)
 
 
 @pt.ContainerRegister(pt.enum)
@@ -645,9 +703,9 @@ class EnumSeries(Series):
         cls: Type[_E],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
+        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _E:
         obj: _E = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()

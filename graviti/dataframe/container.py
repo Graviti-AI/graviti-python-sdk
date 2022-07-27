@@ -34,9 +34,9 @@ class Container:
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: PortexType,
+        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _T:
         raise NotImplementedError
 

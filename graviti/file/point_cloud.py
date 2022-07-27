@@ -6,6 +6,7 @@
 """Graviti point cloud file class."""
 
 from graviti.file.base import File, RemoteFile
+from graviti.portex import RemoteFileTypeResgister
 
 
 class PointCloud(File):
@@ -14,6 +15,12 @@ class PointCloud(File):
     __slots__ = File.__slots__
 
 
+@RemoteFileTypeResgister(
+    "https://github.com/Project-OpenBytes/portex-standard",
+    "main",
+    "file.PointCloud",
+    "file.PointCloudBin",
+)
 class RemotePointCloud(RemoteFile):
     """This class represents remote point cloud files."""
 

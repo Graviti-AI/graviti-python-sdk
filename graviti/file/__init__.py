@@ -5,7 +5,7 @@
 """File module."""
 
 from graviti.file.audio import Audio, RemoteAudio
-from graviti.file.base import File, RemoteFile
+from graviti.file.base import File, FileBase, RemoteFile
 from graviti.file.image import Image, RemoteImage
 from graviti.file.point_cloud import PointCloud, RemotePointCloud
 
@@ -13,6 +13,7 @@ __all__ = [
     "Audio",
     "Image",
     "File",
+    "FileBase",
     "PointCloud",
     "RemoteAudio",
     "RemoteFile",

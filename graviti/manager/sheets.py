@@ -83,7 +83,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
 
-        dataframe = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        dataframe = DataFrame._from_factory(  # pylint: disable=protected-access
+            factory, schema, self._dataset.object_policy_manager
+        )
         dataframe.operations = []
         return dataframe
 
