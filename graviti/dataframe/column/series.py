@@ -33,6 +33,7 @@ from graviti.utility import MAX_REPR_ROWS, FileBase
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
+    from graviti.manager import ObjectPolicyManager
 
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
@@ -442,12 +443,13 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key].as_py()
 
     @classmethod
-    def _from_factory(
+    def _from_factory(  # pylint: disable=too-many-arguments
         cls: Type[_S],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _S:
         obj: _S = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()
@@ -492,12 +494,13 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key]
 
     @classmethod
-    def _from_factory(
+    def _from_factory(  # pylint: disable=too-many-arguments
         cls: Type[_A],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
         _item_schema = builtin_schema.items
@@ -638,12 +641,13 @@ class EnumSeries(Series):
         return obj
 
     @classmethod
-    def _from_factory(
+    def _from_factory(  # pylint: disable=too-many-arguments
         cls: Type[_E],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _E:
         obj: _E = object.__new__(cls)
         obj._data = factory.create_pyarrow_list()

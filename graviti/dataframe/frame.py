@@ -7,7 +7,19 @@
 
 
 from itertools import chain, islice, zip_longest
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import pyarrow as pa
 
@@ -22,6 +34,9 @@ from graviti.dataframe.sql import RowSeries as SqlRowSeries
 from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, FileBase, Mode, engine
+
+if TYPE_CHECKING:
+    from graviti.manager import ObjectPolicyManager
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
@@ -210,12 +225,13 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def _from_factory(  # type: ignore[override]
+    def _from_factory(  # type: ignore[override]  # pylint: disable=too-many-arguments
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: pt.PortexRecordBase,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _T:
         """Create DataFrame with paging lists.
 
@@ -224,6 +240,7 @@ class DataFrame(Container):
             schema: The schema of the DataFrame.
             root: The root of the created DataFrame.
             name: The name of the created DataFrame.
+            object_policy_manager: The object policy manager of the dataset.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
@@ -240,6 +257,7 @@ class DataFrame(Container):
                 schema=value,
                 root=obj if root is None else root,
                 name=(key,) + name,
+                object_policy_manager=object_policy_manager,
             )
             for key, value in schema.items()
         }
