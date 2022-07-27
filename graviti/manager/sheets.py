@@ -36,6 +36,11 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         return self._get_data().__getitem__(key)
 
     def __setitem__(self, key: str, value: DataFrame) -> None:
+        if value.operations is not None:
+            raise NotImplementedError(
+                "Not support assigning one DataFrame to multiple sheets."
+                " Please use method 'copy' first."
+            )
         is_replace = False
         if key in self:
             is_replace = True
@@ -44,13 +49,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         if is_replace:
             self.operations.append(DeleteSheet(key))
 
-        if value.operations is None:
-            value.operations = [AddData(value.copy())]
-        else:
-            raise NotImplementedError(
-                "Not support assigning one DataFrame to multiple sheets."
-                " Please use method 'copy' first."
-            )
+        value.operations = [AddData(value.copy())]
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
