@@ -5,7 +5,7 @@
 """The table-structured data container related classes."""
 
 
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
 
@@ -60,6 +60,9 @@ class Container:
         raise NotImplementedError
 
     def _to_post_data(self) -> List[Any]:
+        raise NotImplementedError
+
+    def _del_item_by_location(self, key: Union[int, slice]) -> None:
         raise NotImplementedError
 
     # TODO: Defines a base indexer for the loc and iloc return type.

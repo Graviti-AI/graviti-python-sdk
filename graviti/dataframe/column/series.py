@@ -115,7 +115,12 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         return self._data[key]
 
     def __delitem__(self, key: Union[int, slice]) -> None:
-        self._data.__delitem__(key)
+        if self._root is not None:
+            raise TypeError(
+                "'__delitem__' is not supported for the Series which is a member of a DataFrame"
+            )
+
+        self._del_item_by_location(key)
 
     @overload
     def __setitem__(self, key: slice, value: Union[Iterable[Any], _SB]) -> None:
@@ -188,6 +193,9 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
+
+    def _del_item_by_location(self, key: Union[int, slice]) -> None:
+        self._data.__delitem__(key)
 
     # @overload
     # @staticmethod

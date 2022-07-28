@@ -105,6 +105,12 @@ class DataFrameILocIndexer:
             self.obj.operations.append(UpdateData(dataframe))
 
     def __delitem__(self, key: Union[int, slice]) -> None:
+        if self.obj._root is not None:
+            raise TypeError(
+                "'iloc.__delitem__' is not supported for the DataFrame"
+                "which is a member of another DataFrame"
+            )
+
         self.obj._del_item_by_location(key)
 
 
@@ -196,4 +202,10 @@ class DataFrameLocIndexer:
             self.obj.operations.append(UpdateData(dataframe))
 
     def __delitem__(self, key: Union[int, slice]) -> None:
+        if self.obj._root is not None:
+            raise TypeError(
+                "'loc.__delitem__' is not supported for the DataFrame"
+                "which is a member of another DataFrame"
+            )
+
         self.obj._del_item_by_location(key)

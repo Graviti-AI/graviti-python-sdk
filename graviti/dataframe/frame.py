@@ -372,7 +372,7 @@ class DataFrame(Container):
 
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         for column in self._columns.values():
-            column.loc.__delitem__(key)
+            column._del_item_by_location(key)  # pylint: disable=protected-access
         if self.operations is not None:
             record_key = self._record_key
             if isinstance(key, int):
