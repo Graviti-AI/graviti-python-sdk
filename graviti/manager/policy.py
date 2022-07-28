@@ -128,10 +128,13 @@ class OSSObjectPolicyManager(ObjectPolicyManager):
         policy: Dict[str, Any],
         verb: str,
         key: str,
+        mime_type: Optional[str] = None,
     ) -> Dict[str, str]:
         date = convert_datetime_to_gmt(datetime.now(timezone.utc))
+        content_type = "" if mime_type is None else mime_type
+
         signature = (
-            f"{verb}\n\n\n{date}\nx-oss-security-token:{policy['SecurityToken']}\n"
+            f"{verb}\n\n{content_type}\n{date}\nx-oss-security-token:{policy['SecurityToken']}\n"
             f"/{policy['bucket']}/{key}"
         )
         _hmac = policy["hmac"].copy()
@@ -139,11 +142,14 @@ class OSSObjectPolicyManager(ObjectPolicyManager):
         signature = base64.b64encode(_hmac.digest()).decode("utf-8")
         authorization = f"OSS {policy['AccessKeyId']}:{signature}"
 
-        return {
+        headers = {
             "Authorization": authorization,
             "x-oss-security-token": policy["SecurityToken"],
             "Date": date,
         }
+        if mime_type is not None:
+            headers["Content-Type"] = mime_type
+        return headers
 
     def get_object(self, key: str, _allow_retry: bool = True) -> UserResponse:
         """Get the object from OSS.
@@ -190,11 +196,9 @@ class OSSObjectPolicyManager(ObjectPolicyManager):
         policy = self._init_put_policy()
         verb = "PUT"
 
-        headers: Dict[str, Any] = self._get_headers(policy, verb, key)
-        url = f"https://{policy['bucket']}.{policy['endpoint']}/{key}"
         mime_type = mimetypes.guess_type(path)[0]
-        if mime_type is not None:
-            headers["Content-Type"] = mime_type
+        headers: Dict[str, Any] = self._get_headers(policy, verb, key, mime_type)
+        url = f"https://{policy['bucket']}.{policy['endpoint']}/{key}"
 
         try:
             with path.open("rb") as fp:
