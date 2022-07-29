@@ -126,6 +126,21 @@ Edit multiple items:
 
    df[f"{COLUMN_NAME}"][0:2] = ["d.jpg", "e.jpg"]
 
+Delete Rows
+===========
+
+Delete one row:
+
+.. code:: python
+
+   del df.loc[0]
+
+Delete multiple rows:
+
+.. code:: python
+
+   del df.loc[0:2]
+
 Extend Rows
 ===========
 
