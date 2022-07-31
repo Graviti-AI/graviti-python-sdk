@@ -5,17 +5,20 @@
 
 """Definitions of different operations on a DataFrame."""
 
-from typing import TYPE_CHECKING, List
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
 from tqdm import tqdm
 
-from graviti.openapi import add_data, delete_data, update_data, update_schema, upload_files
+from graviti.file import File
+from graviti.openapi import add_data, delete_data, update_data, update_schema
 from graviti.operation.common import get_schema
-from graviti.portex import PortexType
-from graviti.utility import File, chunked
+from graviti.portex import PortexType, RemoteFileTypeResgister
+from graviti.utility import chunked, submit_multithread_tasks
 
 if TYPE_CHECKING:
     from graviti.dataframe import DataFrame, FileSeries
+    from graviti.manager import ObjectPolicyManager
 
 _MAX_BATCH_SIZE = 2048
 _MAX_ITEMS = 60000
@@ -54,6 +57,7 @@ class DataFrameOperation:
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
+        object_policy_manager: "ObjectPolicyManager",
     ) -> None:
         """Execute the OpenAPI create sheet.
 
@@ -67,6 +71,7 @@ class DataFrameOperation:
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
+            object_policy_manager: The object policy manager of the dataset.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -88,6 +93,37 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             _MAX_BATCH_SIZE,
             _MAX_ITEMS // self._data.schema._get_column_count(),  # pylint: disable=protected-access
         )
+
+    def _update_local_files(
+        self,
+        object_policy_manager: "ObjectPolicyManager",
+    ) -> List[List[Optional[Tuple[str, Path]]]]:
+        # object_policy_manager = self._data.object_policy_manager
+        if not object_policy_manager:
+            raise ValueError("Require object policy manager to upload data")
+
+        prefix = object_policy_manager.prefix
+
+        keys_and_paths = []
+        for file_array in self.get_file_arrays():
+            schema = file_array.schema
+            file_type = RemoteFileTypeResgister.SCHEMA_TO_REMOTE_FILE[
+                schema.package.repo, schema.__class__.__name__  # type: ignore[index]
+            ]
+            key_and_path: List[Optional[Tuple[str, Path]]] = []
+            # pylint: disable=protected-access
+            for index, file in enumerate(file_array._data):
+                if isinstance(file, File):
+                    key = f"{prefix}/{file.get_checksum()}"
+                    key_and_path.append((key, file.path))
+
+                    post_data = file._to_post_data()
+                    post_data["key"] = key
+                    file_array[index] = file_type(**post_data)  # type: ignore[arg-type]
+                else:
+                    key_and_path.append(None)
+            keys_and_paths.append(key_and_path)
+        return keys_and_paths
 
     def get_file_arrays(self) -> List["FileSeries"]:
         """Get the list of FileSeries.
@@ -131,6 +167,7 @@ class AddData(DataOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
+        object_policy_manager: "ObjectPolicyManager",
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -144,26 +181,22 @@ class AddData(DataOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
+            object_policy_manager: The object policy manager of the dataset.
 
         """
+        keys_and_paths = self._update_local_files(object_policy_manager)
         data = self._data._to_post_data()  # pylint: disable=protected-access
-
-        for batch, *file_arrays in zip(
+        for batch, *keys_and_paths in zip(
             *map(
+                # TODO: support dataframe slicing methods to replace chunked
                 lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
-                (data, *self.get_file_arrays()),
+                (data, *keys_and_paths),
             )
         ):
-            for file_array in file_arrays:
-                local_files = filter(lambda x: isinstance(x, File), file_array)
-                upload_files(
-                    access_key,
-                    url,
-                    owner,
-                    dataset,
-                    draft_number=draft_number,
-                    sheet=sheet,
-                    files=local_files,
+            for key_and_path in keys_and_paths:
+                _upload_files(
+                    filter(lambda x: x is not None, key_and_path),  # type: ignore[arg-type]
+                    object_policy_manager,
                     jobs=jobs,
                     pbar=file_pbar,
                 )
@@ -203,6 +236,7 @@ class UpdateSchema(DataFrameOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
+        object_policy_manager: "ObjectPolicyManager",
     ) -> None:
         """Execute the OpenAPI update schema.
 
@@ -216,6 +250,7 @@ class UpdateSchema(DataFrameOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
+            object_policy_manager: The object policy manager of the dataset.
 
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
@@ -255,6 +290,7 @@ class UpdateData(DataOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
+        object_policy_manager: "ObjectPolicyManager",
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -268,30 +304,25 @@ class UpdateData(DataOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
+            object_policy_manager: The object policy manager of the dataset.
 
         """
+        keys_and_paths = self._update_local_files(object_policy_manager)
         data = self._data._to_patch_data()  # pylint: disable=protected-access
 
-        for batch, *file_arrays in zip(
+        for batch, *keys_and_paths in zip(
             *map(
                 lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
-                (data, *self.get_file_arrays()),
+                (data, *keys_and_paths),
             )
         ):
-            for file_array in file_arrays:
-                local_files = filter(lambda x: isinstance(x, File), file_array)
-                upload_files(
-                    access_key,
-                    url,
-                    owner,
-                    dataset,
-                    draft_number=draft_number,
-                    sheet=sheet,
-                    files=local_files,
+            for key_and_path in keys_and_paths:
+                _upload_files(
+                    filter(lambda x: x is not None, key_and_path),  # type: ignore[arg-type]
+                    object_policy_manager,
                     jobs=jobs,
                     pbar=file_pbar,
                 )
-
             update_data(
                 access_key,
                 url,
@@ -327,6 +358,7 @@ class DeleteData(DataFrameOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
+        object_policy_manager: "ObjectPolicyManager",
     ) -> None:
         """Execute the OpenAPI delete data.
 
@@ -340,6 +372,7 @@ class DeleteData(DataFrameOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
+            object_policy_manager: The object policy manager of the dataset.
 
         """
         delete_data(
@@ -351,3 +384,33 @@ class DeleteData(DataFrameOperation):
             sheet=sheet,
             record_keys=self.record_keys,
         )
+
+
+def _upload_files(
+    keys_and_paths: Iterable[Tuple[str, Path]],
+    object_policy_manager: "ObjectPolicyManager",
+    pbar: tqdm,
+    _allow_retry: bool = True,
+    jobs: int = 8,
+) -> None:
+    submit_multithread_tasks(
+        lambda key_and_path: _upload_file(
+            *key_and_path,
+            object_policy_manager,
+            pbar,
+            _allow_retry,
+        ),
+        keys_and_paths,
+        jobs=jobs,
+    )
+
+
+def _upload_file(
+    key: str,
+    path: Path,
+    object_policy_manager: "ObjectPolicyManager",
+    pbar: tqdm,
+    _allow_retry: bool = True,
+) -> None:
+    object_policy_manager.put_object(key, path, _allow_retry)
+    pbar.update()

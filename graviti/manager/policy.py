@@ -58,6 +58,25 @@ class ObjectPolicyManager:
         """Clear the put policy."""
         delattr(self, "_put_policy")
 
+    def _init_put_policy(self) -> Dict[str, Any]:
+        """Initialize and return the put policy.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    @property
+    def prefix(self) -> str:
+        """Return the prefix of the put policy.
+
+        Returns:
+            The prefix of the put policy.
+
+        """
+        return self._init_put_policy()["policy"]["prefix"]  # type: ignore[no-any-return]
+
     def get_object(self, key: str, _allow_retry: bool = True) -> UserResponse:
         """Get the object from graviti.
 
