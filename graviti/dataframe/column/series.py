@@ -208,6 +208,24 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         self._data.__delitem__(key)
 
+    @classmethod
+    def _from_factory(
+        cls: Type[_SB],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _SB:
+        obj: _SB = object.__new__(cls)
+        obj.schema = schema
+        obj._refresh_data_from_factory(factory)
+        obj._root = root
+        obj._name = name
+        return obj
+
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        self._data = factory.create_pyarrow_list()
+
     # @overload
     # @staticmethod
     # def _get_location_by_index(key: Iterable[int]) -> List[int]:
@@ -471,21 +489,6 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key].as_py()
 
     @classmethod
-    def _from_factory(
-        cls: Type[_S],
-        factory: LazyFactoryBase,
-        schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _S:
-        obj: _S = object.__new__(cls)
-        obj._data = factory.create_pyarrow_list()
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
-        return obj
-
-    @classmethod
     def _from_pyarrow(
         cls: Type[_S],
         array: pa.Array,
@@ -519,29 +522,6 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
     def __getitem__(self, key: int) -> Any:
         return self._data[key]
-
-    @classmethod
-    def _from_factory(
-        cls: Type[_A],
-        factory: LazyFactoryBase,
-        schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _A:
-        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
-        _item_schema = builtin_schema.items
-        _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
-
-        obj: _A = object.__new__(cls)
-        obj._data = factory.create_mapped_list(
-            lambda scalar: _item_creator(scalar.values, _item_schema)
-        )
-        obj.schema = schema
-        obj._root = root
-        obj._item_schema = _item_schema  # pylint: disable=protected-access
-        obj._name = name
-
-        return obj
 
     @classmethod
     def _from_pyarrow(
@@ -584,6 +564,16 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj.schema = schema
         obj._item_schema = items_schema
         return obj
+
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        builtin_schema: pt.array = self.schema.to_builtin()  # type: ignore[assignment]
+        _item_schema = builtin_schema.items
+        _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
+
+        self._data = factory.create_mapped_list(
+            lambda scalar: _item_creator(scalar.values, _item_schema)
+        )
+        self._item_schema = _item_schema  # pylint: disable=protected-access
 
     def _extract_paging_list(self: _A, values: _A) -> MappedPagingList:
         # pylint: disable=protected-access
@@ -661,29 +651,6 @@ class FileSeries(Series):  # pylint: disable=abstract-method
         return self._data[key]
 
     @classmethod
-    def _from_factory(  # pylint: disable=too-many-arguments
-        cls: Type[_F],
-        factory: LazyFactoryBase,
-        schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _F:
-        obj: _F = object.__new__(cls)
-        remote_file_type = pt.RemoteFileTypeResgister.SCHEMA_TO_REMOTE_FILE[
-            schema.package.repo, schema.__class__.__name__  # type: ignore[index]
-        ]
-        obj._data = factory.create_list(
-            lambda scalar: remote_file_type(
-                **scalar.as_py(), object_policy_manager=factory.object_policy_manager
-            )
-        )
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
-
-        return obj
-
-    @classmethod
     def _from_iterable(
         cls: Type[_F],
         array: Iterable[FileBase],
@@ -696,6 +663,17 @@ class FileSeries(Series):  # pylint: disable=abstract-method
 
     def _to_post_data(self) -> List[Dict[str, Any]]:
         return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
+
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        schema = self.schema
+        remote_file_type = pt.RemoteFileTypeResgister.SCHEMA_TO_REMOTE_FILE[
+            schema.package.repo, schema.__class__.__name__  # type: ignore[index]
+        ]
+        self._data = factory.create_list(
+            lambda scalar: remote_file_type(
+                **scalar.as_py(), object_policy_manager=factory.object_policy_manager
+            )
+        )
 
     def to_pylist(self) -> List[FileBase]:
         """Convert the BinaryFileSeries to python list.
@@ -730,25 +708,6 @@ class EnumSeries(Series):
         return obj
 
     @classmethod
-    def _from_factory(
-        cls: Type[_E],
-        factory: LazyFactoryBase,
-        schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _E:
-        obj: _E = object.__new__(cls)
-        obj._data = factory.create_pyarrow_list()
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
-        obj._indices_to_values = cls._create_indices_to_values(
-            schema.to_builtin().values,  # type: ignore[attr-defined]
-            obj._data._patype,  # pylint: disable=protected-access
-        )
-        return obj
-
-    @classmethod
     def _from_pyarrow(
         cls: Type[_E],
         array: pa.Array,
@@ -780,6 +739,13 @@ class EnumSeries(Series):
         if None not in indices_to_values:
             indices_to_values[pa.scalar(None, patype)] = None
         return indices_to_values
+
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        self._data = factory.create_pyarrow_list()
+        self._indices_to_values = self._create_indices_to_values(
+            self.schema.to_builtin().values,  # type: ignore[attr-defined]
+            self._data._patype,  # pylint: disable=protected-access
+        )
 
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
