@@ -5,7 +5,7 @@
 """The table-structured data container related classes."""
 
 
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
 
@@ -47,6 +47,14 @@ class Container:
         schema: PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+    ) -> _T:
+        raise NotImplementedError
+
+    @classmethod
+    def _from_iterable(
+        cls: Type[_T],
+        array: Iterable[Any],
+        schema: PortexType,
     ) -> _T:
         raise NotImplementedError
 
