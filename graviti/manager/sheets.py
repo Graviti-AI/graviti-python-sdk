@@ -145,6 +145,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self._check_record_names(self[sheet_name].schema, sheet_name)
 
         dataset = self._dataset
+        object_policy_manager = dataset.object_policy_manager
         for sheet_operation in self.operations:
             sheet_operation.do(
                 dataset.access_key,
@@ -180,5 +181,6 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                             jobs=jobs,
                             data_pbar=data_pbar,
                             file_pbar=file_pbar,
+                            object_policy_manager=object_policy_manager,
                         )
-                        dataframe.operations = []
+                    dataframe.operations = []
