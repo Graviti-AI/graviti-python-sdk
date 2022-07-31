@@ -13,6 +13,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    Iterator,
     List,
     Optional,
     Tuple,
@@ -103,6 +104,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         if schema is None:
             array = pa.array(data)
             schema = pt.PortexType.from_pyarrow(array.type)
+        elif issubclass(schema.container, FileSeries):
+            return FileSeries._from_iterable(data, schema)  # type: ignore[arg-type]
         else:
             array = cls._pylist_to_pyarrow(data, schema)  # type: ignore[arg-type]
 
@@ -238,9 +241,18 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _getitem_by_location(self, key: int) -> Any:
         return self.__getitem__(key)
 
+    @classmethod
+    def _from_iterable(
+        cls: Type[_SB],
+        array: Iterable[Any],
+        schema: pt.PortexType,
+    ) -> _SB:
+        return cls(array, schema)
+
     @staticmethod
     def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
-
+        if isinstance(values, Iterator):
+            values = list(values)
         processor, need_process = SeriesBase._process_array(values, schema)
 
         if not need_process:
@@ -558,6 +570,24 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         return obj
 
+    @classmethod
+    def _from_iterable(
+        cls: Type[_A],
+        array: Iterable[Any],
+        schema: pt.PortexType,
+    ) -> _A:
+        obj: _A = object.__new__(cls)
+        items_schema = schema.to_builtin().items  # type: ignore[attr-defined]
+        items_container = items_schema.container
+        array = (
+            items_container._from_iterable(value, items_schema)  # pylint: disable=protected-access
+            for value in array
+        )
+        obj._data = MappedPagingList(array)
+        obj.schema = schema
+        obj._item_schema = items_schema
+        return obj
+
     def _extract_paging_list(self: _A, values: _A) -> MappedPagingList:
         # pylint: disable=protected-access
         _item_schema = self._item_schema
@@ -662,14 +692,10 @@ class FileSeries(Series):  # pylint: disable=abstract-method
         cls: Type[_F],
         array: Iterable[FileBase],
         schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
     ) -> _F:
         obj: _F = object.__new__(cls)
         obj._data = PagingList(array)
         obj.schema = schema
-        obj._root = root
-        obj._name = name
         return obj
 
     def _to_post_data(self) -> List[Dict[str, Any]]:
