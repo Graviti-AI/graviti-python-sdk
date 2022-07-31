@@ -338,8 +338,11 @@ class PagingList(PagingListBase):
         """
         obj: _PL = object.__new__(cls)
 
+        def get_array(pos: int, keys: Tuple[str, ...]) -> Tuple[Any, ...]:
+            return tuple(map(mapper, factory.get_array(pos, keys)))
+
         obj._pages = [
-            MappedLazyPage(length, partial(factory.get_array, pos, keys), mapper)
+            LazyPage(length, partial(get_array, pos, keys))
             for pos, length in enumerate(factory.get_page_lengths())
         ]
         obj._offsets = factory.get_offsets()

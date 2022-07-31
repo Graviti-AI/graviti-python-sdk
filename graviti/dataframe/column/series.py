@@ -27,9 +27,16 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
 from graviti.dataframe.container import Container
+from graviti.file import FileBase, RemoteAudio, RemoteFile, RemoteImage, RemotePointCloud
 from graviti.operation import UpdateData
-from graviti.paging import LazyFactoryBase, MappedPagingList, PagingListBase, PyArrowPagingList
-from graviti.utility import MAX_REPR_ROWS, FileBase
+from graviti.paging import (
+    LazyFactoryBase,
+    MappedPagingList,
+    PagingList,
+    PagingListBase,
+    PyArrowPagingList,
+)
+from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
@@ -38,6 +45,7 @@ if TYPE_CHECKING:
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
+_F = TypeVar("_F", bound="FileSeries")
 _E = TypeVar("_E", bound="EnumSeries")
 
 
@@ -601,6 +609,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 @pt.ExternalContainerRegister(
     "https://github.com/Project-OpenBytes/portex-standard",
     "main",
+    "file.File",
     "file.Audio",
     "file.Image",
     "file.PointCloud",
@@ -612,12 +621,80 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 class FileSeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
-    def __getitem__(self, key: int) -> Optional[FileBase]:
-        scalar = self._data[key]
-        if not scalar.is_valid:
-            return None
+    _FILE_CONTAINER = RemoteFile
 
-        return FileBase.from_pyarrow(scalar)
+    _data: PagingList  # type: ignore[assignment]
+
+    object_policy_manager: Optional["ObjectPolicyManager"]
+
+    def __getitem__(self, key: int) -> Any:
+        return self._data[key]
+
+    @classmethod
+    def _from_factory(  # pylint: disable=too-many-arguments
+        cls: Type[_F],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
+    ) -> _F:
+        obj: _F = object.__new__(cls)
+        obj._data = factory.create_list(
+            lambda scalar: cls._FILE_CONTAINER(**scalar.as_py())
+            # lambda scalar: RemoteFile(**scalar.as_py(), object_policy=object_policy_manager)
+        )
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        obj.object_policy_manager = object_policy_manager
+
+        return obj
+
+    @classmethod
+    def _from_iterable(
+        cls: Type[_F],
+        array: Iterable[FileBase],
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _F:
+        obj: _F = object.__new__(cls)
+        obj._data = PagingList(array)
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        return obj
+
+    def _to_post_data(self) -> List[Dict[str, Any]]:
+        return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
+
+    def to_pylist(self) -> List[FileBase]:
+        """Convert the BinaryFileSeries to python list.
+
+        Returns:
+            The python list.
+
+        """
+        return list(self._data)
+
+
+class ImageFileSeries(Series):  # pylint: disable=abstract-method
+    """One-dimensional array for image files."""
+
+    _FILE_CONTAINER = RemoteImage
+
+
+class AudioSeries(Series):  # pylint: disable=abstract-method
+    """One-dimensional array for audio files."""
+
+    _FILE_CONTAINER = RemoteAudio
+
+
+class PointCloudFileSeries(Series):  # pylint: disable=abstract-method
+    """One-dimensional array for point cloud files."""
+
+    _FILE_CONTAINER = RemotePointCloud
 
 
 @pt.ContainerRegister(pt.enum)
