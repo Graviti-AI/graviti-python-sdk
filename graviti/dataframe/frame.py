@@ -5,6 +5,7 @@
 
 """The implementation of the Graviti DataFrame."""
 
+# pylint: disable=too-many-lines
 
 from itertools import chain, islice, zip_longest
 from typing import (
@@ -31,9 +32,10 @@ from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.dataframe.sql import RowSeries as SqlRowSeries
+from graviti.file import FileBase
 from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
-from graviti.utility import MAX_REPR_ROWS, FileBase, Mode, engine
+from graviti.utility import MAX_REPR_ROWS, Mode, engine
 
 if TYPE_CHECKING:
     from graviti.manager import ObjectPolicyManager
@@ -44,6 +46,30 @@ _C = TypeVar("_C", bound="Container")
 
 RECORD_KEY = "__record_key"
 APPLY_KEY = "apply_result"
+
+
+def _to_simple_pyarrow(schema: pt.PortexType) -> pa.DataType:
+    if not isinstance(schema, pt.PortexRecordBase):
+        return schema.to_pyarrow()
+
+    fields = []
+    for name, portex_type in schema.items():
+        builtin_type = portex_type.to_builtin()  # type: ignore[attr-defined]
+        if (
+            isinstance(builtin_type, pt.array)
+            and isinstance(builtin_type.items, pt.PortexRecordBase)
+            or issubclass(portex_type.container, FileSeries)
+        ):
+            continue
+
+        if isinstance(portex_type, pt.PortexRecordBase):
+            sub_fields = _to_simple_pyarrow(portex_type)
+            if sub_fields:
+                fields.append(pa.field(name, sub_fields))
+        else:
+            fields.append(pa.field(name, _to_simple_pyarrow(portex_type)))
+
+    return pa.struct(fields)
 
 
 @pt.ContainerRegister(pt.record)
@@ -115,7 +141,10 @@ class DataFrame(Container):
             return cls.from_pyarrow(pa.array(data))
 
         if isinstance(data, list):
-            return cls._from_pyarrow(cls._pylist_to_pyarrow(data, schema), schema)
+            # return cls._from_pyarrow(cls._pylist_to_pyarrow(data, schema), schema)
+            return cls._from_pyarrow_and_pydict(
+                *cls._pylist_to_pyarrow_and_pydict(data, schema), schema
+            )
 
         raise ValueError("DataFrame only supports creating from list object now")
 
@@ -722,8 +751,8 @@ class DataFrame(Container):
                 "'extend' is not supported for the DataFrame which is a member of another DataFrame"
             )
         if not isinstance(values, DataFrame):
-            values = DataFrame._from_pyarrow(  # pylint: disable=protected-access
-                self._pylist_to_pyarrow(values, self.schema), self.schema
+            values = DataFrame._from_pyarrow_and_pydict(  # pylint: disable=protected-access
+                *self._pylist_to_pyarrow_and_pydict(values, self.schema), self.schema
             )
         elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):
             raise TypeError("The schema of the given DataFrame is mismatched")
@@ -806,6 +835,80 @@ class DataFrame(Container):
             return pa.array(values, schema.to_pyarrow())
 
         return pa.array(processor(values), schema.to_pyarrow())
+
+    @staticmethod
+    def _pylist_to_pyarrow_and_pydict(
+        values: Iterable[Any], schema: pt.PortexRecordBase
+    ) -> Tuple[pa.StructArray, Dict[str, Any]]:
+        pyarrow_schema = _to_simple_pyarrow(schema)
+        pyarrow_array = pa.array(values, pyarrow_schema)
+
+        pydict = DataFrame._get_pydict(values, schema)
+
+        return pyarrow_array, pydict
+
+    @staticmethod
+    def _get_pydict(values: Iterable[Any], schema: pt.PortexRecordBase) -> Dict[str, Any]:
+        pydict: Dict[str, Any] = {}
+        for key, portex_type in schema.items():
+            container = portex_type.container
+            if issubclass(container, ArraySeries) and isinstance(
+                portex_type.to_builtin().items, pt.PortexRecordBase  # type: ignore[attr-defined]
+            ):
+                pydict[key] = container._from_iterable(  # pylint: disable=protected-access
+                    (DataFrame(value[key]) for value in values),
+                    portex_type,
+                )
+            elif issubclass(container, FileSeries):
+                pydict[key] = container._from_iterable(  # pylint: disable=protected-access
+                    (value[key] for value in values), portex_type
+                )
+            elif isinstance(portex_type, pt.PortexRecordBase):
+                sub_pydict = DataFrame._get_pydict([value[key] for value in values], portex_type)
+                if sub_pydict:
+                    pydict[key] = sub_pydict
+        return pydict
+
+    @classmethod
+    def _from_pyarrow_and_pydict(  # pylint: disable=too-many-arguments
+        cls: Type[_T],
+        array: pa.StructArray,
+        pydict: Dict[str, Any],
+        schema: pt.PortexRecordBase,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
+        obj: _T = object.__new__(cls)
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+
+        columns: Dict[str, Any] = {}
+        for key, value in schema.items():
+            sub_pydict = pydict.get(key, {})
+            if isinstance(sub_pydict, (FileSeries, ArraySeries)):
+                columns[key] = sub_pydict
+                continue
+
+            sub_array = array and array.type.get_field_index(key) != -1 and array.field(key)
+            if isinstance(value, pt.PortexRecordBase):
+                columns[key] = cls._from_pyarrow_and_pydict(
+                    sub_array,
+                    sub_pydict,
+                    schema=value,
+                    root=obj if root is None else root,
+                    name=(key,) + name,
+                )
+            else:
+                columns[key] = value.container._from_pyarrow(  # pylint: disable=protected-access
+                    array.field(key),
+                    schema=value,
+                    root=obj if root is None else root,
+                    name=(key,) + name,
+                )
+        obj._columns = columns
+
+        return obj
 
     def _get_file_columns(self) -> List[FileSeries]:
         """Get the FileSeries columns of the DataFrame.

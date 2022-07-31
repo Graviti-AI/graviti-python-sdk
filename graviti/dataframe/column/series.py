@@ -551,6 +551,22 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         return obj
 
+    @classmethod
+    def _from_iterable(
+        cls: Type[_A],
+        array: Iterable["DataFrame"],
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _A:
+        obj: _A = object.__new__(cls)
+        obj._data = MappedPagingList(array)
+        obj.schema = schema
+        obj._item_schema = schema.to_builtin().items  # type: ignore[attr-defined]
+        obj._root = root
+        obj._name = name
+        return obj
+
     def _extract_paging_list(self: _A, values: _A) -> MappedPagingList:
         # pylint: disable=protected-access
         _item_schema = self._item_schema
