@@ -198,6 +198,10 @@ class DataFrame(Container):
             lines.append(line)
         return lines
 
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        for key, column in self._columns.items():
+            column._refresh_data_from_factory(factory[key])  # pylint: disable=protected-access
+
     @classmethod
     def _construct(
         cls,

@@ -169,7 +169,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         ) as file_pbar:
             with tqdm(total=df_total, disable=quiet, desc="uploading structured data") as data_pbar:
                 for sheet_name, dataframe in self.items():
-                    for df_operation in dataframe.operations:  # type: ignore[union-attr]
+                    if not dataframe.operations:
+                        continue
+                    for df_operation in dataframe.operations:
                         df_operation.do(
                             dataset.access_key,
                             dataset.url,
@@ -183,3 +185,15 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                             object_policy_manager=object_policy_manager,
                         )
                     dataframe.operations = []
+                    factory = LazyLowerCaseFactory(
+                        len(dataframe),
+                        LIMIT,
+                        partial(self._list_data, sheet_name=sheet_name),
+                        pa.struct(
+                            [pa.field(RECORD_KEY, pa.string()), *dataframe.schema.to_pyarrow()]
+                        ),
+                    )
+                    factory.object_policy_manager = object_policy_manager
+                    dataframe._refresh_data_from_factory(  # pylint: disable=protected-access)
+                        factory
+                    )

@@ -73,6 +73,9 @@ class Container:
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         raise NotImplementedError
 
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        raise NotImplementedError
+
     # TODO: Defines a base indexer for the loc and iloc return type.
     @property
     def iloc(self) -> Any:
