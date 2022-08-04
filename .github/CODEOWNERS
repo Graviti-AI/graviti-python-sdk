@@ -4,15 +4,8 @@
 
 * @linjiX
 
-/.github/workflows/ @AChenQ
-/.pre-commit-config.yaml @AChenQ
-
 /docs/ @graczhual
 
 /graviti/openapi/ @graczhual
 /graviti/manager/ @graczhual
 /graviti/operation/ @graczhual
-/graviti/dataframe/ @AChenQ
-/graviti/portex/ @Lee-000
-/graviti/exception.py @Lee-000
-/graviti/file/ @Lee-000
