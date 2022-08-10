@@ -31,6 +31,10 @@ class PortexError(GravitiException):
     """This is the base class for custom exceptions in Graviti portex module."""
 
 
+class FieldNameConflictError(PortexError):
+    """This class defines the exception for the portex field name error."""
+
+
 class GitNotFoundError(PortexError):
     """This class defines the exception for the git command not found error.
 
