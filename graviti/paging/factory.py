@@ -13,6 +13,7 @@ import pyarrow as pa
 
 from graviti.paging.lists import PagingList, PyArrowPagingList
 from graviti.paging.offset import Offsets
+from graviti.paging.wrapper import StructArrayWrapper
 
 
 class LazyFactoryBase:
@@ -224,3 +225,73 @@ class LazySubFactory(LazyFactoryBase):
 
         """
         return PyArrowPagingList.from_factory(self._factory, self._keys, self._patype)
+
+
+class LazyLowerCaseFactory(LazyFactory):
+    """LazyLowerCaseFactory is a factory to handle the case insensitive data from graviti back-end.
+
+    Arguments:
+        total_count: The total count of the elements in the paging lists.
+        limit: The size of each lazy load page.
+        getter: A callable object to get the source data.
+        patype: The pyarrow DataType of the data in the factory.
+
+    """
+
+    def __init__(
+        self, total_count: int, limit: int, getter: Callable[[int, int], Any], patype: pa.DataType
+    ) -> None:
+        super().__init__(total_count, limit, getter, self._lower_patype(patype))
+
+    def __getitem__(self, key: str) -> "LazyLowerCaseSubFactory":
+        lower_key = key.lower()
+        return LazyLowerCaseSubFactory(self, (lower_key,), self._patype[lower_key].type)
+
+    def _lower_patype(self, patype: pa.DataType) -> pa.DataType:
+        if isinstance(patype, pa.StructType):
+            return pa.struct(
+                {field.name.lower(): self._lower_patype(field.type) for field in patype}
+            )
+
+        if isinstance(patype, pa.ListType):
+            return pa.list_(self._lower_patype(patype.value_type))
+
+        return patype
+
+    def get_array(self, pos: int, keys: Tuple[str, ...]) -> pa.Array:
+        """Get the array from the factory.
+
+        Arguments:
+            pos: The page number.
+            keys: The keys to access the array from factory.
+
+        Returns:
+            The requested pyarrow array.
+
+        """
+        array = self._pages[pos]
+        if array is None:
+            array = pa.array(self._getter(pos * self._limit, self._limit), type=self._patype)
+            self._pages[pos] = StructArrayWrapper(array)
+
+        for key in keys:
+            array = array.field(key)
+
+        return array
+
+
+class LazyLowerCaseSubFactory(LazySubFactory):
+    """LazyLowerCaseSubFactory is a sub-factory to handle the case insensitive data.
+
+    Arguments:
+        factory: The source LazyFactory instance.
+        keys: The keys to access the array from the source LazyFactory.
+        patype: The pyarrow DataType of the data in the sub-factory.
+
+    """
+
+    def __getitem__(self, key: str) -> "LazyLowerCaseSubFactory":
+        lower_key = key.lower()
+        return LazyLowerCaseSubFactory(
+            self._factory, self._keys + (lower_key,), self._patype[lower_key].type
+        )

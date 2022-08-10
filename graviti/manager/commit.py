@@ -24,7 +24,7 @@ from graviti.openapi import (
     list_commits,
 )
 from graviti.operation import SheetOperation
-from graviti.paging import LazyFactory
+from graviti.paging import LazyLowerCaseFactory
 from graviti.portex import PortexRecordBase
 from graviti.utility import check_type, convert_iso_to_datetime
 
@@ -256,7 +256,7 @@ class Commit(Sheets):
         if schema is None:
             schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
 
-        factory = LazyFactory(
+        factory = LazyLowerCaseFactory(
             total_count,
             LIMIT,
             _getter,
