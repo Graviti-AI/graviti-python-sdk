@@ -88,4 +88,4 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
             The expanded Portex builtin type.
 
         """
-        return self.internal_type.to_builtin()  # type: ignore[attr-defined, no-any-return]
+        return self.internal_type.to_builtin()
