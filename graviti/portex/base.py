@@ -19,6 +19,7 @@ from graviti.utility import PathLike, UserMutableMapping
 if TYPE_CHECKING:
     from graviti.dataframe import Container
     from graviti.dataframe.sql.container import SearchContainer
+    from graviti.portex.builtin import PortexBuiltinType
     from graviti.portex.factory import ConnectedFieldsFactory
     from graviti.portex.field import ConnectedFields
     from graviti.portex.param import Params
@@ -224,6 +225,15 @@ class PortexType:
 
         Return:
             The corresponding builtin PyArrow DataType.
+
+        """
+        raise NotImplementedError
+
+    def to_builtin(self) -> "PortexBuiltinType":
+        """Expand the top level type to Portex builtin type.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
 
         """
         raise NotImplementedError

@@ -487,7 +487,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _A:
-        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
+        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
@@ -508,7 +508,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _A:
-        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[attr-defined]
+        builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
