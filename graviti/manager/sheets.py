@@ -14,7 +14,7 @@ from tqdm.auto import tqdm
 from graviti.dataframe import RECORD_KEY, DataFrame
 from graviti.manager.common import LIMIT
 from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
-from graviti.paging import LazyFactory
+from graviti.paging import LazyLowerCaseFactory
 from graviti.portex import PortexRecordBase
 from graviti.utility import ReprMixin
 
@@ -76,7 +76,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
         patype = schema.to_pyarrow()
 
-        factory = LazyFactory(
+        factory = LazyLowerCaseFactory(
             sheet["record_count"],
             LIMIT,
             partial(self._list_data, sheet_name=sheet_name),
