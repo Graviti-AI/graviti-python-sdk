@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, MutableMapping
 import pyarrow as pa
 from tqdm.auto import tqdm
 
+import graviti.portex as pt
 from graviti.dataframe import RECORD_KEY, DataFrame
+from graviti.exception import FieldNameConflictError
 from graviti.manager.common import LIMIT
 from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
 from graviti.paging import LazyLowerCaseFactory
@@ -103,6 +105,33 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
         return self._data
 
+    def _check_record_names(self, schema: PortexRecordBase, sheet_name: str) -> None:
+        name_mapping: Dict[str, str] = {}
+        for name, portex_type in schema.items():
+            builtin_type = portex_type.to_builtin()
+            if isinstance(builtin_type, pt.record):
+                self._check_record_names(builtin_type, sheet_name)
+            elif isinstance(builtin_type, pt.array):
+                self._check_array_names(builtin_type, sheet_name)
+
+            lower_name = name.lower()
+            if lower_name in name_mapping:
+                raise FieldNameConflictError(
+                    f'In sheet "{sheet_name}", the field name "{name}" is conflict with '
+                    f'"{name_mapping[lower_name]}", the Graviti data platform is case insensitive.'
+                )
+
+            name_mapping[lower_name] = name
+
+    def _check_array_names(self, schema: pt.array, sheet_name: str) -> None:
+        items = schema.items
+        builtin_type = items.to_builtin()
+
+        if isinstance(builtin_type, pt.record):
+            self._check_record_names(builtin_type, sheet_name)
+        elif isinstance(builtin_type, pt.array):
+            self._check_array_names(builtin_type, sheet_name)
+
     def _upload_to_draft(self, draft_number: int, jobs: int, quiet: bool) -> None:
         """Upload the local dataset to Graviti.
 
@@ -112,6 +141,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             quiet: Set to True to stop showing the upload process bar.
 
         """
+        for sheet_name in {operation.sheet for operation in self.operations}:
+            self._check_record_names(self[sheet_name].schema, sheet_name)
+
         dataset = self._dataset
         for sheet_operation in self.operations:
             sheet_operation.do(
