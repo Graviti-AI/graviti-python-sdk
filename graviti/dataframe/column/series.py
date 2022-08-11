@@ -251,17 +251,26 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     @staticmethod
     def _process_array(
         values: Iterable[Any], schema: pt.PortexType
-    ) -> Tuple[Callable[[Any], Any], bool]:
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
+        if not values:
+            return lambda x: x, None
+
         for value in values:
             if value is None:
                 continue
+
             processor, need_process = SeriesBase._get_process(value, schema)
+            if need_process is None:
+                continue
+
             return lambda x: list(map(processor, x)), need_process
 
         return lambda x: x, False
 
     @staticmethod
-    def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:
+    def _get_process(
+        value: Any, schema: pt.PortexType
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
         container = schema.container
         if value.__class__.__name__ == "DataFrame":
             return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
