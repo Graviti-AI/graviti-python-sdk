@@ -738,7 +738,9 @@ class DataFrame(Container):
             self._record_key._data.extend_nulls(values_length)  # pylint: disable=protected-access
 
     @staticmethod
-    def _get_process(value: Any, schema: pt.PortexType) -> Tuple[Callable[[Any], Any], bool]:
+    def _get_process(
+        value: Any, schema: pt.PortexType
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
         container = schema.container
         if container == DataFrame:
             return DataFrame._process_record(value, schema)  # type: ignore[arg-type]
@@ -761,15 +763,21 @@ class DataFrame(Container):
     @staticmethod
     def _process_array(
         values: Iterable[Any], schema: pt.PortexType
-    ) -> Tuple[Callable[[Any], Any], bool]:
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
         if isinstance(values, DataFrame):
             return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
+
+        if not values:
+            return lambda x: x, None
 
         for value in values:
             if value is None:
                 continue
 
             processor, need_process = DataFrame._get_process(value, schema)
+            if need_process is None:
+                continue
+
             return lambda x: list(map(processor, x)), need_process
         return lambda x: x, False
 
@@ -783,9 +791,10 @@ class DataFrame(Container):
     @staticmethod
     def _process_record(
         values: Dict[str, Any], schema: pt.PortexRecordBase
-    ) -> Tuple[Callable[[Any], Any], bool]:
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
         processors: Dict[str, Callable[[Any], Any]] = {}
-        need_process, sub_need_process = False, False
+        need_process: Optional[bool] = False
+        sub_need_process: Optional[bool] = False
         for name, field in schema.items():
             item = values[name]
             if item is None:
