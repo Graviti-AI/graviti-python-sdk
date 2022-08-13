@@ -51,21 +51,19 @@ below, users can create a very simple dataset to experience Graviti SDK.
    for filename in filenames:
        row_data = {
            "filename": filename,
-           "box2ds": DataFrame(
-               [
-                   {
-                       "xmin": 1,
-                       "ymin": 1,
-                       "xmax": 4,
-                       "ymax": 5,
-                       "category": "boat",
-                       "attribute": {
-                           "difficult": False,
-                           "occluded": False,
-                       },
-                   }
-               ]
-           ),
+           "box2ds": [
+               {
+                   "xmin": 1,
+                   "ymin": 1,
+                   "xmax": 4,
+                   "ymax": 5,
+                   "category": "boat",
+                   "attribute": {
+                       "difficult": False,
+                       "occluded": False,
+                   },
+               },
+           ],
        }
        data.append(row_data)
    draft["train"] = DataFrame(data=data, schema=schema)
