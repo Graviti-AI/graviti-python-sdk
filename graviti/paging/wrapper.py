@@ -70,6 +70,16 @@ class ScalarWrapper:
     def __init__(self, scalar: pa.scalar) -> None:
         self._scalar = scalar
 
+    @property
+    def is_valid(self) -> bool:
+        """The wrapper of pyarrow Scalar.is_valid method.
+
+        Returns:
+            Bool value indicating whether this scalar is None.
+
+        """
+        return self._scalar.is_valid  # type: ignore[no-any-return]
+
 
 class ArrayWrapper:
     """The wrapper of pyarrow array.
