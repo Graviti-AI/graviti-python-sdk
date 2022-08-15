@@ -8,19 +8,7 @@
 # pylint: disable=too-many-lines
 
 from itertools import chain, islice, zip_longest
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
 
@@ -36,9 +24,6 @@ from graviti.file import FileBase
 from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, Mode, engine
-
-if TYPE_CHECKING:
-    from graviti.manager import ObjectPolicyManager
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
@@ -253,11 +238,10 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def _from_factory(  # type: ignore[override]  # pylint: disable=too-many-arguments
+    def _from_factory(  # type: ignore[override]
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: pt.PortexRecordBase,
-        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _T:
@@ -266,7 +250,6 @@ class DataFrame(Container):
         Arguments:
             factory: The LazyFactory instance for creating the PagingList.
             schema: The schema of the DataFrame.
-            object_policy_manager: The object policy manager of the dataset.
             root: The root of the created DataFrame.
             name: The name of the created DataFrame.
 
@@ -283,7 +266,6 @@ class DataFrame(Container):
             key: value.container._from_factory(  # pylint: disable=protected-access
                 factory[key],
                 schema=value,
-                object_policy_manager=object_policy_manager,
                 root=obj if root is None else root,
                 name=(key,) + name,
             )
@@ -292,7 +274,7 @@ class DataFrame(Container):
 
         if RECORD_KEY in factory:
             obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
-                factory[RECORD_KEY], pt.string(nullable=True), object_policy_manager
+                factory[RECORD_KEY], pt.string(nullable=True)
             )
 
         return obj

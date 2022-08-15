@@ -41,7 +41,6 @@ from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
-    from graviti.manager import ObjectPolicyManager
 
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
@@ -472,11 +471,10 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key].as_py()
 
     @classmethod
-    def _from_factory(  # pylint: disable=too-many-arguments
+    def _from_factory(
         cls: Type[_S],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
-        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _S:
@@ -523,11 +521,10 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         return self._data[key]
 
     @classmethod
-    def _from_factory(  # pylint: disable=too-many-arguments
+    def _from_factory(
         cls: Type[_A],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
-        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _A:
@@ -668,7 +665,6 @@ class FileSeries(Series):  # pylint: disable=abstract-method
         cls: Type[_F],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
-        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _F:
@@ -678,7 +674,7 @@ class FileSeries(Series):  # pylint: disable=abstract-method
         ]
         obj._data = factory.create_list(
             lambda scalar: remote_file_type(
-                **scalar.as_py(), object_policy_manager=object_policy_manager
+                **scalar.as_py(), object_policy_manager=factory.object_policy_manager
             )
         )
         obj.schema = schema
@@ -734,11 +730,10 @@ class EnumSeries(Series):
         return obj
 
     @classmethod
-    def _from_factory(  # pylint: disable=too-many-arguments
+    def _from_factory(
         cls: Type[_E],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
-        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _E:
