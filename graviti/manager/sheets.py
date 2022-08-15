@@ -84,11 +84,10 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             partial(self._list_data, sheet_name=sheet_name),
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
-
-        dataframe = DataFrame._from_factory(  # pylint: disable=protected-access
-            factory, schema, self._dataset.object_policy_manager
-        )
+        factory.object_policy_manager = self._dataset.object_policy_manager
+        dataframe = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
         dataframe.operations = []
+
         return dataframe
 
     def _init_data(self) -> None:

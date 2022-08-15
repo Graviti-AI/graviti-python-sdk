@@ -14,7 +14,6 @@ from graviti.portex import PortexType
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
-    from graviti.manager.policy import ObjectPolicyManager
 
 _T = TypeVar("_T", bound="Container")
 
@@ -30,11 +29,10 @@ class Container:
         raise NotImplementedError
 
     @classmethod
-    def _from_factory(  # pylint: disable=too-many-arguments
+    def _from_factory(
         cls: Type[_T],
         factory: LazyFactoryBase,
         schema: PortexType,
-        object_policy_manager: "ObjectPolicyManager",
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _T:
