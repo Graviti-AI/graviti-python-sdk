@@ -25,7 +25,7 @@ repos:
         name: isort-examples
         types: [python]
         files: "^examples"
-        args: ["--profile=black", "-w 100", "--thirdparty=tensorbay"]
+        args: ["--profile=black", "-w 100"]
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.29.1
@@ -54,7 +54,6 @@ repos:
             "--docstring-convention=google",
             "--ignore-decorators=overload",
             "--ignore=E203,W503,D105,D107,DAR203",
-            "--per-file-ignores=docs/code/*:E402,F811 tensorbay/opendataset/*:D100",
           ]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -63,8 +62,7 @@ repos:
       - id: mypy
         types: [python]
         exclude: "(test_\\w*\\.py$)"
-        additional_dependencies:
-          [types-PyYAML==6.0.7, types-requests==2.25.11, tensorbay==1.20.0, numpy==1.22.0]
+        additional_dependencies: [types-PyYAML==6.0.7, types-requests==2.25.11, numpy==1.22.0]
         args:
           [
             "--cache-dir=/tmp/mypy_cache/",
