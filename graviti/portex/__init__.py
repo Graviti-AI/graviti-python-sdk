@@ -22,6 +22,7 @@ from graviti.portex.builtin import (
     tensor,
 )
 from graviti.portex.register import (
+    STANDARD_URL,
     ContainerRegister,
     ExternalContainerRegister,
     RemoteFileTypeResgister,
@@ -30,8 +31,9 @@ from graviti.portex.register import (
 __all__ = [
     "ContainerRegister",
     "ExternalContainerRegister",
-    "PortexType",
+    "STANDARD_URL",
     "PortexRecordBase",
+    "PortexType",
     "RemoteFileTypeResgister",
     "array",
     "binary",

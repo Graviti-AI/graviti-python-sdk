@@ -631,7 +631,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
 
 @pt.ExternalContainerRegister(
-    "https://github.com/Project-OpenBytes/portex-standard",
+    pt.STANDARD_URL,
     "main",
     "file.File",
     "file.Audio",

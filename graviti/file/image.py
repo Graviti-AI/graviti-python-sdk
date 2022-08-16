@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, Union
 
 from graviti.file.base import File, RemoteFile
 from graviti.file.image_size import get_image_size
-from graviti.portex import RemoteFileTypeResgister
+from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
 
 if TYPE_CHECKING:
     from graviti.manager import ObjectPolicyManager
@@ -59,9 +59,7 @@ class Image(File):
         return self._width
 
 
-@RemoteFileTypeResgister(
-    "https://github.com/Project-OpenBytes/portex-standard", "main", "file.Image"
-)
+@RemoteFileTypeResgister(STANDARD_URL, "main", "file.Image")
 class RemoteImage(RemoteFile):
     """This class represents remote image files.
 

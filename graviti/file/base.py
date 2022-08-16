@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, Union
 
 from _io import BufferedReader
 
-from graviti.portex import RemoteFileTypeResgister
+from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
 from graviti.utility.repr import ReprMixin
 from graviti.utility.requests import UserResponse
 
@@ -173,9 +173,7 @@ class File(FileBase):
         return self._path.open("rb")
 
 
-@RemoteFileTypeResgister(
-    "https://github.com/Project-OpenBytes/portex-standard", "main", "file.File"
-)
+@RemoteFileTypeResgister(STANDARD_URL, "main", "file.File")
 class RemoteFile(FileBase):
     """This class represents the file on Graviti platform.
 
