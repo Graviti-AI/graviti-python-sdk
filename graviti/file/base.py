@@ -207,8 +207,8 @@ class RemoteFile(FileBase):
     def open(self) -> UserResponse:
         """Return the binary file pointer of this file.
 
-        Return:
+        Returns:
             The remote file pointer.
 
         """
-        # return self._object_policy.get_object(self._key)
+        return self._object_policy.get_object(self._key)
