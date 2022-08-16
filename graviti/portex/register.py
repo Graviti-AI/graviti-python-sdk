@@ -19,6 +19,8 @@ _P = TypeVar("_P", bound="PortexType")
 _C = TypeVar("_C", bound="Container")
 _F = TypeVar("_F", bound="RemoteFile")
 
+STANDARD_URL = "https://github.com/Project-OpenBytes/portex-standard"
+
 
 class ContainerRegister:
     """The class decorator to connect portex type and the data container.

@@ -6,7 +6,7 @@
 """Graviti point cloud file class."""
 
 from graviti.file.base import File, RemoteFile
-from graviti.portex import RemoteFileTypeResgister
+from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
 
 
 class PointCloud(File):
@@ -16,7 +16,7 @@ class PointCloud(File):
 
 
 @RemoteFileTypeResgister(
-    "https://github.com/Project-OpenBytes/portex-standard",
+    STANDARD_URL,
     "main",
     "file.PointCloud",
     "file.PointCloudBin",
