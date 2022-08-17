@@ -172,6 +172,15 @@ def upload_file(
             post_data,
             checksum,
         )
+    elif backend_type == "s3":
+        if "signedRequestHeaders" in post_data:
+            del post_data["signedRequestHeaders"]
+
+        _post_multipart_formdata(
+            host,
+            local_path,
+            post_data,
+        )
     else:
         _post_multipart_formdata(
             host,
