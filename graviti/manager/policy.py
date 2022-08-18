@@ -75,7 +75,7 @@ class ObjectPolicyManager:
             The prefix of the put policy.
 
         """
-        return self._init_put_policy()["policy"]["prefix"]  # type: ignore[no-any-return]
+        return self._init_put_policy()["prefix"]  # type: ignore[no-any-return]
 
     def get_object(self, key: str, _allow_retry: bool = True) -> UserResponse:
         """Get the object from graviti.
