@@ -119,7 +119,10 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
 
                     post_data = file._to_post_data()
                     post_data["key"] = key
-                    file_array[index] = file_type(**post_data)  # type: ignore[arg-type]
+                    file_array[index] = file_type(
+                        **post_data,  # type: ignore[arg-type]
+                        object_policy_manager=object_policy_manager,
+                    )
                 else:
                     key_and_path.append(None)
             keys_and_paths.append(key_and_path)
