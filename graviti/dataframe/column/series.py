@@ -147,7 +147,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         value: Union[Iterable[Any], _SB, Any],
     ) -> None:
         if isinstance(key, int):
-            series = self._from_pyarrow(self._pylist_to_pyarrow([value], self.schema), self.schema)
+            series = self._from_iterable([value], self.schema)
             key = slice(key, key + 1)
         elif not isinstance(value, self.__class__):
             series = self._from_pyarrow(
