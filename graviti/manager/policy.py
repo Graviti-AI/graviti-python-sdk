@@ -387,8 +387,8 @@ class S3ObjectPolicyManager(ObjectPolicyManager):
     @staticmethod
     def _get_signature(policy: Dict[str, Any], string_to_sign: str, simple_date: str) -> str:
         _hmac = policy["hmac"].copy()
-        date_key = _hmac.update(f"{simple_date}".encode())
-        date_region_key = hmac.new(date_key, f"{policy['region']}".encode(), sha256).digest()
+        _hmac.update(simple_date.encode())
+        date_region_key = hmac.new(_hmac.digest(), f"{policy['region']}".encode(), sha256).digest()
         date_region_service_key = hmac.new(date_region_key, b"s3", sha256).digest()
         signing_key = hmac.new(date_region_service_key, b"aws4_request", sha256).digest()
 
@@ -402,7 +402,7 @@ class S3ObjectPolicyManager(ObjectPolicyManager):
     ) -> Dict[str, str]:
         now = datetime.now(timezone.utc)
         simple_date = f"{now.year:04d}{now.month:02d}{now.day:02}"
-        x_amz_date = f"{simple_date}Y{now.hour:02d}{now.minute:02d}{now.second:02d}Z"
+        x_amz_date = f"{simple_date}T{now.hour:02d}{now.minute:02d}{now.second:02d}Z"
 
         canonical_request = self._get_canonical_request(policy, verb, key, x_amz_date)
         string_to_sign = self._get_string_to_sign(
