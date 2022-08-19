@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Dict, Union
 from _io import BufferedReader
 
 from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
+from graviti.utility import shorten
 from graviti.utility.repr import ReprMixin
 from graviti.utility.requests import UserResponse
 
@@ -200,7 +201,8 @@ class RemoteFile(FileBase):
         self._object_policy = object_policy_manager
 
     def _repr_head(self) -> str:
-        return f'{self.__class__.__name__}("{self.key}")'
+        short_checksum = shorten(self.key.rsplit("/", 1)[1])
+        return f'{self.__class__.__name__}("{short_checksum}")'
 
     def open(self) -> UserResponse:
         """Return the binary file pointer of this file.
