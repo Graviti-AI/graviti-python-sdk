@@ -114,7 +114,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             # pylint: disable=protected-access
             for index, file in enumerate(file_array._data):
                 if isinstance(file, File):
-                    key = f"{prefix}/{file.get_checksum()}"
+                    key = f"{prefix}{file.get_checksum()}"
                     key_and_path.append((key, file.path))
 
                     post_data = file._to_post_data()
