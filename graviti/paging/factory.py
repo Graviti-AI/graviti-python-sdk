@@ -353,7 +353,8 @@ class LazyLowerCaseFactory(LazyFactory):
         array = self._pages[pos]
         if array is None:
             array = pa.array(self._getter(pos * self._limit, self._limit), type=self._patype)
-            self._pages[pos] = StructArrayWrapper(array)
+            array = StructArrayWrapper(array)
+            self._pages[pos] = array
 
         for key in keys:
             array = array.field(key)

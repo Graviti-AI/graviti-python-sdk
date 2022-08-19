@@ -80,6 +80,15 @@ class ScalarWrapper:
         """
         return self._scalar.is_valid  # type: ignore[no-any-return]
 
+    def as_py(self) -> Any:
+        """The wrapper of pyarrow Scalar.as_py method.
+
+        Returns:
+            Return this value as a Python builtin object.
+
+        """
+        return self._scalar.as_py()
+
 
 class ArrayWrapper:
     """The wrapper of pyarrow array.
@@ -95,6 +104,9 @@ class ArrayWrapper:
 
     def __init__(self, array: pa.Array) -> None:
         self._array = array
+
+    def __len__(self) -> int:
+        return len(self._array)
 
 
 class StructScalarWrapper(ScalarWrapper):
