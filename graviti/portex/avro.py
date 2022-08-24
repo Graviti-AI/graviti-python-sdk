@@ -187,7 +187,7 @@ def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
     for i in index_range:
         sub_name = list(fields.keys())[i]
         sub_type = fields[i].to_builtin()
-        sub_namespace = f"{namespace}.{sub_name}"
+        sub_namespace = f"{namespace}.{name}"
         sub_schema = _on_type(names, sub_namespace, sub_name, i, sub_type)
         avro_record_field = AvroField(
             typ=sub_schema,
