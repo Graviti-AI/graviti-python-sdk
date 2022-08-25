@@ -5,8 +5,6 @@
 """The Portex builtin types."""
 
 
-from functools import reduce
-from operator import mul
 from typing import Iterable, List, Mapping, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
@@ -407,46 +405,3 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         """
         list_size = self.length if self.length else -1
         return pa.list_(self.items.to_pyarrow(), list_size)  # pylint: disable=no-member
-
-
-class tensor(PortexBuiltinType):  # pylint: disable=invalid-name
-    """Portex complex type ``tensor``.
-
-    Arguments:
-        shape: The shape of the tensor.
-        items: The item type of the tensor.
-        nullable: Whether it is a nullable type.
-
-    Examples:
-        >>> t = tensor((3, 3), float64())
-        >>> t
-        tensor(
-          shape=(3, 3),
-          items=float64(),
-        )
-
-    """
-
-    shape: Tuple[Optional[int], ...] = param(ptype=PTYPE.Array)
-    items: PortexType = param(ptype=PTYPE.PortexType)
-    nullable: bool = param(False, ptype=PTYPE.Boolean)
-
-    def __init__(
-        self, shape: Iterable[Optional[int]], items: PortexType, nullable: bool = False
-    ) -> None:
-        self.shape = tuple(PTYPE.Array.check(shape))
-        self.items = PTYPE.PortexType.check(items)
-        super().__init__(nullable=nullable)
-
-    def to_pyarrow(self) -> pa.DataType:
-        """Convert the Portex type to the corresponding builtin PyArrow DataType.
-
-        Returns:
-            The corresponding builtin PyArrow DataType.
-
-        """
-        try:
-            list_size = reduce(mul, self.shape)
-        except TypeError:
-            list_size = -1
-        return pa.list_(self.items.to_pyarrow(), list_size=list_size)  # pylint: disable=no-member

@@ -19,7 +19,6 @@ from graviti.portex.builtin import (
     int64,
     record,
     string,
-    tensor,
 )
 from graviti.portex.register import (
     STANDARD_URL,
@@ -49,5 +48,4 @@ __all__ = [
     "read_yaml",
     "record",
     "string",
-    "tensor",
 ]
