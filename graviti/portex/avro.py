@@ -18,7 +18,6 @@ from graviti.portex.builtin import (
     int64,
     record,
     string,
-    tensor,
 )
 
 _REMOTE_FILE_FIELD_NAMES = {"checksum", "url"}
@@ -126,21 +125,6 @@ class AvroArraySchema(AvroSchema):
         }
 
 
-class AvroFixedArraySchema(AvroSchema):
-    def __init__(self, items: AvroSchema, shape):
-        super().__init__()
-        self._items = items
-        self._shape = shape
-
-    def to_json(self):
-        return {
-            "type": "array",
-            "items": self._items.to_json(),
-            "shape": self._shape,
-            "default": [],
-        }
-
-
 class AvroEnumSchema(AvroSchema):
     def __init__(self, namespace, name, symbols):
         super().__init__()
@@ -199,13 +183,6 @@ def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
     )
 
 
-def _on_fixed_shape_list(names, namespace, name, _pa_ist: tensor) -> AvroFixedArraySchema:
-    sub_namespace = f"{namespace}.{name}.items"
-    sub_name = "items"
-    items = _on_type(names, sub_namespace, sub_name, _pa_ist.items.to_builtin())
-    return AvroFixedArraySchema(items=items, shape=_pa_ist.shape)
-
-
 def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchema:
     return AvroPrimitiveSchema("int")
 
@@ -227,5 +204,4 @@ _COMPLEX_TYPES_PROCESSERS = {
     record: _on_struct,
     array: _on_list,
     enum: _on_enum,
-    tensor: _on_fixed_shape_list,
 }
