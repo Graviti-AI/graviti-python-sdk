@@ -409,7 +409,8 @@ Take `standard`_ as an example, which is used as the standard external package b
  Binary Files
 **************
 
-SDK supports adding and uploading binary files, whose schema must be of type `file.RemoteFile` in `standard`_ package.
+SDK supports adding and uploading binary files, whose schema must be of type ``file.File``, ``file.Image``,
+``file.Audio`` or ``file.PointCloud`` in `standard`_ package.
 
 
 .. code:: python
@@ -421,13 +422,13 @@ SDK supports adding and uploading binary files, whose schema must be of type `fi
    >>> record = pt.record(
    ...    {
    ...       "filename": pt.string(),
-   ...       "image": std.file.RemoteFile,
+   ...       "image": std.file.Image,
    ...    }
    ... )
 
 When using the record in the above example as the schema of a DataFrame,
-the column of "image" stores binary files.
-Please see :ref:`features/sheet_management/dataframe:File Operation` for more details about data.
+the column of "image" stores image files.
+Please see :doc:`/features/sheet_management/binary_files` for more details about data.
 
 ****************
  Schema Methods

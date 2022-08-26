@@ -267,33 +267,3 @@ If the fields are defined in a template, the DataFrame cannot be changed, and ``
    0  1.0   1.0   4.0   5.0   boat      False      False
    >>> df["caption"] = ["a"]
    TypeError: Cannot set item 'caption' in ImmutableFields
-
-****************
- File Operation
-****************
-
-Graviti SDK use the :class:`~graviti.utility.file.File` and :class:`~graviti.utility.file.RemoteFile`
-to represent a specific file.
-
-Load the local file into DataFrame:
-
-.. code:: python
-
-   import graviti.portex as pt
-   from graviti import DataFrame
-   from graviti.utility import File
-
-   std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
-   schema = pt.record({"file": std.file.RemoteFile()})
-   data = [
-       {"file": File("PATH/TO/YOUR/FILE1")},
-       {"file": File("PATH/TO/YOUR/FILE2")},
-   ]
-   df = DataFrame(data, schema)
-
-Read the file in DataFrame:
-
-.. code:: python
-
-   file = df["file"][0]
-   file.open().read()
