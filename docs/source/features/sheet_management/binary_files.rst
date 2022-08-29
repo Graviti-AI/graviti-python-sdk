@@ -35,12 +35,12 @@ Load the local text files to DataFrame:
 
    data = [
        {
-           "filename": "EXAMPLE1.text",
-           "file": File("PATH/TO/YOUR/EXAMPLE1.text")
+           "filename": "EXAMPLE1.txt",
+           "file": File("PATH/TO/YOUR/EXAMPLE1.txt")
        },
        {
-           "filename": "EXAMPLE2.text",
-           "file": File("PATH/TO/YOUR/EXAMPLE2.text")
+           "filename": "EXAMPLE2.txt",
+           "file": File("PATH/TO/YOUR/EXAMPLE2.txt")
        },
    ]
 
@@ -135,12 +135,12 @@ Load the local audio into DataFrame:
 
    data = [
        {
-           "filename": "EXAMPLE1.mp3",
-           "audio": File("PATH/TO/YOUR/EXAMPLE1.mp3")
+           "filename": "EXAMPLE1.wav",
+           "audio": File("PATH/TO/YOUR/EXAMPLE1.wav")
        },
        {
-           "filename": "EXAMPLE2.mp3",
-           "audio": File("PATH/TO/YOUR/EXAMPLE2.mp3")
+           "filename": "EXAMPLE2.wav",
+           "audio": File("PATH/TO/YOUR/EXAMPLE2.wav")
        },
    ]
 
@@ -176,12 +176,12 @@ Load the local point_cloud into DataFrame:
 
    data = [
        {
-           "filename": "EXAMPLE1",
-           "point_cloud": File("PATH/TO/YOUR/EXAMPLE1")
+           "filename": "EXAMPLE1.pcd",
+           "point_cloud": File("PATH/TO/YOUR/EXAMPLE1.pcd")
        },
        {
-           "filename": "EXAMPLE2",
-           "point_cloud": File("PATH/TO/YOUR/EXAMPLE2")
+           "filename": "EXAMPLE2.pcd",
+           "point_cloud": File("PATH/TO/YOUR/EXAMPLE2.pcd")
        },
    ]
 
