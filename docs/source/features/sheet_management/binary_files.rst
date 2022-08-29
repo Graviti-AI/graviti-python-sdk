@@ -86,11 +86,11 @@ Load the local image into DataFrame:
    data = [
        {
            "filename": "EXAMPLE1.png",
-           "image": File("PATH/TO/YOUR/EXAMPLE1.png")
+           "image": Image("PATH/TO/YOUR/EXAMPLE1.png")
        },
        {
            "filename": "EXAMPLE2.png",
-           "image": File("PATH/TO/YOUR/EXAMPLE2.png")
+           "image": Image("PATH/TO/YOUR/EXAMPLE2.png")
        },
    ]
 
@@ -129,18 +129,18 @@ Load the local audio into DataFrame:
    schema = pt.record(
        {
            "filename": pt.string(),
-           "audio": std.file.Image(),
+           "audio": std.file.Audio(),
        }
    )
 
    data = [
        {
            "filename": "EXAMPLE1.wav",
-           "audio": File("PATH/TO/YOUR/EXAMPLE1.wav")
+           "audio": Audio("PATH/TO/YOUR/EXAMPLE1.wav")
        },
        {
            "filename": "EXAMPLE2.wav",
-           "audio": File("PATH/TO/YOUR/EXAMPLE2.wav")
+           "audio": Audio("PATH/TO/YOUR/EXAMPLE2.wav")
        },
    ]
 
@@ -170,18 +170,18 @@ Load the local point_cloud into DataFrame:
    schema = pt.record(
        {
            "filename": pt.string(),
-           "point_cloud": std.file.Image(),
+           "point_cloud": std.file.PointCloud(),
        }
    )
 
    data = [
        {
            "filename": "EXAMPLE1.pcd",
-           "point_cloud": File("PATH/TO/YOUR/EXAMPLE1.pcd")
+           "point_cloud": PointCloud("PATH/TO/YOUR/EXAMPLE1.pcd")
        },
        {
            "filename": "EXAMPLE2.pcd",
-           "point_cloud": File("PATH/TO/YOUR/EXAMPLE2.pcd")
+           "point_cloud": PointCloud("PATH/TO/YOUR/EXAMPLE2.pcd")
        },
    ]
 
