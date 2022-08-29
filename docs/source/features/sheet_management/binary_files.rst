@@ -32,6 +32,7 @@ Load the local text files to DataFrame:
            "file": std.file.File(),
        }
    )
+
    data = [
        {
            "filename": "EXAMPLE1.text",
@@ -77,21 +78,22 @@ Load the local image into DataFrame:
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
        {
-           "imagename": pt.string(),
+           "filename": pt.string(),
            "image": std.file.Image(),
        }
    )
+
    data = [
        {
-           "imagename": "EXAMPLE1.png",
+           "filename": "EXAMPLE1.png",
            "image": File("PATH/TO/YOUR/EXAMPLE1.png")
        },
        {
-           "imagename": "EXAMPLE2.png",
+           "filename": "EXAMPLE2.png",
            "image": File("PATH/TO/YOUR/EXAMPLE2.png")
        },
    ]
- 
+
    df = DataFrame(data, schema)
 
 Read the image in DataFrame:
@@ -126,21 +128,22 @@ Load the local audio into DataFrame:
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
        {
-           "audioname": pt.string(),
+           "filename": pt.string(),
            "audio": std.file.Image(),
        }
    )
+
    data = [
        {
-           "audioname": "EXAMPLE1.mp3",
+           "filename": "EXAMPLE1.mp3",
            "audio": File("PATH/TO/YOUR/EXAMPLE1.mp3")
        },
        {
-           "audioname": "EXAMPLE2.mp3",
+           "filename": "EXAMPLE2.mp3",
            "audio": File("PATH/TO/YOUR/EXAMPLE2.mp3")
        },
    ]
- 
+
    df = DataFrame(data, schema)
 
 Read the audio in DataFrame:
@@ -166,21 +169,22 @@ Load the local point_cloud into DataFrame:
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
        {
-           "point_cloud_name": pt.string(),
+           "filename": pt.string(),
            "point_cloud": std.file.Image(),
        }
    )
+
    data = [
        {
-           "point_cloud_name": "EXAMPLE1",
+           "filename": "EXAMPLE1",
            "point_cloud": File("PATH/TO/YOUR/EXAMPLE1")
        },
        {
-           "point_cloud_name": "EXAMPLE2",
+           "filename": "EXAMPLE2",
            "point_cloud": File("PATH/TO/YOUR/EXAMPLE2")
        },
    ]
- 
+
    df = DataFrame(data, schema)
 
 Read the point_cloud in DataFrame:
