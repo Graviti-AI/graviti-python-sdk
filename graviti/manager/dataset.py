@@ -5,6 +5,7 @@
 
 """The implementation of the Dataset and DatasetManager."""
 
+import logging
 from enum import Enum
 from typing import Any, Dict, Generator, Optional, Tuple, TypeVar
 
@@ -36,6 +37,12 @@ from graviti.utility import (
     check_type,
     convert_iso_to_datetime,
 )
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 
 class RevisionType(Enum):
@@ -252,9 +259,16 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         if not modified:
             raise StatusError("It is not allowed to commit a dataset without any modifications")
 
+        # pylint: disable=protected-access
         draft = self.drafts.create(title, description, head.name)
-        head._upload_to_draft(draft.number, jobs, quiet)  # pylint: disable=protected-access
-        draft.commit(title, description)
+        logger.info("%s created successfully", draft._repr_head())
+
+        head._upload_to_draft(draft.number, jobs, quiet)
+        logger.info("%s uploaded successfully", draft._repr_head())
+
+        branch = draft.commit(title, description)
+        logger.info("%s committed successfully", draft._repr_head())
+        logger.info("The HEAD of the dataset after commit: \n%s", branch)
 
 
 class DatasetManager:
