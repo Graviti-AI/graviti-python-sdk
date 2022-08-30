@@ -25,6 +25,7 @@ It provides a pythonic way to access datasets by Graviti OpenAPI.
 
    getting_started/installation
    getting_started/10_minutes_to_graviti
+   getting_started/upload_dataset
 
 .. toctree::
    :hidden:

@@ -29,7 +29,6 @@ below, users can create a very simple dataset to experience Graviti SDK.
 
    ws = Workspace(f"{YOUR_ACCESSKEY}")
    dataset = ws.datasets.create("Graviti-dataset-demo")
-   draft = dataset.drafts.create("Draft-1")
 
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    box2ds = std.label.Box2D(
@@ -66,9 +65,8 @@ below, users can create a very simple dataset to experience Graviti SDK.
            ],
        }
        data.append(row_data)
-   draft["train"] = DataFrame(data=data, schema=schema)
-   draft.upload()
-   draft.commit("Commit-1")
+   dataset["train"] = DataFrame(data=data, schema=schema)
+   dataset.commit("Commit-1")
 
 ***************
  Get a Dataset
