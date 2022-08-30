@@ -248,7 +248,8 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                 "It is not allowed to commit a dataset whose HEAD is not a branch. "
                 "Please checkout a branch first"
             )
-        if not head.operations:
+        modified = head.operations or any(df.operations for df in head.values())
+        if not modified:
             raise StatusError("It is not allowed to commit a dataset without any modifications")
 
         draft = self.drafts.create(title, description, head.name)
