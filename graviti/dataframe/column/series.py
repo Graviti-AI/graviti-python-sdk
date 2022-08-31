@@ -639,6 +639,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     "file.PointCloud",
     "file.PointCloudBin",
     "file.RemoteFile",
+    "label.Mask",
     "label.file.RemoteInstanceMask",
     "label.file.RemoteSemanticMask",
 )
