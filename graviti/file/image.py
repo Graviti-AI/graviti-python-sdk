@@ -59,7 +59,7 @@ class Image(File):
         return self._width
 
 
-@RemoteFileTypeResgister(STANDARD_URL, "main", "file.Image")
+@RemoteFileTypeResgister(STANDARD_URL, "main", "file.Image", "label.Mask")
 class RemoteImage(RemoteFile):
     """This class represents remote image files.
 
