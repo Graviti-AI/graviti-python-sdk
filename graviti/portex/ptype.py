@@ -6,11 +6,12 @@
 
 
 from typing import Any as TypingAny
-from typing import ClassVar, Dict, Iterable, List
+from typing import ClassVar, Dict, List
 from typing import Mapping as TypingMapping
 from typing import Optional, Sequence, Tuple, Type, Union
 
 from graviti.portex.base import PortexType as ClassPortexType
+from graviti.portex.enum import EnumValues, create_enum_values
 from graviti.portex.field import Fields as ClassFields
 from graviti.portex.package import Imports
 
@@ -129,29 +130,17 @@ class Enum(ParameterType):
     """Parameter type for Portex enum values."""
 
     @staticmethod
-    def check(arg: TypingAny) -> List[Union[int, float, str, bool, None]]:
+    def check(arg: TypingAny) -> EnumValues:
         """Check and transfer the parameter type.
 
         Arguments:
             arg: The argument which needs to be checked.
 
-        Raises:
-            TypeError: When the argument is not iterable or
-                the value of the input argument is not string type.
-
         Returns:
             A list of enum values created by the input argument.
 
         """
-        if not isinstance(arg, Iterable):
-            raise TypeError("Argument should be iterable")
-
-        values = list(arg)
-        for value in values:
-            if not isinstance(value, (str, int, float, bool, type(None))):
-                raise TypeError("The value of enum must be string, int, float, bool or None type")
-
-        return values
+        return create_enum_values(arg)
 
 
 class Fields(ParameterType):
