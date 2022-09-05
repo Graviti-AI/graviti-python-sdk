@@ -5,12 +5,13 @@
 """The Portex builtin types."""
 
 
-from typing import Iterable, List, Mapping, Optional, Tuple, Type, TypeVar, Union
+from typing import Iterable, Mapping, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
 
 from graviti.portex import ptype as PTYPE
 from graviti.portex.base import PortexRecordBase, PortexType
+from graviti.portex.enum import EnumValues
 from graviti.portex.factory import ConnectedFieldsFactory
 from graviti.portex.field import Fields
 from graviti.portex.package import packages
@@ -320,7 +321,7 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
-    values: List[_E] = param(ptype=PTYPE.Enum)
+    values: EnumValues = param(ptype=PTYPE.Enum)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(self, values: Iterable[_E], nullable: bool = False) -> None:
@@ -334,14 +335,17 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
             The corresponding builtin PyArrow DataType.
 
         """
-        length = len(self.values)
-        if length < 128:
+        min_index, max_index = self.values.index_scope
+        if min_index >= -128 and max_index <= 127:
             return pa.int8()
 
-        if length < 32768:
+        if min_index >= -32768 and max_index <= 32767:
             return pa.int16()
 
-        return pa.int32()
+        if min_index >= -2147483648 and max_index <= 2147483647:
+            return pa.int32()
+
+        return pa.int64()
 
 
 @PyArrowConversionRegister(
