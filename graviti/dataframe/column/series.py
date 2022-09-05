@@ -303,19 +303,18 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         container = schema.container
         if value.__class__.__name__ == "DataFrame":
             return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
+
         if container == ArraySeries:
             return SeriesBase._process_array(
                 value, schema.to_builtin().items  # type: ignore[attr-defined]
             )
+
         if container == FileSeries:
             return SeriesBase._process_file(value)
+
         if container == EnumSeries:
-            values_to_indices: Dict[Union[int, float, str, bool, None], Optional[int]] = {
-                k: v for v, k in enumerate(schema.to_builtin().values)  # type: ignore[attr-defined]
-            }
-            if None not in values_to_indices:
-                values_to_indices[None] = None
-            return lambda x: values_to_indices[x], True
+            value_to_index = schema.to_builtin().values.value_to_index  # type: ignore[attr-defined]
+            return lambda x: value_to_index[x], True
 
         return lambda x: x, False
 
@@ -690,10 +689,10 @@ class FileSeries(Series):  # pylint: disable=abstract-method
 class EnumSeries(Series):
     """One-dimensional array for portex builtin type enum."""
 
-    _indices_to_values: Dict[Optional[pa.Scalar], Union[int, float, str, bool, None]]
+    _index_to_value: Dict[Optional[int], Any]
 
     def __getitem__(self, key: int) -> Any:
-        return self._indices_to_values[self._data[key]]
+        return self._index_to_value[self._data[key].as_py()]
 
     def _to_post_data(self) -> List[int]:
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
@@ -705,7 +704,9 @@ class EnumSeries(Series):
         name: Tuple[str, ...] = (),
     ) -> "EnumSeries":
         obj = super()._copy(schema, root, name)
-        obj._indices_to_values = self._indices_to_values.copy()  # pylint: disable=protected-access
+        enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+        obj._index_to_value = enum_values.index_to_value  # pylint: disable=protected-access
+
         return obj
 
     @classmethod
@@ -721,32 +722,15 @@ class EnumSeries(Series):
         obj.schema = schema
         obj._root = root
         obj._name = name
-        obj._indices_to_values = cls._create_indices_to_values(
-            schema.to_builtin().values,  # type: ignore[attr-defined]
-            obj._data._patype,  # pylint: disable=protected-access
-        )
-        return obj
+        enum_values = schema.to_builtin().values  # type: ignore[attr-defined]
+        obj._index_to_value = enum_values.index_to_value
 
-    @staticmethod
-    def _create_indices_to_values(
-        enum_values: List[Union[int, float, str, bool, None]], patype: pa.DataType
-    ) -> Dict[Optional[pa.Scalar], Union[int, float, str, bool, None]]:
-        indices_to_values = dict(
-            zip(
-                pa.array(range(len(enum_values)), patype),  # pylint: disable=protected-access
-                enum_values,
-            )
-        )
-        if None not in indices_to_values:
-            indices_to_values[pa.scalar(None, patype)] = None
-        return indices_to_values
+        return obj
 
     def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
         self._data = factory.create_pyarrow_list()
-        self._indices_to_values = self._create_indices_to_values(
-            self.schema.to_builtin().values,  # type: ignore[attr-defined]
-            self._data._patype,  # pylint: disable=protected-access
-        )
+        enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+        self._index_to_value = enum_values.index_to_value
 
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
@@ -755,4 +739,5 @@ class EnumSeries(Series):
             The python list representing the Series.
 
         """
-        return [self._indices_to_values[i] for i in self._data]
+        _index_to_value = self._index_to_value
+        return [_index_to_value[i.as_py()] for i in self._data]
