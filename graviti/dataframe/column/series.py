@@ -37,6 +37,7 @@ from graviti.paging import (
     PagingListBase,
     PyArrowPagingList,
 )
+from graviti.portex.enum import EnumValueType
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
@@ -689,7 +690,7 @@ class FileSeries(Series):  # pylint: disable=abstract-method
 class EnumSeries(Series):
     """One-dimensional array for portex builtin type enum."""
 
-    _index_to_value: Dict[Optional[int], Any]
+    _index_to_value: Dict[Optional[int], EnumValueType]
 
     def __getitem__(self, key: int) -> Any:
         return self._index_to_value[self._data[key].as_py()]

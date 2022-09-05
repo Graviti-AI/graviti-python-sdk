@@ -9,23 +9,35 @@ from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, Tuple, Unio
 
 from graviti.utility import UserMapping, UserSequence
 
+_Types = (str, int, bool, type(None))
+EnumValueType = Union[str, int, bool, None]
+
 
 class EnumValues:
     """The base class of portex enum values."""
 
     index_scope: Tuple[int, int]
-    value_to_index: Dict[Any, Optional[int]]
-    index_to_value: Dict[Optional[int], Any]
+    value_to_index: Dict[EnumValueType, Optional[int]]
+    index_to_value: Dict[Optional[int], EnumValueType]
 
-    def _init_mapping(self, value_to_index: Dict[Any, Optional[int]]) -> None:
+    def _init_mapping(self, value_to_index: Dict[EnumValueType, Optional[int]]) -> None:
         if None not in value_to_index:
             value_to_index[None] = None
 
         self.value_to_index = value_to_index
         self.index_to_value = {value: key for key, value in value_to_index.items()}
 
+    @staticmethod
+    def _check_value_type(value: Any) -> EnumValueType:
+        if not isinstance(value, _Types):
+            raise TypeError(
+                f"The type of enum value ({value}) must be 'str', 'int', 'bool' or None"
+            )
 
-class EnumValueList(EnumValues, UserSequence[Any]):
+        return value
+
+
+class EnumValueList(EnumValues, UserSequence[EnumValueType]):
     """The portex enum values in list format.
 
     Arguments:
@@ -33,20 +45,21 @@ class EnumValueList(EnumValues, UserSequence[Any]):
 
     """
 
-    def __init__(self, values: Iterable[Any]) -> None:
-        self._data = list(values)
+    def __init__(self, values: Iterable[EnumValueType]) -> None:
+        checker = self._check_value_type
+        self._data = [checker(value) for value in values]
         self._init()
 
     def _init(self) -> None:
         self.index_scope = (0, len(self._data) - 1)
 
-        value_to_index: Dict[Any, Optional[int]] = {
+        value_to_index: Dict[EnumValueType, Optional[int]] = {
             value: key for key, value in enumerate(self._data)
         }
         self._init_mapping(value_to_index)
 
 
-class EnumValueDict(EnumValues, UserMapping[int, Any]):
+class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
     """The portex enum values in dict format.
 
     Arguments:
@@ -54,8 +67,13 @@ class EnumValueDict(EnumValues, UserMapping[int, Any]):
 
     """
 
-    def __init__(self, values: Mapping[int, Any]) -> None:
-        self._data = dict(values)
+    def __init__(self, values: Mapping[int, EnumValueType]) -> None:
+        checker = self._check_value_type
+        try:
+            self._data = {int(key): checker(value) for key, value in values.items()}
+        except ValueError as error:
+            raise TypeError("The portex enum index type must be 'int'") from error
+
         self._init()
 
     def _init(self) -> None:
@@ -66,7 +84,9 @@ class EnumValueDict(EnumValues, UserMapping[int, Any]):
         self._init_mapping(value_to_index)  # type: ignore[arg-type]
 
 
-def create_enum_values(values: Union[Sequence[Any], Mapping[int, Any]]) -> EnumValues:
+def create_enum_values(
+    values: Union[Sequence[EnumValueType], Mapping[int, EnumValueType]]
+) -> EnumValues:
     """The factory function of EnumValues.
 
     Arguments:
