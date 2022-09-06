@@ -5,7 +5,7 @@
 """Portex enum values releated classes."""
 
 
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 from graviti.utility import UserMapping, UserSequence
 
@@ -36,6 +36,15 @@ class EnumValues:
 
         return value
 
+    def to_pyobj(self) -> Union[List[EnumValueType], Dict[int, EnumValueType]]:
+        """Dump the instance to a python list or dict.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
 
 class EnumValueList(EnumValues, UserSequence[EnumValueType]):
     """The portex enum values in list format.
@@ -44,6 +53,8 @@ class EnumValueList(EnumValues, UserSequence[EnumValueType]):
         values: The enum values.
 
     """
+
+    _data: List[EnumValueType]
 
     def __init__(self, values: Iterable[EnumValueType]) -> None:
         checker = self._check_value_type
@@ -58,6 +69,15 @@ class EnumValueList(EnumValues, UserSequence[EnumValueType]):
         }
         self._init_mapping(value_to_index)
 
+    def to_pyobj(self) -> List[EnumValueType]:
+        """Dump the instance to a python list.
+
+        Returns:
+            A python list representation of the enum values.
+
+        """
+        return self._data.copy()
+
 
 class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
     """The portex enum values in dict format.
@@ -66,6 +86,8 @@ class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
         values: The enum values.
 
     """
+
+    _data: Dict[int, EnumValueType]
 
     def __init__(self, values: Mapping[int, EnumValueType]) -> None:
         checker = self._check_value_type
@@ -82,6 +104,15 @@ class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
         self.index_scope = (min(value_to_index.values()), max(value_to_index.values()))
 
         self._init_mapping(value_to_index)  # type: ignore[arg-type]
+
+    def to_pyobj(self) -> Dict[int, EnumValueType]:
+        """Dump the instance to a python dict.
+
+        Returns:
+            A python dict representation of the enum values.
+
+        """
+        return self._data.copy()
 
 
 def create_enum_values(
