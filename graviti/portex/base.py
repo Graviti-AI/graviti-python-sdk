@@ -14,7 +14,7 @@ import yaml
 
 from graviti.portex.package import Imports, Package
 from graviti.portex.register import PyArrowConversionRegister
-from graviti.utility import PathLike, UserMutableMapping
+from graviti.utility import INDENT, PathLike, UserMutableMapping
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
@@ -23,8 +23,6 @@ if TYPE_CHECKING:
     from graviti.portex.factory import ConnectedFieldsFactory
     from graviti.portex.field import ConnectedFields
     from graviti.portex.param import Params
-
-_INDENT = " " * 2
 
 PYARROW_TYPE_ID_TO_PORTEX_TYPE = PyArrowConversionRegister.PYARROW_TYPE_ID_TO_PORTEX_TYPE
 
@@ -49,14 +47,14 @@ class PortexType:
 
     def _repr1(self, level: int) -> str:
         with_params = False
-        indent = level * _INDENT
+        indent = level * INDENT
         lines = [f"{self.__class__.__name__}("]
         for name, parameter in self.params.items():
             attr = getattr(self, name)
             if attr != parameter.default:
                 with_params = True
                 lines.append(
-                    f"{_INDENT}{name}="  # pylint: disable=protected-access
+                    f"{INDENT}{name}="  # pylint: disable=protected-access
                     f"{attr._repr1(level + 1) if hasattr(attr, '_repr1') else repr(attr)},"
                 )
 

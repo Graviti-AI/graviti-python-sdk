@@ -25,9 +25,9 @@ from typing import (
 
 import pyarrow as pa
 
-from graviti.portex.base import _INDENT, PortexType
+from graviti.portex.base import PortexType
 from graviti.portex.package import Imports
-from graviti.utility import FrozenNameOrderedDict, NameOrderedDict
+from graviti.utility import INDENT, FrozenNameOrderedDict, NameOrderedDict
 
 _T = TypeVar("_T", bound="Fields")
 
@@ -54,16 +54,15 @@ class FrozenFields(FrozenNameOrderedDict[PortexType]):
         super()._setitem(key, value)
 
     def _repr1(self, level: int) -> str:
-        indent = level * _INDENT
         lines = ["{"]
         for name, portex_type in self.items():
             lines.append(
-                f"{_INDENT}'{name}': "  # pylint: disable=protected-access
+                f"{INDENT}'{name}': "  # pylint: disable=protected-access
                 f"{portex_type._repr1(level + 1)},"
             )
 
         lines.append("}")
-        return f"\n{indent}".join(lines)
+        return f"\n{level * INDENT}".join(lines)
 
     def insert(self, index: int, name: str, portex_type: PortexType) -> None:
         """Insert the name and portex_type at the index.
