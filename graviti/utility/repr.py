@@ -23,6 +23,7 @@ from typing import (
 )
 
 MAX_REPR_ROWS = 10
+INDENT = " " * 2
 
 
 class ReprType(Enum):
