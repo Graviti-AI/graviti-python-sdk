@@ -11,7 +11,13 @@ from typing import Mapping as TypingMapping
 from typing import Optional, Sequence, Tuple, Type, Union
 
 from graviti.portex.base import PortexType as ClassPortexType
-from graviti.portex.enum import EnumValues, create_enum_values
+from graviti.portex.enum import (
+    EnumValueDict,
+    EnumValueList,
+    EnumValues,
+    EnumValueType,
+    create_enum_values,
+)
 from graviti.portex.field import Fields as ClassFields
 from graviti.portex.package import Imports
 
@@ -141,6 +147,48 @@ class Enum(ParameterType):
 
         """
         return create_enum_values(arg)
+
+    @staticmethod
+    def load(
+        content: Union[Dict[int, EnumValueType], List[EnumValueType], None],
+        _: Optional[Imports] = None,
+    ) -> Optional[EnumValues]:
+        """Create Portex EnumValues instance from python object.
+
+        Arguments:
+            content: A python list or dict representing a EnumValues.
+            _: The imports of the Portex field.
+
+        Returns:
+            A Portex EnumValues instance created from the input python list or dict.
+
+        Raises:
+            TypeError: When the input enum values is not in list or dict format.
+
+        """
+        if content is None:
+            return None
+
+        if isinstance(content, dict):
+            return EnumValueDict(content)
+
+        if isinstance(content, list):
+            return EnumValueList(content)
+
+        raise TypeError("portex enum values should be a list or a dict")
+
+    @staticmethod
+    def dump(arg: EnumValues) -> Union[Dict[int, EnumValueType], List[EnumValueType]]:
+        """Dump the input Portex EnumValues instance to a python list or dict.
+
+        Arguments:
+            arg: A Portex EnumValues instance.
+
+        Returns:
+            A Python list or dict representation of the Portex enum values.
+
+        """
+        return arg.to_pyobj()
 
 
 class Fields(ParameterType):
