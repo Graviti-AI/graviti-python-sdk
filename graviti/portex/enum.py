@@ -7,7 +7,7 @@
 
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
-from graviti.utility import UserMapping, UserSequence
+from graviti.utility import INDENT, UserMapping, UserSequence
 
 _Types = (str, int, bool, type(None))
 EnumValueType = Union[str, int, bool, None]
@@ -19,6 +19,9 @@ class EnumValues:
     index_scope: Tuple[int, int]
     value_to_index: Dict[EnumValueType, Optional[int]]
     index_to_value: Dict[Optional[int], EnumValueType]
+
+    def __repr__(self) -> str:
+        return self._repr1(0)
 
     def _init_mapping(self, value_to_index: Dict[EnumValueType, Optional[int]]) -> None:
         if None not in value_to_index:
@@ -35,6 +38,9 @@ class EnumValues:
             )
 
         return value
+
+    def _repr1(self, level: int) -> str:
+        raise NotImplementedError
 
     def to_pyobj(self) -> Union[List[EnumValueType], Dict[int, EnumValueType]]:
         """Dump the instance to a python list or dict.
@@ -68,6 +74,13 @@ class EnumValueList(EnumValues, UserSequence[EnumValueType]):
             value: key for key, value in enumerate(self._data)
         }
         self._init_mapping(value_to_index)
+
+    def _repr1(self, level: int) -> str:
+        lines = ["["]
+        lines.extend(f"{INDENT}{repr(value)}," for value in self._data)
+        lines.append("]")
+
+        return f"\n{level * INDENT}".join(lines)
 
     def to_pyobj(self) -> List[EnumValueType]:
         """Dump the instance to a python list.
@@ -104,6 +117,13 @@ class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
         self.index_scope = (min(value_to_index.values()), max(value_to_index.values()))
 
         self._init_mapping(value_to_index)  # type: ignore[arg-type]
+
+    def _repr1(self, level: int) -> str:
+        lines = ["{"]
+        lines.extend(f"{INDENT}{key}: {repr(value)}," for key, value in self._data.items())
+        lines.append("}")
+
+        return f"\n{level * INDENT}".join(lines)
 
     def to_pyobj(self) -> Dict[int, EnumValueType]:
         """Dump the instance to a python dict.
