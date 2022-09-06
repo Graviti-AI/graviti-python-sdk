@@ -21,7 +21,6 @@ from graviti.utility.common import (
     urlnorm,
 )
 from graviti.utility.engine import Mode, engine
-from graviti.utility.file import File, FileBase, RemoteFile
 from graviti.utility.itertools import chunked
 from graviti.utility.repr import INDENT, MAX_REPR_ROWS, ReprMixin, ReprType
 from graviti.utility.requests import UserResponse, config, get_session, submit_multithread_tasks
@@ -29,15 +28,12 @@ from graviti.utility.typing import NestedDict, PathLike, check_type
 
 __all__ = [
     "AttrDict",
-    "File",
-    "FileBase",
     "FrozenNameOrderedDict",
     "INDENT",
     "MAX_REPR_ROWS",
     "NameOrderedDict",
     "NestedDict",
     "PathLike",
-    "RemoteFile",
     "ReprMixin",
     "ReprType",
     "UserMapping",

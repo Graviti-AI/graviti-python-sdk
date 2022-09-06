@@ -22,7 +22,6 @@ from graviti.openapi.dataset import (
     update_dataset,
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
-from graviti.openapi.file import upload_files
 from graviti.openapi.policy import get_object_policy
 from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
@@ -76,5 +75,4 @@ __all__ = [
     "update_dataset",
     "update_draft",
     "update_schema",
-    "upload_files",
 ]
