@@ -140,7 +140,11 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             quiet: Set to True to stop showing the upload process bar.
 
         """
-        for sheet_name in {operation.sheet for operation in self.operations}:
+        for sheet_name in {
+            operation.sheet
+            for operation in self.operations
+            if not isinstance(operation, DeleteSheet)
+        }:
             self._check_record_names(self[sheet_name].schema, sheet_name)
 
         dataset = self._dataset
