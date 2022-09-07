@@ -24,7 +24,7 @@ _REMOTE_FILE_FIELD_NAMES = {"checksum", "url"}
 
 _PRIMITIVE_TYPES = {
     int32: "int",
-    int64: "int",
+    int64: "long",
     float32: "float",
     float64: "double",
     boolean: "boolean",
