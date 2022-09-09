@@ -11,4 +11,4 @@ from graviti.dataframe import DataFrame
 from graviti.utility import engine
 from graviti.workspace import Workspace
 
-__all__ = ["__version__", "DataFrame", "Workspace", "Series", "engine"]
+__all__ = ["DataFrame", "Series", "Workspace", "__version__", "engine"]

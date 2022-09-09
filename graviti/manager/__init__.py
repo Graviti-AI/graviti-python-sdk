@@ -25,8 +25,8 @@ __all__ = [
     "DatasetManager",
     "Draft",
     "DraftManager",
-    "ObjectPolicyManager",
     "OSSObjectPolicyManager",
+    "ObjectPolicyManager",
     "S3ObjectPolicyManager",
     "TagManager",
 ]
