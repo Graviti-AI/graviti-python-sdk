@@ -6,7 +6,7 @@
 """Graviti point cloud file class."""
 
 from graviti.file.base import File, RemoteFile
-from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
+from graviti.portex import STANDARD_URL, ExternalElementResgister
 
 
 class PointCloud(File):
@@ -15,7 +15,7 @@ class PointCloud(File):
     __slots__ = File.__slots__
 
 
-@RemoteFileTypeResgister(
+@ExternalElementResgister(
     STANDARD_URL,
     "main",
     "file.PointCloud",

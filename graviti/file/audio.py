@@ -6,7 +6,7 @@
 """Graviti audio file class."""
 
 from graviti.file.base import File, RemoteFile
-from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
+from graviti.portex import STANDARD_URL, ExternalElementResgister
 
 
 class Audio(File):
@@ -15,7 +15,7 @@ class Audio(File):
     __slots__ = File.__slots__
 
 
-@RemoteFileTypeResgister(STANDARD_URL, "main", "file.Audio")
+@ExternalElementResgister(STANDARD_URL, "main", "file.Audio")
 class RemoteAudio(RemoteFile):
     """This class represents remote audio files."""
 

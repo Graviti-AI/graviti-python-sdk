@@ -24,7 +24,7 @@ from graviti.portex.register import (
     STANDARD_URL,
     ContainerRegister,
     ExternalContainerRegister,
-    RemoteFileTypeResgister,
+    ExternalElementResgister,
 )
 
 __all__ = [
@@ -33,7 +33,7 @@ __all__ = [
     "STANDARD_URL",
     "PortexRecordBase",
     "PortexType",
-    "RemoteFileTypeResgister",
+    "ExternalElementResgister",
     "array",
     "binary",
     "boolean",
