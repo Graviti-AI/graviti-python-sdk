@@ -86,36 +86,6 @@ class ExternalContainerRegister:
         return container
 
 
-class PyArrowConversionRegister:
-    """Register the Portex type to set the conversion from PyArrow to Portex.
-
-    Arguments:
-        pyarrow_type_ids: The id of the corresponding PyArrow types.
-
-    """
-
-    PYARROW_TYPE_ID_TO_PORTEX_TYPE: ClassVar[Dict[int, Type["PortexType"]]] = {}
-
-    def __init__(self, *pyarrow_type_ids: int) -> None:
-        self._pyarrow_type_ids = pyarrow_type_ids
-
-    def __call__(self, portex_type: Type[_P]) -> Type[_P]:
-        """Register the Portex type and return it back.
-
-        Arguments:
-            portex_type: The Portex type to register.
-
-        Returns:
-            The original Portex type.
-
-        """
-        mapping = self.PYARROW_TYPE_ID_TO_PORTEX_TYPE
-        for pyarrow_type_id in self._pyarrow_type_ids:
-            mapping[pyarrow_type_id] = portex_type
-
-        return portex_type
-
-
 class ExternalElementResgister:
     """The class decorator to connect portex external type and the element class.
 
@@ -152,3 +122,33 @@ class ExternalElementResgister:
                 package[name].element = element
 
         return element
+
+
+class PyArrowConversionRegister:
+    """Register the Portex type to set the conversion from PyArrow to Portex.
+
+    Arguments:
+        pyarrow_type_ids: The id of the corresponding PyArrow types.
+
+    """
+
+    PYARROW_TYPE_ID_TO_PORTEX_TYPE: ClassVar[Dict[int, Type["PortexType"]]] = {}
+
+    def __init__(self, *pyarrow_type_ids: int) -> None:
+        self._pyarrow_type_ids = pyarrow_type_ids
+
+    def __call__(self, portex_type: Type[_P]) -> Type[_P]:
+        """Register the Portex type and return it back.
+
+        Arguments:
+            portex_type: The Portex type to register.
+
+        Returns:
+            The original Portex type.
+
+        """
+        mapping = self.PYARROW_TYPE_ID_TO_PORTEX_TYPE
+        for pyarrow_type_id in self._pyarrow_type_ids:
+            mapping[pyarrow_type_id] = portex_type
+
+        return portex_type
