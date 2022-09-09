@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import pyarrow as pa
 
 from graviti.portex.base import PortexType
-from graviti.portex.register import ExternalContainerRegister
+from graviti.portex.register import ExternalContainerRegister, ExternalElementResgister
 
 if TYPE_CHECKING:
     from graviti.portex.builtin import PortexBuiltinType
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from graviti.portex.package import ExternalPackage
 
 EXTERNAL_TYPE_TO_CONTAINER = ExternalContainerRegister.EXTERNAL_TYPE_TO_CONTAINER
+EXTERNAL_TYPE_TO_ELEMENT = ExternalElementResgister.EXTERNAL_TYPE_TO_ELEMENT
 
 
 class PortexExternalType(PortexType):  # pylint: disable=abstract-method
@@ -32,14 +33,18 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
     def __init_subclass__(cls) -> None:
         cls._signature = cls.params.get_signature()
 
-        container = EXTERNAL_TYPE_TO_CONTAINER.get(
-            (cls.package.url, cls.package.revision, cls.__name__)
-        ) or getattr(cls._factory.class_, "container", None)
+        key = (cls.package.url, cls.package.revision, cls.__name__)
+        base_class = cls._factory.class_
 
+        container = EXTERNAL_TYPE_TO_CONTAINER.get(key) or getattr(base_class, "container", None)
         if container:
             cls.container = container
 
-        search_container = getattr(cls._factory.class_, "search_container", None)
+        element = EXTERNAL_TYPE_TO_ELEMENT.get(key) or getattr(cls._factory.class_, "element", None)
+        if element:
+            cls.element = element
+
+        search_container = getattr(base_class, "search_container", None)
         if search_container:
             cls.search_container = search_container
 

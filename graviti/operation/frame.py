@@ -13,7 +13,7 @@ from tqdm import tqdm
 from graviti.file import File
 from graviti.openapi import add_data, delete_data, update_data, update_schema
 from graviti.operation.common import get_schema
-from graviti.portex import PortexType, RemoteFileTypeResgister
+from graviti.portex import PortexType
 from graviti.utility import chunked, submit_multithread_tasks
 
 if TYPE_CHECKING:
@@ -106,10 +106,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
 
         keys_and_paths = []
         for file_array in self.get_file_arrays():
-            schema = file_array.schema
-            file_type = RemoteFileTypeResgister.SCHEMA_TO_REMOTE_FILE[
-                schema.package.repo, schema.__class__.__name__  # type: ignore[index]
-            ]
+            file_type = file_array.schema.element
             key_and_path: List[Optional[Tuple[str, Path]]] = []
             # pylint: disable=protected-access
             for index, file in enumerate(file_array._data):
@@ -120,7 +117,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
                     post_data = file._to_post_data()
                     post_data["key"] = key
                     file_array[index] = file_type(
-                        **post_data,  # type: ignore[arg-type]
+                        **post_data,
                         object_policy_manager=object_policy_manager,
                     )
                 else:

@@ -5,19 +5,18 @@
 """The portex type register related classes."""
 
 
-from typing import TYPE_CHECKING, ClassVar, Dict, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type, TypeVar
 
 from graviti.portex.package import packages
 from graviti.utility import urlnorm
 
 if TYPE_CHECKING:
     from graviti.dataframe import Container
-    from graviti.file import RemoteFile
     from graviti.portex.base import PortexType
 
+_T = TypeVar("_T")
 _P = TypeVar("_P", bound="PortexType")
 _C = TypeVar("_C", bound="Container")
-_F = TypeVar("_F", bound="RemoteFile")
 
 STANDARD_URL = "https://github.com/Project-OpenBytes/portex-standard"
 
@@ -117,8 +116,8 @@ class PyArrowConversionRegister:
         return portex_type
 
 
-class RemoteFileTypeResgister:
-    """The class decorator to portex external type and the remote file type.
+class ExternalElementResgister:
+    """The class decorator to connect portex external type and the element class.
 
     Arguments:
         url: The git repo url of the external package.
@@ -127,22 +126,29 @@ class RemoteFileTypeResgister:
 
     """
 
-    SCHEMA_TO_REMOTE_FILE: ClassVar[Dict[Tuple[str, str], Type["RemoteFile"]]] = {}
+    EXTERNAL_TYPE_TO_ELEMENT: ClassVar[Dict[Tuple[str, str, str], Type[Any]]] = {}
 
     def __init__(self, url: str, revision: str, *names: str) -> None:
-        self._repo = f"{urlnorm(url)}@{revision}"
+        self._url = urlnorm(url)
+        self._revision = revision
         self._names = names
 
-    def __call__(self, file: Type[_F]) -> Type[_F]:
-        """Connect remote file type with the portex external types.
+    def __call__(self, element: Type[_T]) -> Type[_T]:
+        """Connect element class with the portex external types.
 
         Arguments:
-            file: The remote file type needs to be connected.
+            element: The elemenet class needs to be connected.
 
         Returns:
-            The input remote file class unchanged.
+            The input element class unchanged.
 
         """
+        package = packages.externals.get((self._url, self._revision))
+
         for name in self._names:
-            self.SCHEMA_TO_REMOTE_FILE[self._repo, name] = file
-        return file
+            self.EXTERNAL_TYPE_TO_ELEMENT[self._url, self._revision, name] = element
+
+            if package:
+                package[name].element = element
+
+        return element

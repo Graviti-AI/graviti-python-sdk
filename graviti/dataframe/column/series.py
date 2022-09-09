@@ -663,12 +663,9 @@ class FileSeries(Series):  # pylint: disable=abstract-method
         return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
 
     def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
-        schema = self.schema
-        remote_file_type = pt.RemoteFileTypeResgister.SCHEMA_TO_REMOTE_FILE[
-            schema.package.repo, schema.__class__.__name__  # type: ignore[index]
-        ]
+        file_type = self.schema.element
         self._data = factory.create_list(
-            lambda scalar: remote_file_type(
+            lambda scalar: file_type(
                 **scalar.as_py(), object_policy_manager=factory.object_policy_manager
             )
         )

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, Union
 
 from _io import BufferedReader
 
-from graviti.portex import STANDARD_URL, RemoteFileTypeResgister
+from graviti.portex import STANDARD_URL, ExternalElementResgister
 from graviti.utility import shorten
 from graviti.utility.repr import ReprMixin
 from graviti.utility.requests import UserResponse
@@ -174,7 +174,7 @@ class File(FileBase):
         return self._path.open("rb")
 
 
-@RemoteFileTypeResgister(STANDARD_URL, "main", "file.File")
+@ExternalElementResgister(STANDARD_URL, "main", "file.File")
 class RemoteFile(FileBase):
     """This class represents the file on Graviti platform.
 
