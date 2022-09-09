@@ -105,9 +105,9 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             array = pa.array(data)
             schema = pt.PortexType.from_pyarrow(array.type)
         elif issubclass(schema.container, FileSeries):
-            return FileSeries._from_iterable(data, schema)  # type: ignore[arg-type]
+            return FileSeries._from_iterable(data, schema)
         else:
-            array = cls._pylist_to_pyarrow(data, schema)  # type: ignore[arg-type]
+            array = cls._pylist_to_pyarrow(data, schema)
 
         return schema.container._from_pyarrow(array, schema)
 
@@ -151,9 +151,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             series = self._from_iterable([value], self.schema)
             key = slice(key, key + 1)
         elif not isinstance(value, self.__class__):
-            series = self._from_pyarrow(
-                self._pylist_to_pyarrow(value, self.schema), self.schema  # type: ignore[arg-type]
-            )
+            series = self._from_pyarrow(self._pylist_to_pyarrow(value, self.schema), self.schema)
         elif self.schema.to_pyarrow().equals(value.schema.to_pyarrow()):
             series = value
         else:
@@ -180,6 +178,9 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     def __len__(self) -> int:
         return self._data.__len__()
+
+    def __iter__(self) -> Iterator[Any]:
+        return self._data.__iter__()
 
     def __repr__(self) -> str:
         indices = list(self._get_repr_indices())

@@ -109,7 +109,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             file_type = file_array.schema.element
             key_and_path: List[Optional[Tuple[str, Path]]] = []
             # pylint: disable=protected-access
-            for index, file in enumerate(file_array._data):
+            for index, file in enumerate(file_array):
                 if isinstance(file, File):
                     key = f"{prefix}{file.get_checksum()}"
                     key_and_path.append((key, file.path))
