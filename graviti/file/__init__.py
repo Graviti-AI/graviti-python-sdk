@@ -11,9 +11,9 @@ from graviti.file.point_cloud import PointCloud, RemotePointCloud
 
 __all__ = [
     "Audio",
-    "Image",
     "File",
     "FileBase",
+    "Image",
     "PointCloud",
     "RemoteAudio",
     "RemoteFile",
