@@ -120,9 +120,9 @@ class Commit(Sheets):
         )
 
     def _init_dataframe(self, sheet_name: str) -> DataFrame:
-        dataframe = super()._init_dataframe(sheet_name)
-        dataframe.searcher = partial(self.search, sheet_name)
-        return dataframe
+        df = super()._init_dataframe(sheet_name)
+        df.searcher = partial(self.search, sheet_name)
+        return df
 
     @classmethod
     def from_response(cls: Type[_C], dataset: "Dataset", contents: Dict[str, Any]) -> _C:

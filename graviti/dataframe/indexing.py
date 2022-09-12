@@ -94,15 +94,15 @@ class DataFrameILocIndexer:
 
         self.obj._set_slice_by_location(key, value)
         if self.obj.operations is not None:
-            dataframe = value.copy()
+            df = value.copy()
             _record_key = self.obj._record_key
             # TODO: support slicing methods for record_key
             record_key = [
                 _record_key[i]  # type: ignore[index]
                 for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
             ]
-            dataframe._record_key = ColumnSeries(record_key)
-            self.obj.operations.append(UpdateData(dataframe))
+            df._record_key = ColumnSeries(record_key)
+            self.obj.operations.append(UpdateData(df))
 
     def __delitem__(self, key: Union[int, slice]) -> None:
         if self.obj._root is not None:
@@ -191,15 +191,15 @@ class DataFrameLocIndexer:
 
         self.obj._set_slice_by_location(key, value)
         if self.obj.operations is not None:
-            dataframe = value.copy()
+            df = value.copy()
             _record_key = self.obj._record_key
             # TODO: support slicing methods for record_key
             record_key = [
                 _record_key[i]  # type: ignore[index]
                 for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
             ]
-            dataframe._record_key = ColumnSeries(record_key)
-            self.obj.operations.append(UpdateData(dataframe))
+            df._record_key = ColumnSeries(record_key)
+            self.obj.operations.append(UpdateData(df))
 
     def __delitem__(self, key: Union[int, slice]) -> None:
         if self.obj._root is not None:
