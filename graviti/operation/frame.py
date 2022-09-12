@@ -5,12 +5,11 @@
 
 """Definitions of different operations on a DataFrame."""
 
-from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List
 
 from tqdm import tqdm
 
-from graviti.file import File
+from graviti.file import File, FileBase
 from graviti.openapi import add_data, delete_data, update_data, update_schema
 from graviti.operation.common import get_schema
 from graviti.portex import PortexType
@@ -27,7 +26,7 @@ _MAX_ITEMS = 60000
 class DataFrameOperation:
     """This class defines the basic method of the operation on a DataFrame."""
 
-    def get_file_arrays(self) -> List["FileSeries"]:  # pylint: disable=no-self-use
+    def get_files(self) -> List[FileBase]:  # pylint: disable=no-self-use
         """Get the list of FileSeries.
 
         Returns:
@@ -83,7 +82,7 @@ class DataFrameOperation:
 class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
     """This class defines the basic method of the data operation on a DataFrame."""
 
-    _file_arrays: List["FileSeries"]
+    _files: List[FileBase]
 
     def __init__(self, data: "DataFrame") -> None:
         self._data = data
@@ -94,38 +93,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             _MAX_ITEMS // self._data.schema._get_column_count(),  # pylint: disable=protected-access
         )
 
-    def _update_local_files(
-        self,
-        object_policy_manager: "ObjectPolicyManager",
-    ) -> List[List[Optional[Tuple[str, Path]]]]:
-        # object_policy_manager = self._data.object_policy_manager
-        if not object_policy_manager:
-            raise ValueError("Require object policy manager to upload data")
-
-        prefix = object_policy_manager.prefix
-
-        keys_and_paths = []
-        for file_array in self.get_file_arrays():
-            file_type = file_array.schema.element
-            key_and_path: List[Optional[Tuple[str, Path]]] = []
-            # pylint: disable=protected-access
-            for index, file in enumerate(file_array):
-                if isinstance(file, File):
-                    key = f"{prefix}{file.get_checksum()}"
-                    key_and_path.append((key, file.path))
-
-                    post_data = file._to_post_data()
-                    post_data["key"] = key
-                    file_array[index] = file_type(
-                        **post_data,
-                        object_policy_manager=object_policy_manager,
-                    )
-                else:
-                    key_and_path.append(None)
-            keys_and_paths.append(key_and_path)
-        return keys_and_paths
-
-    def get_file_arrays(self) -> List["FileSeries"]:
+    def get_files(self) -> List[FileBase]:
         """Get the list of FileSeries.
 
         Returns:
@@ -133,9 +101,9 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
 
         """
         if not hasattr(self, "_file_arrays"):
-            self._file_arrays = self._data._get_file_columns()  # pylint: disable=protected-access
+            self._files = list(self._data._generate_file())  # pylint: disable=protected-access
 
-        return self._file_arrays
+        return self._files
 
     def get_upload_count(self) -> int:
         """Get the data amount to be uploaded.
@@ -184,23 +152,17 @@ class AddData(DataOperation):
             object_policy_manager: The object policy manager of the dataset.
 
         """
-        keys_and_paths = self._update_local_files(object_policy_manager)
-        data = self._data._to_post_data()  # pylint: disable=protected-access
-        for batch, *keys_and_paths in zip(
-            *map(
-                # TODO: support dataframe slicing methods to replace chunked
-                lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
-                (data, *keys_and_paths),
-            )
-        ):
-            for key_and_path in keys_and_paths:
-                _upload_files(
-                    filter(lambda x: x is not None, key_and_path),  # type: ignore[arg-type]
-                    object_policy_manager,
-                    jobs=jobs,
-                    pbar=file_pbar,
-                )
+        _upload_files(
+            filter(lambda f: isinstance(f, File), self.get_files()),  # type: ignore[arg-type]
+            object_policy_manager,
+            jobs=jobs,
+            pbar=file_pbar,
+        )
 
+        for batch in chunked(
+            self._data._to_post_data(),  # pylint: disable=protected-access
+            self._get_max_batch_size(),
+        ):
             add_data(
                 access_key,
                 url,
@@ -307,22 +269,17 @@ class UpdateData(DataOperation):
             object_policy_manager: The object policy manager of the dataset.
 
         """
-        keys_and_paths = self._update_local_files(object_policy_manager)
-        data = self._data._to_patch_data()  # pylint: disable=protected-access
+        _upload_files(
+            filter(lambda f: isinstance(f, File), self.get_files()),  # type: ignore[arg-type]
+            object_policy_manager,
+            jobs=jobs,
+            pbar=file_pbar,
+        )
 
-        for batch, *keys_and_paths in zip(
-            *map(
-                lambda x: chunked(x, self._get_max_batch_size()),  # type: ignore[arg-type]
-                (data, *keys_and_paths),
-            )
+        for batch in chunked(
+            self._data._to_patch_data(),  # pylint: disable=protected-access
+            self._get_max_batch_size(),
         ):
-            for key_and_path in keys_and_paths:
-                _upload_files(
-                    filter(lambda x: x is not None, key_and_path),  # type: ignore[arg-type]
-                    object_policy_manager,
-                    jobs=jobs,
-                    pbar=file_pbar,
-                )
             update_data(
                 access_key,
                 url,
@@ -387,30 +344,26 @@ class DeleteData(DataFrameOperation):
 
 
 def _upload_files(
-    keys_and_paths: Iterable[Tuple[str, Path]],
+    files: Iterable[File],
     object_policy_manager: "ObjectPolicyManager",
     pbar: tqdm,
     _allow_retry: bool = True,
     jobs: int = 8,
 ) -> None:
     submit_multithread_tasks(
-        lambda key_and_path: _upload_file(
-            *key_and_path,
-            object_policy_manager,
-            pbar,
-            _allow_retry,
-        ),
-        keys_and_paths,
+        lambda file: _upload_file(file, object_policy_manager, pbar, _allow_retry),
+        files,
         jobs=jobs,
     )
 
 
 def _upload_file(
-    key: str,
-    path: Path,
+    file: File,
     object_policy_manager: "ObjectPolicyManager",
     pbar: tqdm,
     _allow_retry: bool = True,
 ) -> None:
-    object_policy_manager.put_object(key, path, _allow_retry)
+    post_key = f"{object_policy_manager.prefix}{file.get_checksum()}"
+    object_policy_manager.put_object(post_key, file.path, _allow_retry)
+    file._post_key = post_key  # pylint: disable=protected-access
     pbar.update()

@@ -164,7 +164,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         for df in self.values():
             for df_operation in df.operations:  # type: ignore[union-attr]
                 df_total += df_operation.get_upload_count()
-                file_total += sum(map(len, df_operation.get_file_arrays()))
+                file_total += len(df_operation.get_files())
 
         # Note that after done uploading, the two process bars will switch position due to the tqdm
         # bug https://github.com/tqdm/tqdm/issues/1000.
