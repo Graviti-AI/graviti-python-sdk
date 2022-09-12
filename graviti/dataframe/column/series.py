@@ -168,13 +168,13 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
                 for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
             ]
             name = self._name
-            dataframe = root._construct(
+            df = root._construct(
                 {name[0]: series},
                 pt.record({name[0]: series.schema}),
                 Series(record_key),
                 name[1:],
             )
-            root.operations.append(UpdateData(dataframe))  # type: ignore[union-attr]
+            root.operations.append(UpdateData(df))  # type: ignore[union-attr]
 
     def __len__(self) -> int:
         return self._data.__len__()

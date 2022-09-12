@@ -164,10 +164,10 @@ class DataFrame(Container):
         self._setitem(key, value)
         # TODO: Use self[[key]] to replace DataFrame._construct
         _value = self[key].copy()
-        dataframe = DataFrame._construct(
+        df = DataFrame._construct(
             {key: _value}, pt.record({key: _value.schema}), root._record_key, self._name
         )
-        root.operations.extend((UpdateSchema(self.schema), UpdateData(dataframe)))
+        root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
 
     def __repr__(self) -> str:
         flatten_header, flatten_data = self._flatten()
@@ -986,10 +986,10 @@ class DataFrame(Container):
                 }
             }
 
-        dataframe = self.searcher(criteria, self.schema)  # pylint: disable=not-callable
-        dataframe.criteria = criteria
-        dataframe.searcher = self.searcher
-        return dataframe
+        df = self.searcher(criteria, self.schema)  # pylint: disable=not-callable
+        df.criteria = criteria
+        df.searcher = self.searcher
+        return df
 
     def apply(self, func: Callable[[Any], Any]) -> Container:
         """Apply a function to the DataFrame row by row.
@@ -1026,7 +1026,7 @@ class DataFrame(Container):
         result = func(SqlRowSeries(self.schema))
         criteria = {} if self.criteria is None else self.criteria.copy()
         criteria["select"] = [{APPLY_KEY: result.expr}]
-        dataframe = self.searcher(  # pylint: disable=not-callable
+        df = self.searcher(  # pylint: disable=not-callable
             criteria, pt.record({APPLY_KEY: pt.array(result.schema)})
         )
-        return dataframe[APPLY_KEY]
+        return df[APPLY_KEY]

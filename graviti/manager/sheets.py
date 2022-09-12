@@ -55,9 +55,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
-        dataframe = self[key]
+        df = self[key]
         self._get_data().__delitem__(key)
-        del dataframe.operations
+        del df.operations
         self.operations.append(DeleteSheet(key))
 
     def __iter__(self) -> Iterator[str]:
@@ -85,10 +85,10 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
         factory.object_policy_manager = self._dataset.object_policy_manager
-        dataframe = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
-        dataframe.operations = []
+        df = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        df.operations = []
 
-        return dataframe
+        return df
 
     def _init_data(self) -> None:
         self._data = {}
@@ -161,8 +161,8 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
         df_total = 0
         file_total = 0
-        for dataframe in self.values():
-            for df_operation in dataframe.operations:  # type: ignore[union-attr]
+        for df in self.values():
+            for df_operation in df.operations:  # type: ignore[union-attr]
                 df_total += df_operation.get_upload_count()
                 file_total += sum(map(len, df_operation.get_file_arrays()))
 
@@ -172,10 +172,10 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             total=file_total, disable=(file_total == 0 or quiet), desc="uploading binary files"
         ) as file_pbar:
             with tqdm(total=df_total, disable=quiet, desc="uploading structured data") as data_pbar:
-                for sheet_name, dataframe in self.items():
-                    if not dataframe.operations:
+                for sheet_name, df in self.items():
+                    if not df.operations:
                         continue
-                    for df_operation in dataframe.operations:
+                    for df_operation in df.operations:
                         df_operation.do(
                             dataset.access_key,
                             dataset.url,
@@ -188,16 +188,12 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                             file_pbar=file_pbar,
                             object_policy_manager=object_policy_manager,
                         )
-                    dataframe.operations = []
+                    df.operations = []
                     factory = LazyLowerCaseFactory(
-                        len(dataframe),
+                        len(df),
                         LIMIT,
                         partial(self._list_data, sheet_name=sheet_name),
-                        pa.struct(
-                            [pa.field(RECORD_KEY, pa.string()), *dataframe.schema.to_pyarrow()]
-                        ),
+                        pa.struct([pa.field(RECORD_KEY, pa.string()), *df.schema.to_pyarrow()]),
                     )
                     factory.object_policy_manager = object_policy_manager
-                    dataframe._refresh_data_from_factory(  # pylint: disable=protected-access)
-                        factory
-                    )
+                    df._refresh_data_from_factory(factory)  # pylint: disable=protected-access)
