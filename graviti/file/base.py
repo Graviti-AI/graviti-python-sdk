@@ -83,17 +83,21 @@ class File(FileBase):
 
     """
 
-    __slots__ = FileBase.__slots__ + ("_path", "_checksum")
+    __slots__ = FileBase.__slots__ + ("_path", "_checksum", "_post_key")
 
     _BUFFER_SIZE = 65536
 
     _checksum: str
+    _post_key: str
 
     def __init__(self, path: str) -> None:
         self._path = Path(path).absolute()
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self._path.name}")'
+
+    def _to_post_data(self) -> Dict[str, Union[int, str]]:
+        return {"key": self._post_key, "extension": self._extension, "size": self._size}
 
     @property
     def path(self) -> Path:
