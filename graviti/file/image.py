@@ -5,7 +5,10 @@
 
 """Graviti image file class."""
 
-from typing import TYPE_CHECKING, Dict, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, Optional, Type, TypeVar, Union
+
+import pyarrow as pa
 
 from graviti.file.base import File, RemoteFile
 from graviti.file.image_size import get_image_size
@@ -13,6 +16,10 @@ from graviti.portex import STANDARD_URL, ExternalElementResgister
 
 if TYPE_CHECKING:
     from graviti.manager import ObjectPolicyManager
+
+
+_I = TypeVar("_I", bound="Image")
+_RI = TypeVar("_RI", bound="RemoteImage")
 
 
 class Image(File):
@@ -27,6 +34,24 @@ class Image(File):
 
     _height: int
     _width: int
+
+    @classmethod
+    def _from_pyarrow(
+        cls: Type[_I],
+        scalar: pa.StructScalar,
+        _: Optional["ObjectPolicyManager"] = None,
+    ) -> _I:
+        obj: _I = object.__new__(cls)
+        pyobj = scalar.as_py()
+
+        obj._key = pyobj["key"]
+        obj._path = Path(pyobj["key"])
+        obj._extension = pyobj["extension"]
+        obj._size = pyobj["size"]
+        obj._height = pyobj["height"]
+        obj._width = pyobj["width"]
+
+        return obj
 
     def _to_post_data(self) -> Dict[str, Union[int, str]]:
         post_data = super()._to_post_data()
@@ -90,6 +115,24 @@ class RemoteImage(RemoteFile):
         RemoteFile.__init__(self, key, extension, size, object_policy_manager)
         self._height = height
         self._width = width
+
+    @classmethod
+    def _from_pyarrow(  # type: ignore[override]
+        cls: Type[_RI],
+        scalar: pa.StructScalar,
+        object_policy_manager: "ObjectPolicyManager",
+    ) -> _RI:
+        obj: _RI = object.__new__(cls)
+        pyobj = scalar.as_py()
+
+        obj._key = pyobj["key"]
+        obj._extension = pyobj["extension"]
+        obj._size = pyobj["size"]
+        obj._height = pyobj["height"]
+        obj._width = pyobj["width"]
+        obj._object_policy = object_policy_manager
+
+        return obj
 
     def _to_post_data(self) -> Dict[str, Union[int, str]]:
         post_data = super()._to_post_data()

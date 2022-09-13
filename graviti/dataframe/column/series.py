@@ -538,7 +538,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         obj: _A = object.__new__(cls)
         obj._data = MappedPagingList.from_array(
-            array, lambda scalar: _item_creator(scalar.values, _item_schema)
+            array, lambda scalar: _item_creator(scalar.values, _item_schema, root)
         )
 
         obj.schema = schema
@@ -572,7 +572,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
         self._data = factory.create_mapped_list(
-            lambda scalar: _item_creator(scalar.values, _item_schema)
+            lambda scalar: _item_creator(scalar.values, _item_schema, self._root)
         )
         self._item_schema = _item_schema  # pylint: disable=protected-access
 
@@ -641,10 +641,10 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     "file.PointCloudBin",
     "label.Mask",
 )
-class FileSeries(Series):  # pylint: disable=abstract-method
+class FileSeries(SeriesBase):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
-    _data: PagingList  # type: ignore[assignment]
+    _data: PagingList
 
     def __getitem__(self, key: int) -> Any:
         return self._data[key]
@@ -658,6 +658,30 @@ class FileSeries(Series):  # pylint: disable=abstract-method
         obj: _F = object.__new__(cls)
         obj._data = PagingList(array)
         obj.schema = schema
+        return obj
+
+    @classmethod
+    def _from_pyarrow(
+        cls: Type[_F],
+        array: pa.Array,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _F:
+        if root is None:
+            raise ValueError(
+                "The object policy manager from root is needed to create FileSeries from pyarrow"
+            )
+
+        obj: _F = object.__new__(cls)
+        file_type: FileBase = schema.element  # type: ignore[assignment]
+        # pylint: disable=protected-access
+        obj._data = PagingList(
+            file_type._from_pyarrow(item, root._object_policy_manager) for item in array
+        )
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
         return obj
 
     def _to_post_data(self) -> List[Dict[str, Any]]:
