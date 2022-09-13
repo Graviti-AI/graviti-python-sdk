@@ -5,8 +5,12 @@
 
 """The implementation of the Draft and DraftManager."""
 
+from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
+import pyarrow as pa
+
+from graviti.dataframe import RECORD_KEY
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
@@ -24,6 +28,7 @@ from graviti.openapi import (
     update_draft,
 )
 from graviti.operation import SheetOperation
+from graviti.paging.factory import LazyLowerCaseFactory
 from graviti.utility import check_type, convert_iso_to_datetime
 
 if TYPE_CHECKING:
@@ -244,7 +249,19 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             quiet: Set to True to stop showing the upload process bar.
 
         """
+        modified_sheets = {name: df for name, df in self.items() if df.operations}
+
         self._upload_to_draft(self.number, jobs, quiet)
+
+        for name, df in modified_sheets.items():
+            factory = LazyLowerCaseFactory(
+                len(df),
+                LIMIT,
+                partial(self._list_data, sheet_name=name),
+                pa.struct([pa.field(RECORD_KEY, pa.string()), *df.schema.to_pyarrow()]),
+            )
+            factory.object_policy_manager = self._dataset.object_policy_manager
+            df._refresh_data_from_factory(factory)  # pylint: disable=protected-access)
 
 
 class DraftManager:
