@@ -52,6 +52,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self.operations.append(DeleteSheet(key))
 
         value.operations = [AddData(value.copy())]
+        value._object_policy_manager = self._dataset.object_policy_manager
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
@@ -175,6 +176,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                 for sheet_name, df in self.items():
                     if not df.operations:
                         continue
+
                     for df_operation in df.operations:
                         df_operation.do(
                             dataset.access_key,
@@ -189,11 +191,3 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                             object_policy_manager=object_policy_manager,
                         )
                     df.operations = []
-                    factory = LazyLowerCaseFactory(
-                        len(df),
-                        LIMIT,
-                        partial(self._list_data, sheet_name=sheet_name),
-                        pa.struct([pa.field(RECORD_KEY, pa.string()), *df.schema.to_pyarrow()]),
-                    )
-                    factory.object_policy_manager = object_policy_manager
-                    df._refresh_data_from_factory(factory)  # pylint: disable=protected-access)
