@@ -8,8 +8,9 @@
 import mimetypes
 from hashlib import sha1
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Dict, Optional, Type, TypeVar, Union
 
+import pyarrow as pa
 from _io import BufferedReader
 
 from graviti.portex import STANDARD_URL, ExternalElementResgister
@@ -19,6 +20,10 @@ from graviti.utility.requests import UserResponse
 
 if TYPE_CHECKING:
     from graviti.manager import ObjectPolicyManager
+
+_FB = TypeVar("_FB", bound="FileBase")
+_F = TypeVar("_F", bound="File")
+_RF = TypeVar("_RF", bound="RemoteFile")
 
 _ENCODINGS = mimetypes.encodings_map
 
@@ -34,6 +39,21 @@ class FileBase(ReprMixin):
 
     def _to_post_data(self) -> Dict[str, Union[int, str]]:
         return {"key": self.key, "extension": self.extension, "size": self.size}
+
+    @classmethod
+    def _from_pyarrow(
+        cls: Type[_FB],
+        scalar: pa.StructScalar,
+        _: Optional["ObjectPolicyManager"] = None,
+    ) -> _FB:
+        obj: _FB = object.__new__(cls)
+        pyobj = scalar.as_py()
+
+        obj._key = pyobj["key"]
+        obj._extension = pyobj["extension"]
+        obj._size = pyobj["size"]
+
+        return obj
 
     @property
     def key(self) -> str:
@@ -97,7 +117,23 @@ class File(FileBase):
         return f'{self.__class__.__name__}("{self._path.name}")'
 
     def _to_post_data(self) -> Dict[str, Union[int, str]]:
-        return {"key": self._post_key, "extension": self._extension, "size": self._size}
+        return {"key": self._post_key, "extension": self.extension, "size": self.size}
+
+    @classmethod
+    def _from_pyarrow(
+        cls: Type[_F],
+        scalar: pa.StructScalar,
+        _: Optional["ObjectPolicyManager"] = None,
+    ) -> _F:
+        obj: _F = object.__new__(cls)
+        pyobj = scalar.as_py()
+
+        obj._key = pyobj["key"]
+        obj._path = Path(pyobj["key"])
+        obj._extension = pyobj["extension"]
+        obj._size = pyobj["size"]
+
+        return obj
 
     @property
     def path(self) -> Path:
@@ -207,6 +243,22 @@ class RemoteFile(FileBase):
     def _repr_head(self) -> str:
         short_checksum = shorten(self.key.rsplit("/", 1)[1])
         return f'{self.__class__.__name__}("{short_checksum}")'
+
+    @classmethod
+    def _from_pyarrow(  # type: ignore[override]  # pylint: disable=signature-differs
+        cls: Type[_RF],
+        scalar: pa.StructScalar,
+        object_policy_manager: "ObjectPolicyManager",
+    ) -> _RF:
+        obj: _RF = object.__new__(cls)
+        pyobj = scalar.as_py()
+
+        obj._key = pyobj["key"]
+        obj._extension = pyobj["extension"]
+        obj._size = pyobj["size"]
+        obj._object_policy = object_policy_manager
+
+        return obj
 
     def open(self) -> UserResponse:
         """Return the binary file pointer of this file.

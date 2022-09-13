@@ -9,6 +9,7 @@
 
 from itertools import chain, islice, zip_longest
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -36,6 +37,10 @@ from graviti.file import FileBase
 from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, Mode, engine
+
+if TYPE_CHECKING:
+    from graviti.manager.policy import ObjectPolicyManager
+
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
@@ -101,6 +106,7 @@ class DataFrame(Container):
 
     _columns: Dict[str, Container]
     _record_key: Optional[ColumnSeries] = None
+    _object_policy_manager: "ObjectPolicyManager"
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
     searcher: Optional[Callable[[Dict[str, Any], pt.PortexRecordBase], "DataFrame"]] = None
@@ -276,6 +282,9 @@ class DataFrame(Container):
         obj: _T = object.__new__(cls)
         obj.schema = schema
         obj._root = root
+        if root is None:
+            obj._object_policy_manager = factory.object_policy_manager
+
         obj._name = name
 
         obj._columns = {
