@@ -437,15 +437,11 @@ class DataFrame(Container):
         for column in self._columns.values():
             column._del_item_by_location(key)  # pylint: disable=protected-access
         if self.operations is not None:
-            record_key = self._record_key
+            record_key: ColumnSeries = self._record_key  # type: ignore[assignment]
             if isinstance(key, int):
-                record_keys = [record_key[key]]  # type: ignore[index]
+                record_keys = [record_key[key]]
             else:
-                # TODO: support slicing methods for record_key
-                record_keys = [
-                    record_key[i]  # type: ignore[index]
-                    for i in range(len(record_key))[key]  # type: ignore[arg-type]
-                ]
+                record_keys = list(record_key[key])
             self.operations.append(DeleteData(record_keys))
 
     @property
