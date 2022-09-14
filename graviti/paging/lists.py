@@ -102,9 +102,19 @@ class PagingListBase:
 
         self._update_pages(start, stop)
 
+    @overload
     def __getitem__(self, index: int) -> Any:
-        index = self._make_index_nonnegative(index)
-        return self._getitem(index)
+        ...
+
+    @overload
+    def __getitem__(self: _PLB, index: slice) -> _PLB:
+        ...
+
+    def __getitem__(self: _PLB, index: Union[int, slice]) -> Union[Any, _PLB]:
+        if isinstance(index, int):
+            return self._get_item(index)
+
+        return self._get_slice(index)
 
     def __iadd__(self: _PLB, values: Union[_PLB, Iterable[Any]]) -> _PLB:
         if isinstance(values, self.__class__):
@@ -122,9 +132,116 @@ class PagingListBase:
     def _make_index_nonnegative(self, index: int) -> int:
         return index if index >= 0 else self.__len__() + index
 
-    def _getitem(self, index: int) -> Any:
+    def _get_item(self, index: int) -> Any:
+        index = self._make_index_nonnegative(index)
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i].get_item(j)
+
+    def _get_slice_positive_step(  # pylint: disable=too-many-locals
+        self, start: int, stop: int, step: int
+    ) -> List[PageBase[Any]]:
+        if start >= stop:
+            return []
+
+        _pages = self._pages
+
+        start_i, start_j = self._offsets.get_coordinate(start)
+        stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
+        stop_j += 1
+
+        if start_i == stop_i:
+            return [_pages[start_i].get_slice(start_j, stop_j, step)]
+
+        if step == 1:
+            return [
+                _pages[start_i].get_slice(start_j),
+                *_pages[start_i + 1 : stop_i],
+                _pages[stop_i].get_slice(stop=stop_j),
+            ]
+
+        start_page = _pages[start_i]
+        offset = len(start_page) - start_j
+        pages = [start_page.get_slice(start_j, step=step)]
+
+        for page in _pages[start_i + 1 : stop_i]:
+            slice_start = -offset % step
+            page_length = len(page)
+
+            if slice_start < page_length:
+                pages.append(page.get_slice(slice_start, step=step))
+
+            offset += page_length
+
+        stop_page = _pages[stop_i]
+        slice_start = -offset % step
+        if slice_start < stop_j:
+            pages.append(stop_page.get_slice(slice_start, stop_j, step))
+
+        return pages
+
+    def _get_slice_negative_step(  # pylint: disable=too-many-locals
+        self, start: int, stop: int, step: int
+    ) -> List[PageBase[Any]]:
+        if start <= stop:
+            return []
+
+        _pages = self._pages
+
+        stop_j: Optional[int]
+
+        start_i, start_j = self._offsets.get_coordinate(start)
+        stop_i, stop_j = self._offsets.get_coordinate(stop + 1)
+        stop_j = stop_j - 1 if stop_j != 0 else None
+
+        if start_i == stop_i:
+            return [_pages[start_i].get_slice(start_j, stop_j, step)]
+
+        if step == -1:
+            return [
+                _pages[start_i].get_slice(start_j, step=step),
+                *(page.get_slice(step=step) for page in _pages[start_i - 1 : stop_i : -1]),
+                _pages[stop_i].get_slice(stop=stop_j, step=step),
+            ]
+
+        start_page = _pages[start_i]
+        offset = start_j + 1
+        pages = [start_page.get_slice(start_j, step=step)]
+
+        for page in _pages[start_i - 1 : stop_i : -1]:
+            page_length = len(page)
+            slice_start = page_length + offset % step - 1
+
+            if slice_start >= 0:
+                pages.append(page.get_slice(slice_start, step=step))
+
+            offset += page_length
+
+        stop_page = _pages[stop_i]
+        slice_start = len(stop_page) + offset % step - 1
+
+        if slice_start > (stop_j if stop_j is not None else -1):
+            pages.append(stop_page.get_slice(slice_start, stop_j, step))
+
+        return pages
+
+    def _get_slice(self: _PLB, index: slice) -> _PLB:
+        start, stop, step = index.indices(self.__len__())
+
+        pages = (
+            self._get_slice_positive_step(start, stop, step)
+            if step > 0
+            else self._get_slice_negative_step(start, stop, step)
+        )
+
+        offsets = Offsets(0, 0)
+        offsets.extend(map(len, pages))
+
+        obj: _PLB = object.__new__(self.__class__)
+        # pylint: disable=protected-access
+        obj._pages = pages
+        obj._offsets = offsets
+
+        return obj
 
     def _update_pages(
         self, start: int, stop: int, pages: Optional[Sequence[PageBase[Any]]] = None
