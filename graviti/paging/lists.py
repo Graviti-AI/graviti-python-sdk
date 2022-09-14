@@ -116,9 +116,9 @@ class PagingListBase(Sequence[_T], ReprMixin):
 
     def __getitem__(self: _PLB, index: Union[int, slice]) -> Union[_T, _PLB]:
         if isinstance(index, int):
-            return self._get_item(index)  # type: ignore[no-any-return]
+            return self.get_item(index)  # type: ignore[no-any-return]
 
-        return self._get_slice(index)
+        return self.get_slice(index)
 
     def __iadd__(self: _PLB, values: Union[_PLB, Iterable[_T]]) -> _PLB:
         if isinstance(values, self.__class__):
@@ -135,11 +135,6 @@ class PagingListBase(Sequence[_T], ReprMixin):
 
     def _make_index_nonnegative(self, index: int) -> int:
         return index if index >= 0 else self.__len__() + index
-
-    def _get_item(self, index: int) -> _T:
-        index = self._make_index_nonnegative(index)
-        i, j = self._offsets.get_coordinate(index)
-        return self._pages[i].get_item(j)
 
     def _get_slice_positive_step(  # pylint: disable=too-many-locals
         self, start: int, stop: int, step: int
@@ -228,25 +223,6 @@ class PagingListBase(Sequence[_T], ReprMixin):
 
         return pages
 
-    def _get_slice(self: _PLB, index: slice) -> _PLB:
-        start, stop, step = index.indices(self.__len__())
-
-        pages = (
-            self._get_slice_positive_step(start, stop, step)
-            if step > 0
-            else self._get_slice_negative_step(start, stop, step)
-        )
-
-        offsets = Offsets(0, 0)
-        offsets.extend(map(len, pages))
-
-        obj: _PLB = object.__new__(self.__class__)
-        # pylint: disable=protected-access
-        obj._pages = pages
-        obj._offsets = offsets
-
-        return obj
-
     def _update_pages(
         self, start: int, stop: int, pages: Optional[Sequence[PageBase[_T]]] = None
     ) -> None:
@@ -301,6 +277,48 @@ class PagingListBase(Sequence[_T], ReprMixin):
         for i, j in zip(ranging, indices):
             x, y = offsets.get_coordinate(j)
             self._update_pages(i, i + 1, [pages[x][y : y + 1]])
+
+    def get_item(self, index: int) -> _T:
+        """Get the element in PagingList at the given index.
+
+        Arguments:
+            index: The input index.
+
+        Returns:
+            The element at the given index.
+
+        """
+        index = self._make_index_nonnegative(index)
+        i, j = self._offsets.get_coordinate(index)
+        return self._pages[i].get_item(j)
+
+    def get_slice(self: _PLB, index: slice) -> _PLB:
+        """Get the sliced PagingList at the given slice.
+
+        Arguments:
+            index: The input slice.
+
+        Returns:
+            The sliced PagingList at the given slice.
+
+        """
+        start, stop, step = index.indices(self.__len__())
+
+        pages = (
+            self._get_slice_positive_step(start, stop, step)
+            if step > 0
+            else self._get_slice_negative_step(start, stop, step)
+        )
+
+        offsets = Offsets(0, 0)
+        offsets.extend(map(len, pages))
+
+        obj: _PLB = object.__new__(self.__class__)
+        # pylint: disable=protected-access
+        obj._pages = pages
+        obj._offsets = offsets
+
+        return obj
 
     def set_item(self, index: int, value: _T) -> None:
         """Update the element value in PagingList at the given index.
