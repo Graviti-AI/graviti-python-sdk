@@ -7,7 +7,7 @@
 
 from itertools import repeat
 from math import ceil
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, TypeVar
 
 import pyarrow as pa
 
@@ -17,6 +17,8 @@ from graviti.paging.wrapper import StructArrayWrapper
 
 if TYPE_CHECKING:
     from graviti.manager import ObjectPolicyManager
+
+_T = TypeVar("_T")
 
 
 class LazyFactoryBase:
@@ -44,7 +46,7 @@ class LazyFactoryBase:
         """
         raise NotImplementedError
 
-    def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
+    def create_list(self, mapper: Callable[[Any], _T]) -> PagingList[_T]:
         """Create a paging list from the factory.
 
         Arguments:
@@ -56,7 +58,7 @@ class LazyFactoryBase:
         """
         raise NotImplementedError
 
-    def create_mapped_list(self, mapper: Callable[[Any], Any]) -> MappedPagingList:
+    def create_mapped_list(self, mapper: Callable[[Any], _T]) -> MappedPagingList[_T]:
         """Create a paging list from the factory.
 
         Arguments:
@@ -68,7 +70,7 @@ class LazyFactoryBase:
         """
         raise NotImplementedError
 
-    def create_pyarrow_list(self) -> PyArrowPagingList:
+    def create_pyarrow_list(self) -> PyArrowPagingList[Any]:
         """Create a paging list from the factory.
 
         Raises:
@@ -191,7 +193,7 @@ class LazyFactory(LazyFactoryBase):
 
         return array
 
-    def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
+    def create_list(self, mapper: Callable[[Any], _T]) -> PagingList[_T]:
         """Create a paging list from the factory.
 
         Arguments:
@@ -203,7 +205,7 @@ class LazyFactory(LazyFactoryBase):
         """
         return PagingList.from_factory(self, (), mapper)
 
-    def create_mapped_list(self, mapper: Callable[[Any], Any]) -> MappedPagingList:
+    def create_mapped_list(self, mapper: Callable[[Any], _T]) -> MappedPagingList[_T]:
         """Create a paging list from the factory.
 
         Arguments:
@@ -215,7 +217,7 @@ class LazyFactory(LazyFactoryBase):
         """
         return MappedPagingList.from_factory(self, (), mapper)
 
-    def create_pyarrow_list(self) -> PyArrowPagingList:
+    def create_pyarrow_list(self) -> PyArrowPagingList[Any]:
         """Create a paging list from the factory.
 
         Returns:
@@ -274,7 +276,7 @@ class LazySubFactory(LazyFactoryBase):
         """
         return self._factory.object_policy_manager
 
-    def create_list(self, mapper: Callable[[Any], Any]) -> PagingList:
+    def create_list(self, mapper: Callable[[Any], _T]) -> PagingList[_T]:
         """Create a paging list from the factory.
 
         Arguments:
@@ -286,7 +288,7 @@ class LazySubFactory(LazyFactoryBase):
         """
         return PagingList.from_factory(self._factory, self._keys, mapper)
 
-    def create_mapped_list(self, mapper: Callable[[Any], Any]) -> MappedPagingList:
+    def create_mapped_list(self, mapper: Callable[[Any], _T]) -> MappedPagingList[_T]:
         """Create a paging list from the factory.
 
         Arguments:
@@ -298,7 +300,7 @@ class LazySubFactory(LazyFactoryBase):
         """
         return MappedPagingList.from_factory(self._factory, self._keys, mapper)
 
-    def create_pyarrow_list(self) -> PyArrowPagingList:
+    def create_pyarrow_list(self) -> PyArrowPagingList[Any]:
         """Create a paging list from the factory.
 
         Returns:

@@ -31,13 +31,14 @@ from graviti.paging.page import LazyPage, MappedLazyPage, MappedPage, MappedPage
 if TYPE_CHECKING:
     from graviti.paging.factory import LazyFactory
 
-_PLB = TypeVar("_PLB", bound="PagingListBase")
-_PL = TypeVar("_PL", bound="PagingList")
-_MPL = TypeVar("_MPL", bound="MappedPagingList")
-_PPL = TypeVar("_PPL", bound="PyArrowPagingList")
+_T = TypeVar("_T")
+_PLB = TypeVar("_PLB", bound="PagingListBase[Any]")
+_PL = TypeVar("_PL", bound="PagingList[Any]")
+_MPL = TypeVar("_MPL", bound="MappedPagingList[Any]")
+_PPL = TypeVar("_PPL", bound="PyArrowPagingList[Any]")
 
 
-class PagingListBase:
+class PagingListBase(Sequence[_T]):
     """PagingListBase is the base class of the paging list related classes.
 
     Arguments:
@@ -46,36 +47,36 @@ class PagingListBase:
     """
 
     _array_creator = tuple
-    _pages: List[PageBase[Any]]
+    _pages: List[PageBase[_T]]
     _offsets: Offsets
 
-    def __init__(self, iterable: Iterable[Any]) -> None:
+    def __init__(self, iterable: Iterable[_T]) -> None:
         array = self._array_creator(iterable)
         self._init(array)
 
     def __len__(self) -> int:
         return self._offsets.total_count
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[_T]:
         return chain(*self._pages)
 
     @overload
-    def __setitem__(self, index: int, value: Any) -> None:
+    def __setitem__(self, index: int, value: _T) -> None:
         ...
 
     @overload
-    def __setitem__(self: _PLB, index: slice, value: Union[Iterable[Any], _PLB]) -> None:
+    def __setitem__(self: _PLB, index: slice, value: Union[Iterable[_T], _PLB]) -> None:
         ...
 
     def __setitem__(
-        self: _PLB, index: Union[int, slice], value: Union[Any, Iterable[Any], _PLB]
+        self: _PLB, index: Union[int, slice], value: Union[_T, Iterable[_T], _PLB]
     ) -> None:
         if isinstance(index, int):
             self.set_item(index, value)
         elif isinstance(value, self.__class__):
             self.set_slice(index, value)
         else:
-            self.set_slice_iterable(index, value)
+            self.set_slice_iterable(index, value)  # type: ignore[arg-type]
 
     def __delitem__(self, index: Union[int, slice]) -> None:
         if isinstance(index, slice):
@@ -103,20 +104,20 @@ class PagingListBase:
         self._update_pages(start, stop)
 
     @overload
-    def __getitem__(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> _T:
         ...
 
     @overload
     def __getitem__(self: _PLB, index: slice) -> _PLB:
         ...
 
-    def __getitem__(self: _PLB, index: Union[int, slice]) -> Union[Any, _PLB]:
+    def __getitem__(self: _PLB, index: Union[int, slice]) -> Union[_T, _PLB]:
         if isinstance(index, int):
-            return self._get_item(index)
+            return self._get_item(index)  # type: ignore[no-any-return]
 
         return self._get_slice(index)
 
-    def __iadd__(self: _PLB, values: Union[_PLB, Iterable[Any]]) -> _PLB:
+    def __iadd__(self: _PLB, values: Union[_PLB, Iterable[_T]]) -> _PLB:
         if isinstance(values, self.__class__):
             self.extend(values)
         else:
@@ -124,7 +125,7 @@ class PagingListBase:
 
         return self
 
-    def _init(self, array: Sequence[Any]) -> None:
+    def _init(self, array: Sequence[_T]) -> None:
         length = len(array)
         self._pages = [Page(array)] if length != 0 else []
         self._offsets = Offsets(length, length)
@@ -132,14 +133,14 @@ class PagingListBase:
     def _make_index_nonnegative(self, index: int) -> int:
         return index if index >= 0 else self.__len__() + index
 
-    def _get_item(self, index: int) -> Any:
+    def _get_item(self, index: int) -> _T:
         index = self._make_index_nonnegative(index)
         i, j = self._offsets.get_coordinate(index)
         return self._pages[i].get_item(j)
 
     def _get_slice_positive_step(  # pylint: disable=too-many-locals
         self, start: int, stop: int, step: int
-    ) -> List[PageBase[Any]]:
+    ) -> List[PageBase[_T]]:
         if start >= stop:
             return []
 
@@ -181,7 +182,7 @@ class PagingListBase:
 
     def _get_slice_negative_step(  # pylint: disable=too-many-locals
         self, start: int, stop: int, step: int
-    ) -> List[PageBase[Any]]:
+    ) -> List[PageBase[_T]]:
         if start <= stop:
             return []
 
@@ -244,7 +245,7 @@ class PagingListBase:
         return obj
 
     def _update_pages(
-        self, start: int, stop: int, pages: Optional[Sequence[PageBase[Any]]] = None
+        self, start: int, stop: int, pages: Optional[Sequence[PageBase[_T]]] = None
     ) -> None:
         if start >= stop and not pages:
             return
@@ -254,7 +255,7 @@ class PagingListBase:
         start_i, start_j = self._offsets.get_coordinate(start)
         stop_i, stop_j = self._offsets.get_coordinate(stop - 1)
 
-        update_pages: List[PageBase[Any]] = []
+        update_pages: List[PageBase[_T]] = []
         update_lengths = []
 
         left_page = self._pages[start_i].get_slice(stop=start_j)
@@ -298,7 +299,7 @@ class PagingListBase:
             x, y = offsets.get_coordinate(j)
             self._update_pages(i, i + 1, [pages[x][y : y + 1]])
 
-    def set_item(self, index: int, value: Any) -> None:
+    def set_item(self, index: int, value: _T) -> None:
         """Update the element value in PagingList at the given index.
 
         Arguments:
@@ -347,7 +348,7 @@ class PagingListBase:
 
         self._update_pages_with_step(start, stop, step, values)
 
-    def set_slice_iterable(self, index: slice, values: Iterable[Any]) -> None:
+    def set_slice_iterable(self, index: slice, values: Iterable[_T]) -> None:
         """Update the element values in PagingList at the given slice with iterable object.
 
         Arguments:
@@ -396,7 +397,7 @@ class PagingListBase:
         self._offsets.extend(map(len, pages))
         self._pages.extend(pages)
 
-    def extend_iterable(self, values: Iterable[Any]) -> None:
+    def extend_iterable(self, values: Iterable[_T]) -> None:
         """Extend PagingList by appending elements from the iterable.
 
         Arguments:
@@ -416,7 +417,7 @@ class PagingListBase:
         """
         page = Page(self._array_creator(repeat(None, size)))
         self._offsets.extend((len(page),))
-        self._pages.append(page)
+        self._pages.append(page)  # type: ignore[arg-type]
 
     def copy(self: _PLB) -> _PLB:
         """Return a copy of the paging list.
@@ -432,7 +433,7 @@ class PagingListBase:
         return obj
 
 
-class PagingList(PagingListBase):
+class PagingList(PagingListBase[_T]):
     """PagingList is a list composed of multiple lists (pages)."""
 
     @classmethod
@@ -440,7 +441,7 @@ class PagingList(PagingListBase):
         cls: Type[_PL],
         factory: "LazyFactory",
         keys: Tuple[str, ...],
-        mapper: Callable[[Any], Any],
+        mapper: Callable[[Any], _T],
     ) -> _PL:
         """Create PagingList from LazyFactory.
 
@@ -467,12 +468,12 @@ class PagingList(PagingListBase):
         return obj
 
 
-class MappedPagingList(PagingListBase):
+class MappedPagingList(PagingListBase[_T]):
     """MappedPagingList is a list composed of multiple mapped pages."""
 
-    _pages: List[MappedPageBase[Any]]  # type: ignore[assignment]
+    _pages: List[MappedPageBase[_T]]  # type: ignore[assignment]
 
-    def _init(self, array: Sequence[Any]) -> None:
+    def _init(self, array: Sequence[_T]) -> None:
         length = len(array)
         self._pages = [MappedPage(array)] if length != 0 else []
         self._offsets = Offsets(length, length)
@@ -480,8 +481,8 @@ class MappedPagingList(PagingListBase):
     @classmethod
     def from_array(
         cls: Type[_MPL],
-        array: Sequence[Any],
-        mapper: Callable[[Any], Any],
+        array: Sequence[_T],
+        mapper: Callable[[Any], _T],
     ) -> _MPL:
         """Create MappedPagingList from the source array.
 
@@ -506,7 +507,7 @@ class MappedPagingList(PagingListBase):
         cls: Type[_MPL],
         factory: "LazyFactory",
         keys: Tuple[str, ...],
-        mapper: Callable[[Any], Any],
+        mapper: Callable[[Any], _T],
     ) -> _MPL:
         """Create MappedPagingList from LazyFactory.
 
@@ -531,8 +532,8 @@ class MappedPagingList(PagingListBase):
 
     def copy(  # type: ignore[override] # pylint: disable=arguments-differ
         self: _MPL,
-        copier: Callable[[Any], Any],
-        mapper: Callable[[Any], Any],
+        copier: Callable[[_T], _T],
+        mapper: Callable[[Any], _T],
     ) -> _MPL:
         """Return a copy of the paging list.
 
@@ -551,7 +552,7 @@ class MappedPagingList(PagingListBase):
         return obj
 
 
-class PyArrowPagingList(PagingListBase):
+class PyArrowPagingList(PagingListBase[_T]):
     """PyArrowPagingList is a list composed of multiple pyarrow arrays (pages).
 
     Arguments:
