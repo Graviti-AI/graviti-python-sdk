@@ -256,21 +256,6 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     #     return list(key)
 
-    # @overload
-    # def _getitem_by_location(self, key: slice) -> "Series":
-    #    ...
-
-    # @overload
-    # def _getitem_by_location(self, key: int) -> Any:
-    #     ...
-
-    # @overload
-    # def _getitem_by_location(self, key: Iterable[int]) -> "Series":
-    #     ...
-
-    def _getitem_by_location(self, key: int) -> Any:
-        return self.__getitem__(key)
-
     @classmethod
     def _from_iterable(
         cls: Type[_SB],
