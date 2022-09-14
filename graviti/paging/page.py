@@ -168,7 +168,8 @@ class SlicedPage(PageBase[_T]):
         array = self._array
         if array is None:
             ranging = self._ranging
-            array = self._source_array[ranging.start : ranging.stop : ranging.step]
+            stop = ranging.stop
+            array = self._source_array[ranging.start : stop if stop != -1 else None : ranging.step]
             self._array = array
             self._patch(array)
 
@@ -269,7 +270,10 @@ class LazySlicedPage(PageBase[_T]):
         array = self._array
         if array is None:
             ranging = self._ranging
-            array = self._array_getter()[ranging.start : ranging.stop : ranging.step]
+            stop = ranging.stop
+            array = self._array_getter()[
+                ranging.start : stop if stop != -1 else None : ranging.step
+            ]
 
             self._array = array
             self._patch(array)
@@ -499,7 +503,10 @@ class MappedLazySlicedPage(MappedPageBase[_T]):
         array = self._array
         if array is None:
             ranging = self._ranging
-            array = self._array_getter()[ranging.start : ranging.stop : ranging.step]
+            stop = ranging.stop
+            array = self._array_getter()[
+                ranging.start : stop if stop != -1 else None : ranging.step
+            ]
             array = tuple(map(self._mapper, array))
 
             self._array = array
