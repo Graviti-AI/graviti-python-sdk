@@ -111,20 +111,23 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return schema.container._from_pyarrow(array, schema)
 
-    # @overload
-    # def __getitem__(self, key: slice) -> "Series":
-    #    ...
+    @overload
+    def __getitem__(self: _SB, key: slice) -> _SB:
+        ...
 
-    # @overload
-    # def __getitem__(self, key: int) -> Any:
-    #     ...
+    @overload
+    def __getitem__(self, key: int) -> Any:
+        ...
 
     # @overload
     # def __getitem__(self, key: Iterable[int]) -> "Series":
     #     ...
 
-    def __getitem__(self, key: int) -> Any:
-        return self._data[key]
+    def __getitem__(self: _SB, key: Union[int, slice]) -> Union[Any, _SB]:
+        if isinstance(key, int):
+            return self._get_item(key)
+
+        return self._get_slice(key)
 
     def __delitem__(self, key: Union[int, slice]) -> None:
         if self._root is not None:
@@ -206,6 +209,20 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
+
+    def _get_item(self, key: int) -> Any:
+        return self._data.get_item(key)
+
+    def _get_slice(self: _SB, key: slice) -> _SB:
+        obj: _SB = object.__new__(self.__class__)
+
+        obj.schema = self.schema
+        # pylint: disable=protected-access
+        obj._root = self._root
+        obj._name = self._name
+        obj._data = self._data.get_slice(key)
+
+        return obj
 
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         self._data.__delitem__(key)
@@ -486,9 +503,6 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
 
     _data: PyArrowPagingList[Any]
 
-    def __getitem__(self, key: int) -> Any:
-        return self._data[key].as_py()
-
     @classmethod
     def _from_pyarrow(
         cls: Type[_S],
@@ -503,6 +517,9 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         obj._root = root
         obj._name = name
         return obj
+
+    def _get_item(self, key: int) -> Any:
+        return self._data.get_item(key).as_py()
 
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
@@ -520,9 +537,6 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
     _data: MappedPagingList[Any]
     _item_schema: pt.PortexType
-
-    def __getitem__(self, key: int) -> Any:
-        return self._data[key]
 
     @classmethod
     def _from_pyarrow(
@@ -564,6 +578,12 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj._data = MappedPagingList(array)
         obj.schema = schema
         obj._item_schema = items_schema
+        return obj
+
+    def _get_slice(self: _A, key: slice) -> _A:
+        obj = super()._get_slice(key)
+        obj._item_schema = self._item_schema  # pylint: disable=protected-access
+
         return obj
 
     def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
@@ -646,9 +666,6 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
 
     _data: PagingList[Any]
 
-    def __getitem__(self, key: int) -> Any:
-        return self._data[key]
-
     @classmethod
     def _from_iterable(
         cls: Type[_F],
@@ -711,8 +728,15 @@ class EnumSeries(Series):
 
     _index_to_value: Dict[Optional[int], EnumValueType]
 
-    def __getitem__(self, key: int) -> Any:
+    def _get_item(self, key: int) -> Any:
         return self._index_to_value[self._data[key].as_py()]
+
+    def _get_slice(self: _E, key: slice) -> _E:
+        obj = super()._get_slice(key)
+        enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+        obj._index_to_value = enum_values.index_to_value  # pylint: disable=protected-access
+
+        return obj
 
     def _to_post_data(self) -> List[int]:
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
