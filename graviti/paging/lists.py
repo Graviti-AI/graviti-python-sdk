@@ -27,6 +27,7 @@ import pyarrow as pa
 
 from graviti.paging.offset import Offsets
 from graviti.paging.page import LazyPage, MappedLazyPage, MappedPage, MappedPageBase, Page, PageBase
+from graviti.utility import ReprMixin, ReprType
 
 if TYPE_CHECKING:
     from graviti.paging.factory import LazyFactory
@@ -38,13 +39,15 @@ _MPL = TypeVar("_MPL", bound="MappedPagingList[Any]")
 _PPL = TypeVar("_PPL", bound="PyArrowPagingList[Any]")
 
 
-class PagingListBase(Sequence[_T]):
+class PagingListBase(Sequence[_T], ReprMixin):
     """PagingListBase is the base class of the paging list related classes.
 
     Arguments:
         array: The input sequence.
 
     """
+
+    _repr_type = ReprType.SEQUENCE
 
     _array_creator = tuple
     _pages: List[PageBase[_T]]
