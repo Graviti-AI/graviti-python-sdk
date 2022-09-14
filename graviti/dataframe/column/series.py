@@ -164,17 +164,11 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         if self._root is not None and self._root.operations is not None:
             value = series.copy()
             root = self._root
-            _record_key = root._record_key
-            # TODO: support slicing methods for record_key
-            record_key = [
-                _record_key[i]  # type: ignore[index]
-                for i in range(*key.indices(len(_record_key)))  # type: ignore[arg-type]
-            ]
             name = self._name
             df = root._construct(
                 {name[0]: series},
                 pt.record({name[0]: series.schema}),
-                Series(record_key),
+                root._record_key[key],  # type: ignore[index]
                 name[1:],
             )
             root.operations.append(UpdateData(df))  # type: ignore[union-attr]
