@@ -558,120 +558,118 @@ class DataFrame(Container):
 
         return obj
 
-    # def head(self, n: int = 5) -> "DataFrame":
-    #     """Return the first `n` rows.
-    #
-    #     Arguments:
-    #         n: Number of rows to select.
-    #
-    #     Return:
-    #         The first `n` rows.
-    #
-    #     Examples:
-    #         >>> df = DataFrame(
-    #         ...     {
-    #         ...         "animal": [
-    #         ...             "alligator",
-    #         ...             "bee",
-    #         ...             "falcon",
-    #         ...             "lion",
-    #         ...             "monkey",
-    #         ...             "parrot",
-    #         ...             "shark",
-    #         ...             "whale",
-    #         ...             "zebra",
-    #         ...         ]
-    #         ...     }
-    #         ... )
-    #         >>> df
-    #               animal
-    #         0  alligator
-    #         1        bee
-    #         2     falcon
-    #         3       lion
-    #         4     monkey
-    #         5     parrot
-    #         6      shark
-    #         7      whale
-    #         8      zebra
-    #
-    #         Viewing the first `n` lines (three in this case)
-    #
-    #         >>> df.head(3)
-    #               animal
-    #         0  alligator
-    #         1        bee
-    #         2     falcon
-    #
-    #         For negative values of `n`
-    #
-    #         >>> df.head(-3)
-    #               animal
-    #         0  alligator
-    #         1        bee
-    #         2     falcon
-    #         3       lion
-    #         4     monkey
-    #         5     parrot
-    #
-    #     """
+    def head(self: _T, n: int = 5) -> _T:
+        """Return the first `n` rows.
 
-    # def tail(self, n: int = 5) -> "DataFrame":
-    #     """Return the last `n` rows.
-    #
-    #     Arguments:
-    #         n: Number of rows to select.
-    #
-    #     Return:
-    #         The last `n` rows.
-    #
-    #     Examples:
-    #         >>> df = DataFrame(
-    #         ...     {
-    #         ...         "animal": [
-    #         ...             "alligator",
-    #         ...             "bee",
-    #         ...             "falcon",
-    #         ...             "lion",
-    #         ...             "monkey",
-    #         ...             "parrot",
-    #         ...             "shark",
-    #         ...             "whale",
-    #         ...             "zebra",
-    #         ...         ]
-    #         ...     }
-    #         ... )
-    #         >>> df
-    #               animal
-    #         0  alligator
-    #         1        bee
-    #         2     falcon
-    #         3       lion
-    #         4     monkey
-    #         5     parrot
-    #         6      shark
-    #         7      whale
-    #         8      zebra
-    #
-    #         Viewing the last 5 lines
-    #
-    #         >>> df.tail()
-    #            animal
-    #         4  monkey
-    #         5  parrot
-    #         6   shark
-    #         7   whale
-    #         8   zebra
-    #
-    #         Viewing the last `n` lines (three in this case)
-    #
-    #         >>> df.tail(3)
-    #           animal
-    #         6  shark
-    #         7  whale
-    #         8  zebra
-    #
-    #     """
+        Arguments:
+            n: Number of rows to select.
+
+        Returns:
+            The first `n` rows.
+
+        Examples:
+            >>> df = DataFrame(
+            ...     [
+            ...         {"animal": "alligator"},
+            ...         {"animal": "bee"},
+            ...         {"animal": "falcon"},
+            ...         {"animal": "lion"},
+            ...         {"animal": "monkey"},
+            ...         {"animal": "parrot"},
+            ...         {"animal": "shark"},
+            ...         {"animal": "whale"},
+            ...         {"animal": "zebra"},
+            ...     ]
+            ... )
+            >>> df
+                  animal
+            0  alligator
+            1        bee
+            2     falcon
+            3       lion
+            4     monkey
+            5     parrot
+            6      shark
+            7      whale
+            8      zebra
+
+            Viewing the first `n` lines (three in this case)
+
+            >>> df.head(3)
+                  animal
+            0  alligator
+            1        bee
+            2     falcon
+
+            For negative values of `n`
+
+            >>> df.head(-3)
+                  animal
+            0  alligator
+            1        bee
+            2     falcon
+            3       lion
+            4     monkey
+            5     parrot
+
+        """
+        return self._get_slice_by_location(slice(0, n))
+
+    def tail(self: _T, n: int = 5) -> _T:
+        """Return the last `n` rows.
+
+        Arguments:
+            n: Number of rows to select.
+
+        Returns:
+            The last `n` rows.
+
+        Examples:
+            >>> df = DataFrame(
+            ...     [
+            ...         {"animal": "alligator"},
+            ...         {"animal": "bee"},
+            ...         {"animal": "falcon"},
+            ...         {"animal": "lion"},
+            ...         {"animal": "monkey"},
+            ...         {"animal": "parrot"},
+            ...         {"animal": "shark"},
+            ...         {"animal": "whale"},
+            ...         {"animal": "zebra"},
+            ...     ]
+            ... )
+            >>> df
+                  animal
+            0  alligator
+            1        bee
+            2     falcon
+            3       lion
+            4     monkey
+            5     parrot
+            6      shark
+            7      whale
+            8      zebra
+
+            Viewing the last 5 lines
+
+            >>> df.tail()
+               animal
+            0  monkey
+            1  parrot
+            2   shark
+            3   whale
+            4   zebra
+
+            Viewing the last `n` lines (three in this case)
+
+            >>> df.tail(3)
+              animal
+            0  shark
+            1  whale
+            2  zebra
+
+        """
+        return self._get_slice_by_location(slice(-n, None))
 
     def _copy(  # type: ignore[override]
         self: _T,
