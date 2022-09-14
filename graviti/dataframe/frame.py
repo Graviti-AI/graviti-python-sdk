@@ -537,35 +537,26 @@ class DataFrame(Container):
     #
     #     """
 
-    # @overload
-    # def _getitem_by_location(self, key: slice) -> "DataFrame":
-    #    ...
-
-    # @overload
-    # def _getitem_by_location(self, key: int) -> RowSeries:
-    #     ...
-
-    # @overload
-    # def _getitem_by_location(self, key: Iterable[int]) -> "DataFrame":
-    #     ...
-
-    def _getitem_by_location(self, key: int) -> RowSeries:
+    def _get_item_by_location(self, key: int) -> RowSeries:
         indices_data = {name: self._columns[name].iloc[key] for name in self.schema}
         return RowSeries._construct(indices_data)  # pylint: disable=protected-access
 
-    # @overload
-    # @staticmethod
-    # def _get_location_by_index(key: Iterable[int]) -> Iterable[int]:
-    #     ...
+    def _get_slice_by_location(self: _T, key: slice) -> _T:
+        obj: _T = object.__new__(self.__class__)
+        obj.schema = self.schema
 
-    # @overload
-    # @staticmethod
-    # def _get_location_by_index(key: int) -> int:
-    #     ...
+        # pylint: disable=protected-access
+        obj._root = self._root
+        obj._name = self._name
 
-    # @staticmethod
-    # def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, Iterable[int]]:
-    #     return key
+        columns = {}
+
+        for name, value in self._columns.items():
+            columns[name] = value.iloc[key]
+
+        obj._columns = columns
+
+        return obj
 
     # def head(self, n: int = 5) -> "DataFrame":
     #     """Return the first `n` rows.

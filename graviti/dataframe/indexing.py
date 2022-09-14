@@ -28,19 +28,28 @@ class DataFrameILocIndexer:
     #     ...
 
     @overload
-    def __getitem__(self, key: Tuple[int, str]) -> Any:
+    def __getitem__(self, key: slice) -> "DataFrame":
+        ...
+
+    @overload
+    def __getitem__(self, key: Tuple[Union[int, slice], str]) -> Any:
         ...
 
     @overload
     def __getitem__(self, key: int) -> "RowSeries":
         ...
 
-    def __getitem__(self, key: Union[int, Tuple[int, str]]) -> Union[Any, "RowSeries"]:
+    def __getitem__(
+        self, key: Union[int, slice, Tuple[Union[int, slice], str]]
+    ) -> Union[Any, "DataFrame", "RowSeries"]:
         if isinstance(key, tuple):
             index, name = key
-            return self.obj[name].loc[index]
+            return self.obj[name].iloc[index]
 
-        return self.obj._getitem_by_location(key)
+        if isinstance(key, int):
+            return self.obj._get_item_by_location(key)
+
+        return self.obj._get_slice_by_location(key)
 
     @overload
     def __setitem__(self, key: int, value: NestedDict[str, Any]) -> None:
@@ -125,19 +134,28 @@ class DataFrameLocIndexer:
     #     ...
 
     @overload
-    def __getitem__(self, key: Tuple[int, str]) -> Any:
+    def __getitem__(self, key: slice) -> "DataFrame":
+        ...
+
+    @overload
+    def __getitem__(self, key: Tuple[Union[int, slice], str]) -> Any:
         ...
 
     @overload
     def __getitem__(self, key: int) -> "RowSeries":
         ...
 
-    def __getitem__(self, key: Union[int, Tuple[int, str]]) -> Union[Any, "RowSeries"]:
+    def __getitem__(
+        self, key: Union[int, slice, Tuple[Union[int, slice], str]]
+    ) -> Union[Any, "DataFrame", "RowSeries"]:
         if isinstance(key, tuple):
             index, name = key
-            return self.obj[name].iloc[index]
+            return self.obj[name].loc[index]
 
-        return self.obj._getitem_by_location(key)
+        if isinstance(key, int):
+            return self.obj._get_item_by_location(key)
+
+        return self.obj._get_slice_by_location(key)
 
     @overload
     def __setitem__(self, key: int, value: NestedDict[str, Any]) -> None:
