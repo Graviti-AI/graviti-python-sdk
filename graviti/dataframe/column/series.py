@@ -71,7 +71,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     """
 
     schema: pt.PortexType
-    _data: PagingListBase
+    _data: PagingListBase[Any]
 
     def __new__(
         cls: Type[_SB],
@@ -484,7 +484,7 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
 
     """
 
-    _data: PyArrowPagingList
+    _data: PyArrowPagingList[Any]
 
     def __getitem__(self, key: int) -> Any:
         return self._data[key].as_py()
@@ -518,7 +518,7 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
 class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     """One-dimensional array for portex builtin type array."""
 
-    _data: MappedPagingList
+    _data: MappedPagingList[Any]
     _item_schema: pt.PortexType
 
     def __getitem__(self, key: int) -> Any:
@@ -576,7 +576,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         )
         self._item_schema = _item_schema  # pylint: disable=protected-access
 
-    def _extract_paging_list(self: _A, values: _A) -> MappedPagingList:
+    def _extract_paging_list(self: _A, values: _A) -> MappedPagingList[Any]:
         # pylint: disable=protected-access
         _item_schema = self._item_schema
         if values._item_schema is _item_schema and values is not self:
@@ -644,7 +644,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 class FileSeries(SeriesBase):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
-    _data: PagingList
+    _data: PagingList[Any]
 
     def __getitem__(self, key: int) -> Any:
         return self._data[key]
