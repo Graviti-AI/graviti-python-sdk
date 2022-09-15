@@ -198,9 +198,11 @@ class DataFrame(Container):
         self._setitem(key, value)
         # TODO: Use self[[key]] to replace DataFrame._construct
         _value = self[key].copy()
-        df = DataFrame._construct(
-            {key: _value}, pt.record({key: _value.schema}), root._record_key, self._name
-        )
+
+        df = self._create(pt.record({key: _value.schema}), None, self._name)
+        df._record_key = root._record_key
+        df._columns = {key: _value}
+
         root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
 
     @staticmethod
@@ -324,21 +326,6 @@ class DataFrame(Container):
         return pydict
 
     @classmethod
-    def _construct(
-        cls,
-        columns: Dict[str, Container],
-        schema: pt.record,
-        record_key: Optional[ColumnSeries],
-        name: Tuple[str, ...] = (),
-    ) -> "DataFrame":
-        obj: DataFrame = object.__new__(cls)
-        obj._columns = columns
-        obj.schema = schema
-        obj._record_key = record_key
-        obj._name = name
-        return obj
-
-    @classmethod
     def _from_pyarrow(  # type: ignore[override]
         cls: Type[_T],
         array: pa.StructArray,
@@ -346,10 +333,7 @@ class DataFrame(Container):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _T:
-        obj: _T = object.__new__(cls)
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
+        obj = cls._create(schema, root, name)
 
         obj._columns = {
             key: value.container._from_pyarrow(  # pylint: disable=protected-access
@@ -382,13 +366,10 @@ class DataFrame(Container):
             The loaded :class:`~graviti.dataframe.DataFrame` object.
 
         """
-        obj: _T = object.__new__(cls)
-        obj.schema = schema
-        obj._root = root
+        obj = cls._create(schema, root, name)
+
         if root is None:
             obj._object_policy_manager = factory.object_policy_manager
-
-        obj._name = name
 
         obj._columns = {
             key: value.container._from_factory(  # pylint: disable=protected-access
@@ -426,10 +407,7 @@ class DataFrame(Container):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _T:
-        obj: _T = object.__new__(cls)
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
+        obj = cls._create(schema, root, name)
 
         columns: Dict[str, Any] = {}
         for key, value in schema.items():
@@ -481,7 +459,7 @@ class DataFrame(Container):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _T:
-        obj: _T = object.__new__(self.__class__)
+        obj = self._create(schema, root, name)
 
         _root = obj if root is None else root
         _columns = self._columns
@@ -496,9 +474,6 @@ class DataFrame(Container):
                 (column_name,) + name,
             )
 
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
         obj._columns = columns
 
         return obj
@@ -619,7 +594,7 @@ class DataFrame(Container):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _T:
-        obj: _T = object.__new__(self.__class__)
+        obj = self._create(schema, root, name)
 
         _root = obj if root is None else root
         _columns = self._columns
@@ -631,9 +606,7 @@ class DataFrame(Container):
             columns[key] = column
 
         obj._columns = columns
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
+
         return obj
 
     @classmethod

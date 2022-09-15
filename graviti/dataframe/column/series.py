@@ -165,12 +165,10 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             value = series.copy()
             root = self._root
             name = self._name
-            df = root._construct(
-                {name[0]: series},
-                pt.record({name[0]: series.schema}),
-                root._record_key[key],  # type: ignore[index]
-                name[1:],
-            )
+            df = root._create(pt.record({name[0]: series.schema.copy()}), None, name[1:])
+            df._record_key = root._record_key[key]  # type: ignore[index]
+            df._columns = {name[0]: series}
+
             root.operations.append(UpdateData(df))  # type: ignore[union-attr]
 
     def __len__(self) -> int:
@@ -214,13 +212,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _SB:
-        obj: _SB = object.__new__(self.__class__)
-
-        obj.schema = schema
-        # pylint: disable=protected-access
-        obj._root = root
-        obj._name = name
-        obj._data = self._data.get_slice(key)
+        obj = self._create(schema, root, name)
+        obj._data = self._data.get_slice(key)  # pylint: disable=protected-access
 
         return obj
 
@@ -235,11 +228,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _SB:
-        obj: _SB = object.__new__(cls)
-        obj.schema = schema
+        obj = cls._create(schema, root, name)
         obj._refresh_data_from_factory(factory)
-        obj._root = root
-        obj._name = name
         return obj
 
     def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
@@ -364,13 +354,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _SB:
-        obj: _SB = object.__new__(self.__class__)
-
-        obj.schema = schema
-        # pylint: disable=protected-access
-        obj._root = root
-        obj._data = self._data.copy()
-        obj._name = name
+        obj = self._create(schema, root, name)
+        obj._data = self._data.copy()  # pylint: disable=protected-access
 
         return obj
 
@@ -496,11 +481,9 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _S:
-        obj: _S = object.__new__(cls)
+        obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
+
         return obj
 
     def _get_item_by_location(self, key: int) -> Any:
@@ -535,15 +518,12 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
-        obj: _A = object.__new__(cls)
+        obj = cls._create(schema, root, name)
         obj._data = MappedPagingList.from_array(
             array, lambda scalar: _item_creator(scalar.values, _item_schema, root)
         )
 
-        obj.schema = schema
-        obj._root = root
-        obj._item_schema = _item_schema  # pylint: disable=protected-access
-        obj._name = name
+        obj._item_schema = _item_schema
 
         return obj
 
@@ -611,21 +591,18 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _A:
-        obj: _A = object.__new__(self.__class__)
+        obj = self._create(schema, root, name)
 
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
-        obj.schema = schema
         # pylint: disable=protected-access
         obj._item_schema = _item_schema
-        obj._root = root
         obj._data = self._data.copy(
             lambda df: df._copy(_item_schema),
             lambda scalar: _item_creator(scalar.values, _item_schema),
         )
-        obj._name = name
 
         return obj
 
@@ -681,15 +658,13 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
                 "The object policy manager from root is needed to create FileSeries from pyarrow"
             )
 
-        obj: _F = object.__new__(cls)
+        obj = cls._create(schema, root, name)
         file_type: FileBase = schema.element  # type: ignore[assignment]
         # pylint: disable=protected-access
         obj._data = PagingList(
             file_type._from_pyarrow(item, root._object_policy_manager) for item in array
         )
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
+
         return obj
 
     def _to_post_data(self) -> List[Dict[str, Any]]:
@@ -758,11 +733,9 @@ class EnumSeries(Series):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
     ) -> _E:
-        obj: _E = object.__new__(cls)
+        obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
+
         enum_values = schema.to_builtin().values  # type: ignore[attr-defined]
         obj._index_to_value = enum_values.index_to_value
 
