@@ -29,6 +29,20 @@ class Container:
         raise NotImplementedError
 
     @classmethod
+    def _create(
+        cls: Type[_T],
+        schema: PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
+        obj: _T = object.__new__(cls)
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+
+        return obj
+
+    @classmethod
     def _from_factory(
         cls: Type[_T],
         factory: LazyFactoryBase,
