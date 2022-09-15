@@ -16,7 +16,7 @@ from graviti.portex import PortexType
 from graviti.utility import chunked, submit_multithread_tasks
 
 if TYPE_CHECKING:
-    from graviti.dataframe import DataFrame, FileSeries
+    from graviti.dataframe import DataFrame
     from graviti.manager import ObjectPolicyManager
 
 _MAX_BATCH_SIZE = 2048
@@ -100,7 +100,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             The list of FileSeries.
 
         """
-        if not hasattr(self, "_file_arrays"):
+        if not hasattr(self, "_files"):
             self._files = list(self._data._generate_file())  # pylint: disable=protected-access
 
         return self._files
@@ -237,8 +237,6 @@ class UpdateData(DataOperation):
         data: The data for updating.
 
     """
-
-    _file_arrays: List["FileSeries"]
 
     def do(  # pylint: disable=invalid-name
         self,
