@@ -125,7 +125,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     def __getitem__(self: _SB, key: Union[int, slice]) -> Union[Any, _SB]:
         if isinstance(key, int):
-            return self._get_item(key)
+            return self._get_item_by_location(key)
 
         return self._get_slice_by_location(key, self.schema.copy())
 
@@ -204,7 +204,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
 
-    def _get_item(self, key: int) -> Any:
+    def _get_item_by_location(self, key: int) -> Any:
         return self._data.get_item(key)
 
     def _get_slice_by_location(
@@ -503,7 +503,7 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         obj._name = name
         return obj
 
-    def _get_item(self, key: int) -> Any:
+    def _get_item_by_location(self, key: int) -> Any:
         return self._data.get_item(key).as_py()
 
     def to_pylist(self) -> List[Any]:
@@ -719,7 +719,7 @@ class EnumSeries(Series):
 
     _index_to_value: Dict[Optional[int], EnumValueType]
 
-    def _get_item(self, key: int) -> Any:
+    def _get_item_by_location(self, key: int) -> Any:
         return self._index_to_value[self._data[key].as_py()]
 
     def _get_slice_by_location(

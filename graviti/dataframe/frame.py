@@ -534,7 +534,10 @@ class DataFrame(Container):
     #     """
 
     def _get_item_by_location(self, key: int) -> RowSeries:
-        indices_data = {name: self._columns[name].iloc[key] for name in self.schema}
+        indices_data = {
+            name: self._columns[name]._get_item_by_location(key)  # pylint: disable=protected-access
+            for name in self.schema
+        }
         return RowSeries._construct(indices_data)  # pylint: disable=protected-access
 
     def _get_slice_by_location(  # type: ignore[override]
