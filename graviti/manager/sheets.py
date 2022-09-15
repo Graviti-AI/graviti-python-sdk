@@ -6,7 +6,17 @@
 """The implementation of the Sheets."""
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, MutableMapping
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    ItemsView,
+    Iterator,
+    KeysView,
+    List,
+    MutableMapping,
+    ValuesView,
+)
 
 import pyarrow as pa
 from tqdm.auto import tqdm
@@ -191,3 +201,30 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                             object_policy_manager=object_policy_manager,
                         )
                     df.operations = []
+
+    def keys(self) -> KeysView[str]:
+        """Return a new view of the keys in sheets.
+
+        Returns:
+            The keys in dict.
+
+        """
+        return self._get_data().keys()
+
+    def values(self) -> ValuesView[DataFrame]:
+        """Return a new view of the values in sheets.
+
+        Returns:
+            The values in dict.
+
+        """
+        return self._get_data().values()
+
+    def items(self) -> ItemsView[str, DataFrame]:
+        """Return a new view of the (key, value) pairs in sheets.
+
+        Returns:
+            The (key, value) pairs in dict.
+
+        """
+        return self._get_data().items()
