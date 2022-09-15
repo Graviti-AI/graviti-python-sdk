@@ -48,7 +48,7 @@ class DataFrameILocIndexer:
         if isinstance(key, int):
             return self.obj._get_item_by_location(key)
 
-        return self.obj._get_slice_by_location(key)
+        return self.obj._get_slice_by_location(key, self.obj.schema.copy())
 
     @overload
     def __setitem__(self, key: int, value: NestedDict[str, Any]) -> None:
@@ -148,7 +148,7 @@ class DataFrameLocIndexer:
         if isinstance(key, int):
             return self.obj._get_item_by_location(key)
 
-        return self.obj._get_slice_by_location(key)
+        return self.obj._get_slice_by_location(key, self.obj.schema.copy())
 
     @overload
     def __setitem__(self, key: int, value: NestedDict[str, Any]) -> None:

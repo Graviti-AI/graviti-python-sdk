@@ -127,7 +127,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         if isinstance(key, int):
             return self._get_item(key)
 
-        return self._get_slice(key)
+        return self._get_slice_by_location(key, self.schema.copy())
 
     def __delitem__(self, key: Union[int, slice]) -> None:
         if self._root is not None:
@@ -207,13 +207,19 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _get_item(self, key: int) -> Any:
         return self._data.get_item(key)
 
-    def _get_slice(self: _SB, key: slice) -> _SB:
+    def _get_slice_by_location(
+        self: _SB,
+        key: slice,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _SB:
         obj: _SB = object.__new__(self.__class__)
 
-        obj.schema = self.schema
+        obj.schema = schema
         # pylint: disable=protected-access
-        obj._root = self._root
-        obj._name = self._name
+        obj._root = root
+        obj._name = name
         obj._data = self._data.get_slice(key)
 
         return obj
@@ -559,8 +565,14 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj._item_schema = items_schema
         return obj
 
-    def _get_slice(self: _A, key: slice) -> _A:
-        obj = super()._get_slice(key)
+    def _get_slice_by_location(
+        self: _A,
+        key: slice,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _A:
+        obj = super()._get_slice_by_location(key, schema, root, name)
         obj._item_schema = self._item_schema  # pylint: disable=protected-access
 
         return obj
@@ -710,8 +722,14 @@ class EnumSeries(Series):
     def _get_item(self, key: int) -> Any:
         return self._index_to_value[self._data[key].as_py()]
 
-    def _get_slice(self: _E, key: slice) -> _E:
-        obj = super()._get_slice(key)
+    def _get_slice_by_location(
+        self: _E,
+        key: slice,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _E:
+        obj = super()._get_slice_by_location(key, schema, root, name)
         enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
         obj._index_to_value = enum_values.index_to_value  # pylint: disable=protected-access
 

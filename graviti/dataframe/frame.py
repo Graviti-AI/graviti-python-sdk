@@ -537,19 +537,31 @@ class DataFrame(Container):
         indices_data = {name: self._columns[name].iloc[key] for name in self.schema}
         return RowSeries._construct(indices_data)  # pylint: disable=protected-access
 
-    def _get_slice_by_location(self: _T, key: slice) -> _T:
+    def _get_slice_by_location(  # type: ignore[override]
+        self: _T,
+        key: slice,
+        schema: pt.PortexRecordBase,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
         obj: _T = object.__new__(self.__class__)
-        obj.schema = self.schema
 
-        # pylint: disable=protected-access
-        obj._root = self._root
-        obj._name = self._name
-
+        _root = obj if root is None else root
+        _columns = self._columns
         columns = {}
 
-        for name, value in self._columns.items():
-            columns[name] = value.iloc[key]
+        # pylint: disable=protected-access
+        for column_name, value in schema.items():
+            columns[column_name] = _columns[column_name]._get_slice_by_location(
+                key,
+                value,
+                _root,  # type: ignore[arg-type]
+                (column_name,) + name,
+            )
 
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
         obj._columns = columns
 
         return obj
@@ -609,7 +621,7 @@ class DataFrame(Container):
             5     parrot
 
         """
-        return self._get_slice_by_location(slice(0, n))
+        return self._get_slice_by_location(slice(0, n), self.schema.copy())
 
     def tail(self: _T, n: int = 5) -> _T:
         """Return the last `n` rows.
@@ -665,7 +677,7 @@ class DataFrame(Container):
             2  zebra
 
         """
-        return self._get_slice_by_location(slice(-n, None))
+        return self._get_slice_by_location(slice(-n, None), self.schema.copy())
 
     def _copy(  # type: ignore[override]
         self: _T,
