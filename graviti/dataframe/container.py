@@ -70,6 +70,15 @@ class Container:
     def _to_post_data(self) -> List[Any]:
         raise NotImplementedError
 
+    def _get_slice_by_location(
+        self: _T,
+        key: slice,
+        schema: PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
+        raise NotImplementedError
+
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         raise NotImplementedError
 
