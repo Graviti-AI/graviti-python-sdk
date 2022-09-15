@@ -150,6 +150,22 @@ class DataFrame(Container):
 
         raise ValueError("DataFrame only supports creating from list object now")
 
+    def __repr__(self) -> str:
+        flatten_header, flatten_data = self._flatten()
+        header = self._get_repr_header(flatten_header)
+        body = self._get_repr_body(flatten_data)
+        column_widths = [len(max(column, key=len)) for column in zip_longest(*header, *body)]
+        lines = [
+            "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
+            for line in chain(header, body)
+        ]
+        if self.__len__() > MAX_REPR_ROWS:
+            lines.append(f"...({self.__len__()})")
+        return "\n".join(lines)
+
+    def __len__(self) -> int:
+        return next(self._columns.values().__iter__()).__len__()
+
     # @overload
     # def __getitem__(self, key: str) -> Union[ColumnSeriesBase, "DataFrame"]:  # type: ignore[misc]
     #     # https://github.com/python/mypy/issues/5090
@@ -187,22 +203,6 @@ class DataFrame(Container):
         )
         root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
 
-    def __repr__(self) -> str:
-        flatten_header, flatten_data = self._flatten()
-        header = self._get_repr_header(flatten_header)
-        body = self._get_repr_body(flatten_data)
-        column_widths = [len(max(column, key=len)) for column in zip_longest(*header, *body)]
-        lines = [
-            "".join(f"{item:<{column_widths[index]+2}}" for index, item in enumerate(line))
-            for line in chain(header, body)
-        ]
-        if self.__len__() > MAX_REPR_ROWS:
-            lines.append(f"...({self.__len__()})")
-        return "\n".join(lines)
-
-    def __len__(self) -> int:
-        return next(self._columns.values().__iter__()).__len__()
-
     @staticmethod
     def _get_repr_header(flatten_header: List[Tuple[str, ...]]) -> List[List[str]]:
         lines: List[List[str]] = []
@@ -216,9 +216,112 @@ class DataFrame(Container):
             lines.append(line)
         return lines
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
-        for key, column in self._columns.items():
-            column._refresh_data_from_factory(factory[key])  # pylint: disable=protected-access
+    @staticmethod
+    def _get_process(
+        value: Any, schema: pt.PortexType
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
+        container = schema.container
+        if container == DataFrame:
+            return DataFrame._process_record(value, schema)  # type: ignore[arg-type]
+        if container == ArraySeries:
+            return DataFrame._process_array(
+                value, schema.to_builtin().items  # type: ignore[attr-defined]
+            )
+        if container == FileSeries:
+            return DataFrame._process_file(value)
+        if container == EnumSeries:
+            values_to_indices: Dict[Union[int, float, str, bool, None], Optional[int]] = {
+                k: v for v, k in enumerate(schema.to_builtin().values)  # type: ignore[attr-defined]
+            }
+            if None not in values_to_indices:
+                values_to_indices[None] = None
+            return lambda x: values_to_indices[x], True
+
+        return lambda x: x, False
+
+    @staticmethod
+    def _process_array(
+        values: Iterable[Any], schema: pt.PortexType
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
+        if isinstance(values, DataFrame):
+            return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
+
+        if not values:
+            return lambda x: x, None
+
+        for value in values:
+            if value is None:
+                continue
+
+            processor, need_process = DataFrame._get_process(value, schema)
+            if need_process is None:
+                continue
+
+            return lambda x: list(map(processor, x)), need_process
+        return lambda x: x, False
+
+    @staticmethod
+    def _process_file(values: Iterable[Any]) -> Tuple[Callable[[Any], Any], bool]:
+        if isinstance(values, FileBase):
+            return lambda x: x.to_pyobj(), True
+
+        return lambda x: x, False
+
+    @staticmethod
+    def _process_record(
+        values: Dict[str, Any], schema: pt.PortexRecordBase
+    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
+        processors: Dict[str, Callable[[Any], Any]] = {}
+        need_process: Optional[bool] = False
+        sub_need_process: Optional[bool] = False
+        for name, field in schema.items():
+            item = values[name]
+            if item is None:
+                processors[name] = lambda x: x
+            else:
+                processors[name], sub_need_process = DataFrame._get_process(item, field)
+                need_process = need_process or sub_need_process
+
+        return lambda x: {k: processors[k](v) for k, v in x.items()}, need_process
+
+    @staticmethod
+    def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexRecordBase) -> pa.StructArray:
+
+        processor, need_process = DataFrame._process_array(values, schema)
+
+        if not need_process:
+            return pa.array(values, schema.to_pyarrow())
+
+        return pa.array(processor(values), schema.to_pyarrow())
+
+    @staticmethod
+    def _pylist_to_pyarrow_and_pydict(
+        values: Iterable[Any], schema: pt.PortexRecordBase
+    ) -> Tuple[pa.StructArray, Dict[str, Any]]:
+        pyarrow_schema = _to_simple_pyarrow(schema)
+        pyarrow_array = pa.array(values, pyarrow_schema)
+        pydict = DataFrame._get_pydict(values, schema)
+
+        return pyarrow_array, pydict
+
+    @staticmethod
+    def _get_pydict(values: Iterable[Any], schema: pt.PortexRecordBase) -> Dict[str, Any]:
+        pydict: Dict[str, Any] = {}
+        for key, portex_type in schema.items():
+            container = portex_type.container
+            if (
+                issubclass(container, ArraySeries)
+                or issubclass(container, FileSeries)
+                or issubclass(container, EnumSeries)
+            ):
+                pydict[key] = container._from_iterable(  # pylint: disable=protected-access
+                    (value[key] for value in values), portex_type
+                )
+            elif isinstance(portex_type, pt.PortexRecordBase):
+                sub_pydict = DataFrame._get_pydict([value[key] for value in values], portex_type)
+                if sub_pydict:
+                    pydict[key] = sub_pydict
+        return pydict
 
     @classmethod
     def _construct(
@@ -315,28 +418,105 @@ class DataFrame(Container):
         return cls(array, schema)
 
     @classmethod
-    def from_pyarrow(
-        cls: Type[_T], array: pa.StructArray, schema: Optional[pt.PortexRecordBase] = None
+    def _from_pyarrow_and_pydict(  # pylint: disable=too-many-arguments
+        cls: Type[_T],
+        array: pa.StructArray,
+        pydict: Dict[str, Any],
+        schema: pt.PortexRecordBase,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
     ) -> _T:
-        """Create DataFrame with pyarrow struct array.
+        obj: _T = object.__new__(cls)
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
 
-        Arguments:
-            array: The input pyarrow struct array.
-            schema: The schema of the DataFrame.
+        columns: Dict[str, Any] = {}
+        for key, value in schema.items():
+            sub_pydict = pydict.get(key, {})
+            if isinstance(sub_pydict, (FileSeries, ArraySeries, EnumSeries)):
+                sub_pydict._root = (  # pylint: disable=protected-access
+                    root if root is not None else obj
+                )
+                columns[key] = sub_pydict
+                continue
 
-        Raises:
-            TypeError: When the given schema is mismatched with the pyarrow array type.
+            if isinstance(value, pt.PortexRecordBase):
+                sub_array = (
+                    array.field(key) if array.type.get_field_index(key) != -1 else pa.struct([])
+                )
+                columns[key] = cls._from_pyarrow_and_pydict(
+                    sub_array,
+                    sub_pydict,
+                    schema=value,
+                    root=obj if root is None else root,
+                    name=(key,) + name,
+                )
+            else:
+                columns[key] = value.container._from_pyarrow(  # pylint: disable=protected-access
+                    array.field(key),
+                    schema=value,
+                    root=obj if root is None else root,
+                    name=(key,) + name,
+                )
+        obj._columns = columns
 
-        Returns:
-            The loaded :class:`~graviti.dataframe.DataFrame` instance.
+        return obj
 
-        """
-        if schema is None:
-            schema = pt.record.from_pyarrow(array.type)
-        elif not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array")
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        for key, column in self._columns.items():
+            column._refresh_data_from_factory(factory[key])  # pylint: disable=protected-access
 
-        return cls._from_pyarrow(array, schema)
+    def _get_item_by_location(self, key: int) -> RowSeries:
+        indices_data = {
+            name: self._columns[name]._get_item_by_location(key)  # pylint: disable=protected-access
+            for name in self.schema
+        }
+        return RowSeries._construct(indices_data)  # pylint: disable=protected-access
+
+    def _get_slice_by_location(  # type: ignore[override]
+        self: _T,
+        key: slice,
+        schema: pt.PortexRecordBase,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
+        obj: _T = object.__new__(self.__class__)
+
+        _root = obj if root is None else root
+        _columns = self._columns
+        columns = {}
+
+        # pylint: disable=protected-access
+        for column_name, value in schema.items():
+            columns[column_name] = _columns[column_name]._get_slice_by_location(
+                key,
+                value,
+                _root,  # type: ignore[arg-type]
+                (column_name,) + name,
+            )
+
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        obj._columns = columns
+
+        return obj
+
+    def _set_slice_by_location(self, key: slice, value: "DataFrame") -> None:
+        for name, column in self._columns.items():
+            column.loc[key] = value[name]
+
+    def _del_item_by_location(self, key: Union[int, slice]) -> None:
+        for column in self._columns.values():
+            column._del_item_by_location(key)  # pylint: disable=protected-access
+        if self.operations is not None:
+            record_key: ColumnSeries = self._record_key  # type: ignore[assignment]
+            if isinstance(key, int):
+                record_keys = [record_key[key]]
+            else:
+                record_keys = list(record_key[key])
+            self.operations.append(DeleteData(record_keys))
 
     def _setitem(self, key: str, value: Union[Iterable[Any], _C]) -> None:
         root = self if self._root is None else self._root
@@ -398,6 +578,10 @@ class DataFrame(Container):
             lines.append(line)
         return lines
 
+    def _generate_file(self) -> Iterator[FileBase]:
+        for extrator in _generate_file_extractor(self.schema):
+            yield from extrator(self)
+
     def _extend(self, values: "DataFrame") -> None:
         for key, value in self._columns.items():
             value._extend(values[key])  # pylint: disable=protected-access
@@ -429,20 +613,52 @@ class DataFrame(Container):
             )
         ]
 
-    def _set_slice_by_location(self, key: slice, value: "DataFrame") -> None:
-        for name, column in self._columns.items():
-            column.loc[key] = value[name]
+    def _copy(  # type: ignore[override]
+        self: _T,
+        schema: pt.PortexRecordBase,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _T:
+        obj: _T = object.__new__(self.__class__)
 
-    def _del_item_by_location(self, key: Union[int, slice]) -> None:
-        for column in self._columns.values():
-            column._del_item_by_location(key)  # pylint: disable=protected-access
-        if self.operations is not None:
-            record_key: ColumnSeries = self._record_key  # type: ignore[assignment]
-            if isinstance(key, int):
-                record_keys = [record_key[key]]
-            else:
-                record_keys = list(record_key[key])
-            self.operations.append(DeleteData(record_keys))
+        _root = obj if root is None else root
+        _columns = self._columns
+        columns = {}
+
+        # pylint: disable=protected-access
+        for key, value in schema.items():
+            column = _columns[key]._copy(value, _root, (key,) + name)  # type: ignore[arg-type]
+            columns[key] = column
+
+        obj._columns = columns
+        obj.schema = schema
+        obj._root = root
+        obj._name = name
+        return obj
+
+    @classmethod
+    def from_pyarrow(
+        cls: Type[_T], array: pa.StructArray, schema: Optional[pt.PortexRecordBase] = None
+    ) -> _T:
+        """Create DataFrame with pyarrow struct array.
+
+        Arguments:
+            array: The input pyarrow struct array.
+            schema: The schema of the DataFrame.
+
+        Raises:
+            TypeError: When the given schema is mismatched with the pyarrow array type.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.DataFrame` instance.
+
+        """
+        if schema is None:
+            schema = pt.record.from_pyarrow(array.type)
+        elif not array.type.equals(schema.to_pyarrow()):
+            raise TypeError("The schema is mismatched with the pyarrow array")
+
+        return cls._from_pyarrow(array, schema)
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
@@ -532,42 +748,6 @@ class DataFrame(Container):
     #         4
     #
     #     """
-
-    def _get_item_by_location(self, key: int) -> RowSeries:
-        indices_data = {
-            name: self._columns[name]._get_item_by_location(key)  # pylint: disable=protected-access
-            for name in self.schema
-        }
-        return RowSeries._construct(indices_data)  # pylint: disable=protected-access
-
-    def _get_slice_by_location(  # type: ignore[override]
-        self: _T,
-        key: slice,
-        schema: pt.PortexRecordBase,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _T:
-        obj: _T = object.__new__(self.__class__)
-
-        _root = obj if root is None else root
-        _columns = self._columns
-        columns = {}
-
-        # pylint: disable=protected-access
-        for column_name, value in schema.items():
-            columns[column_name] = _columns[column_name]._get_slice_by_location(
-                key,
-                value,
-                _root,  # type: ignore[arg-type]
-                (column_name,) + name,
-            )
-
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
-        obj._columns = columns
-
-        return obj
 
     def head(self: _T, n: int = 5) -> _T:
         """Return the first `n` rows.
@@ -682,29 +862,6 @@ class DataFrame(Container):
         """
         return self._get_slice_by_location(slice(-n, None), self.schema.copy())
 
-    def _copy(  # type: ignore[override]
-        self: _T,
-        schema: pt.PortexRecordBase,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _T:
-        obj: _T = object.__new__(self.__class__)
-
-        _root = obj if root is None else root
-        _columns = self._columns
-        columns = {}
-
-        # pylint: disable=protected-access
-        for key, value in schema.items():
-            column = _columns[key]._copy(value, _root, (key,) + name)  # type: ignore[arg-type]
-            columns[key] = column
-
-        obj._columns = columns
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
-        return obj
-
     # def sample(self, n: Optional[int] = None, axis: Optional[int] = None) -> "DataFrame":
     #     """Return a random sample of items from an axis of object.
     #
@@ -781,163 +938,6 @@ class DataFrame(Container):
 
         if self._record_key is not None:
             self._record_key._data.extend_nulls(values_length)  # pylint: disable=protected-access
-
-    @staticmethod
-    def _get_process(
-        value: Any, schema: pt.PortexType
-    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
-        container = schema.container
-        if container == DataFrame:
-            return DataFrame._process_record(value, schema)  # type: ignore[arg-type]
-        if container == ArraySeries:
-            return DataFrame._process_array(
-                value, schema.to_builtin().items  # type: ignore[attr-defined]
-            )
-        if container == FileSeries:
-            return DataFrame._process_file(value)
-        if container == EnumSeries:
-            values_to_indices: Dict[Union[int, float, str, bool, None], Optional[int]] = {
-                k: v for v, k in enumerate(schema.to_builtin().values)  # type: ignore[attr-defined]
-            }
-            if None not in values_to_indices:
-                values_to_indices[None] = None
-            return lambda x: values_to_indices[x], True
-
-        return lambda x: x, False
-
-    @staticmethod
-    def _process_array(
-        values: Iterable[Any], schema: pt.PortexType
-    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
-        if isinstance(values, DataFrame):
-            return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
-
-        if not values:
-            return lambda x: x, None
-
-        for value in values:
-            if value is None:
-                continue
-
-            processor, need_process = DataFrame._get_process(value, schema)
-            if need_process is None:
-                continue
-
-            return lambda x: list(map(processor, x)), need_process
-        return lambda x: x, False
-
-    @staticmethod
-    def _process_file(values: Iterable[Any]) -> Tuple[Callable[[Any], Any], bool]:
-        if isinstance(values, FileBase):
-            return lambda x: x.to_pyobj(), True
-
-        return lambda x: x, False
-
-    @staticmethod
-    def _process_record(
-        values: Dict[str, Any], schema: pt.PortexRecordBase
-    ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
-        processors: Dict[str, Callable[[Any], Any]] = {}
-        need_process: Optional[bool] = False
-        sub_need_process: Optional[bool] = False
-        for name, field in schema.items():
-            item = values[name]
-            if item is None:
-                processors[name] = lambda x: x
-            else:
-                processors[name], sub_need_process = DataFrame._get_process(item, field)
-                need_process = need_process or sub_need_process
-
-        return lambda x: {k: processors[k](v) for k, v in x.items()}, need_process
-
-    @staticmethod
-    def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexRecordBase) -> pa.StructArray:
-
-        processor, need_process = DataFrame._process_array(values, schema)
-
-        if not need_process:
-            return pa.array(values, schema.to_pyarrow())
-
-        return pa.array(processor(values), schema.to_pyarrow())
-
-    @staticmethod
-    def _pylist_to_pyarrow_and_pydict(
-        values: Iterable[Any], schema: pt.PortexRecordBase
-    ) -> Tuple[pa.StructArray, Dict[str, Any]]:
-        pyarrow_schema = _to_simple_pyarrow(schema)
-        pyarrow_array = pa.array(values, pyarrow_schema)
-        pydict = DataFrame._get_pydict(values, schema)
-
-        return pyarrow_array, pydict
-
-    @staticmethod
-    def _get_pydict(values: Iterable[Any], schema: pt.PortexRecordBase) -> Dict[str, Any]:
-        pydict: Dict[str, Any] = {}
-        for key, portex_type in schema.items():
-            container = portex_type.container
-            if (
-                issubclass(container, ArraySeries)
-                or issubclass(container, FileSeries)
-                or issubclass(container, EnumSeries)
-            ):
-                pydict[key] = container._from_iterable(  # pylint: disable=protected-access
-                    (value[key] for value in values), portex_type
-                )
-            elif isinstance(portex_type, pt.PortexRecordBase):
-                sub_pydict = DataFrame._get_pydict([value[key] for value in values], portex_type)
-                if sub_pydict:
-                    pydict[key] = sub_pydict
-        return pydict
-
-    @classmethod
-    def _from_pyarrow_and_pydict(  # pylint: disable=too-many-arguments
-        cls: Type[_T],
-        array: pa.StructArray,
-        pydict: Dict[str, Any],
-        schema: pt.PortexRecordBase,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _T:
-        obj: _T = object.__new__(cls)
-        obj.schema = schema
-        obj._root = root
-        obj._name = name
-
-        columns: Dict[str, Any] = {}
-        for key, value in schema.items():
-            sub_pydict = pydict.get(key, {})
-            if isinstance(sub_pydict, (FileSeries, ArraySeries, EnumSeries)):
-                sub_pydict._root = (  # pylint: disable=protected-access
-                    root if root is not None else obj
-                )
-                columns[key] = sub_pydict
-                continue
-
-            if isinstance(value, pt.PortexRecordBase):
-                sub_array = (
-                    array.field(key) if array.type.get_field_index(key) != -1 else pa.struct([])
-                )
-                columns[key] = cls._from_pyarrow_and_pydict(
-                    sub_array,
-                    sub_pydict,
-                    schema=value,
-                    root=obj if root is None else root,
-                    name=(key,) + name,
-                )
-            else:
-                columns[key] = value.container._from_pyarrow(  # pylint: disable=protected-access
-                    array.field(key),
-                    schema=value,
-                    root=obj if root is None else root,
-                    name=(key,) + name,
-                )
-        obj._columns = columns
-
-        return obj
-
-    def _generate_file(self) -> Iterator[FileBase]:
-        for extrator in _generate_file_extractor(self.schema):
-            yield from extrator(self)
 
     def to_pylist(self) -> List[Dict[str, Any]]:
         """Convert the DataFrame to a python list.
