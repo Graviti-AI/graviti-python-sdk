@@ -111,6 +111,28 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return schema.container._from_pyarrow(array, schema)
 
+    def __repr__(self) -> str:
+        indices = list(self._get_repr_indices())
+        indice_width = len(str(max(indices, default=1)))
+
+        body = []
+        body_item_width = 0
+        for i in indices:
+            item = self.loc[i]
+            name = item._repr_folding() if hasattr(item, "_repr_folding") else str(item)
+            body.append(name)
+            body_item_width = max(len(name), body_item_width)
+
+        lines = []
+        for indice, value in zip(indices, body):
+            lines.append(f"{indice:<{indice_width+2}}{value:<{body_item_width+2}}")
+        if self.__len__() > MAX_REPR_ROWS:
+            lines.append(f"...({self.__len__()})")
+        return "\n".join(lines)
+
+    def __len__(self) -> int:
+        return self._data.__len__()
+
     @overload
     def __getitem__(self: _SB, key: slice) -> _SB:
         ...
@@ -128,14 +150,6 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             return self._get_item_by_location(key)
 
         return self._get_slice_by_location(key, self.schema.copy())
-
-    def __delitem__(self, key: Union[int, slice]) -> None:
-        if self._root is not None:
-            raise TypeError(
-                "'__delitem__' is not supported for the Series which is a member of a DataFrame"
-            )
-
-        self._del_item_by_location(key)
 
     @overload
     def __setitem__(self, key: slice, value: Union[Iterable[Any], _SB]) -> None:
@@ -171,94 +185,16 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
             root.operations.append(UpdateData(df))  # type: ignore[union-attr]
 
-    def __len__(self) -> int:
-        return self._data.__len__()
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        if self._root is not None:
+            raise TypeError(
+                "'__delitem__' is not supported for the Series which is a member of a DataFrame"
+            )
+
+        self._del_item_by_location(key)
 
     def __iter__(self) -> Iterator[Any]:
         return self._data.__iter__()
-
-    def __repr__(self) -> str:
-        indices = list(self._get_repr_indices())
-        indice_width = len(str(max(indices, default=1)))
-
-        body = []
-        body_item_width = 0
-        for i in indices:
-            item = self.loc[i]
-            name = item._repr_folding() if hasattr(item, "_repr_folding") else str(item)
-            body.append(name)
-            body_item_width = max(len(name), body_item_width)
-
-        lines = []
-        for indice, value in zip(indices, body):
-            lines.append(f"{indice:<{indice_width+2}}{value:<{body_item_width+2}}")
-        if self.__len__() > MAX_REPR_ROWS:
-            lines.append(f"...({self.__len__()})")
-        return "\n".join(lines)
-
-    def _repr_folding(self) -> str:
-        return f"{self.__class__.__name__}({self.__len__()})"
-
-    def _get_repr_indices(self) -> Iterable[int]:
-        return islice(range(len(self)), MAX_REPR_ROWS)
-
-    def _get_item_by_location(self, key: int) -> Any:
-        return self._data.get_item(key)
-
-    def _get_slice_by_location(
-        self: _SB,
-        key: slice,
-        schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _SB:
-        obj = self._create(schema, root, name)
-        obj._data = self._data.get_slice(key)  # pylint: disable=protected-access
-
-        return obj
-
-    def _del_item_by_location(self, key: Union[int, slice]) -> None:
-        self._data.__delitem__(key)
-
-    @classmethod
-    def _from_factory(
-        cls: Type[_SB],
-        factory: LazyFactoryBase,
-        schema: pt.PortexType,
-        root: Optional["DataFrame"] = None,
-        name: Tuple[str, ...] = (),
-    ) -> _SB:
-        obj = cls._create(schema, root, name)
-        obj._refresh_data_from_factory(factory)
-        return obj
-
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
-        self._data = factory.create_pyarrow_list()
-
-    # @overload
-    # @staticmethod
-    # def _get_location_by_index(key: Iterable[int]) -> List[int]:
-    #     ...
-
-    # @overload
-    # @staticmethod
-    # def _get_location_by_index(key: int) -> int:
-    #     ...
-
-    # @staticmethod
-    # def _get_location_by_index(key: Union[int, Iterable[int]]) -> Union[int, List[int]]:
-    #     if isinstance(key, int):
-    #         return key
-
-    #     return list(key)
-
-    @classmethod
-    def _from_iterable(
-        cls: Type[_SB],
-        array: Iterable[Any],
-        schema: pt.PortexType,
-    ) -> _SB:
-        return cls(array, schema)
 
     @staticmethod
     def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
@@ -319,6 +255,56 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return lambda x: x, False
 
+    @classmethod
+    def _from_factory(
+        cls: Type[_SB],
+        factory: LazyFactoryBase,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _SB:
+        obj = cls._create(schema, root, name)
+        obj._refresh_data_from_factory(factory)
+        return obj
+
+    @classmethod
+    def _from_iterable(
+        cls: Type[_SB],
+        array: Iterable[Any],
+        schema: pt.PortexType,
+    ) -> _SB:
+        return cls(array, schema)
+
+    def _repr_folding(self) -> str:
+        return f"{self.__class__.__name__}({self.__len__()})"
+
+    def _get_repr_indices(self) -> Iterable[int]:
+        return islice(range(len(self)), MAX_REPR_ROWS)
+
+    def _get_item_by_location(self, key: int) -> Any:
+        return self._data.get_item(key)
+
+    def _get_slice_by_location(
+        self: _SB,
+        key: slice,
+        schema: pt.PortexType,
+        root: Optional["DataFrame"] = None,
+        name: Tuple[str, ...] = (),
+    ) -> _SB:
+        obj = self._create(schema, root, name)
+        obj._data = self._data.get_slice(key)  # pylint: disable=protected-access
+
+        return obj
+
+    def _set_slice(self: _SB, key: slice, value: _SB) -> None:
+        self._data.set_slice(key, value._data)  # pylint: disable=protected-access
+
+    def _del_item_by_location(self, key: Union[int, slice]) -> None:
+        self._data.__delitem__(key)
+
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+        self._data = factory.create_pyarrow_list()
+
     def _extend(self: _SB, values: _SB) -> None:
         """Extend Series to itself row by row.
 
@@ -359,8 +345,34 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         return obj
 
-    def _set_slice(self, key: slice, value: _SB) -> None:
-        self._data.set_slice(key, value._data)  # pylint: disable=protected-access
+    def _to_post_data(self) -> List[Any]:
+        return self.to_pylist()
+
+    @classmethod
+    def from_pyarrow(
+        cls: Type[_SB],
+        array: pa.Array,
+        schema: Optional[pt.PortexType] = None,
+    ) -> _SB:
+        """Instantiate a Series backed by an pyarrow array.
+
+        Arguments:
+            array: The input pyarrow array.
+            schema: The schema of the series. If None, will be inferred from `array`.
+
+        Raises:
+            TypeError: When the schema is mismatched with the pyarrow array type.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.column.Series` instance.
+
+        """
+        if schema is None:
+            schema = pt.PortexType.from_pyarrow(array.type)
+        elif not array.type.equals(schema.to_pyarrow()):
+            raise TypeError("The schema is mismatched with the pyarrow array")
+
+        return cls._from_pyarrow(array, schema)
 
     @property
     def iloc(self) -> ColumnSeriesILocIndexer:
@@ -411,35 +423,6 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
         """
         return ColumnSeriesLocIndexer(self)
-
-    @classmethod
-    def from_pyarrow(
-        cls: Type[_SB],
-        array: pa.Array,
-        schema: Optional[pt.PortexType] = None,
-    ) -> _SB:
-        """Instantiate a Series backed by an pyarrow array.
-
-        Arguments:
-            array: The input pyarrow array.
-            schema: The schema of the series. If None, will be inferred from `array`.
-
-        Raises:
-            TypeError: When the schema is mismatched with the pyarrow array type.
-
-        Returns:
-            The loaded :class:`~graviti.dataframe.column.Series` instance.
-
-        """
-        if schema is None:
-            schema = pt.PortexType.from_pyarrow(array.type)
-        elif not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array")
-
-        return cls._from_pyarrow(array, schema)
-
-    def _to_post_data(self) -> List[Any]:
-        return self.to_pylist()
 
 
 @pt.ContainerRegister(
