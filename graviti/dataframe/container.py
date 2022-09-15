@@ -70,6 +70,9 @@ class Container:
     def _to_post_data(self) -> List[Any]:
         raise NotImplementedError
 
+    def _get_item_by_location(self, key: int) -> Any:
+        raise NotImplementedError
+
     def _get_slice_by_location(
         self: _T,
         key: slice,
