@@ -133,7 +133,7 @@ class PackageRepo:
                 self._shallow_fetch()
             except CalledProcessError:
                 self._deep_fetch()
-        except (CalledProcessError, GitCommandError, FileNotFoundError):
+        except (CalledProcessError, GitCommandError, FileNotFoundError, KeyboardInterrupt):
             rmtree(path)
             raise
 
