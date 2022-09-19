@@ -7,16 +7,13 @@
 
 from itertools import repeat
 from math import ceil
-from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Iterator, List, Optional, Tuple, TypeVar
 
 import pyarrow as pa
 
 from graviti.paging.lists import MappedPagingList, PagingList, PyArrowPagingList
 from graviti.paging.offset import Offsets
 from graviti.paging.wrapper import StructArrayWrapper
-
-if TYPE_CHECKING:
-    from graviti.manager import ObjectPolicyManager
 
 _T = TypeVar("_T")
 
@@ -35,16 +32,6 @@ class LazyFactoryBase:
             return True
         except KeyError:
             return False
-
-    @property
-    def object_policy_manager(self) -> "ObjectPolicyManager":
-        """Return the object policy manager of the factory.
-
-        Raises:
-            NotImplementedError: The method of the base class should not be called.
-
-        """
-        raise NotImplementedError
 
     def create_list(self, mapper: Callable[[Any], _T]) -> PagingList[_T]:
         """Create a paging list from the factory.
@@ -138,8 +125,6 @@ class LazyFactory(LazyFactoryBase):
 
     """
 
-    _object_policy_manager: "ObjectPolicyManager"
-
     def __init__(
         self, total_count: int, limit: int, getter: Callable[[int, int], Any], patype: pa.DataType
     ) -> None:
@@ -151,26 +136,6 @@ class LazyFactory(LazyFactoryBase):
 
     def __getitem__(self, key: str) -> "LazySubFactory":
         return LazySubFactory(self, (key,), self._patype[key].type)
-
-    @property
-    def object_policy_manager(self) -> "ObjectPolicyManager":
-        """Return the object policy manager of the factory.
-
-        Returns:
-            The object policy manager of the factory.
-
-        """
-        return self._object_policy_manager
-
-    @object_policy_manager.setter
-    def object_policy_manager(self, object_policy_manager: "ObjectPolicyManager") -> None:
-        """Set the object policy manager of the factory.
-
-        Arguments:
-            object_policy_manager: The object policy manager to be set.
-
-        """
-        self._object_policy_manager = object_policy_manager
 
     def get_array(self, pos: int, keys: Tuple[str, ...]) -> pa.Array:
         """Get the array from the factory.
@@ -265,16 +230,6 @@ class LazySubFactory(LazyFactoryBase):
 
     def __getitem__(self, key: str) -> "LazySubFactory":
         return LazySubFactory(self._factory, self._keys + (key,), self._patype[key].type)
-
-    @property
-    def object_policy_manager(self) -> "ObjectPolicyManager":
-        """Return the object policy manager of the factory.
-
-        Returns:
-            The object policy manager of the factory.
-
-        """
-        return self._factory.object_policy_manager
 
     def create_list(self, mapper: Callable[[Any], _T]) -> PagingList[_T]:
         """Create a paging list from the factory.
