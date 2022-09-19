@@ -461,7 +461,14 @@ class DataFrame(Container):
     ) -> _T:
         obj = self._create(schema, root, name)
 
-        _root = obj if root is None else root
+        if root is None:
+            self_root: "DataFrame" = self._root if self._root else self  # type: ignore[assignment]
+            # pylint: disable=protected-access
+            obj._object_policy_manager = self_root._object_policy_manager
+            _root: Optional["DataFrame"] = obj
+        else:
+            _root = root
+
         _columns = self._columns
         columns = {}
 
@@ -470,7 +477,7 @@ class DataFrame(Container):
             columns[column_name] = _columns[column_name]._get_slice_by_location(
                 key,
                 value,
-                _root,  # type: ignore[arg-type]
+                _root,
                 (column_name,) + name,
             )
 
@@ -596,13 +603,20 @@ class DataFrame(Container):
     ) -> _T:
         obj = self._create(schema, root, name)
 
-        _root = obj if root is None else root
+        if root is None:
+            self_root: "DataFrame" = self._root if self._root else self  # type: ignore[assignment]
+            # pylint: disable=protected-access
+            obj._object_policy_manager = self_root._object_policy_manager
+            _root: Optional["DataFrame"] = obj
+        else:
+            _root = root
+
         _columns = self._columns
         columns = {}
 
         # pylint: disable=protected-access
         for key, value in schema.items():
-            column = _columns[key]._copy(value, _root, (key,) + name)  # type: ignore[arg-type]
+            column = _columns[key]._copy(value, _root, (key,) + name)
             columns[key] = column
 
         obj._columns = columns
