@@ -14,6 +14,7 @@ from graviti.portex import PortexType
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
+    from graviti.manager.policy import ObjectPolicyManager
 
 _T = TypeVar("_T", bound="Container")
 
@@ -49,6 +50,8 @@ class Container:
         schema: PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _T:
         raise NotImplementedError
 
@@ -59,6 +62,8 @@ class Container:
         schema: PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: Optional["ObjectPolicyManager"] = None,
     ) -> _T:
         raise NotImplementedError
 
@@ -99,7 +104,11 @@ class Container:
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         raise NotImplementedError
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+    def _refresh_data_from_factory(
+        self,
+        factory: LazyFactoryBase,
+        object_policy_manager: Optional["ObjectPolicyManager"],
+    ) -> None:
         raise NotImplementedError
 
     # TODO: Defines a base indexer for the loc and iloc return type.

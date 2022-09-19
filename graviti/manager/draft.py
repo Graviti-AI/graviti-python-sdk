@@ -260,8 +260,9 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
                 partial(self._list_data, sheet_name=name),
                 pa.struct([pa.field(RECORD_KEY, pa.string()), *df.schema.to_pyarrow()]),
             )
-            factory.object_policy_manager = self._dataset.object_policy_manager
-            df._refresh_data_from_factory(factory)  # pylint: disable=protected-access)
+            df._refresh_data_from_factory(  # pylint: disable=protected-access)
+                factory, self._dataset.object_policy_manager
+            )
 
 
 class DraftManager:
