@@ -5,13 +5,14 @@
 
 """PyArrow array wrapper related class."""
 
-from typing import Any, ClassVar, Dict, Iterator, Type, TypeVar
+from typing import Any, ClassVar, Dict, Iterator, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
 _A = TypeVar("_A", bound="ArrayWrapper")
 _S = TypeVar("_S", bound="StructScalarWrapper")
-_L = TypeVar("_L", bound="ListScalarWrapper")
+_LS = TypeVar("_LS", bound="ListScalarWrapper")
+_LA = TypeVar("_LA", bound="ListArrayWrapper")
 
 
 class WrapperRegister:
@@ -204,7 +205,7 @@ class ListScalarWrapper(ScalarWrapper):
         self._wrapper = WrapperRegister.get(scalar.type.value_type.id)
 
     @classmethod
-    def from_wrapper(cls: Type[_L], scalar: pa.ListScalar, wrapper: Type[ArrayWrapper]) -> _L:
+    def from_wrapper(cls: Type[_LS], scalar: pa.ListScalar, wrapper: Type[ArrayWrapper]) -> _LS:
         """Create ListScalarWrapper instance by inputing scalar and wrapper.
 
         Arguments:
@@ -215,7 +216,7 @@ class ListScalarWrapper(ScalarWrapper):
             The ListScalarWrapper instance created by the input scalar and wrapper.
 
         """
-        obj: _L = object.__new__(cls)
+        obj: _LS = object.__new__(cls)
         obj._scalar = scalar
         obj._wrapper = wrapper
 
@@ -249,8 +250,37 @@ class ListArrayWrapper(ArrayWrapper):
         self._array = array
         self._wrapper = WrapperRegister.get(array.type.value_type.id)
 
+    @overload
     def __getitem__(self, index: int) -> ListScalarWrapper:
-        return ListScalarWrapper.from_wrapper(self._array[index], self._wrapper)
+        ...
+
+    @overload
+    def __getitem__(self: _LA, index: slice) -> _LA:
+        ...
+
+    def __getitem__(self: _LA, index: Union[int, slice]) -> Union[ListScalarWrapper, _LA]:
+        if isinstance(index, int):
+            return ListScalarWrapper.from_wrapper(self._array[index], self._wrapper)
+
+        return self.from_wrapper(self._array[index], self._wrapper)
 
     def __iter__(self) -> Iterator[ListScalarWrapper]:
         return (ListScalarWrapper.from_wrapper(item, self._wrapper) for item in self._array)
+
+    @classmethod
+    def from_wrapper(cls: Type[_LA], array: pa.ListArray, wrapper: Type[ArrayWrapper]) -> _LA:
+        """Create ListScalarWrapper instance by inputing scalar and wrapper.
+
+        Arguments:
+            array: The PyArrow ListArray instance needs to be wrapped.
+            wrapper: The wrapper of the input array.
+
+        Returns:
+            The ListScalarWrapper instance created by the input scalar and wrapper.
+
+        """
+        obj: _LA = object.__new__(cls)
+        obj._array = array
+        obj._wrapper = wrapper
+
+        return obj

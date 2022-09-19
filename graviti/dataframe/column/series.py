@@ -536,9 +536,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         name: Tuple[str, ...] = (),
     ) -> _A:
         obj = super()._get_slice_by_location(key, schema, root, name)
-        obj._item_schema = self._item_schema  # pylint: disable=protected-access
-
-        return obj
+        return obj._copy(schema, root, name)  # pylint: disable=protected-access
 
     def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
         builtin_schema: pt.array = self.schema.to_builtin()  # type: ignore[assignment]
@@ -559,7 +557,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow
         return values._data.copy(
             lambda df: df._copy(_item_schema),
-            lambda scalar: _item_creator(scalar.values, _item_schema),
+            lambda scalar: _item_creator(scalar.values, _item_schema, self._root),
         )
 
     def _set_item_by_slice(self: _A, key: slice, value: _A) -> None:
@@ -584,7 +582,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj._item_schema = _item_schema
         obj._data = self._data.copy(
             lambda df: df._copy(_item_schema),
-            lambda scalar: _item_creator(scalar.values, _item_schema),
+            lambda scalar: _item_creator(scalar.values, _item_schema, root),
         )
 
         return obj
