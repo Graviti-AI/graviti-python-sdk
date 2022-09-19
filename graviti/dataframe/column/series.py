@@ -42,12 +42,15 @@ from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
+    from graviti.manager.policy import ObjectPolicyManager
 
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
 _A = TypeVar("_A", bound="ArraySeries")
 _F = TypeVar("_F", bound="FileSeries")
 _E = TypeVar("_E", bound="EnumSeries")
+
+_OPM = Optional["ObjectPolicyManager"]
 
 
 class SeriesBase(Container):  # pylint: disable=abstract-method
@@ -262,9 +265,11 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,
     ) -> _SB:
         obj = cls._create(schema, root, name)
-        obj._refresh_data_from_factory(factory)
+        obj._refresh_data_from_factory(factory, object_policy_manager)
         return obj
 
     @classmethod
@@ -302,7 +307,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
         self._data.__delitem__(key)
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase, _: _OPM) -> None:
         self._data = factory.create_pyarrow_list()
 
     def _extend(self: _SB, values: _SB) -> None:
@@ -463,6 +468,8 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,  # pylint: disable=unused-argument
     ) -> _S:
         obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
@@ -488,6 +495,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
     _data: MappedPagingList[Any]
     _item_schema: pt.PortexType
+    _object_policy_manager: _OPM = None
 
     @classmethod
     def _from_pyarrow(
@@ -496,6 +504,8 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,
     ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
@@ -503,10 +513,14 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         obj = cls._create(schema, root, name)
         obj._data = MappedPagingList.from_array(
-            array, lambda scalar: _item_creator(scalar.values, _item_schema, root)
+            array,
+            lambda scalar: _item_creator(
+                scalar.values, _item_schema, object_policy_manager=object_policy_manager
+            ),
         )
 
         obj._item_schema = _item_schema
+        obj._object_policy_manager = object_policy_manager
 
         return obj
 
@@ -536,17 +550,24 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         name: Tuple[str, ...] = (),
     ) -> _A:
         obj = super()._get_slice_by_location(key, schema, root, name)
-        return obj._copy(schema, root, name)  # pylint: disable=protected-access
+        # pylint: disable=protected-access
+        obj._object_policy_manager = self._object_policy_manager
+        return obj._copy(schema, root, name)
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+    def _refresh_data_from_factory(
+        self, factory: LazyFactoryBase, object_policy_manager: _OPM
+    ) -> None:
         builtin_schema: pt.array = self.schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
 
         self._data = factory.create_mapped_list(
-            lambda scalar: _item_creator(scalar.values, _item_schema, self._root)
+            lambda scalar: _item_creator(
+                scalar.values, _item_schema, object_policy_manager=object_policy_manager
+            )
         )
         self._item_schema = _item_schema  # pylint: disable=protected-access
+        self._object_policy_manager = object_policy_manager
 
     def _extract_paging_list(self: _A, values: _A) -> MappedPagingList[Any]:
         # pylint: disable=protected-access
@@ -557,7 +578,9 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         _item_creator = _item_schema.container._from_pyarrow
         return values._data.copy(
             lambda df: df._copy(_item_schema),
-            lambda scalar: _item_creator(scalar.values, _item_schema, self._root),
+            lambda scalar: _item_creator(
+                scalar.values, _item_schema, object_policy_manager=values._object_policy_manager
+            ),
         )
 
     def _set_item_by_slice(self: _A, key: slice, value: _A) -> None:
@@ -577,13 +600,17 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
+        _object_policy_manager = self._object_policy_manager
 
         # pylint: disable=protected-access
         obj._item_schema = _item_schema
         obj._data = self._data.copy(
             lambda df: df._copy(_item_schema),
-            lambda scalar: _item_creator(scalar.values, _item_schema, root),
+            lambda scalar: _item_creator(
+                scalar.values, _item_schema, object_policy_manager=_object_policy_manager
+            ),
         )
+        obj._object_policy_manager = _object_policy_manager
 
         return obj
 
@@ -633,17 +660,19 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,
     ) -> _F:
-        if root is None:
+        if object_policy_manager is None:
             raise ValueError(
-                "The object policy manager from root is needed to create FileSeries from pyarrow"
+                "The object policy manager is needed to create FileSeries from pyarrow"
             )
 
         obj = cls._create(schema, root, name)
         file_type: FileBase = schema.element  # type: ignore[assignment]
         # pylint: disable=protected-access
         obj._data = PagingList(
-            file_type._from_pyarrow(item, root._object_policy_manager) for item in array
+            file_type._from_pyarrow(item, object_policy_manager) for item in array
         )
 
         return obj
@@ -651,12 +680,12 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
     def _to_post_data(self) -> List[Dict[str, Any]]:
         return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+    def _refresh_data_from_factory(
+        self, factory: LazyFactoryBase, object_policy_manager: _OPM
+    ) -> None:
         file_type = self.schema.element
         self._data = factory.create_list(
-            lambda scalar: file_type(
-                **scalar.as_py(), object_policy_manager=factory.object_policy_manager
-            )
+            lambda scalar: file_type(**scalar.as_py(), object_policy_manager=object_policy_manager)
         )
 
     def to_pylist(self) -> List[FileBase]:
@@ -713,6 +742,8 @@ class EnumSeries(Series):
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,  # pylint: disable=unused-argument
     ) -> _E:
         obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
@@ -722,7 +753,7 @@ class EnumSeries(Series):
 
         return obj
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+    def _refresh_data_from_factory(self, factory: LazyFactoryBase, _: _OPM) -> None:
         self._data = factory.create_pyarrow_list()
         enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
         self._index_to_value = enum_values.index_to_value

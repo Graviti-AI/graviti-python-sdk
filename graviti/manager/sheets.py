@@ -62,7 +62,6 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self.operations.append(DeleteSheet(key))
 
         value.operations = [AddData(value.copy())]
-        value._object_policy_manager = self._dataset.object_policy_manager
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:
@@ -95,8 +94,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             partial(self._list_data, sheet_name=sheet_name),
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
-        factory.object_policy_manager = self._dataset.object_policy_manager
-        df = DataFrame._from_factory(factory, schema)  # pylint: disable=protected-access
+        df = DataFrame._from_factory(  # pylint: disable=protected-access
+            factory, schema, object_policy_manager=self._dataset.object_policy_manager
+        )
         df.operations = []
 
         return df

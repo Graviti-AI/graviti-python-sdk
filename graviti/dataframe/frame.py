@@ -45,6 +45,8 @@ if TYPE_CHECKING:
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
 
+_OPM = Optional["ObjectPolicyManager"]
+
 
 RECORD_KEY = "__record_key"
 APPLY_KEY = "apply_result"
@@ -106,7 +108,7 @@ class DataFrame(Container):
 
     _columns: Dict[str, Container]
     _record_key: Optional[ColumnSeries] = None
-    _object_policy_manager: "ObjectPolicyManager"
+
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
     searcher: Optional[Callable[[Dict[str, Any], pt.PortexRecordBase], "DataFrame"]] = None
@@ -332,6 +334,8 @@ class DataFrame(Container):
         schema: pt.PortexRecordBase,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,
     ) -> _T:
         obj = cls._create(schema, root, name)
 
@@ -341,6 +345,7 @@ class DataFrame(Container):
                 schema=value,
                 root=obj if root is None else root,
                 name=(key,) + name,
+                object_policy_manager=object_policy_manager,
             )
             for key, value in schema.items()
         }
@@ -353,6 +358,8 @@ class DataFrame(Container):
         schema: pt.PortexRecordBase,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
+        *,
+        object_policy_manager: _OPM = None,
     ) -> _T:
         """Create DataFrame with paging lists.
 
@@ -361,6 +368,7 @@ class DataFrame(Container):
             schema: The schema of the DataFrame.
             root: The root of the created DataFrame.
             name: The name of the created DataFrame.
+            object_policy_manager: The ObjectPolicyManager instance for reading files.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
@@ -368,15 +376,13 @@ class DataFrame(Container):
         """
         obj = cls._create(schema, root, name)
 
-        if root is None:
-            obj._object_policy_manager = factory.object_policy_manager
-
         obj._columns = {
             key: value.container._from_factory(  # pylint: disable=protected-access
                 factory[key],
                 schema=value,
                 root=obj if root is None else root,
                 name=(key,) + name,
+                object_policy_manager=object_policy_manager,
             )
             for key, value in schema.items()
         }
@@ -441,9 +447,13 @@ class DataFrame(Container):
 
         return obj
 
-    def _refresh_data_from_factory(self, factory: LazyFactoryBase) -> None:
+    def _refresh_data_from_factory(
+        self, factory: LazyFactoryBase, object_policy_manager: _OPM
+    ) -> None:
         for key, column in self._columns.items():
-            column._refresh_data_from_factory(factory[key])  # pylint: disable=protected-access
+            column._refresh_data_from_factory(  # pylint: disable=protected-access
+                factory[key], object_policy_manager
+            )
 
     def _get_item_by_location(self, key: int) -> RowSeries:
         indices_data = {
@@ -461,14 +471,7 @@ class DataFrame(Container):
     ) -> _T:
         obj = self._create(schema, root, name)
 
-        if root is None:
-            self_root: "DataFrame" = self._root if self._root else self  # type: ignore[assignment]
-            # pylint: disable=protected-access
-            obj._object_policy_manager = self_root._object_policy_manager
-            _root: Optional["DataFrame"] = obj
-        else:
-            _root = root
-
+        _root = obj if root is None else root
         _columns = self._columns
         columns = {}
 
@@ -477,7 +480,7 @@ class DataFrame(Container):
             columns[column_name] = _columns[column_name]._get_slice_by_location(
                 key,
                 value,
-                _root,
+                _root,  # type: ignore[arg-type]
                 (column_name,) + name,
             )
 
@@ -603,20 +606,17 @@ class DataFrame(Container):
     ) -> _T:
         obj = self._create(schema, root, name)
 
-        if root is None:
-            self_root: "DataFrame" = self._root if self._root else self  # type: ignore[assignment]
-            # pylint: disable=protected-access
-            obj._object_policy_manager = self_root._object_policy_manager
-            _root: Optional["DataFrame"] = obj
-        else:
-            _root = root
-
+        _root = obj if root is None else root
         _columns = self._columns
         columns = {}
 
         # pylint: disable=protected-access
         for key, value in schema.items():
-            column = _columns[key]._copy(value, _root, (key,) + name)
+            column = _columns[key]._copy(
+                value,
+                _root,  # type: ignore[arg-type]
+                (key,) + name,
+            )
             columns[key] = column
 
         obj._columns = columns
