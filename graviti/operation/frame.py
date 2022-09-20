@@ -26,16 +26,16 @@ _MAX_ITEMS = 60000
 class DataFrameOperation:
     """This class defines the basic method of the operation on a DataFrame."""
 
-    def get_files(self) -> List[FileBase]:  # pylint: disable=no-self-use
-        """Get the list of FileSeries.
+    def get_file_count(self) -> int:  # pylint: disable=no-self-use
+        """Get the file amount to be uploaded.
 
         Returns:
-            The list of FileSeries.
+            The file amount to be uploaded.
 
         """
-        return []
+        return 0
 
-    def get_upload_count(self) -> int:  # pylint: disable=no-self-use
+    def get_data_count(self) -> int:  # pylint: disable=no-self-use
         """Get the data amount to be uploaded.
 
         Returns:
@@ -93,19 +93,16 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             _MAX_ITEMS // self._data.schema._get_column_count(),  # pylint: disable=protected-access
         )
 
-    def get_files(self) -> List[FileBase]:
-        """Get the list of FileSeries.
+    def get_file_count(self) -> int:
+        """Get the file amount to be uploaded.
 
         Returns:
-            The list of FileSeries.
+            The file amount to be uploaded.
 
         """
-        if not hasattr(self, "_files"):
-            self._files = list(self._data._generate_file())  # pylint: disable=protected-access
+        return len(list(self._data._generate_file()))  # pylint: disable=protected-access
 
-        return self._files
-
-    def get_upload_count(self) -> int:
+    def get_data_count(self) -> int:
         """Get the data amount to be uploaded.
 
         Returns:
