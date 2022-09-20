@@ -13,7 +13,7 @@ from graviti.file import File, FileBase
 from graviti.openapi import add_data, delete_data, update_data, update_schema
 from graviti.operation.common import get_schema
 from graviti.portex import PortexType
-from graviti.utility import chunked, submit_multithread_tasks
+from graviti.utility import submit_multithread_tasks
 
 if TYPE_CHECKING:
     from graviti.dataframe import DataFrame
@@ -152,17 +152,22 @@ class AddData(DataOperation):
             object_policy_manager: The object policy manager of the dataset.
 
         """
-        _upload_files(
-            filter(lambda f: isinstance(f, File), self.get_files()),  # type: ignore[arg-type]
-            object_policy_manager,
-            jobs=jobs,
-            pbar=file_pbar,
-        )
+        batch_size = self._get_max_batch_size()
+        df = self._data
 
-        for batch in chunked(
-            self._data._to_post_data(),  # pylint: disable=protected-access
-            self._get_max_batch_size(),
-        ):
+        for i in range(0, len(df), batch_size):
+            batch = df.iloc[i : i + batch_size]
+
+            # pylint: disable=protected-access
+            _upload_files(
+                filter(
+                    lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
+                ),
+                object_policy_manager,
+                jobs=jobs,
+                pbar=file_pbar,
+            )
+
             add_data(
                 access_key,
                 url,
@@ -170,7 +175,7 @@ class AddData(DataOperation):
                 dataset,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch,
+                data=batch._to_post_data(),
             )
             data_pbar.update(len(batch))
 
@@ -267,17 +272,25 @@ class UpdateData(DataOperation):
             object_policy_manager: The object policy manager of the dataset.
 
         """
-        _upload_files(
-            filter(lambda f: isinstance(f, File), self.get_files()),  # type: ignore[arg-type]
-            object_policy_manager,
-            jobs=jobs,
-            pbar=file_pbar,
-        )
+        batch_size = self._get_max_batch_size()
+        print(batch_size)
+        df = self._data
 
-        for batch in chunked(
-            self._data._to_patch_data(),  # pylint: disable=protected-access
-            self._get_max_batch_size(),
-        ):
+        for i in range(0, len(df), batch_size):
+            batch = df.iloc[i : i + batch_size]
+
+            # pylint: disable=protected-access
+            batch._record_key = df._record_key[i : i + batch_size]  # type: ignore[index]
+
+            _upload_files(
+                filter(
+                    lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
+                ),
+                object_policy_manager,
+                jobs=jobs,
+                pbar=file_pbar,
+            )
+
             update_data(
                 access_key,
                 url,
@@ -285,7 +298,7 @@ class UpdateData(DataOperation):
                 dataset,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch,
+                data=batch._to_patch_data(),
             )
             data_pbar.update(len(batch))
 
