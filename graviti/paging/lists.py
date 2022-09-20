@@ -630,6 +630,21 @@ class PyArrowPagingList(PagingListBase[_T]):
 
         return obj
 
+    def get_slice(self: _PPL, index: slice) -> _PPL:
+        """Get the sliced PyArrowPagingList at the given slice.
+
+        Arguments:
+            index: The input slice.
+
+        Returns:
+            The sliced PyArrowPagingList at the given slice.
+
+        """
+        obj = super().get_slice(index)
+        obj._patype = self._patype  # pylint: disable=protected-access
+
+        return obj
+
     def set_slice(self: _PPL, index: slice, values: _PPL) -> None:
         """Update the element values at the given slice with input PyArrowPagingList.
 
