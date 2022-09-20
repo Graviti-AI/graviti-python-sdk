@@ -29,7 +29,7 @@ import graviti.portex as pt
 from graviti.dataframe.column.series import ArraySeries, EnumSeries, FileSeries
 from graviti.dataframe.column.series import Series as ColumnSeries
 from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
-from graviti.dataframe.container import Container
+from graviti.dataframe.container import RECORD_KEY, Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.dataframe.sql import RowSeries as SqlRowSeries
@@ -47,8 +47,6 @@ _C = TypeVar("_C", bound="Container")
 
 _OPM = Optional["ObjectPolicyManager"]
 
-
-RECORD_KEY = "__record_key"
 APPLY_KEY = "apply_result"
 
 
@@ -202,8 +200,8 @@ class DataFrame(Container):
         _value = self[key].copy()
 
         df = self._create(pt.record({key: _value.schema}), None, self._name)
-        df._record_key = root._record_key
         df._columns = {key: _value}
+        df[RECORD_KEY] = root._record_key  # type: ignore[index, assignment]
 
         root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
 
@@ -570,21 +568,6 @@ class DataFrame(Container):
     def _extend(self, values: "DataFrame") -> None:
         for key, value in self._columns.items():
             value._extend(values[key])  # pylint: disable=protected-access
-
-    def _to_patch_data(self) -> List[Dict[str, Any]]:
-        column_names = self.schema.keys()
-        patch_data = []
-        for record_key, values in zip(
-            # pylint: disable=protected-access
-            self._record_key._to_post_data(),  # type: ignore[union-attr]
-            zip(*(column._to_post_data() for column in self._columns.values())),
-        ):
-            row_patch_data = dict(zip(column_names, values))
-            for name in self._name:
-                row_patch_data = {name: row_patch_data}
-            row_patch_data[RECORD_KEY] = record_key
-            patch_data.append(row_patch_data)
-        return patch_data
 
     def _to_post_data(self) -> List[Dict[str, Any]]:
         column_names = self.schema.keys()

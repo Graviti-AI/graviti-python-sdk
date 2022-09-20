@@ -27,7 +27,7 @@ import pyarrow as pa
 
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
-from graviti.dataframe.container import Container
+from graviti.dataframe.container import RECORD_KEY, Container
 from graviti.file import FileBase
 from graviti.operation import UpdateData
 from graviti.paging import (
@@ -183,8 +183,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             root = self._root
             name = self._name
             df = root._create(pt.record({name[0]: series.schema.copy()}), None, name[1:])
-            df._record_key = root._record_key[key]  # type: ignore[index]
             df._columns = {name[0]: series}
+            df[RECORD_KEY] = root._record_key[key]  # type: ignore[index, assignment]
 
             root.operations.append(UpdateData(df))  # type: ignore[union-attr]
 
