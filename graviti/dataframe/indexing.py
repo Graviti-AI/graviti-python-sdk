@@ -8,6 +8,7 @@
 from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union, overload
 
 from graviti.dataframe.column.series import SeriesBase
+from graviti.dataframe.container import RECORD_KEY
 from graviti.operation import UpdateData
 from graviti.utility import NestedDict
 
@@ -103,7 +104,7 @@ class DataFrameILocIndexer:
         self.obj._set_slice_by_location(key, value)
         if self.obj.operations is not None:
             df = value.copy()
-            df._record_key = self.obj._record_key[key]  # type: ignore[index]
+            df[RECORD_KEY] = self.obj._record_key[key]  # type: ignore[index, assignment]
             self.obj.operations.append(UpdateData(df))
 
     def __delitem__(self, key: Union[int, slice]) -> None:
@@ -203,7 +204,7 @@ class DataFrameLocIndexer:
         self.obj._set_slice_by_location(key, value)
         if self.obj.operations is not None:
             df = value.copy()
-            df._record_key = self.obj._record_key[key]  # type: ignore[index]
+            df[RECORD_KEY] = self.obj._record_key[key]  # type: ignore[index, assignment]
             self.obj.operations.append(UpdateData(df))
 
     def __delitem__(self, key: Union[int, slice]) -> None:

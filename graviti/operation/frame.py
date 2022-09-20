@@ -273,15 +273,12 @@ class UpdateData(DataOperation):
 
         """
         batch_size = self._get_max_batch_size()
-        print(batch_size)
         df = self._data
 
         for i in range(0, len(df), batch_size):
             batch = df.iloc[i : i + batch_size]
 
             # pylint: disable=protected-access
-            batch._record_key = df._record_key[i : i + batch_size]  # type: ignore[index]
-
             _upload_files(
                 filter(
                     lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
@@ -298,7 +295,7 @@ class UpdateData(DataOperation):
                 dataset,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch._to_patch_data(),
+                data=batch._to_post_data(),
             )
             data_pbar.update(len(batch))
 
