@@ -409,3 +409,53 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         """
         list_size = self.length if self.length else -1
         return pa.list_(self.items.to_pyarrow(), list_size)  # pylint: disable=no-member
+
+
+@PyArrowConversionRegister(pa.lib.Type_TIMESTAMP)  # pylint: disable=c-extension-no-member
+class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
+    """Portex temporal type ``timestamp``.
+
+    Arguments:
+        unit: The unit of the timestamp, supports 's', 'ms', 'us' and 'ns'.
+        tz: The name of the timezone, ``None`` indicates the timestamp is naive.
+        nullable: Whether it is a nullable type.
+
+    Examples:
+        >>> t = timestamp("ms")
+        >>> t
+        timestamp(
+          unit='ms',
+        )
+        >>>
+        >>> t = timestamp("us", tz="UTC")
+        >>> t
+        timestamp(
+          unit='ms',
+          tz='UTC',
+        )
+
+    """
+
+    _T = TypeVar("_T", bound="timestamp")
+
+    unit: str = param(ptype=PTYPE.String, options=["s", "ms", "us", "ns"])
+    tz: Optional[str] = param(None, ptype=PTYPE.String)
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, unit: str, tz: Optional[str] = None, nullable: bool = False) -> None:
+        self.unit = PTYPE.String.check(unit)
+        self.tz = PTYPE.String.check(tz) if tz is not None else None
+        super().__init__(nullable=nullable)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.TimestampType) -> _T:
+        return cls(pyarrow_type.unit, pyarrow_type.tz)
+
+    def to_pyarrow(self) -> pa.DataType:
+        """Convert the Portex type to the corresponding builtin PyArrow DataType.
+
+        Returns:
+            The corresponding builtin PyArrow DataType.
+
+        """
+        return pa.timestamp(self.unit, self.tz)
