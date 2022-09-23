@@ -18,6 +18,7 @@ from graviti.portex.builtin import (
     int64,
     record,
     string,
+    timestamp,
 )
 
 _REMOTE_FILE_FIELD_NAMES = {"checksum", "url"}
@@ -125,6 +126,21 @@ class AvroArraySchema(AvroSchema):
         }
 
 
+class AvroTimestampSchema(AvroSchema):
+    def __init__(self, unit: str, tz: str):
+        super().__init__()
+        self._unit = unit
+        self._tz = tz
+
+    def to_json(self):
+        return {
+            "type": "long",
+            "logicalType": "portex.timestamp",
+            "unit": self._unit,
+            "tz": self._tz,
+        }
+
+
 class AvroEnumSchema(AvroSchema):
     def __init__(self, values):
         super().__init__()
@@ -187,6 +203,10 @@ def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchem
     return AvroEnumSchema(_filed.values)
 
 
+def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroPrimitiveSchema:
+    return AvroTimestampSchema(_timestamp_type)
+
+
 def _on_type(names, namespace, name, _portex_type):
     typ = type(_portex_type)
     if typ in _COMPLEX_TYPES_PROCESSERS:
@@ -204,4 +224,5 @@ _COMPLEX_TYPES_PROCESSERS = {
     record: _on_struct,
     array: _on_list,
     enum: _on_enum,
+    timestamp: _on_timestamp,
 }
