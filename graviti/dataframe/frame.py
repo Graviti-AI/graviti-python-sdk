@@ -705,19 +705,20 @@ class DataFrame(Container):
         """
         return (self.__len__(), len(self.schema))
 
-    # @property
-    # def size(self) -> int:
-    #     """Return an int representing the number of elements in this object.
-    #
-    #     Return:
-    #         Size of the DataFrame.
-    #
-    #     Examples:
-    #         >>> df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
-    #         >>> df.size
-    #         4
-    #
-    #     """
+    @property
+    def size(self) -> int:
+        """Return an int representing the number of elements in this object.
+
+        Returns:
+            Size of the DataFrame.
+
+        Examples:
+            >>> df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+            >>> df.size
+            4
+
+        """
+        return self.__len__() * len(self.schema)
 
     def head(self: _T, n: int = 5) -> _T:
         """Return the first `n` rows.
