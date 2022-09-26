@@ -126,18 +126,18 @@ class AvroArraySchema(AvroSchema):
 
 
 class AvroEnumSchema(AvroSchema):
-    def __init__(self, namespace, name, symbols):
+    def __init__(self, values):
         super().__init__()
-        self._namespace = namespace
-        self._name = name
-        self._symbols = symbols
+        self._values = values
 
     def to_json(self):
+        min_index, max_index = self._values.index_scope
+        avro_type = "int" if min_index >= -2147483648 and max_index <= 2147483647 else "long"
+
         return {
-            "type": "enum",
-            "namespace": self._namespace,
-            "name": self._name,
-            "symbols": self._symbols,
+            "type": avro_type,
+            "logicalType": "portex.enum",
+            "values": self._values.to_pyobj(),
         }
 
 
@@ -184,7 +184,7 @@ def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
 
 
 def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchema:
-    return AvroPrimitiveSchema("int")
+    return AvroEnumSchema(_filed.values)
 
 
 def _on_type(names, namespace, name, _portex_type):
