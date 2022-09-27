@@ -769,10 +769,12 @@ class EnumSeries(Series):
         return [_index_to_value[i.as_py()] for i in self._data]
 
 
-@pt.ContainerRegister(pt.timestamp)
+@pt.ContainerRegister(pt.timestamp, pt.date)
 class TimeSeries(Series):
     """One-dimensional array for portex builtin temporal type."""
 
     def _to_post_data(self) -> List[Any]:
         array = self._data.to_pyarrow()
-        return array.cast(pa.int64()).to_pylist()  # type: ignore[no-any-return]
+        bit_width = array.type.bit_width
+        target_type = pa.int32() if bit_width == 32 else pa.int64()
+        return array.cast(target_type).to_pylist()  # type: ignore[no-any-return]

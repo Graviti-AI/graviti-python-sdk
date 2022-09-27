@@ -11,6 +11,7 @@ from graviti.portex.builtin import (
     array,
     binary,
     boolean,
+    date,
     enum,
     float32,
     float64,
@@ -126,6 +127,14 @@ class AvroArraySchema(AvroSchema):
         }
 
 
+class AvroDateSchema(AvroSchema):
+    def to_json(self):
+        return {
+            "type": "int",
+            "logicalType": "portex.date",
+        }
+
+
 class AvroTimestampSchema(AvroSchema):
     def __init__(self, unit: str, tz: str):
         super().__init__()
@@ -207,6 +216,10 @@ def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroPri
     return AvroTimestampSchema(_timestamp_type)
 
 
+def _on_date(names, namespace, name, _date_type: date) -> AvroDateSchema:
+    return AvroDateSchema(_date_type)
+
+
 def _on_type(names, namespace, name, _portex_type):
     typ = type(_portex_type)
     if typ in _COMPLEX_TYPES_PROCESSERS:
@@ -224,5 +237,6 @@ _COMPLEX_TYPES_PROCESSERS = {
     record: _on_struct,
     array: _on_list,
     enum: _on_enum,
+    date: _on_date,
     timestamp: _on_timestamp,
 }

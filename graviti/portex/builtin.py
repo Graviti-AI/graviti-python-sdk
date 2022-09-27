@@ -411,6 +411,37 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.list_(self.items.to_pyarrow(), list_size)  # pylint: disable=no-member
 
 
+@PyArrowConversionRegister(pa.lib.Type_DATE32)  # pylint: disable=c-extension-no-member
+class date(PortexBuiltinType):  # pylint: disable=invalid-name
+    """Portex temporal type ``date``.
+
+    Arguments:
+        nullable: Whether it is a nullable type.
+
+    Examples:
+        >>> t = date()
+        >>> t
+        date()
+
+    """
+
+    _T = TypeVar("_T", bound="date")
+
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, nullable: bool = False) -> None:
+        super().__init__(nullable=nullable)
+
+    def to_pyarrow(self) -> pa.DataType:
+        """Convert the Portex type to the corresponding builtin PyArrow DataType.
+
+        Returns:
+            The corresponding builtin PyArrow DataType.
+
+        """
+        return pa.date32()
+
+
 @PyArrowConversionRegister(pa.lib.Type_TIMESTAMP)  # pylint: disable=c-extension-no-member
 class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex temporal type ``timestamp``.
