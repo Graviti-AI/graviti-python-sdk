@@ -73,16 +73,16 @@ def shorten(origin: str) -> str:
 
 
 def convert_iso_to_datetime(iso: str) -> datetime:
-    """Convert iso 8601 format string to datetime format time.
+    """Convert iso 8601 format string to datetime format time with local timezone.
 
     Arguments:
         iso: The iso 8601 format string.
 
     Returns:
-        The datetime format time.
+        The datetime format time with local timezone.
 
     """
-    return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone()
 
 
 def convert_datetime_to_gmt(utctime: datetime) -> str:
