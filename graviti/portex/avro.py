@@ -19,6 +19,7 @@ from graviti.portex.builtin import (
     int64,
     record,
     string,
+    time,
     timestamp,
 )
 
@@ -135,6 +136,26 @@ class AvroDateSchema(AvroSchema):
         }
 
 
+class AvroTimeSchema(AvroSchema):
+    _AVRO_TYPES = {
+        "s": "int",
+        "ms": "int",
+        "us": "long",
+        "ns": "long",
+    }
+
+    def __init__(self, unit: str):
+        super().__init__()
+        self._unit = unit
+
+    def to_json(self):
+        return {
+            "type": self._AVRO_TYPES[self._unit],
+            "logicalType": "portex.time",
+            "unit": self._unit,
+        }
+
+
 class AvroTimestampSchema(AvroSchema):
     def __init__(self, unit: str, tz: str):
         super().__init__()
@@ -212,6 +233,10 @@ def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchem
     return AvroEnumSchema(_filed.values)
 
 
+def _on_time(names, namespace, name, _time_type: time) -> AvroTimeSchema:
+    return AvroTimeSchema(_time_type)
+
+
 def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroPrimitiveSchema:
     return AvroTimestampSchema(_timestamp_type)
 
@@ -238,5 +263,6 @@ _COMPLEX_TYPES_PROCESSERS = {
     array: _on_list,
     enum: _on_enum,
     date: _on_date,
+    time: _on_time,
     timestamp: _on_timestamp,
 }

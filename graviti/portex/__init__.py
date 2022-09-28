@@ -20,6 +20,7 @@ from graviti.portex.builtin import (
     int64,
     record,
     string,
+    time,
     timestamp,
 )
 from graviti.portex.register import (
@@ -51,5 +52,6 @@ __all__ = [
     "read_yaml",
     "record",
     "string",
+    "time",
     "timestamp",
 ]

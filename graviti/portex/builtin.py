@@ -442,6 +442,56 @@ class date(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.date32()
 
 
+@PyArrowConversionRegister(
+    pa.lib.Type_TIME32, pa.lib.Type_TIME64  # pylint: disable=c-extension-no-member
+)
+class time(PortexBuiltinType):  # pylint: disable=invalid-name
+    """Portex temporal type ``time``.
+
+    Arguments:
+        unit: The unit of the time, supports 's', 'ms', 'us' and 'ns'.
+        nullable: Whether it is a nullable type.
+
+    Examples:
+        >>> t = time("ms")
+        >>> t
+        times(
+          unit='ms',
+        )
+
+    """
+
+    _T = TypeVar("_T", bound="time")
+
+    _UNIT_TO_TYPE = {
+        "s": pa.time32("s"),
+        "ms": pa.time32("ms"),
+        "us": pa.time64("us"),
+        "ns": pa.time64("ns"),
+    }
+    _TYPE_TO_UNIT = {value: key for key, value in _UNIT_TO_TYPE.items()}
+
+    unit: str = param(ptype=PTYPE.String, options=["s", "ms", "us", "ns"])
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, unit: str, nullable: bool = False) -> None:
+        self.unit = PTYPE.String.check(unit)
+        super().__init__(nullable=nullable)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+        return cls(cls._TYPE_TO_UNIT[pyarrow_type])
+
+    def to_pyarrow(self) -> pa.DataType:
+        """Convert the Portex type to the corresponding builtin PyArrow DataType.
+
+        Returns:
+            The corresponding builtin PyArrow DataType.
+
+        """
+        return self._UNIT_TO_TYPE[self.unit]
+
+
 @PyArrowConversionRegister(pa.lib.Type_TIMESTAMP)  # pylint: disable=c-extension-no-member
 class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex temporal type ``timestamp``.
