@@ -27,9 +27,9 @@ def _list_data(
     if order_by is not None:
         params["order_by"] = order_by
     if offset is not None:
-        params["offset"] = columns
+        params["offset"] = offset
     if limit is not None:
-        params["limit"] = order_by
+        params["limit"] = limit
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
