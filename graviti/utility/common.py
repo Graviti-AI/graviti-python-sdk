@@ -6,8 +6,9 @@
 """Common tools."""
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
+from sys import version_info
 from threading import Lock
 from typing import Any, Callable, DefaultDict, TypeVar
 
@@ -72,17 +73,36 @@ def shorten(origin: str) -> str:
     return origin[:7]
 
 
-def convert_iso_to_datetime(iso: str) -> datetime:
-    """Convert iso 8601 format string to datetime format time with local timezone.
+if version_info >= (3, 7):
 
-    Arguments:
-        iso: The iso 8601 format string.
+    def convert_iso_to_datetime(date_string: str) -> datetime:
+        """Convert iso 8601 format string to datetime format time with local timezone.
 
-    Returns:
-        The datetime format time with local timezone.
+        Arguments:
+            date_string: The iso 8601 format string.
 
-    """
-    return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone()
+        Returns:
+            The datetime format time with local timezone.
+
+        """
+        return datetime.fromisoformat(date_string.replace("Z", "+00:00")).astimezone()
+
+else:
+    _DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+    def convert_iso_to_datetime(date_string: str) -> datetime:
+        """Convert iso 8601 format string to datetime format time with local timezone.
+
+        Arguments:
+            date_string: The iso 8601 format string.
+
+        Returns:
+            The datetime format time with local timezone.
+
+        """
+        return (
+            datetime.strptime(date_string, _DATE_FORMAT).replace(tzinfo=timezone.utc).astimezone()
+        )
 
 
 def convert_datetime_to_gmt(utctime: datetime) -> str:
