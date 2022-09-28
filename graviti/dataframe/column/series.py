@@ -769,7 +769,7 @@ class EnumSeries(Series):
         return [_index_to_value[i.as_py()] for i in self._data]
 
 
-@pt.ContainerRegister(pt.timestamp, pt.date)
+@pt.ContainerRegister(pt.date, pt.time, pt.timestamp)
 class TimeSeries(Series):
     """One-dimensional array for portex builtin temporal type."""
 
