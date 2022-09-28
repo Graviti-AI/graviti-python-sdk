@@ -21,6 +21,7 @@ from graviti.portex.builtin import (
     record,
     string,
     time,
+    timedelta,
     timestamp,
 )
 from graviti.portex.register import (
@@ -53,5 +54,6 @@ __all__ = [
     "record",
     "string",
     "time",
+    "timedelta",
     "timestamp",
 ]

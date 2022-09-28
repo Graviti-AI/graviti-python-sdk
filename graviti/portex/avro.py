@@ -20,6 +20,7 @@ from graviti.portex.builtin import (
     record,
     string,
     time,
+    timedelta,
     timestamp,
 )
 
@@ -171,6 +172,19 @@ class AvroTimestampSchema(AvroSchema):
         }
 
 
+class AvroTimedeltaSchema(AvroSchema):
+    def __init__(self, unit: str):
+        super().__init__()
+        self._unit = unit
+
+    def to_json(self):
+        return {
+            "type": "long",
+            "logicalType": "portex.timedelta",
+            "unit": self._unit,
+        }
+
+
 class AvroEnumSchema(AvroSchema):
     def __init__(self, values):
         super().__init__()
@@ -241,6 +255,10 @@ def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroPri
     return AvroTimestampSchema(_timestamp_type)
 
 
+def _on_timedelta(names, namespace, name, _timedelta_type: timedelta) -> AvroTimedeltaSchema:
+    return AvroTimedeltaSchema(_timedelta_type)
+
+
 def _on_date(names, namespace, name, _date_type: date) -> AvroDateSchema:
     return AvroDateSchema(_date_type)
 
@@ -265,4 +283,5 @@ _COMPLEX_TYPES_PROCESSERS = {
     date: _on_date,
     time: _on_time,
     timestamp: _on_timestamp,
+    timedelta: _on_timedelta,
 }

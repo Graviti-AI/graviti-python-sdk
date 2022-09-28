@@ -540,3 +540,43 @@ class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
 
         """
         return pa.timestamp(self.unit, self.tz)
+
+
+@PyArrowConversionRegister(pa.lib.Type_DURATION)  # pylint: disable=c-extension-no-member
+class timedelta(PortexBuiltinType):  # pylint: disable=invalid-name
+    """Portex temporal type ``timedelta``.
+
+    Arguments:
+        unit: The unit of the timedelta, supports 's', 'ms', 'us' and 'ns'.
+        nullable: Whether it is a nullable type.
+
+    Examples:
+        >>> t = timedelta("ms")
+        >>> t
+        timedelta(
+          unit='ms',
+        )
+
+    """
+
+    _T = TypeVar("_T", bound="timedelta")
+
+    unit: str = param(ptype=PTYPE.String, options=["s", "ms", "us", "ns"])
+    nullable: bool = param(False, ptype=PTYPE.Boolean)
+
+    def __init__(self, unit: str, nullable: bool = False) -> None:
+        self.unit = PTYPE.String.check(unit)
+        super().__init__(nullable=nullable)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DurationType) -> _T:
+        return cls(pyarrow_type.unit)
+
+    def to_pyarrow(self) -> pa.DataType:
+        """Convert the Portex type to the corresponding builtin PyArrow DataType.
+
+        Returns:
+            The corresponding builtin PyArrow DataType.
+
+        """
+        return pa.duration(self.unit)
