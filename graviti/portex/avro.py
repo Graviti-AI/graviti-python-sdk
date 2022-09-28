@@ -248,19 +248,19 @@ def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchem
 
 
 def _on_time(names, namespace, name, _time_type: time) -> AvroTimeSchema:
-    return AvroTimeSchema(_time_type)
+    return AvroTimeSchema(_time_type.unit)
 
 
-def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroPrimitiveSchema:
-    return AvroTimestampSchema(_timestamp_type)
+def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroTimestampSchema:
+    return AvroTimestampSchema(_timestamp_type.unit, _timestamp_type.tz)
 
 
 def _on_timedelta(names, namespace, name, _timedelta_type: timedelta) -> AvroTimedeltaSchema:
-    return AvroTimedeltaSchema(_timedelta_type)
+    return AvroTimedeltaSchema(_timedelta_type.unit)
 
 
 def _on_date(names, namespace, name, _date_type: date) -> AvroDateSchema:
-    return AvroDateSchema(_date_type)
+    return AvroDateSchema()
 
 
 def _on_type(names, namespace, name, _portex_type):
