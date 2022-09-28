@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
-# pylint: disable-all
-# type: ignore
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+# pylint: disable=super-init-not-called
 # flake8: noqa
 
 """Code converting PyArrow schema to Avro Schema."""
+
+from typing import Any, Dict, Type
 
 from graviti.portex.base import PortexType
 from graviti.portex.builtin import (
@@ -24,46 +27,34 @@ from graviti.portex.builtin import (
     timestamp,
 )
 
-_REMOTE_FILE_FIELD_NAMES = {"checksum", "url"}
-
-_PRIMITIVE_TYPES = {
-    int32: "int",
-    int64: "long",
-    float32: "float",
-    float64: "double",
-    boolean: "boolean",
-    string: "string",
-    binary: "bytes",
-}
-
 
 class AvroSchema:
-    def __init__(self):
-        pass
+    def __init__(self, name: str, namespace: str, portex_type: PortexType) -> None:
+        raise NotImplementedError
 
-    def to_json(self):
-        return {}
+    def to_json(self) -> Dict[str, Any]:
+        raise NotImplementedError
 
 
 class AvroField:
     def __init__(
         self,
-        name_registry,
-        typ: AvroSchema,
-        name,
-        optional=True,
-        has_default=False,
-        default=None,
-    ):
-        self._type = typ
+        type_: AvroSchema,
+        name: str,
+        *,
+        optional: bool = True,
+        has_default: bool = False,
+        default: Any = None,
+    ) -> None:
+        self._type = type_
         self._name = name
         self._optional = optional
         self._has_default = has_default
         self._default = default
 
-    def to_json(self):
+    def to_json(self) -> Dict[str, Any]:
         if self._optional:
-            result = {
+            result: Dict[str, Any] = {
                 "name": self._name,
                 "type": [
                     "null",
@@ -75,6 +66,7 @@ class AvroField:
                 "name": self._name,
                 "type": self._type.to_json(),
             }
+
         if self._has_default:
             result["default"] = self._default
 
@@ -82,46 +74,49 @@ class AvroField:
 
 
 class AvroPrimitiveSchema(AvroSchema):
-    def __init__(self, typ, has_default=False, default=None):
-        super().__init__()
-        self._default = default
-        self._has_default = has_default
-        self._type = typ
+    _PRIMITIVE_TYPES: Dict[Type[PortexType], str] = {
+        int32: "int",
+        int64: "long",
+        float32: "float",
+        float64: "double",
+        boolean: "boolean",
+        string: "string",
+        binary: "bytes",
+    }
 
-    def to_json(self):
-        if self._has_default:
-            return {"type": self._type, "default": self._default}
-        else:
-            return self._type
+    def __init__(self, name: str, namespace: str, portex_type: PortexType):
+        try:
+            self._type = self._PRIMITIVE_TYPES[type(portex_type)]
+        except KeyError:
+            raise Exception(f"unsupported type {portex_type}") from None
+
+    def to_json(self) -> str:  # type: ignore[override]
+        return self._type
 
 
-class AvroRecordSchema(AvroSchema):
-    def __init__(self, name_registry, name, namespace, fields: [], aliases=None):
-        super().__init__()
+class AvroRecord(AvroSchema):
+    def __init__(self, name: str, namespace: str, portex_type: record):
         self._name = name
         self._namespace = namespace
-        self._fields = fields
+        self._fields = [
+            AvroField(_avro_schema_creator(key, f"{namespace}.{name}", value), key)
+            for key, value in portex_type.items()
+        ]
 
-        self._aliases = aliases
-        if self._aliases is None:
-            self._aliases = []
-
-    def to_json(self):
+    def to_json(self) -> Dict[str, Any]:
         return {
             "type": "record",
             "name": self._name,
             "namespace": self._namespace,
-            "aliases": self._aliases,
             "fields": [field.to_json() for field in self._fields],
         }
 
 
-class AvroArraySchema(AvroSchema):
-    def __init__(self, items: AvroSchema):
-        super().__init__()
-        self._items = items
+class AvroArray(AvroSchema):
+    def __init__(self, name: str, namespace: str, portex_type: array):
+        self._items = _avro_schema_creator("items", f"{namespace}.{name}.items", portex_type.items)
 
-    def to_json(self):
+    def to_json(self) -> Dict[str, Any]:
         return {
             "type": "array",
             "items": self._items.to_json(),
@@ -129,68 +124,11 @@ class AvroArraySchema(AvroSchema):
         }
 
 
-class AvroDateSchema(AvroSchema):
-    def to_json(self):
-        return {
-            "type": "int",
-            "logicalType": "portex.date",
-        }
+class PortexEnum(AvroSchema):
+    def __init__(self, name: str, namespace: str, portex_type: enum):
+        self._values = portex_type.values
 
-
-class AvroTimeSchema(AvroSchema):
-    _AVRO_TYPES = {
-        "s": "int",
-        "ms": "int",
-        "us": "long",
-        "ns": "long",
-    }
-
-    def __init__(self, unit: str):
-        super().__init__()
-        self._unit = unit
-
-    def to_json(self):
-        return {
-            "type": self._AVRO_TYPES[self._unit],
-            "logicalType": "portex.time",
-            "unit": self._unit,
-        }
-
-
-class AvroTimestampSchema(AvroSchema):
-    def __init__(self, unit: str, tz: str):
-        super().__init__()
-        self._unit = unit
-        self._tz = tz
-
-    def to_json(self):
-        return {
-            "type": "long",
-            "logicalType": "portex.timestamp",
-            "unit": self._unit,
-            "tz": self._tz,
-        }
-
-
-class AvroTimedeltaSchema(AvroSchema):
-    def __init__(self, unit: str):
-        super().__init__()
-        self._unit = unit
-
-    def to_json(self):
-        return {
-            "type": "long",
-            "logicalType": "portex.timedelta",
-            "unit": self._unit,
-        }
-
-
-class AvroEnumSchema(AvroSchema):
-    def __init__(self, values):
-        super().__init__()
-        self._values = values
-
-    def to_json(self):
+    def to_json(self) -> Dict[str, Any]:
         min_index, max_index = self._values.index_scope
         avro_type = "int" if min_index >= -2147483648 and max_index <= 2147483647 else "long"
 
@@ -201,87 +139,78 @@ class AvroEnumSchema(AvroSchema):
         }
 
 
-def _on_list(names, namespace, name, _pa_ist: array) -> AvroArraySchema:
-    sub_namespace = f"{namespace}.{name}.items"
-    sub_name = "items"
-    items = _on_type(names, sub_namespace, sub_name, _pa_ist.items.to_builtin())
-    return AvroArraySchema(items=items)
+class PortexDate(AvroSchema):
+    def __init__(self, name: str, namespace: str, portex_type: PortexType) -> None:
+        pass
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "type": "int",
+            "logicalType": "portex.date",
+        }
 
 
-def _on_primitive(portex_type: PortexType) -> AvroSchema:
-    try:
-        return AvroPrimitiveSchema(typ=_PRIMITIVE_TYPES[type(portex_type)])
-    except KeyError:
-        raise Exception(f"unsupported type {portex_type}") from None
+class PortexTime(AvroSchema):
+    _AVRO_TYPES = {
+        "s": "int",
+        "ms": "int",
+        "us": "long",
+        "ns": "long",
+    }
+
+    def __init__(self, name: str, namespace: str, portex_type: time) -> None:
+        self._unit = portex_type.unit
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "type": self._AVRO_TYPES[self._unit],
+            "logicalType": "portex.time",
+            "unit": self._unit,
+        }
 
 
-def _on_struct(names, namespace, name, _struct: record) -> AvroRecordSchema:
-    avro_record_fields = list()
-    skip_url = False
+class PortexTimestamp(AvroSchema):
+    def __init__(self, name: str, namespace: str, portex_type: timestamp):
+        self._unit = portex_type.unit
+        self._tz = portex_type.tz
 
-    # remove "url" field in avro schema
-    if set(_struct.keys()) == _REMOTE_FILE_FIELD_NAMES:
-        skip_url = True
-
-    for sub_name, sub_type in _struct.items():
-        if skip_url and sub_name == "url":
-            continue
-
-        sub_type = sub_type.to_builtin()
-        sub_namespace = f"{namespace}.{name}"
-        sub_schema = _on_type(names, sub_namespace, sub_name, sub_type)
-        avro_record_field = AvroField(
-            typ=sub_schema,
-            name=sub_name,
-            has_default=False,
-            name_registry=names,
-        )
-        avro_record_fields.append(avro_record_field)
-
-    return AvroRecordSchema(
-        name=name, namespace=namespace, fields=avro_record_fields, name_registry=names
-    )
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "type": "long",
+            "logicalType": "portex.timestamp",
+            "unit": self._unit,
+            "tz": self._tz,
+        }
 
 
-def _on_enum(name_registry, namespace, name, _filed: enum) -> AvroPrimitiveSchema:
-    return AvroEnumSchema(_filed.values)
+class PortexTimedelta(AvroSchema):
+    def __init__(self, name: str, namespace: str, portex_type: timedelta) -> None:
+        self._unit = portex_type.unit
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "type": "long",
+            "logicalType": "portex.timedelta",
+            "unit": self._unit,
+        }
 
 
-def _on_time(names, namespace, name, _time_type: time) -> AvroTimeSchema:
-    return AvroTimeSchema(_time_type.unit)
-
-
-def _on_timestamp(names, namespace, name, _timestamp_type: timestamp) -> AvroTimestampSchema:
-    return AvroTimestampSchema(_timestamp_type.unit, _timestamp_type.tz)
-
-
-def _on_timedelta(names, namespace, name, _timedelta_type: timedelta) -> AvroTimedeltaSchema:
-    return AvroTimedeltaSchema(_timedelta_type.unit)
-
-
-def _on_date(names, namespace, name, _date_type: date) -> AvroDateSchema:
-    return AvroDateSchema()
-
-
-def _on_type(names, namespace, name, _portex_type):
-    typ = type(_portex_type)
-    if typ in _COMPLEX_TYPES_PROCESSERS:
-        return _COMPLEX_TYPES_PROCESSERS[typ](names, namespace, name, _portex_type)
-
-    return _on_primitive(_portex_type)
-
-
-def convert_portex_schema_to_avro(_schema: record):
-    avro_schema = _on_struct([], "cn.graviti.portex", "root", _schema)
-    return avro_schema.to_json()
-
-
-_COMPLEX_TYPES_PROCESSERS = {
-    record: _on_struct,
-    array: _on_list,
-    enum: _on_enum,
-    date: _on_date,
-    time: _on_time,
-    timestamp: _on_timestamp,
-    timedelta: _on_timedelta,
+_COMPLEX_TYPE_PROCESSERS: Dict[Type[PortexType], Type[AvroSchema]] = {
+    record: AvroRecord,
+    array: AvroArray,
+    enum: PortexEnum,
+    date: PortexDate,
+    time: PortexTime,
+    timestamp: PortexTimestamp,
+    timedelta: PortexTimedelta,
 }
+
+
+def _avro_schema_creator(name: str, namespace: str, portex_type: PortexType) -> AvroSchema:
+    builtin_portex_type = portex_type.to_builtin()
+    processer = _COMPLEX_TYPE_PROCESSERS.get(type(builtin_portex_type), AvroPrimitiveSchema)
+    return processer(name, namespace, builtin_portex_type)
+
+
+def convert_portex_schema_to_avro(portex_type: record) -> Dict[str, Any]:
+    return AvroRecord("root", "cn.graviti.portex", portex_type).to_json()

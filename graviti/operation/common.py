@@ -11,10 +11,10 @@ from typing import Tuple
 
 import pyarrow as pa
 
-from graviti.portex import PortexType, convert_portex_schema_to_avro
+from graviti.portex import convert_portex_schema_to_avro, record
 
 
-def get_schema(schema: PortexType) -> Tuple[str, str, str]:
+def get_schema(schema: record) -> Tuple[str, str, str]:
     """Get portex schema, avro schema and arrow schema.
 
     Arguments:
@@ -25,7 +25,7 @@ def get_schema(schema: PortexType) -> Tuple[str, str, str]:
     """
     portex_schema = schema.to_yaml()
     avro_schema = json.dumps(convert_portex_schema_to_avro(schema))
-    pyarrow_schema = pa.schema(schema.fields.to_pyarrow())  # type: ignore[attr-defined]
+    pyarrow_schema = pa.schema(schema.fields.to_pyarrow())
     arrow_schema = base64.encodebytes(pyarrow_schema.serialize().to_pybytes()).decode("ascii")
 
     return portex_schema, avro_schema, arrow_schema

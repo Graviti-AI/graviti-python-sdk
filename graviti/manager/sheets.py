@@ -62,6 +62,8 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self.operations.append(DeleteSheet(key))
 
         value.operations = [AddData(value.copy())]
+
+        assert isinstance(value.schema, pt.record)
         self.operations.append(CreateSheet(key, value.schema.copy()))
 
     def __delitem__(self, key: str) -> None:

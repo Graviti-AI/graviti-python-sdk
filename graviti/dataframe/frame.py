@@ -203,6 +203,7 @@ class DataFrame(Container):
         df._columns = {key: _value}
         df[RECORD_KEY] = root._record_key  # type: ignore[index, assignment]
 
+        assert isinstance(self.schema, pt.record)
         root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
 
     @staticmethod
