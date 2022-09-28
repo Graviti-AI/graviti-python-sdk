@@ -4,8 +4,7 @@
 #
 """Schema module."""
 
-# https://github.com/python/mypy/issues/9318
-from graviti.portex.avro import convert_portex_schema_to_avro  # type: ignore[attr-defined]
+from graviti.portex.avro import convert_portex_schema_to_avro
 from graviti.portex.base import PortexRecordBase, PortexType, read_json, read_yaml
 from graviti.portex.builder import build_package
 from graviti.portex.builtin import (

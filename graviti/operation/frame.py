@@ -12,7 +12,7 @@ from tqdm import tqdm
 from graviti.file import File, FileBase
 from graviti.openapi import add_data, delete_data, update_data, update_schema
 from graviti.operation.common import get_schema
-from graviti.portex import PortexType
+from graviti.portex import record
 from graviti.utility import submit_multithread_tasks
 
 if TYPE_CHECKING:
@@ -185,7 +185,7 @@ class UpdateSchema(DataFrameOperation):
 
     """
 
-    def __init__(self, schema: PortexType) -> None:
+    def __init__(self, schema: record) -> None:
         self.schema = schema
 
     def do(  # pylint: disable=invalid-name, unused-argument
