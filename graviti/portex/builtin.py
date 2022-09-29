@@ -475,7 +475,7 @@ class time(PortexBuiltinType):  # pylint: disable=invalid-name
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(self, unit: str, nullable: bool = False) -> None:
-        self.unit = PTYPE.String.check(unit)
+        self.unit = self.params["unit"].check(unit)
         super().__init__(nullable=nullable)
 
     @classmethod
@@ -524,8 +524,8 @@ class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(self, unit: str, tz: Optional[str] = None, nullable: bool = False) -> None:
-        self.unit = PTYPE.String.check(unit)
-        self.tz = PTYPE.String.check(tz) if tz is not None else None
+        self.unit = self.params["unit"].check(unit)
+        self.tz = self.params["tz"].check(tz)
         super().__init__(nullable=nullable)
 
     @classmethod
@@ -565,7 +565,7 @@ class timedelta(PortexBuiltinType):  # pylint: disable=invalid-name
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(self, unit: str, nullable: bool = False) -> None:
-        self.unit = PTYPE.String.check(unit)
+        self.unit = self.params["unit"].check(unit)
         super().__init__(nullable=nullable)
 
     @classmethod
