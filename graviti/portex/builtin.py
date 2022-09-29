@@ -2,6 +2,8 @@
 #
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
+# pylint: disable=c-extension-no-member
+
 """The Portex builtin types."""
 
 
@@ -59,7 +61,7 @@ class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
         return self
 
 
-@PyArrowConversionRegister(pa.lib.Type_STRING)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_STRING)
 class string(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``string``.
 
@@ -85,7 +87,7 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.string()
 
 
-@PyArrowConversionRegister(pa.lib.Type_BINARY)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_BINARY)
 class binary(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``binary``.
 
@@ -111,7 +113,7 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.binary()
 
 
-@PyArrowConversionRegister(pa.lib.Type_BOOL)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_BOOL)
 class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``boolean``.
 
@@ -137,7 +139,7 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.bool_()
 
 
-@PyArrowConversionRegister(pa.lib.Type_INT32)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_INT32)
 class int32(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``int32``.
 
@@ -163,7 +165,7 @@ class int32(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.int32()
 
 
-@PyArrowConversionRegister(pa.lib.Type_INT64)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_INT64)
 class int64(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``int64``.
 
@@ -189,7 +191,7 @@ class int64(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.int64()
 
 
-@PyArrowConversionRegister(pa.lib.Type_FLOAT)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_FLOAT)
 class float32(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``float32``.
 
@@ -215,7 +217,7 @@ class float32(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.float32()
 
 
-@PyArrowConversionRegister(pa.lib.Type_DOUBLE)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_DOUBLE)
 class float64(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex primitive type ``float64``.
 
@@ -241,7 +243,7 @@ class float64(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.float64()
 
 
-@PyArrowConversionRegister(pa.lib.Type_STRUCT)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_STRUCT)
 class record(PortexBuiltinType, PortexRecordBase):  # pylint: disable=invalid-name
     """Portex complex type ``record``.
 
@@ -348,9 +350,7 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.int64()
 
 
-@PyArrowConversionRegister(
-    pa.lib.Type_LIST, pa.lib.Type_FIXED_SIZE_LIST  # pylint: disable=c-extension-no-member
-)
+@PyArrowConversionRegister(pa.lib.Type_LIST, pa.lib.Type_FIXED_SIZE_LIST)
 class array(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``array``.
 
@@ -411,7 +411,7 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.list_(self.items.to_pyarrow(), list_size)  # pylint: disable=no-member
 
 
-@PyArrowConversionRegister(pa.lib.Type_DATE32)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_DATE32)
 class date(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex temporal type ``date``.
 
@@ -442,9 +442,7 @@ class date(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.date32()
 
 
-@PyArrowConversionRegister(
-    pa.lib.Type_TIME32, pa.lib.Type_TIME64  # pylint: disable=c-extension-no-member
-)
+@PyArrowConversionRegister(pa.lib.Type_TIME32, pa.lib.Type_TIME64)
 class time(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex temporal type ``time``.
 
@@ -492,7 +490,7 @@ class time(PortexBuiltinType):  # pylint: disable=invalid-name
         return self._UNIT_TO_TYPE[self.unit]
 
 
-@PyArrowConversionRegister(pa.lib.Type_TIMESTAMP)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_TIMESTAMP)
 class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex temporal type ``timestamp``.
 
@@ -542,7 +540,7 @@ class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
         return pa.timestamp(self.unit, self.tz)
 
 
-@PyArrowConversionRegister(pa.lib.Type_DURATION)  # pylint: disable=c-extension-no-member
+@PyArrowConversionRegister(pa.lib.Type_DURATION)
 class timedelta(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex temporal type ``timedelta``.
 
