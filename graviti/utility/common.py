@@ -121,11 +121,29 @@ def convert_datetime_to_gmt(utctime: datetime) -> str:
     )
 
 
-class ImageMocker:
-    """Raise import PIL error for data loader."""
+class ModuleMocker:
+    """A fake module to raise ``ModuleNotFoundError`` lazily.
+
+    Arguments:
+        message: The error message for the raised ``ModuleNotFoundError``.
+
+    """
 
     def __init__(self, message: str) -> None:
         self._message = message
 
+    def __call__(self, *_: Any, **__: Any) -> Any:
+        """Raise ``ModuleNotFoundError`` when called.
+
+        Arguments:
+            _: Useless positional arguments.
+            __: Useless keyword arguments
+
+        Raises:
+            ModuleNotFoundError: When called.
+
+        """
+        raise ModuleNotFoundError(super().__getattribute__("_message"))
+
     def __getattribute__(self, name: str) -> Any:
-        raise ModuleNotFoundError(self._message)
+        raise ModuleNotFoundError(super().__getattribute__("_message"))

@@ -12,13 +12,12 @@ from typing import Tuple
 from _io import BufferedReader
 
 from graviti.exception import ImageDecodeError
+from graviti.utility import ModuleMocker
 
 try:
     from PIL import Image
 except ModuleNotFoundError:
-    from graviti.utility.common import ImageMocker  # pylint:disable=ungrouped-imports
-
-    Image = ImageMocker(
+    Image = ModuleMocker(
         "Only support getting the size of "
         "JPEG, PNG, JPEG2000, GIF, BMP, GIF, TIFF, ICO, WebP, Flif formats. "
         "Please install pillow to process this file"
