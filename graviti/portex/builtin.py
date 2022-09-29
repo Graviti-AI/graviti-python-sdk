@@ -19,6 +19,21 @@ from graviti.portex.field import Fields
 from graviti.portex.package import packages
 from graviti.portex.param import Param, Params, param
 from graviti.portex.register import PyArrowConversionRegister
+from graviti.utility import ModuleMocker
+
+try:
+    # pylint: disable=import-error
+    from zoneinfo import ZoneInfo as tz_checker
+except ModuleNotFoundError:
+    try:
+        # pylint: disable=import-error
+        from pytz import timezone as tz_checker  # type: ignore[import]
+    except ModuleNotFoundError:
+        tz_checker = ModuleMocker(
+            "'pytz' package or 'zoneinfo' module (builtin module after python 3.9) is needed "
+            "to support timezone"
+        )
+
 
 builtins = packages.builtins
 _E = Union[int, float, str, bool, None]
@@ -523,7 +538,12 @@ class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
 
     def __init__(self, unit: str, tz: Optional[str] = None, nullable: bool = False) -> None:
         self.unit = self.params["unit"].check(unit)
-        self.tz = self.params["tz"].check(tz)
+        _tz = PTYPE.String.check(tz) if tz is not None else None
+        if _tz is not None:
+            tz_checker(_tz)
+
+        self.tz = _tz
+
         super().__init__(nullable=nullable)
 
     @classmethod
