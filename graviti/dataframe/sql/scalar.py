@@ -18,17 +18,17 @@ NUMERICAL_PRIORITY: Dict[Type[pt.PortexType], int] = {
 }
 
 _LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
+_EOM = TypeVar("_EOM", bound="EqualOperatorsMixin")
 _COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
 _AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NS = TypeVar("_NS", bound="NumberScalar")
+_ES = TypeVar("_ES", bound="EnumScalar")
 
 
 class LogicalOperatorsMixin(ScalarContainer):
     """A mixin for dynamically implementing logical operators."""
 
     _LOCICAL_OPERATORS: ClassVar[Dict[str, str]] = {
-        "__eq__": "eq",
-        "__ne__": "ne",
         "__and__": "and",
         "__or__": "or",
     }
@@ -41,10 +41,32 @@ class LogicalOperatorsMixin(ScalarContainer):
     @classmethod
     def _get_logical_operator(cls: Type[_LOM], opt: str) -> Callable[[_LOM, Any], "BooleanScalar"]:
         def func(self: _LOM, other: Any) -> "BooleanScalar":
-            if isinstance(other, ScalarContainer):
-                expr = {f"${opt}": [self.expr, other.expr]}
-            else:
-                expr = {f"${opt}": [self.expr, other]}
+            other_expr = other.expr if isinstance(other, ScalarContainer) else other
+            expr = {f"${opt}": [self.expr, other_expr]}
+
+            return BooleanScalar(expr)
+
+        return func
+
+
+class EqualOperatorsMixin(ScalarContainer):
+    """A mixin for dynamically implementing equal operators."""
+
+    _LOCICAL_OPERATORS: ClassVar[Dict[str, str]] = {
+        "__eq__": "eq",
+        "__ne__": "ne",
+    }
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        for meth, opt in cls._LOCICAL_OPERATORS.items():
+            setattr(cls, meth, cls._get_equal_operator(opt))
+
+    @classmethod
+    def _get_equal_operator(cls: Type[_EOM], opt: str) -> Callable[[_EOM, Any], "BooleanScalar"]:
+        def func(self: _EOM, other: Any) -> "BooleanScalar":
+            other_expr = other.expr if isinstance(other, ScalarContainer) else other
+            expr = {f"${opt}": [self.expr, other_expr]}
 
             return BooleanScalar(expr)
 
@@ -76,10 +98,11 @@ class ComparisonOperatorsMixin(ScalarContainer):
                     raise TypeError(
                         f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
                     )
-                expr = {f"${opt}": [self.expr, other.expr]}
+                other_expr = other.expr
             else:
-                expr = {f"${opt}": [self.expr, other]}
+                other_expr = other
 
+            expr = {f"${opt}": [self.expr, other_expr]}
             return BooleanScalar(expr)
 
         return func
@@ -107,7 +130,9 @@ class ArithmeticOperatorsMixin(ScalarContainer):
         raise NotImplementedError
 
 
-class NumberScalar(LogicalOperatorsMixin, ComparisonOperatorsMixin, ArithmeticOperatorsMixin):
+class NumberScalar(
+    LogicalOperatorsMixin, EqualOperatorsMixin, ComparisonOperatorsMixin, ArithmeticOperatorsMixin
+):
     """One-dimensional array for numerical portex builtin type."""
 
     @classmethod
@@ -134,41 +159,33 @@ class NumberScalar(LogicalOperatorsMixin, ComparisonOperatorsMixin, ArithmeticOp
         return func
 
 
-class BooleanScalar(LogicalOperatorsMixin):
+class BooleanScalar(LogicalOperatorsMixin, EqualOperatorsMixin):
     """One-dimensional array for portex builtin type boolean."""
 
     def __init__(self, expr: _E) -> None:
         super().__init__(expr, pt.boolean())
 
 
-class StringScalar(LogicalOperatorsMixin):
+class StringScalar(LogicalOperatorsMixin, EqualOperatorsMixin):
     """One-dimensional array for portex builtin type string."""
 
 
-class EnumScalar(ScalarContainer):
+class EnumScalar(EqualOperatorsMixin):
     """One-dimensional array for portex builtin type enum."""
 
-    def __eq__(self, other: Any) -> BooleanScalar:  # type: ignore[override]
-        if isinstance(other, ScalarContainer):
-            expr = {"$eq": [self.expr, other.expr]}
-        else:
-            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
-            if other in values:
-                other = values.index(other)
-            expr = {"$eq": [self.expr, other]}
+    @classmethod
+    def _get_equal_operator(cls: Type[_ES], opt: str) -> Callable[[_ES, Any], "BooleanScalar"]:
+        def func(self: _ES, other: Any) -> "BooleanScalar":
+            if isinstance(other, ScalarContainer):
+                other_expr: Any = other.expr
+            else:
+                enum: pt.enum = self.schema.to_builtin()  # type: ignore[assignment]
+                other_expr = enum.values.value_to_index[other]
 
-        return BooleanScalar(expr)
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return BooleanScalar(expr)
 
-    def __ne__(self, other: Any) -> BooleanScalar:  # type: ignore[override]
-        if isinstance(other, ScalarContainer):
-            expr = {"$ne": [self.expr, other.expr]}
-        else:
-            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
-            if other in values:
-                other = values.index(other)
-            expr = {"$ne": [self.expr, other]}
-
-        return BooleanScalar(expr)
+        return func
 
 
 class RowSeries(ScalarContainer):
