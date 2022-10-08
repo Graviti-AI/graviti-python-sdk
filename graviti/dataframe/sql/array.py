@@ -5,10 +5,11 @@
 
 """The implementation of the search related array."""
 
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Type, TypeVar, Union
 
 import graviti.portex as pt
 from graviti.dataframe.sql.container import (
+    _E,
     SearchContainer,
     SearchContainerRegister,
     SearchScalarContainer,
@@ -22,31 +23,38 @@ from graviti.dataframe.sql.scalar import (
     StringScalar,
 )
 
+_LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
+_NSA = TypeVar("_NSA", bound="NumberScalarArray")
+
 
 class LogicalOperatorsMixin:
     """A mixin for dynamically implementing logical operators."""
 
-    expr: Union[str, Dict[str, Any]]
-    schema: pt.PortexType
-    logical_operators: Dict[str, str] = {
+    _logical_operators: Dict[str, str] = {
         "__eq__": "eq",
         "__ne__": "ne",
         "__and__": "and",
         "__or__": "or",
     }
+    expr: Union[str, Dict[str, Any]]
+    upper_expr: _E
+    schema: pt.PortexType
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        for meth, opt in cls.logical_operators.items():
+        for meth, opt in cls._logical_operators.items():
             setattr(cls, meth, cls._get_logical_operator(opt))
 
     @classmethod
-    def _get_logical_operator(cls, opt: str) -> Callable[["ScalarArray", Any], "ScalarArray"]:
-        def func(self: "ScalarArray", other: Any) -> "BooleanScalarArray":
+    def _get_logical_operator(
+        cls: Type[_LOM], opt: str
+    ) -> Callable[[_LOM, Any], "BooleanScalarArray"]:
+        def func(self: _LOM, other: Any) -> "BooleanScalarArray":
             if isinstance(other, SearchScalarContainer):
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
+
             return BooleanScalarArray(expr, pt.boolean(), self.upper_expr)
 
         return func
@@ -77,7 +85,7 @@ class ScalarArray(SearchContainer):
         }
         return ScalarArray(expr, self.schema, self.upper_expr)
 
-    def any(self) -> "BooleanScalar":
+    def any(self) -> BooleanScalar:
         """Whether any element is True.
 
         Returns:
@@ -87,7 +95,7 @@ class ScalarArray(SearchContainer):
         expr = {"$any_match": [self.upper_expr, self.expr]}
         return BooleanScalar(expr)
 
-    def all(self) -> "BooleanScalar":
+    def all(self) -> BooleanScalar:
         """Whether all elements are True.
 
         Returns:
@@ -151,8 +159,8 @@ class NumberScalarArray(ScalarArray, ComparisonArithmeticOperatorsMixin):
     item_container = NumberScalar
 
     @classmethod
-    def _get_comparison_operator(cls, opt: str) -> Callable[..., ScalarArray]:
-        def func(self: "NumberScalarArray", other: Any) -> ScalarArray:
+    def _get_comparison_operator(cls: Type[_NSA], opt: str) -> Callable[[_NSA, Any], ScalarArray]:
+        def func(self: _NSA, other: Any) -> ScalarArray:
             if isinstance(other, SearchScalarContainer):
                 self.check_type_for_other(other, opt)
                 expr = {f"${opt}": [self.expr, other.expr]}
@@ -164,8 +172,10 @@ class NumberScalarArray(ScalarArray, ComparisonArithmeticOperatorsMixin):
         return func
 
     @classmethod
-    def _get_numeric_operator(cls, opt: str) -> Callable[..., "NumberScalarArray"]:
-        def func(self: "NumberScalarArray", other: Any) -> "NumberScalarArray":
+    def _get_numeric_operator(
+        cls: Type[_NSA], opt: str
+    ) -> Callable[[_NSA, Any], "NumberScalarArray"]:
+        def func(self: _NSA, other: Any) -> "NumberScalarArray":
             if isinstance(other, SearchScalarContainer):
                 self.check_type_for_other(other, opt)
                 expr = {f"${opt}": [self.expr, other.expr]}
@@ -180,7 +190,7 @@ class NumberScalarArray(ScalarArray, ComparisonArithmeticOperatorsMixin):
         if self.expr != self.prefix:
             raise TypeError(f"{opt} operation only support for numerical array.")
 
-    def size(self) -> "NumberScalar":
+    def size(self) -> NumberScalar:
         """Get the length of array series.
 
         Returns:
@@ -200,7 +210,7 @@ class NumberScalarArray(ScalarArray, ComparisonArithmeticOperatorsMixin):
         self._check_upper_expr("max")
         return NumberScalar({"$max": [self.upper_expr]}, self.schema)
 
-    def min(self) -> "NumberScalar":
+    def min(self) -> NumberScalar:
         """Get the min value of array series.
 
         Returns:
@@ -210,7 +220,7 @@ class NumberScalarArray(ScalarArray, ComparisonArithmeticOperatorsMixin):
         self._check_upper_expr("min")
         return NumberScalar({"$min": [self.upper_expr]}, self.schema)
 
-    def sum(self) -> "NumberScalar":
+    def sum(self) -> NumberScalar:
         """Get the sum of array series.
 
         Returns:
@@ -231,8 +241,7 @@ class DataFrame(SearchContainer):
 
     def __getitem__(self, key: str) -> SearchContainer:
         field = self.schema[key]
-        expr = f"{self.expr}.{key}"
-        return field.search_container(expr, field, self.upper_expr)
+        return field.search_container(f"{self.expr}.{key}", field, self.upper_expr)
 
     def query(self, func: Callable[[Any], Any]) -> "DataFrame":
         """Query the data of an ArraySeries with a lambda function.

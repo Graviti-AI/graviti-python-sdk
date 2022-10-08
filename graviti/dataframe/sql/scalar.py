@@ -5,40 +5,43 @@
 
 """The implementation of the search related Scalar."""
 
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Type, TypeVar, Union
 
 import graviti.portex as pt
 from graviti.dataframe.sql.container import SearchContainer, SearchScalarContainer
 
 NUMERICAL_PRIORITY = {pt.int32: 0, pt.int64: 1, pt.float32: 2, pt.float64: 3}
 
+_LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
+_CAOM = TypeVar("_CAOM", bound="ComparisonArithmeticOperatorsMixin")
+_NS = TypeVar("_NS", bound="NumberScalar")
+
 
 class LogicalOperatorsMixin:
     """A mixin for dynamically implementing logical operators."""
 
-    expr: Union[str, Dict[str, Any]]
-    schema: pt.PortexType
-    logical_operators: Dict[str, str] = {
+    _logical_operators: Dict[str, str] = {
         "__eq__": "eq",
         "__ne__": "ne",
         "__and__": "and",
         "__or__": "or",
     }
+    expr: Union[str, Dict[str, Any]]
+    schema: pt.PortexType
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        for meth, opt in cls.logical_operators.items():
+        for meth, opt in cls._logical_operators.items():
             setattr(cls, meth, cls._get_logical_operator(opt))
 
     @classmethod
-    def _get_logical_operator(
-        cls, opt: str
-    ) -> Callable[["LogicalOperatorsMixin", Any], "BooleanScalar"]:
-        def func(self: "LogicalOperatorsMixin", other: Any) -> "BooleanScalar":
+    def _get_logical_operator(cls: Type[_LOM], opt: str) -> Callable[[_LOM, Any], "BooleanScalar"]:
+        def func(self: _LOM, other: Any) -> "BooleanScalar":
             if isinstance(other, SearchScalarContainer):
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
+
             return BooleanScalar(expr)
 
         return func
@@ -49,13 +52,13 @@ class ComparisonArithmeticOperatorsMixin:
 
     expr: Union[str, Dict[str, Any]]
     schema: pt.PortexType
-    comparison_operators: Dict[str, str] = {
+    _comparison_operators: Dict[str, str] = {
         "__gt__": "gt",
         "__ge__": "gte",
         "__lt__": "lt",
         "__le__": "lte",
     }
-    numerical_opeartors: Dict[str, str] = {
+    _numerical_opeartors: Dict[str, str] = {
         "__div__": "div",
         "__mod__": "mod",
         "__pow__": "pow",
@@ -66,17 +69,17 @@ class ComparisonArithmeticOperatorsMixin:
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        for meth, opt in cls.comparison_operators.items():
+        for meth, opt in cls._comparison_operators.items():
             setattr(cls, meth, cls._get_comparison_operator(opt))
-        for meth, opt in cls.numerical_opeartors.items():
+        for meth, opt in cls._numerical_opeartors.items():
             setattr(cls, meth, cls._get_numeric_operator(opt))
 
     @classmethod
-    def _get_comparison_operator(cls, opt: str) -> Callable[..., Any]:
+    def _get_comparison_operator(cls: Type[_CAOM], opt: str) -> Callable[[_CAOM, Any], Any]:
         raise NotImplementedError
 
     @classmethod
-    def _get_numeric_operator(cls, opt: str) -> Callable[..., Any]:
+    def _get_numeric_operator(cls: Type[_CAOM], opt: str) -> Callable[[_CAOM, Any], Any]:
         raise NotImplementedError
 
     def check_type_for_other(self, other: SearchScalarContainer, opt: str) -> None:
@@ -104,8 +107,8 @@ class NumberScalar(
     schema: Union[pt.int32, pt.int64, pt.float32, pt.float64]
 
     @classmethod
-    def _get_comparison_operator(cls, opt: str) -> Callable[["NumberScalar", Any], "BooleanScalar"]:
-        def func(self: "NumberScalar", other: Any) -> "BooleanScalar":
+    def _get_comparison_operator(cls: Type[_NS], opt: str) -> Callable[[_NS, Any], "BooleanScalar"]:
+        def func(self: _NS, other: Any) -> "BooleanScalar":
             if isinstance(other, SearchScalarContainer):
                 self.check_type_for_other(other, opt)
                 expr = {f"${opt}": [self.expr, other.expr]}
@@ -117,8 +120,8 @@ class NumberScalar(
         return func
 
     @classmethod
-    def _get_numeric_operator(cls, opt: str) -> Callable[["NumberScalar", Any], "NumberScalar"]:
-        def func(self: "NumberScalar", other: Any) -> "NumberScalar":
+    def _get_numeric_operator(cls: Type[_NS], opt: str) -> Callable[[_NS, Any], "NumberScalar"]:
+        def func(self: _NS, other: Any) -> "NumberScalar":
             if isinstance(other, SearchScalarContainer):
                 self.check_type_for_other(other, opt)
                 expr = {f"${opt}": [self.expr, other.expr]}
@@ -131,6 +134,7 @@ class NumberScalar(
                 > NUMERICAL_PRIORITY[other.schema.__class__]
                 else other.schema
             )
+
             return cls(expr, schema)
 
         return func
@@ -158,6 +162,7 @@ class EnumScalar(SearchScalarContainer):
             if other in values:
                 other = values.index(other)
             expr = {"$eq": [self.expr, other]}
+
         return BooleanScalar(expr)
 
     def __ne__(self, other: Any) -> BooleanScalar:  # type: ignore[override]
@@ -168,6 +173,7 @@ class EnumScalar(SearchScalarContainer):
             if other in values:
                 other = values.index(other)
             expr = {"$ne": [self.expr, other]}
+
         return BooleanScalar(expr)
 
 

@@ -46,10 +46,7 @@ class SearchScalarContainer:
             The loaded object.
 
         """
-        obj: _S = object.__new__(cls)
-        obj.expr = expr
-        obj.schema = schema
-        return obj
+        return cls(expr, schema)
 
 
 class SearchContainer:
