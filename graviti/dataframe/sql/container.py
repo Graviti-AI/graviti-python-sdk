@@ -5,7 +5,7 @@
 
 """The search container and register."""
 
-from typing import TYPE_CHECKING, Any, Dict, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Type, TypeVar, Union
 
 import graviti.portex as pt
 
@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     from graviti.portex.base import PortexType
 
 
-_S = TypeVar("_S", bound="SearchScalarContainer")
-_A = TypeVar("_A", bound="SearchContainer")
+_S = TypeVar("_S", bound="ScalarContainer")
+_A = TypeVar("_A", bound="ArrayContainer")
 _E = Union[str, Dict[str, Any]]
 
 
-class SearchScalarContainer:
-    """The base class for the search container.
+class ScalarContainer:
+    """The base class for the search scalar container.
 
     Arguments:
         expr: The expression of the search.
@@ -46,13 +46,10 @@ class SearchScalarContainer:
             The loaded object.
 
         """
-        obj: _S = object.__new__(cls)
-        obj.expr = expr
-        obj.schema = schema
-        return obj
+        return cls(expr, schema)
 
 
-class SearchContainer:
+class ArrayContainer:
     """The base class for the search array container.
 
     Arguments:
@@ -63,7 +60,7 @@ class SearchContainer:
     """
 
     prefix: str
-    item_container: Type[Union[SearchScalarContainer, "SearchContainer"]]
+    item_container: ClassVar[Type[Union[ScalarContainer, "ArrayContainer"]]]
 
     def __init__(self, expr: _E, schema: pt.PortexType, upper_expr: _E) -> None:
         self.expr = expr
@@ -71,7 +68,7 @@ class SearchContainer:
         self.upper_expr = upper_expr
 
     @classmethod
-    def from_upper(cls, expr: _E, schema: pt.PortexType) -> "SearchContainer":
+    def from_upper(cls, expr: _E, schema: pt.PortexType) -> "ArrayContainer":
         """Instantiate a Search object from the upper level.
 
         Arguments:
@@ -82,11 +79,7 @@ class SearchContainer:
             The loaded object.
 
         """
-        obj: "SearchContainer" = object.__new__(cls)
-        obj.expr = cls.prefix
-        obj.schema = schema
-        obj.upper_expr = expr
-        return obj
+        return cls(cls.prefix, schema, expr)
 
 
 class SearchContainerRegister:
