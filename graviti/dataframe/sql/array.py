@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar, Dict, Type, TypeVar
 import graviti.portex as pt
 from graviti.dataframe.sql.container import _E, ArrayContainer, SearchContainerRegister
 from graviti.dataframe.sql.scalar import (
+    NUMERICAL_PRIORITIES,
     BooleanScalar,
     EnumScalar,
     NumberScalar,
@@ -230,11 +231,19 @@ class NumberArray(Array, ComparisonOperatorsMixin, ArithmeticOperatorsMixin):
                     raise TypeError(
                         f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
                     )
-                expr = {f"${opt}": [self.expr, other.expr]}
+                other_expr = other.expr
+                schema = (
+                    self.schema
+                    if NUMERICAL_PRIORITIES[self.schema.__class__]
+                    > NUMERICAL_PRIORITIES[other.schema.__class__]
+                    else other.schema
+                )
             else:
-                expr = {f"${opt}": [self.expr, other]}
+                other_expr = other
+                schema = self.schema
 
-            return cls(expr, self.schema, self.upper_expr)
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return cls(expr, schema, self.upper_expr)
 
         return func
 
