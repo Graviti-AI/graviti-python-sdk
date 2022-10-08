@@ -14,9 +14,7 @@ import pyarrow as pa
 from _io import BufferedReader
 
 from graviti.portex import STANDARD_URL, ExternalElementResgister
-from graviti.utility import shorten
-from graviti.utility.repr import ReprMixin
-from graviti.utility.requests import UserResponse
+from graviti.utility import PathLike, ReprMixin, UserResponse, shorten
 
 if TYPE_CHECKING:
     from graviti.manager import ObjectPolicyManager
@@ -110,7 +108,7 @@ class File(FileBase):
     _checksum: str
     _post_key: str
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: PathLike) -> None:
         self._path = Path(path).absolute()
 
     def _repr_head(self) -> str:
