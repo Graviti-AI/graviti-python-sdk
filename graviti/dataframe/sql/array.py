@@ -18,17 +18,17 @@ from graviti.dataframe.sql.scalar import (
 )
 
 _LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
+_EOM = TypeVar("_EOM", bound="EqualOperatorsMixin")
 _COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
 _AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NA = TypeVar("_NA", bound="NumberArray")
+_EA = TypeVar("_EA", bound="EnumArray")
 
 
 class LogicalOperatorsMixin(ArrayContainer):
     """A mixin for dynamically implementing logical operators."""
 
     _LOCICAL_OPERATORS: ClassVar[Dict[str, str]] = {
-        "__eq__": "eq",
-        "__ne__": "ne",
         "__and__": "and",
         "__or__": "or",
     }
@@ -41,10 +41,32 @@ class LogicalOperatorsMixin(ArrayContainer):
     @classmethod
     def _get_logical_operator(cls: Type[_LOM], opt: str) -> Callable[[_LOM, Any], "BooleanArray"]:
         def func(self: _LOM, other: Any) -> "BooleanArray":
-            if isinstance(other, ArrayContainer):
-                expr = {f"${opt}": [self.expr, other.expr]}
-            else:
-                expr = {f"${opt}": [self.expr, other]}
+            other_expr = other.expr if isinstance(other, ArrayContainer) else other
+            expr = {f"${opt}": [self.expr, other_expr]}
+
+            return BooleanArray(expr, pt.boolean(), self.upper_expr)
+
+        return func
+
+
+class EqualOperatorsMixin(ArrayContainer):
+    """A mixin for dynamically implementing euqal operators."""
+
+    _EQUAL_OPERATORS: ClassVar[Dict[str, str]] = {
+        "__eq__": "eq",
+        "__ne__": "ne",
+    }
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        for meth, opt in cls._EQUAL_OPERATORS.items():
+            setattr(cls, meth, cls._get_equal_operator(opt))
+
+    @classmethod
+    def _get_equal_operator(cls: Type[_EOM], opt: str) -> Callable[[_EOM, Any], "BooleanArray"]:
+        def func(self: _EOM, other: Any) -> "BooleanArray":
+            other_expr = other.expr if isinstance(other, ArrayContainer) else other
+            expr = {f"${opt}": [self.expr, other_expr]}
 
             return BooleanArray(expr, pt.boolean(), self.upper_expr)
 
@@ -76,10 +98,11 @@ class ComparisonOperatorsMixin(ArrayContainer):
                     raise TypeError(
                         f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
                     )
-                expr = {f"${opt}": [self.expr, other.expr]}
+                other_expr = other.expr
             else:
-                expr = {f"${opt}": [self.expr, other]}
+                other_expr = other
 
+            expr = {f"${opt}": [self.expr, other_expr]}
             return BooleanArray(expr, pt.boolean(), self.upper_expr)
 
         return func
@@ -154,46 +177,38 @@ class Array(ArrayContainer):
 
 
 @SearchContainerRegister(pt.boolean)
-class BooleanArray(Array, LogicalOperatorsMixin):
+class BooleanArray(Array, LogicalOperatorsMixin, EqualOperatorsMixin):
     """One-dimensional array for portex builtin type array with the boolean items."""
 
     item_container = BooleanScalar
 
 
 @SearchContainerRegister(pt.string)
-class StringArray(Array, LogicalOperatorsMixin):
+class StringArray(Array, LogicalOperatorsMixin, EqualOperatorsMixin):
     """One-dimensional array for portex builtin type array with the string and enum items."""
 
     item_container = StringScalar
 
 
 @SearchContainerRegister(pt.enum)
-class EnumArray(Array):
+class EnumArray(Array, EqualOperatorsMixin):
     """One-dimensional array for portex builtin type array with the string and enum items."""
 
     item_container = EnumScalar
 
-    def __eq__(self, other: Any) -> BooleanArray:  # type: ignore[override]
-        if isinstance(other, ArrayContainer):
-            expr = {"$eq": [self.expr, other.expr]}
-        else:
-            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
-            if other in values:
-                other = values.index(other)
-            expr = {"$eq": [self.expr, other]}
+    @classmethod
+    def _get_equal_operator(cls: Type[_EA], opt: str) -> Callable[[_EA, Any], "BooleanArray"]:
+        def func(self: _EA, other: Any) -> "BooleanArray":
+            if isinstance(other, ArrayContainer):
+                other_expr: Any = other.expr
+            else:
+                enum: pt.enum = self.schema.to_builtin()  # type: ignore[assignment]
+                other_expr = enum.values.value_to_index[other]
 
-        return BooleanArray(expr, pt.boolean(), self.upper_expr)
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return BooleanArray(expr, pt.boolean(), self.upper_expr)
 
-    def __ne__(self, other: Any) -> BooleanArray:  # type: ignore[override]
-        if isinstance(other, ArrayContainer):
-            expr = {"$ne": [self.expr, other.expr]}
-        else:
-            values = self.schema.to_builtin().values  # type: ignore[attr-defined]
-            if other in values:
-                other = values.index(other)
-            expr = {"$ne": [self.expr, other]}
-
-        return BooleanArray(expr, pt.boolean(), self.upper_expr)
+        return func
 
 
 @SearchContainerRegister(
