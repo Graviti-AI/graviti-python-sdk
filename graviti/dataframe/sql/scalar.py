@@ -18,11 +18,12 @@ NUMERICAL_PRIORITY: Dict[Type[pt.PortexType], int] = {
 }
 
 _LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
-_CAOM = TypeVar("_CAOM", bound="ComparisonArithmeticOperatorsMixin")
+_COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
+_AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NS = TypeVar("_NS", bound="NumberScalar")
 
 
-class LogicalOperatorsMixin:
+class LogicalOperatorsMixin(ScalarContainer):
     """A mixin for dynamically implementing logical operators."""
 
     _LOCICAL_OPERATORS: ClassVar[Dict[str, str]] = {
@@ -31,8 +32,6 @@ class LogicalOperatorsMixin:
         "__and__": "and",
         "__or__": "or",
     }
-    expr: _E
-    schema: pt.PortexType
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -52,8 +51,8 @@ class LogicalOperatorsMixin:
         return func
 
 
-class ComparisonArithmeticOperatorsMixin:
-    """A mixin for dynamically implementing comparison and arithmetic operators."""
+class ComparisonOperatorsMixin(ScalarContainer):
+    """A mixin for dynamically implementing comparison operators."""
 
     _COMPARISON_OPERATORS: ClassVar[Dict[str, str]] = {
         "__gt__": "gt",
@@ -61,61 +60,22 @@ class ComparisonArithmeticOperatorsMixin:
         "__lt__": "lt",
         "__le__": "lte",
     }
-    _NUMERICAL_OPERATORS: ClassVar[Dict[str, str]] = {
-        "__div__": "div",
-        "__mod__": "mod",
-        "__pow__": "pow",
-        "__sub__": "sub",
-        "__mul__": "mult",
-        "__add__": "add",
-    }
-    expr: _E
-    schema: pt.PortexType
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         for meth, opt in cls._COMPARISON_OPERATORS.items():
             setattr(cls, meth, cls._get_comparison_operator(opt))
-        for meth, opt in cls._NUMERICAL_OPERATORS.items():
-            setattr(cls, meth, cls._get_numeric_operator(opt))
 
     @classmethod
-    def _get_comparison_operator(cls: Type[_CAOM], opt: str) -> Callable[[_CAOM, Any], Any]:
-        raise NotImplementedError
-
-    @classmethod
-    def _get_numeric_operator(cls: Type[_CAOM], opt: str) -> Callable[[_CAOM, Any], Any]:
-        raise NotImplementedError
-
-    def check_type_for_other(self, other: ScalarContainer, opt: str) -> None:
-        """Check whether the other series is the same type as self series.
-
-        Arguments:
-            other: The needed check series.
-            opt: Name of opt.
-
-        Raises:
-            TypeError: When the right series type is different from left.
-
-        """
-        if not isinstance(other, self.__class__):
-            raise TypeError(f"Invalid {opt} operation between {self.schema} and {other.schema}")
-
-
-class NumberScalar(
-    ScalarContainer,
-    LogicalOperatorsMixin,
-    ComparisonArithmeticOperatorsMixin,
-):
-    """One-dimensional array for numerical portex builtin type."""
-
-    schema: Union[pt.int32, pt.int64, pt.float32, pt.float64]
-
-    @classmethod
-    def _get_comparison_operator(cls: Type[_NS], opt: str) -> Callable[[_NS, Any], "BooleanScalar"]:
-        def func(self: _NS, other: Any) -> "BooleanScalar":
+    def _get_comparison_operator(
+        cls: Type[_COM], opt: str
+    ) -> Callable[[_COM, Any], "BooleanScalar"]:
+        def func(self: _COM, other: Any) -> "BooleanScalar":
             if isinstance(other, ScalarContainer):
-                self.check_type_for_other(other, opt)
+                if not isinstance(other, type(self)):
+                    raise TypeError(
+                        f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
+                    )
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
@@ -124,11 +84,40 @@ class NumberScalar(
 
         return func
 
+
+class ArithmeticOperatorsMixin(ScalarContainer):
+    """A mixin for dynamically implementing arithmetic operators."""
+
+    _ARITHMETIC_OPERATORS: ClassVar[Dict[str, str]] = {
+        "__div__": "div",
+        "__mod__": "mod",
+        "__pow__": "pow",
+        "__sub__": "sub",
+        "__mul__": "mult",
+        "__add__": "add",
+    }
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        for meth, opt in cls._ARITHMETIC_OPERATORS.items():
+            setattr(cls, meth, cls._get_arithemtic_operator(opt))
+
     @classmethod
-    def _get_numeric_operator(cls: Type[_NS], opt: str) -> Callable[[_NS, Any], "NumberScalar"]:
-        def func(self: _NS, other: Any) -> "NumberScalar":
+    def _get_arithemtic_operator(cls: Type[_AOM], opt: str) -> Callable[[_AOM, Any], Any]:
+        raise NotImplementedError
+
+
+class NumberScalar(LogicalOperatorsMixin, ComparisonOperatorsMixin, ArithmeticOperatorsMixin):
+    """One-dimensional array for numerical portex builtin type."""
+
+    @classmethod
+    def _get_arithemtic_operator(cls: Type[_NS], opt: str) -> Callable[[_NS, Any], _NS]:
+        def func(self: _NS, other: Any) -> _NS:
             if isinstance(other, ScalarContainer):
-                self.check_type_for_other(other, opt)
+                if not isinstance(other, type(self)):
+                    raise TypeError(
+                        f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
+                    )
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
@@ -145,14 +134,14 @@ class NumberScalar(
         return func
 
 
-class BooleanScalar(ScalarContainer, LogicalOperatorsMixin):
+class BooleanScalar(LogicalOperatorsMixin):
     """One-dimensional array for portex builtin type boolean."""
 
     def __init__(self, expr: _E) -> None:
         super().__init__(expr, pt.boolean())
 
 
-class StringScalar(ScalarContainer, LogicalOperatorsMixin):
+class StringScalar(LogicalOperatorsMixin):
     """One-dimensional array for portex builtin type string."""
 
 

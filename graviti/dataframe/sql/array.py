@@ -8,15 +8,9 @@
 from typing import Any, Callable, ClassVar, Dict, Type, TypeVar
 
 import graviti.portex as pt
-from graviti.dataframe.sql.container import (
-    _E,
-    ArrayContainer,
-    ScalarContainer,
-    SearchContainerRegister,
-)
+from graviti.dataframe.sql.container import _E, ArrayContainer, SearchContainerRegister
 from graviti.dataframe.sql.scalar import (
     BooleanScalar,
-    ComparisonArithmeticOperatorsMixin,
     EnumScalar,
     NumberScalar,
     RowSeries,
@@ -24,7 +18,9 @@ from graviti.dataframe.sql.scalar import (
 )
 
 _LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
-_NSA = TypeVar("_NSA", bound="NumberArray")
+_COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
+_AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
+_NA = TypeVar("_NA", bound="NumberArray")
 
 
 class LogicalOperatorsMixin(ArrayContainer):
@@ -36,8 +32,6 @@ class LogicalOperatorsMixin(ArrayContainer):
         "__and__": "and",
         "__or__": "or",
     }
-    expr: _E
-    schema: pt.PortexType
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -47,7 +41,7 @@ class LogicalOperatorsMixin(ArrayContainer):
     @classmethod
     def _get_logical_operator(cls: Type[_LOM], opt: str) -> Callable[[_LOM, Any], "BooleanArray"]:
         def func(self: _LOM, other: Any) -> "BooleanArray":
-            if isinstance(other, ScalarContainer):
+            if isinstance(other, ArrayContainer):
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
@@ -55,6 +49,62 @@ class LogicalOperatorsMixin(ArrayContainer):
             return BooleanArray(expr, pt.boolean(), self.upper_expr)
 
         return func
+
+
+class ComparisonOperatorsMixin(ArrayContainer):
+    """A mixin for dynamically implementing comparison operators."""
+
+    _COMPARISON_OPERATORS: ClassVar[Dict[str, str]] = {
+        "__gt__": "gt",
+        "__ge__": "gte",
+        "__lt__": "lt",
+        "__le__": "lte",
+    }
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        for meth, opt in cls._COMPARISON_OPERATORS.items():
+            setattr(cls, meth, cls._get_comparison_operator(opt))
+
+    @classmethod
+    def _get_comparison_operator(
+        cls: Type[_COM], opt: str
+    ) -> Callable[[_COM, Any], "BooleanArray"]:
+        def func(self: _COM, other: Any) -> "BooleanArray":
+            if isinstance(other, ArrayContainer):
+                if not isinstance(other, type(self)):
+                    raise TypeError(
+                        f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
+                    )
+                expr = {f"${opt}": [self.expr, other.expr]}
+            else:
+                expr = {f"${opt}": [self.expr, other]}
+
+            return BooleanArray(expr, pt.boolean(), self.upper_expr)
+
+        return func
+
+
+class ArithmeticOperatorsMixin(ArrayContainer):
+    """A mixin for dynamically implementing arithmetic operators."""
+
+    _ARITHMETIC_OPERATORS: ClassVar[Dict[str, str]] = {
+        "__div__": "div",
+        "__mod__": "mod",
+        "__pow__": "pow",
+        "__sub__": "sub",
+        "__mul__": "mult",
+        "__add__": "add",
+    }
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        for meth, opt in cls._ARITHMETIC_OPERATORS.items():
+            setattr(cls, meth, cls._get_arithmetic_operator(opt))
+
+    @classmethod
+    def _get_arithmetic_operator(cls: Type[_AOM], opt: str) -> Callable[[_AOM, Any], Any]:
+        raise NotImplementedError
 
 
 class Array(ArrayContainer):
@@ -124,7 +174,7 @@ class EnumArray(Array):
     item_container = EnumScalar
 
     def __eq__(self, other: Any) -> BooleanArray:  # type: ignore[override]
-        if isinstance(other, ScalarContainer):
+        if isinstance(other, ArrayContainer):
             expr = {"$eq": [self.expr, other.expr]}
         else:
             values = self.schema.to_builtin().values  # type: ignore[attr-defined]
@@ -135,7 +185,7 @@ class EnumArray(Array):
         return BooleanArray(expr, pt.boolean(), self.upper_expr)
 
     def __ne__(self, other: Any) -> BooleanArray:  # type: ignore[override]
-        if isinstance(other, ScalarContainer):
+        if isinstance(other, ArrayContainer):
             expr = {"$ne": [self.expr, other.expr]}
         else:
             values = self.schema.to_builtin().values  # type: ignore[attr-defined]
@@ -152,34 +202,24 @@ class EnumArray(Array):
     pt.int32,
     pt.int64,
 )
-class NumberArray(Array, ComparisonArithmeticOperatorsMixin):
+class NumberArray(Array, ComparisonOperatorsMixin, ArithmeticOperatorsMixin):
     """One-dimensional array for portex builtin type array with the numerical items."""
 
     item_container = NumberScalar
 
     @classmethod
-    def _get_comparison_operator(cls: Type[_NSA], opt: str) -> Callable[[_NSA, Any], Array]:
-        def func(self: _NSA, other: Any) -> Array:
-            if isinstance(other, ScalarContainer):
-                self.check_type_for_other(other, opt)
+    def _get_arithmetic_operator(cls: Type[_NA], opt: str) -> Callable[[_NA, Any], _NA]:
+        def func(self: _NA, other: Any) -> _NA:
+            if isinstance(other, ArrayContainer):
+                if not isinstance(other, type(self)):
+                    raise TypeError(
+                        f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
+                    )
                 expr = {f"${opt}": [self.expr, other.expr]}
             else:
                 expr = {f"${opt}": [self.expr, other]}
 
-            return Array(expr, pt.array(pt.boolean()), self.upper_expr)
-
-        return func
-
-    @classmethod
-    def _get_numeric_operator(cls: Type[_NSA], opt: str) -> Callable[[_NSA, Any], "NumberArray"]:
-        def func(self: _NSA, other: Any) -> "NumberArray":
-            if isinstance(other, ScalarContainer):
-                self.check_type_for_other(other, opt)
-                expr = {f"${opt}": [self.expr, other.expr]}
-            else:
-                expr = {f"${opt}": [self.expr, other]}
-
-            return NumberArray(expr, self.schema, self.upper_expr)
+            return cls(expr, self.schema, self.upper_expr)
 
         return func
 
