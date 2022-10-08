@@ -10,7 +10,7 @@ from typing import Any, Callable, ClassVar, Dict, Type, TypeVar, Union
 import graviti.portex as pt
 from graviti.dataframe.sql.container import _E, ArrayContainer, ScalarContainer
 
-NUMERICAL_PRIORITY: Dict[Type[pt.PortexType], int] = {
+NUMERICAL_PRIORITIES: Dict[Type[pt.PortexType], int] = {
     pt.int32: 0,
     pt.int64: 1,
     pt.float32: 2,
@@ -143,17 +143,18 @@ class NumberScalar(
                     raise TypeError(
                         f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
                     )
-                expr = {f"${opt}": [self.expr, other.expr]}
+                other_expr = other.expr
+                schema = (
+                    self.schema
+                    if NUMERICAL_PRIORITIES[self.schema.__class__]
+                    > NUMERICAL_PRIORITIES[other.schema.__class__]
+                    else other.schema
+                )
             else:
-                expr = {f"${opt}": [self.expr, other]}
+                other_expr = other
+                schema = self.schema
 
-            schema = (
-                self.schema
-                if NUMERICAL_PRIORITY[self.schema.__class__]
-                > NUMERICAL_PRIORITY[other.schema.__class__]
-                else other.schema
-            )
-
+            expr = {f"${opt}": [self.expr, other_expr]}
             return cls(expr, schema)
 
         return func
