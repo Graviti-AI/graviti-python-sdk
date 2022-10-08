@@ -46,7 +46,11 @@ class ScalarContainer:
             The loaded object.
 
         """
-        return cls(expr, schema)
+        obj: _S = object.__new__(cls)
+        obj.expr = expr
+        obj.schema = schema
+
+        return obj
 
 
 class ArrayContainer:

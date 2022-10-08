@@ -7,6 +7,8 @@
 
 from typing import Any, Callable, ClassVar, Dict, Type, TypeVar, Union
 
+import pyarrow as pa
+
 import graviti.portex as pt
 from graviti.dataframe.sql.container import _E, ArrayContainer, ScalarContainer
 
@@ -23,6 +25,7 @@ _COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
 _AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NS = TypeVar("_NS", bound="NumberScalar")
 _ES = TypeVar("_ES", bound="EnumScalar")
+_TSB = TypeVar("_TSB", bound="TemporalScalarBase")
 
 
 class LogicalOperatorsMixin(ScalarContainer):
@@ -187,6 +190,65 @@ class EnumScalar(EqualOperatorsMixin):
             return BooleanScalar(expr)
 
         return func
+
+
+class TemporalScalarBase(EqualOperatorsMixin, ComparisonOperatorsMixin):
+    """One-dimensional array for portex builtin temporal type."""
+
+    def _time_to_int(self, value: Any) -> int:
+        return pa.scalar(value, self.schema.to_pyarrow()).value  # type: ignore[no-any-return]
+
+    @classmethod
+    def _get_equal_operator(cls: Type[_TSB], opt: str) -> Callable[[_TSB, Any], "BooleanScalar"]:
+        def func(self: _TSB, other: Any) -> "BooleanScalar":
+            if isinstance(other, ScalarContainer):
+                other_expr: Any = other.expr
+            else:
+                other_expr = self._time_to_int(other)  # pylint: disable=protected-access
+
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return BooleanScalar(expr)
+
+        return func
+
+    @classmethod
+    def _get_comparison_operator(
+        cls: Type[_TSB], opt: str
+    ) -> Callable[[_TSB, Any], "BooleanScalar"]:
+        def func(self: _TSB, other: Any) -> "BooleanScalar":
+            if isinstance(other, ScalarContainer):
+                if not isinstance(other, type(self)):
+                    raise TypeError(
+                        f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
+                    )
+                other_expr: Any = other.expr
+            else:
+                other_expr = self._time_to_int(other)  # pylint: disable=protected-access
+
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return BooleanScalar(expr)
+
+        return func
+
+
+class DateScalar(TemporalScalarBase):
+    """One-dimensional array for portex builtin date type."""
+
+    def _time_to_int(self, value: Any) -> int:
+        scalar = pa.scalar(value, self.schema.to_pyarrow())
+        return scalar.cast(pa.int32()).as_py()  # type: ignore[no-any-return]
+
+
+class TimeScalar(TemporalScalarBase):
+    """One-dimensional array for portex builtin time type."""
+
+
+class TimestampScalar(TemporalScalarBase):
+    """One-dimensional array for portex builtin timestamp type."""
+
+
+class TimedeltaScalar(TemporalScalarBase):
+    """One-dimensional array for portex builtin timedelta type."""
 
 
 class RowSeries(ScalarContainer):

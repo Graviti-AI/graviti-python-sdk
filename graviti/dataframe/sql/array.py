@@ -7,15 +7,21 @@
 
 from typing import Any, Callable, ClassVar, Dict, Type, TypeVar
 
+import pyarrow as pa
+
 import graviti.portex as pt
 from graviti.dataframe.sql.container import _E, ArrayContainer, SearchContainerRegister
 from graviti.dataframe.sql.scalar import (
     NUMERICAL_PRIORITIES,
     BooleanScalar,
+    DateScalar,
     EnumScalar,
     NumberScalar,
     RowSeries,
     StringScalar,
+    TimedeltaScalar,
+    TimeScalar,
+    TimestampScalar,
 )
 
 _LOM = TypeVar("_LOM", bound="LogicalOperatorsMixin")
@@ -24,6 +30,7 @@ _COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
 _AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NA = TypeVar("_NA", bound="NumberArray")
 _EA = TypeVar("_EA", bound="EnumArray")
+_TAB = TypeVar("_TAB", bound="TemporalArrayBase")
 
 
 class LogicalOperatorsMixin(ArrayContainer):
@@ -210,6 +217,77 @@ class EnumArray(Array, EqualOperatorsMixin):
             return BooleanArray(expr, pt.boolean(), self.upper_expr)
 
         return func
+
+
+class TemporalArrayBase(Array, EqualOperatorsMixin, ComparisonOperatorsMixin):
+    """One-dimensional array for portex builtin temporal types."""
+
+    def _time_to_int(self, value: Any) -> int:
+        return pa.scalar(value, self.schema.to_pyarrow()).value  # type: ignore[no-any-return]
+
+    @classmethod
+    def _get_equal_operator(cls: Type[_TAB], opt: str) -> Callable[[_TAB, Any], "BooleanArray"]:
+        def func(self: _TAB, other: Any) -> "BooleanArray":
+            if isinstance(other, ArrayContainer):
+                other_expr: Any = other.expr
+            else:
+                other_expr = self._time_to_int(other)  # pylint: disable=protected-access
+
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return BooleanArray(expr, pt.boolean(), self.upper_expr)
+
+        return func
+
+    @classmethod
+    def _get_comparison_operator(
+        cls: Type[_TAB], opt: str
+    ) -> Callable[[_TAB, Any], "BooleanArray"]:
+        def func(self: _TAB, other: Any) -> "BooleanArray":
+            if isinstance(other, ArrayContainer):
+                if not isinstance(other, type(self)):
+                    raise TypeError(
+                        f"Invalid '{opt}' operation between {self.schema} and {other.schema}"
+                    )
+                other_expr: Any = other.expr
+            else:
+                other_expr = self._time_to_int(other)  # pylint: disable=protected-access
+
+            expr = {f"${opt}": [self.expr, other_expr]}
+            return BooleanArray(expr, pt.boolean(), self.upper_expr)
+
+        return func
+
+
+@SearchContainerRegister(pt.date)
+class DateArray(TemporalArrayBase):
+    """One-dimensional array for portex builtin date type."""
+
+    item_container = DateScalar
+
+    def _time_to_int(self, value: Any) -> int:
+        scalar = pa.scalar(value, self.schema.to_pyarrow())
+        return scalar.cast(pa.int32()).as_py()  # type: ignore[no-any-return]
+
+
+@SearchContainerRegister(pt.time)
+class TimeArray(TemporalArrayBase):
+    """One-dimensional array for portex builtin time type."""
+
+    item_container = TimeScalar
+
+
+@SearchContainerRegister(pt.timestamp)
+class TimestampArray(TemporalArrayBase):
+    """One-dimensional array for portex builtin timestamp type."""
+
+    item_container = TimestampScalar
+
+
+@SearchContainerRegister(pt.timedelta)
+class TimedeltaArray(TemporalArrayBase):
+    """One-dimensional array for portex builtin timedelta type."""
+
+    item_container = TimedeltaScalar
 
 
 @SearchContainerRegister(
