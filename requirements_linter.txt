@@ -5,5 +5,7 @@
 # linter
 pre-commit
 pylint == 2.11.1
+
 # optional dependences
 pillow >= 2.0.0
+pandas >= 1.1.5
