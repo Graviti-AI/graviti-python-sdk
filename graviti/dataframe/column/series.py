@@ -41,6 +41,8 @@ from graviti.portex.enum import EnumValueType
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from graviti.dataframe.frame import DataFrame
     from graviti.manager.policy import ObjectPolicyManager
 
@@ -487,6 +489,15 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
 
         """
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
+
+    def to_pandas(self) -> "pd.Series":
+        """Convert the graviti Series to a pandas Series.
+
+        Returns:
+            The converted pandas Series.
+
+        """
+        return self._data.to_pyarrow().to_pandas()
 
 
 @pt.ContainerRegister(pt.array)
