@@ -37,7 +37,7 @@ from graviti.paging import (
     PagingListBase,
     PyArrowPagingList,
 )
-from graviti.portex.enum import EnumValueType
+from graviti.portex.enum import EnumValueList, EnumValueType
 from graviti.utility import MAX_REPR_ROWS
 
 if TYPE_CHECKING:
@@ -778,6 +778,28 @@ class EnumSeries(Series):
         """
         _index_to_value = self._index_to_value
         return [_index_to_value[i.as_py()] for i in self._data]
+
+    def to_pandas(self) -> "pd.Series":
+        """Convert the graviti EnumSeries to a pandas Categorical Series.
+
+        Returns:
+            The converted pandas Categorical Series.
+
+        Raises:
+            TypeError: When the enum values in 'dict' format.
+
+        """
+        enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
+        if not isinstance(enum_values, EnumValueList):
+            raise TypeError(
+                "The enum values in 'dict' format is not supported to converted to pandas"
+            )
+
+        dictionary = enum_values.to_pyobj()
+
+        array = self._data.to_pyarrow().combine_chunks()
+        dictionary_array = pa.DictionaryArray.from_arrays(array, dictionary)
+        return dictionary_array.to_pandas()
 
 
 @pt.ContainerRegister(pt.date, pt.time, pt.timestamp, pt.timedelta)
