@@ -725,6 +725,15 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
         """
         return list(self._data)
 
+    def to_pandas(self) -> "pandas.Series":
+        """Convert the graviti Series to a pandas Series.
+
+        Returns:
+            The converted pandas Series.
+
+        """
+        return pd.Series(self._data)
+
 
 @pt.ContainerRegister(pt.enum)
 class EnumSeries(Series):
