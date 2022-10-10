@@ -478,6 +478,9 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
 
         return obj
 
+    def __iter__(self) -> Iterator[Any]:
+        return (i.as_py() for i in self._data)
+
     def _get_item_by_location(self, key: int) -> Any:
         return self._data.get_item(key).as_py()
 
