@@ -38,10 +38,15 @@ from graviti.paging import (
     PyArrowPagingList,
 )
 from graviti.portex.enum import EnumValueList, EnumValueType
-from graviti.utility import MAX_REPR_ROWS
+from graviti.utility import MAX_REPR_ROWS, ModuleMocker
+
+try:
+    import pandas as pd
+except ModuleNotFoundError:
+    pd = ModuleMocker("No module named 'pandas'")
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import pandas
 
     from graviti.dataframe.frame import DataFrame
     from graviti.manager.policy import ObjectPolicyManager
@@ -493,7 +498,7 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         """
         return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
-    def to_pandas(self) -> "pd.Series":
+    def to_pandas(self) -> "pandas.Series":
         """Convert the graviti Series to a pandas Series.
 
         Returns:
@@ -640,6 +645,15 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     def _to_post_data(self) -> List[Any]:
         return [item._to_post_data() for item in self._data]  # pylint: disable=protected-access
 
+    def to_pandas(self) -> "pandas.Series":
+        """Convert the graviti Series to a pandas Series.
+
+        Returns:
+            The converted pandas Series.
+
+        """
+        return pd.Series(item.to_pylist() for item in self._data)
+
 
 @pt.ExternalContainerRegister(
     pt.STANDARD_URL,
@@ -782,7 +796,7 @@ class EnumSeries(Series):
         _index_to_value = self._index_to_value
         return [_index_to_value[i.as_py()] for i in self._data]
 
-    def to_pandas(self) -> "pd.Series":
+    def to_pandas(self) -> "pandas.Series":
         """Convert the graviti EnumSeries to a pandas Categorical Series.
 
         Returns:
