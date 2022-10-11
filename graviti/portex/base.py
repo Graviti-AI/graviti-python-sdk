@@ -137,14 +137,8 @@ class PortexType:
             The created Portex type instance.
 
         """
-        pyarrow_type_id = (
-            pyarrow_type.value_type.id
-            if pyarrow_type.id == pa.lib.Type_DICTIONARY  # pylint: disable=c-extension-no-member
-            else pyarrow_type.id
-        )
-
         try:
-            portex_type = PYARROW_TYPE_ID_TO_PORTEX_TYPE[pyarrow_type_id]
+            portex_type = PYARROW_TYPE_ID_TO_PORTEX_TYPE[pyarrow_type.id]
         except KeyError:
             raise TypeError(f'Not supported PyArrow type "{pyarrow_type}"') from None
 
