@@ -26,9 +26,8 @@ from typing import (
 import pyarrow as pa
 
 import graviti.portex as pt
-from graviti.dataframe.column.series import ArraySeries, EnumSeries, FileSeries
+from graviti.dataframe.column.series import ArraySeries, EnumSeries, FileSeries, NumberSeries
 from graviti.dataframe.column.series import Series as ColumnSeries
-from graviti.dataframe.column.series import SeriesBase as ColumnSeriesBase
 from graviti.dataframe.container import RECORD_KEY, Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
@@ -105,7 +104,7 @@ class DataFrame(Container):
     """
 
     _columns: Dict[str, Container]
-    _record_key: Optional[ColumnSeries] = None
+    _record_key: Optional[NumberSeries] = None
 
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
@@ -387,7 +386,7 @@ class DataFrame(Container):
         }
 
         if RECORD_KEY in factory:
-            obj._record_key = ColumnSeries._from_factory(  # pylint: disable=protected-access
+            obj._record_key = NumberSeries._from_factory(  # pylint: disable=protected-access
                 factory[RECORD_KEY], pt.string(nullable=True)
             )
 
@@ -495,7 +494,7 @@ class DataFrame(Container):
         for column in self._columns.values():
             column._del_item_by_location(key)  # pylint: disable=protected-access
         if self.operations is not None:
-            record_key: ColumnSeries = self._record_key  # type: ignore[assignment]
+            record_key: NumberSeries = self._record_key  # type: ignore[assignment]
             if isinstance(key, int):
                 record_keys = [record_key[key]]
             else:
@@ -525,15 +524,15 @@ class DataFrame(Container):
         self.schema[key] = schema
         self._columns[key] = column
 
-    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeriesBase]]:
+    def _flatten(self) -> Tuple[List[Tuple[str, ...]], List[ColumnSeries]]:
         header: List[Tuple[str, ...]] = []
-        data: List[ColumnSeriesBase] = []
+        data: List[ColumnSeries] = []
         for key, value in self._columns.items():
             if isinstance(value, DataFrame):
                 nested_header, nested_data = value._flatten()  # pylint: disable=protected-access
                 header.extend((key, *sub_column) for sub_column in nested_header)
                 data.extend(nested_data)
-            elif isinstance(value, ColumnSeriesBase):
+            elif isinstance(value, ColumnSeries):
                 data.append(value)
                 header.append((key,))
             else:
@@ -547,7 +546,7 @@ class DataFrame(Container):
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
 
-    def _get_repr_body(self, flatten_data: List[ColumnSeriesBase]) -> List[List[str]]:
+    def _get_repr_body(self, flatten_data: List[ColumnSeries]) -> List[List[str]]:
         lines = []
         for i in self._get_repr_indices():
             line: List[str] = [str(i)]

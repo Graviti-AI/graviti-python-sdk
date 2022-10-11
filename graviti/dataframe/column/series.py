@@ -51,8 +51,8 @@ if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
     from graviti.manager.permission import ObjectPermissionManager
 
-_SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
+_P = TypeVar("_P", bound="PyarrowSeries")
 _A = TypeVar("_A", bound="ArraySeries")
 _F = TypeVar("_F", bound="FileSeries")
 _E = TypeVar("_E", bound="EnumSeries")
@@ -60,7 +60,7 @@ _E = TypeVar("_E", bound="EnumSeries")
 _OPM = Optional["ObjectPermissionManager"]
 
 
-class SeriesBase(Container):  # pylint: disable=abstract-method
+class Series(Container):  # pylint: disable=abstract-method
     """One-dimensional array.
 
     Arguments:
@@ -84,8 +84,8 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     _data: PagingListBase[Any]
 
     def __new__(
-        cls: Type[_SB],
-        data: Union[Iterable[Any], _SB],
+        cls: Type[_S],
+        data: Union[Iterable[Any], _S],
         schema: Optional[pt.PortexType] = None,
     ) -> Any:
         """One-dimensional data with schema.
@@ -144,7 +144,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         return self._data.__len__()
 
     @overload
-    def __getitem__(self: _SB, key: slice) -> _SB:
+    def __getitem__(self: _S, key: slice) -> _S:
         ...
 
     @overload
@@ -155,14 +155,14 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     # def __getitem__(self, key: Iterable[int]) -> "Series":
     #     ...
 
-    def __getitem__(self: _SB, key: Union[int, slice]) -> Union[Any, _SB]:
+    def __getitem__(self: _S, key: Union[int, slice]) -> Union[Any, _S]:
         if isinstance(key, int):
             return self._get_item_by_location(key)
 
         return self._get_slice_by_location(key, self.schema.copy())
 
     @overload
-    def __setitem__(self, key: slice, value: Union[Iterable[Any], _SB]) -> None:
+    def __setitem__(self, key: slice, value: Union[Iterable[Any], _S]) -> None:
         ...
 
     @overload
@@ -172,7 +172,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def __setitem__(
         self,
         key: Union[int, slice],
-        value: Union[Iterable[Any], _SB, Any],
+        value: Union[Iterable[Any], _S, Any],
     ) -> None:
         if isinstance(key, int):
             series = self._from_iterable([value], self.schema)
@@ -210,7 +210,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _pylist_to_pyarrow(values: Iterable[Any], schema: pt.PortexType) -> pa.StructArray:
         if isinstance(values, Iterator):
             values = list(values)
-        processor, need_process = SeriesBase._process_array(values, schema)
+        processor, need_process = Series._process_array(values, schema)
 
         if not need_process:
             return pa.array(values, schema.to_pyarrow())
@@ -228,7 +228,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             if value is None:
                 continue
 
-            processor, need_process = SeriesBase._get_process(value, schema)
+            processor, need_process = Series._get_process(value, schema)
             if need_process is None:
                 continue
 
@@ -245,12 +245,12 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
             return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
 
         if container == ArraySeries:
-            return SeriesBase._process_array(
+            return Series._process_array(
                 value, schema.to_builtin().items  # type: ignore[attr-defined]
             )
 
         if container == FileSeries:
-            return SeriesBase._process_file(value)
+            return Series._process_file(value)
 
         if container == EnumSeries:
             value_to_index = schema.to_builtin().values.value_to_index  # type: ignore[attr-defined]
@@ -267,24 +267,24 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     @classmethod
     def _from_factory(
-        cls: Type[_SB],
+        cls: Type[_S],
         factory: LazyFactoryBase,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
         object_permission_manager: _OPM = None,
-    ) -> _SB:
+    ) -> _S:
         obj = cls._create(schema, root, name)
         obj._refresh_data_from_factory(factory, object_permission_manager)
         return obj
 
     @classmethod
     def _from_iterable(
-        cls: Type[_SB],
+        cls: Type[_S],
         array: Iterable[Any],
         schema: pt.PortexType,
-    ) -> _SB:
+    ) -> _S:
         return cls(array, schema)
 
     def _repr_folding(self) -> str:
@@ -297,18 +297,18 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         return self._data.get_item(key)
 
     def _get_slice_by_location(
-        self: _SB,
+        self: _S,
         key: slice,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-    ) -> _SB:
+    ) -> _S:
         obj = self._create(schema, root, name)
         obj._data = self._data.get_slice(key)  # pylint: disable=protected-access
 
         return obj
 
-    def _set_slice(self: _SB, key: slice, value: _SB) -> None:
+    def _set_slice(self: _S, key: slice, value: _S) -> None:
         self._data.set_slice(key, value._data)  # pylint: disable=protected-access
 
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
@@ -317,7 +317,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
     def _refresh_data_from_factory(self, factory: LazyFactoryBase, _: _OPM) -> None:
         self._data = factory.create_pyarrow_list()
 
-    def _extend(self: _SB, values: _SB) -> None:
+    def _extend(self: _S, values: _S) -> None:
         """Extend Series to itself row by row.
 
         Arguments:
@@ -347,11 +347,11 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         self._data.extend(values._data)  # pylint: disable=protected-access
 
     def _copy(
-        self: _SB,
+        self: _S,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
-    ) -> _SB:
+    ) -> _S:
         obj = self._create(schema, root, name)
         obj._data = self._data.copy()  # pylint: disable=protected-access
 
@@ -362,10 +362,10 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
 
     @classmethod
     def from_pyarrow(
-        cls: Type[_SB],
+        cls: Type[_S],
         array: pa.Array,
         schema: Optional[pt.PortexType] = None,
-    ) -> _SB:
+    ) -> _S:
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
@@ -387,7 +387,7 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         return cls._from_pyarrow(array, schema)
 
     @classmethod
-    def from_pandas(cls: Type[_SB], series: "pandas.Series") -> _SB:
+    def from_pandas(cls: Type[_S], series: "pandas.Series") -> _S:
         """Convert a pandas Series to a graviti Series.
 
         Arguments:
@@ -452,47 +452,21 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         return ColumnSeriesLocIndexer(self)
 
 
-@pt.ContainerRegister(
-    pt.binary,
-    pt.boolean,
-    pt.float32,
-    pt.float64,
-    pt.int32,
-    pt.int64,
-    pt.string,
-)
-class Series(SeriesBase):  # pylint: disable=abstract-method
-    """One-dimensional array.
-
-    Arguments:
-        data: The data that needs to be stored in Series. Could be ndarray or Iterable.
-        schema: Data type to force. If None, will be inferred from ``data``.
-
-    Examples:
-        Constructing Series from a list.
-
-        >>> d = [1,2,3,4]
-        >>> series = Series(data=d)
-        >>> series
-        0 1
-        1 2
-        2 3
-        3 4
-
-    """
+class PyarrowSeries(Series):  # pylint: disable=abstract-method
+    """Pyarrow based one-dimensional array."""
 
     _data: PyArrowPagingList[Any]
 
     @classmethod
     def _from_pyarrow(
-        cls: Type[_S],
+        cls: Type[_P],
         array: pa.Array,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
         object_permission_manager: _OPM = None,  # pylint: disable=unused-argument
-    ) -> _S:
+    ) -> _P:
         obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
 
@@ -523,8 +497,29 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         return self._data.to_pyarrow().to_pandas()
 
 
+@pt.ContainerRegister(
+    pt.boolean,
+    pt.float32,
+    pt.float64,
+    pt.int32,
+    pt.int64,
+)
+class NumberSeries(PyarrowSeries):
+    """One-dimensional array for portex builtin number type."""
+
+
+@pt.ContainerRegister(pt.string)
+class StringSeries(PyarrowSeries):
+    """One-dimensional array for portex builtin string type."""
+
+
+@pt.ContainerRegister(pt.binary)
+class BinarySeries(PyarrowSeries):
+    """One-dimensional array for portex builtin binary type."""
+
+
 @pt.ContainerRegister(pt.array)
-class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
+class ArraySeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for portex builtin type array."""
 
     _data: MappedPagingList[Any]
@@ -682,7 +677,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     "file.PointCloudBin",
     "label.Mask",
 )
-class FileSeries(SeriesBase):  # pylint: disable=abstract-method
+class FileSeries(Series):  # pylint: disable=abstract-method
     """One-dimensional array for file."""
 
     _data: PagingList[Any]
@@ -755,7 +750,7 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
 
 
 @pt.ContainerRegister(pt.enum)
-class EnumSeries(Series):
+class EnumSeries(PyarrowSeries):
     """One-dimensional array for portex builtin type enum."""
 
     _index_to_value: Dict[Optional[int], EnumValueType]
@@ -864,7 +859,7 @@ class EnumSeries(Series):
 
 
 @pt.ContainerRegister(pt.date, pt.time, pt.timestamp, pt.timedelta)
-class TimeSeries(Series):
+class TimeSeries(PyarrowSeries):
     """One-dimensional array for portex builtin temporal type."""
 
     def _to_post_data(self) -> List[Any]:
