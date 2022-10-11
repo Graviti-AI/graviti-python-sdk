@@ -39,13 +39,13 @@ from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, Mode, engine
 
 if TYPE_CHECKING:
-    from graviti.manager.policy import ObjectPolicyManager
+    from graviti.manager.permission import ObjectPermissionManager
 
 
 _T = TypeVar("_T", bound="DataFrame")
 _C = TypeVar("_C", bound="Container")
 
-_OPM = Optional["ObjectPolicyManager"]
+_OPM = Optional["ObjectPermissionManager"]
 
 APPLY_KEY = "apply_result"
 
@@ -334,7 +334,7 @@ class DataFrame(Container):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,
+        object_permission_manager: _OPM = None,
     ) -> _T:
         obj = cls._create(schema, root, name)
 
@@ -344,7 +344,7 @@ class DataFrame(Container):
                 schema=value,
                 root=obj if root is None else root,
                 name=(key,) + name,
-                object_policy_manager=object_policy_manager,
+                object_permission_manager=object_permission_manager,
             )
             for key, value in schema.items()
         }
@@ -358,7 +358,7 @@ class DataFrame(Container):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,
+        object_permission_manager: _OPM = None,
     ) -> _T:
         """Create DataFrame with paging lists.
 
@@ -367,7 +367,7 @@ class DataFrame(Container):
             schema: The schema of the DataFrame.
             root: The root of the created DataFrame.
             name: The name of the created DataFrame.
-            object_policy_manager: The ObjectPolicyManager instance for reading files.
+            object_permission_manager: The ObjectPermissionManager instance for reading files.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` object.
@@ -381,7 +381,7 @@ class DataFrame(Container):
                 schema=value,
                 root=obj if root is None else root,
                 name=(key,) + name,
-                object_policy_manager=object_policy_manager,
+                object_permission_manager=object_permission_manager,
             )
             for key, value in schema.items()
         }
@@ -447,11 +447,11 @@ class DataFrame(Container):
         return obj
 
     def _refresh_data_from_factory(
-        self, factory: LazyFactoryBase, object_policy_manager: _OPM
+        self, factory: LazyFactoryBase, object_permission_manager: _OPM
     ) -> None:
         for key, column in self._columns.items():
             column._refresh_data_from_factory(  # pylint: disable=protected-access
-                factory[key], object_policy_manager
+                factory[key], object_permission_manager
             )
 
     def _get_item_by_location(self, key: int) -> RowSeries:

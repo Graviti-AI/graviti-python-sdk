@@ -97,7 +97,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
         df = DataFrame._from_factory(  # pylint: disable=protected-access
-            factory, schema, object_policy_manager=self._dataset.object_policy_manager
+            factory, schema, object_permission_manager=self._dataset.object_permission_manager
         )
         df.operations = []
 
@@ -161,7 +161,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self._check_record_names(self[sheet_name].schema, sheet_name)
 
         dataset = self._dataset
-        object_policy_manager = dataset.object_policy_manager
+        object_permission_manager = dataset.object_permission_manager
         for sheet_operation in self.operations:
             sheet_operation.do(
                 dataset.access_key,
@@ -200,7 +200,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                             jobs=jobs,
                             data_pbar=data_pbar,
                             file_pbar=file_pbar,
-                            object_policy_manager=object_policy_manager,
+                            object_permission_manager=object_permission_manager,
                         )
                     df.operations = []
 

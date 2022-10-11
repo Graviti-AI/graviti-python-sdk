@@ -3,14 +3,14 @@
 # Copyright 2022 Graviti. Licensed under MIT License.
 #
 
-"""Interfaces about the dataset policy."""
+"""Interfaces about the dataset object."""
 
 from typing import Any, Dict, Optional
 
 from graviti.openapi.requests import open_api_do
 
 
-def get_object_policy(
+def get_object_permission(
     access_key: str,
     url: str,
     owner: str,
@@ -20,7 +20,7 @@ def get_object_policy(
     is_internal: Optional[bool] = None,
     expired: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/policy/object`.
+    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/objects/permissions`.
 
     Arguments:
         access_key: User's access key.
@@ -39,7 +39,7 @@ def get_object_policy(
     Examples:
         Request permission to get dataset data from OSS:
 
-        >>> get_policy(
+        >>> get_object_permission(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "graviti-example",
@@ -49,7 +49,7 @@ def get_object_policy(
         {
             "backend_type":"OSS",
             "expire_at":"2022-07-12T06:07:52Z",
-            "policy": {
+            "permission": {
                 "AccessKeyId":"LTAI4FjgXD3yFJUaasdasd",
                 "AccessKeySecret":"LTAI4FjgXD3yFJJKasdad",
                 "SecurityToken":"CAISrgJ1q6Ft5B2yfSjIr5bkKILdaseqw",
@@ -60,7 +60,7 @@ def get_object_policy(
 
         Request permission to put dataset data to OSS:
 
-        >>> get_policy(
+        >>> get_object_permission(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "graviti-example",
@@ -70,7 +70,7 @@ def get_object_policy(
         {
             "backend_type":"OSS",
             "expire_at":"2022-07-12T06:07:52Z",
-            "policy": {
+            "permission": {
                 "AccessKeyId":"LTAI4FjgXD3yFJUaasdasd",
                 "AccessKeySecret":"LTAI4FjgXD3yFJJKasdad",
                 "SecurityToken":"CAISrgJ1q6Ft5B2yfSjIr5bkKILdaseqw",
@@ -82,7 +82,7 @@ def get_object_policy(
 
         Request permission to get dataset data from AZURE:
 
-        >>> get_policy(
+        >>> get_object_permission(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "graviti-example",
@@ -92,7 +92,7 @@ def get_object_policy(
         {
             "backend_type":"AZURE",
             "expire_at":"2022-07-12T06:07:52Z",
-            "policy": {
+            "permission": {
                 "container_name":"graviti210304",
                 "account_name":"gra220303",
                 "sas_param":"se=2022-07-21T10%3A07Z&sig=*******",
@@ -102,7 +102,7 @@ def get_object_policy(
 
         Request permission to put dataset data to AZURE:
 
-        >>> get_policy(
+        >>> get_object_permission(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "graviti-example",
@@ -112,7 +112,7 @@ def get_object_policy(
         {
             "backend_type":"AZURE",
             "expire_at":"2022-07-12T06:07:52Z",
-            "policy": {
+            "permission": {
                 "container_name":"graviti210304",
                 "account_name":"gra220303",
                 "prefix":"examplePrefix/",
@@ -123,7 +123,7 @@ def get_object_policy(
 
         Request permission to get dataset data from S3:
 
-        >>> get_policy(
+        >>> get_object_permission(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "graviti-example",
@@ -133,7 +133,7 @@ def get_object_policy(
         {
             "backend_type":"S3",
             "expire_at":"2022-07-12T06:07:52Z",
-            "policy": {
+            "permission": {
                 "AccessKeyId":"ASIAQHT******",
                 "AccessKeySecret":"Y6x2a2cHIlJdx******",
                 "SecurityToken":"FwoGZXIvYXdzEH0aDGYBu******",
@@ -145,7 +145,7 @@ def get_object_policy(
 
         Request permission to put dataset data to S3:
 
-        >>> get_policy(
+        >>> get_object_permission(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "graviti-example",
@@ -155,7 +155,7 @@ def get_object_policy(
         {
             "backend_type":"S3",
             "expire_at":"2022-07-12T06:07:52Z",
-            "policy": {
+            "permission": {
                 "AccessKeyId":"ASIAQHT******",
                 "AccessKeySecret":"Y6x2a2cHIlJdx******",
                 "SecurityToken":"FwoGZXIvYXdzEH0aDGYBu******",
@@ -167,7 +167,7 @@ def get_object_policy(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/policy/object"
+    url = f"{url}/v2/datasets/{owner}/{dataset}/objects/permissions"
     params: Dict[str, Any] = {"actions": actions}
 
     if is_internal is not None:

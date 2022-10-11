@@ -17,7 +17,7 @@ from graviti.utility import submit_multithread_tasks
 
 if TYPE_CHECKING:
     from graviti.dataframe import DataFrame
-    from graviti.manager import ObjectPolicyManager
+    from graviti.manager import ObjectPermissionManager
 
 _MAX_BATCH_SIZE = 2048
 _MAX_ITEMS = 60000
@@ -56,7 +56,7 @@ class DataFrameOperation:
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI create sheet.
 
@@ -70,7 +70,7 @@ class DataFrameOperation:
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_policy_manager: The object policy manager of the dataset.
+            object_permission_manager: The object permission manager of the dataset.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -132,7 +132,7 @@ class AddData(DataOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -146,7 +146,7 @@ class AddData(DataOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_policy_manager: The object policy manager of the dataset.
+            object_permission_manager: The object permission manager of the dataset.
 
         """
         batch_size = self._get_max_batch_size()
@@ -160,7 +160,7 @@ class AddData(DataOperation):
                 filter(
                     lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
                 ),
-                object_policy_manager,
+                object_permission_manager,
                 jobs=jobs,
                 pbar=file_pbar,
             )
@@ -200,7 +200,7 @@ class UpdateSchema(DataFrameOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI update schema.
 
@@ -214,7 +214,7 @@ class UpdateSchema(DataFrameOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_policy_manager: The object policy manager of the dataset.
+            object_permission_manager: The object permission manager of the dataset.
 
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
@@ -252,7 +252,7 @@ class UpdateData(DataOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI add data.
 
@@ -266,7 +266,7 @@ class UpdateData(DataOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_policy_manager: The object policy manager of the dataset.
+            object_permission_manager: The object permission manager of the dataset.
 
         """
         batch_size = self._get_max_batch_size()
@@ -280,7 +280,7 @@ class UpdateData(DataOperation):
                 filter(
                     lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
                 ),
-                object_policy_manager,
+                object_permission_manager,
                 jobs=jobs,
                 pbar=file_pbar,
             )
@@ -320,7 +320,7 @@ class DeleteData(DataFrameOperation):
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI delete data.
 
@@ -334,7 +334,7 @@ class DeleteData(DataFrameOperation):
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_policy_manager: The object policy manager of the dataset.
+            object_permission_manager: The object permission manager of the dataset.
 
         """
         delete_data(
@@ -350,13 +350,13 @@ class DeleteData(DataFrameOperation):
 
 def _upload_files(
     files: Iterable[File],
-    object_policy_manager: "ObjectPolicyManager",
+    object_permission_manager: "ObjectPermissionManager",
     pbar: tqdm,
     _allow_retry: bool = True,
     jobs: int = 8,
 ) -> None:
     submit_multithread_tasks(
-        lambda file: _upload_file(file, object_policy_manager, pbar, _allow_retry),
+        lambda file: _upload_file(file, object_permission_manager, pbar, _allow_retry),
         files,
         jobs=jobs,
     )
@@ -364,11 +364,11 @@ def _upload_files(
 
 def _upload_file(
     file: File,
-    object_policy_manager: "ObjectPolicyManager",
+    object_permission_manager: "ObjectPermissionManager",
     pbar: tqdm,
     _allow_retry: bool = True,
 ) -> None:
-    post_key = f"{object_policy_manager.prefix}{file.get_checksum()}"
-    object_policy_manager.put_object(post_key, file.path, _allow_retry)
+    post_key = f"{object_permission_manager.prefix}{file.get_checksum()}"
+    object_permission_manager.put_object(post_key, file.path, _allow_retry)
     file._post_key = post_key  # pylint: disable=protected-access
     pbar.update()

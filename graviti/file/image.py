@@ -15,7 +15,7 @@ from graviti.file.image_size import get_image_size
 from graviti.portex import STANDARD_URL, ExternalElementResgister
 
 if TYPE_CHECKING:
-    from graviti.manager import ObjectPolicyManager
+    from graviti.manager import ObjectPermissionManager
 
 
 _I = TypeVar("_I", bound="Image")
@@ -39,7 +39,7 @@ class Image(File):
     def _from_pyarrow(
         cls: Type[_I],
         scalar: pa.StructScalar,
-        _: Optional["ObjectPolicyManager"] = None,
+        _: Optional["ObjectPermissionManager"] = None,
     ) -> _I:
         obj: _I = object.__new__(cls)
         pyobj = scalar.as_py()
@@ -94,7 +94,7 @@ class RemoteImage(RemoteFile):
         size: The size of the image file.
         height: The height of the image.
         width: The width of the image.
-        object_policy_manager: The policy to access the file.
+        object_permission_manager: The permission to access the file.
 
     """
 
@@ -110,9 +110,9 @@ class RemoteImage(RemoteFile):
         size: int,
         height: int,
         width: int,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
-        RemoteFile.__init__(self, key, extension, size, object_policy_manager)
+        RemoteFile.__init__(self, key, extension, size, object_permission_manager)
         self._height = height
         self._width = width
 
@@ -120,7 +120,7 @@ class RemoteImage(RemoteFile):
     def _from_pyarrow(  # type: ignore[override]
         cls: Type[_RI],
         scalar: pa.StructScalar,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> _RI:
         obj: _RI = object.__new__(cls)
         pyobj = scalar.as_py()
@@ -130,7 +130,7 @@ class RemoteImage(RemoteFile):
         obj._size = pyobj["size"]
         obj._height = pyobj["height"]
         obj._width = pyobj["width"]
-        obj._object_policy = object_policy_manager
+        obj._object_permission = object_permission_manager
 
         return obj
 
