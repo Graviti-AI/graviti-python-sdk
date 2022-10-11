@@ -361,21 +361,38 @@ class Series(Container):  # pylint: disable=abstract-method
         return self.to_pylist()
 
     @classmethod
-    def from_pyarrow(cls: Type[_S], array: pa.Array) -> _S:
+    def from_pyarrow(cls, array: pa.Array) -> "Series":
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
             array: The input pyarrow array.
 
+        Raises:
+            TypeError: When the input pyarrow type is not supported.
+
         Returns:
             The loaded :class:`~graviti.dataframe.column.Series` instance.
 
         """
+        pyarrow_type = array.type
+
+        # pylint: disable=protected-access
+        if pa.types.is_dictionary(pyarrow_type):
+            schema: pt.PortexType = pt.enum(array.dictionary.to_pylist())
+
+            return EnumSeries._from_pyarrow(array.indices, schema)
+
         schema = pt.PortexType.from_pyarrow(array.type)
-        return cls._from_pyarrow(array, schema)
+        container = schema.container
+        if not issubclass(container, Series):
+            raise TypeError(
+                f"pyarrow type '{pyarrow_type}' is not supported converting to a graviti Series"
+            )
+
+        return container._from_pyarrow(array, schema)
 
     @classmethod
-    def from_pandas(cls: Type[_S], series: "pandas.Series") -> _S:
+    def from_pandas(cls, series: "pandas.Series") -> "Series":
         """Convert a pandas Series to a graviti Series.
 
         Arguments:
@@ -517,7 +534,7 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
     @classmethod
     def _from_pyarrow(
         cls: Type[_A],
-        array: pa.Array,
+        array: pa.ListArray,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
@@ -684,7 +701,7 @@ class FileSeries(Series):  # pylint: disable=abstract-method
     @classmethod
     def _from_pyarrow(
         cls: Type[_F],
-        array: pa.Array,
+        array: pa.StructArray,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
@@ -777,7 +794,7 @@ class EnumSeries(PyarrowSeries):
     @classmethod
     def _from_pyarrow(
         cls: Type[_E],
-        array: pa.Array,
+        array: pa.IntegerArray,
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
