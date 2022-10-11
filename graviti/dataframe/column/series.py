@@ -60,7 +60,7 @@ _E = TypeVar("_E", bound="EnumSeries")
 _OPM = Optional["ObjectPermissionManager"]
 
 
-class Series(Container):  # pylint: disable=abstract-method
+class Series(Container):
     """One-dimensional array.
 
     Arguments:
@@ -456,8 +456,17 @@ class Series(Container):  # pylint: disable=abstract-method
         """
         return ColumnSeriesLocIndexer(self)
 
+    def to_pylist(self) -> List[Any]:
+        """Convert the container to a python list.
 
-class PyarrowSeries(Series):  # pylint: disable=abstract-method
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+
+class PyarrowSeries(Series):
     """Pyarrow based one-dimensional array."""
 
     _data: PyArrowPagingList[Any]
@@ -524,7 +533,7 @@ class BinarySeries(PyarrowSeries):
 
 
 @pt.ContainerRegister(pt.array)
-class ArraySeries(Series):  # pylint: disable=abstract-method
+class ArraySeries(Series):
     """One-dimensional array for portex builtin type array."""
 
     _data: MappedPagingList[Any]
@@ -682,7 +691,7 @@ class ArraySeries(Series):  # pylint: disable=abstract-method
     "file.PointCloudBin",
     "label.Mask",
 )
-class FileSeries(Series):  # pylint: disable=abstract-method
+class FileSeries(Series):
     """One-dimensional array for file."""
 
     _data: PagingList[Any]
