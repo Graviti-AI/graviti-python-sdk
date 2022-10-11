@@ -261,7 +261,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
                 pa.struct([pa.field(RECORD_KEY, pa.string()), *df.schema.to_pyarrow()]),
             )
             df._refresh_data_from_factory(  # pylint: disable=protected-access)
-                factory, self._dataset.object_policy_manager
+                factory, self._dataset.object_permission_manager
             )
 
 

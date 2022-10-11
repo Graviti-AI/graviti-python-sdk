@@ -22,7 +22,7 @@ from graviti.openapi.dataset import (
     update_dataset,
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
-from graviti.openapi.policy import get_object_policy
+from graviti.openapi.object import get_object_permission
 from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
 from graviti.openapi.search import create_search
@@ -59,7 +59,7 @@ __all__ = [
     "get_dataset",
     "get_draft",
     "get_draft_sheet",
-    "get_object_policy",
+    "get_object_permission",
     "get_revision",
     "get_tag",
     "list_branches",

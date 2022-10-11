@@ -14,7 +14,7 @@ from graviti.portex import PortexType
 
 if TYPE_CHECKING:
     from graviti.dataframe.frame import DataFrame
-    from graviti.manager.policy import ObjectPolicyManager
+    from graviti.manager.permission import ObjectPermissionManager
 
 _T = TypeVar("_T", bound="Container")
 
@@ -53,7 +53,7 @@ class Container:
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
+        object_permission_manager: Optional["ObjectPermissionManager"] = None,
     ) -> _T:
         raise NotImplementedError
 
@@ -65,7 +65,7 @@ class Container:
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: Optional["ObjectPolicyManager"] = None,
+        object_permission_manager: Optional["ObjectPermissionManager"] = None,
     ) -> _T:
         raise NotImplementedError
 
@@ -109,7 +109,7 @@ class Container:
     def _refresh_data_from_factory(
         self,
         factory: LazyFactoryBase,
-        object_policy_manager: Optional["ObjectPolicyManager"],
+        object_permission_manager: Optional["ObjectPermissionManager"],
     ) -> None:
         raise NotImplementedError
 

@@ -17,7 +17,7 @@ from graviti.portex import STANDARD_URL, ExternalElementResgister
 from graviti.utility import PathLike, ReprMixin, UserResponse, shorten
 
 if TYPE_CHECKING:
-    from graviti.manager import ObjectPolicyManager
+    from graviti.manager import ObjectPermissionManager
 
 _FB = TypeVar("_FB", bound="FileBase")
 _F = TypeVar("_F", bound="File")
@@ -42,7 +42,7 @@ class FileBase(ReprMixin):
     def _from_pyarrow(
         cls: Type[_FB],
         scalar: pa.StructScalar,
-        _: Optional["ObjectPolicyManager"] = None,
+        _: Optional["ObjectPermissionManager"] = None,
     ) -> _FB:
         obj: _FB = object.__new__(cls)
         pyobj = scalar.as_py()
@@ -121,7 +121,7 @@ class File(FileBase):
     def _from_pyarrow(
         cls: Type[_F],
         scalar: pa.StructScalar,
-        _: Optional["ObjectPolicyManager"] = None,
+        _: Optional["ObjectPermissionManager"] = None,
     ) -> _F:
         obj: _F = object.__new__(cls)
         pyobj = scalar.as_py()
@@ -220,23 +220,23 @@ class RemoteFile(FileBase):
         key: The key of the file.
         extension: The extension of the file.
         size: The size of the file.
-        object_policy_manager: The policy to access the file.
+        object_permission_manager: The permission to access the file.
 
     """
 
-    __slots__ = FileBase.__slots__ + ("_object_policy",)
+    __slots__ = FileBase.__slots__ + ("_object_permission",)
 
     def __init__(
         self,
         key: str,
         extension: str,
         size: int,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         self._key = key
         self._extension = extension
         self._size = size
-        self._object_policy = object_policy_manager
+        self._object_permission = object_permission_manager
 
     def _repr_head(self) -> str:
         short_checksum = shorten(self.key.rsplit("/", 1)[1])
@@ -246,7 +246,7 @@ class RemoteFile(FileBase):
     def _from_pyarrow(  # type: ignore[override]  # pylint: disable=signature-differs
         cls: Type[_RF],
         scalar: pa.StructScalar,
-        object_policy_manager: "ObjectPolicyManager",
+        object_permission_manager: "ObjectPermissionManager",
     ) -> _RF:
         obj: _RF = object.__new__(cls)
         pyobj = scalar.as_py()
@@ -254,7 +254,7 @@ class RemoteFile(FileBase):
         obj._key = pyobj["key"]
         obj._extension = pyobj["extension"]
         obj._size = pyobj["size"]
-        obj._object_policy = object_policy_manager
+        obj._object_permission = object_permission_manager
 
         return obj
 
@@ -265,4 +265,4 @@ class RemoteFile(FileBase):
             The remote file pointer.
 
         """
-        return self._object_policy.get_object(self._key)
+        return self._object_permission.get_object(self._key)

@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     import pandas
 
     from graviti.dataframe.frame import DataFrame
-    from graviti.manager.policy import ObjectPolicyManager
+    from graviti.manager.permission import ObjectPermissionManager
 
 _SB = TypeVar("_SB", bound="SeriesBase")
 _S = TypeVar("_S", bound="Series")
@@ -57,7 +57,7 @@ _A = TypeVar("_A", bound="ArraySeries")
 _F = TypeVar("_F", bound="FileSeries")
 _E = TypeVar("_E", bound="EnumSeries")
 
-_OPM = Optional["ObjectPolicyManager"]
+_OPM = Optional["ObjectPermissionManager"]
 
 
 class SeriesBase(Container):  # pylint: disable=abstract-method
@@ -273,10 +273,10 @@ class SeriesBase(Container):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,
+        object_permission_manager: _OPM = None,
     ) -> _SB:
         obj = cls._create(schema, root, name)
-        obj._refresh_data_from_factory(factory, object_policy_manager)
+        obj._refresh_data_from_factory(factory, object_permission_manager)
         return obj
 
     @classmethod
@@ -491,7 +491,7 @@ class Series(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,  # pylint: disable=unused-argument
+        object_permission_manager: _OPM = None,  # pylint: disable=unused-argument
     ) -> _S:
         obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
@@ -529,7 +529,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
     _data: MappedPagingList[Any]
     _item_schema: pt.PortexType
-    _object_policy_manager: _OPM = None
+    _object_permission_manager: _OPM = None
 
     @classmethod
     def _from_pyarrow(
@@ -539,7 +539,7 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,
+        object_permission_manager: _OPM = None,
     ) -> _A:
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
@@ -549,12 +549,12 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         obj._data = MappedPagingList.from_array(
             array,
             lambda scalar: _item_creator(
-                scalar.values, _item_schema, object_policy_manager=object_policy_manager
+                scalar.values, _item_schema, object_permission_manager=object_permission_manager
             ),
         )
 
         obj._item_schema = _item_schema
-        obj._object_policy_manager = object_policy_manager
+        obj._object_permission_manager = object_permission_manager
 
         return obj
 
@@ -585,11 +585,11 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
     ) -> _A:
         obj = super()._get_slice_by_location(key, schema, root, name)
         # pylint: disable=protected-access
-        obj._object_policy_manager = self._object_policy_manager
+        obj._object_permission_manager = self._object_permission_manager
         return obj._copy(schema, root, name)
 
     def _refresh_data_from_factory(
-        self, factory: LazyFactoryBase, object_policy_manager: _OPM
+        self, factory: LazyFactoryBase, object_permission_manager: _OPM
     ) -> None:
         builtin_schema: pt.array = self.schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
@@ -597,11 +597,11 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
 
         self._data = factory.create_mapped_list(
             lambda scalar: _item_creator(
-                scalar.values, _item_schema, object_policy_manager=object_policy_manager
+                scalar.values, _item_schema, object_permission_manager=object_permission_manager
             )
         )
         self._item_schema = _item_schema  # pylint: disable=protected-access
-        self._object_policy_manager = object_policy_manager
+        self._object_permission_manager = object_permission_manager
 
     def _extract_paging_list(self: _A, values: _A) -> MappedPagingList[Any]:
         # pylint: disable=protected-access
@@ -613,7 +613,9 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         return values._data.copy(
             lambda df: df._copy(_item_schema),
             lambda scalar: _item_creator(
-                scalar.values, _item_schema, object_policy_manager=values._object_policy_manager
+                scalar.values,
+                _item_schema,
+                object_permission_manager=values._object_permission_manager,
             ),
         )
 
@@ -634,17 +636,17 @@ class ArraySeries(SeriesBase):  # pylint: disable=abstract-method
         builtin_schema: pt.array = schema.to_builtin()  # type: ignore[assignment]
         _item_schema = builtin_schema.items
         _item_creator = _item_schema.container._from_pyarrow  # pylint: disable=protected-access
-        _object_policy_manager = self._object_policy_manager
+        _object_permission_manager = self._object_permission_manager
 
         # pylint: disable=protected-access
         obj._item_schema = _item_schema
         obj._data = self._data.copy(
             lambda df: df._copy(_item_schema),
             lambda scalar: _item_creator(
-                scalar.values, _item_schema, object_policy_manager=_object_policy_manager
+                scalar.values, _item_schema, object_permission_manager=_object_permission_manager
             ),
         )
-        obj._object_policy_manager = _object_policy_manager
+        obj._object_permission_manager = _object_permission_manager
 
         return obj
 
@@ -704,18 +706,18 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,
+        object_permission_manager: _OPM = None,
     ) -> _F:
-        if object_policy_manager is None:
+        if object_permission_manager is None:
             raise ValueError(
-                "The object policy manager is needed to create FileSeries from pyarrow"
+                "The object permission manager is needed to create FileSeries from pyarrow"
             )
 
         obj = cls._create(schema, root, name)
         file_type: FileBase = schema.element  # type: ignore[assignment]
         # pylint: disable=protected-access
         obj._data = PagingList(
-            file_type._from_pyarrow(item, object_policy_manager) for item in array
+            file_type._from_pyarrow(item, object_permission_manager) for item in array
         )
 
         return obj
@@ -724,11 +726,13 @@ class FileSeries(SeriesBase):  # pylint: disable=abstract-method
         return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
 
     def _refresh_data_from_factory(
-        self, factory: LazyFactoryBase, object_policy_manager: _OPM
+        self, factory: LazyFactoryBase, object_permission_manager: _OPM
     ) -> None:
         file_type = self.schema.element
         self._data = factory.create_list(
-            lambda scalar: file_type(**scalar.as_py(), object_policy_manager=object_policy_manager)
+            lambda scalar: file_type(
+                **scalar.as_py(), object_permission_manager=object_permission_manager
+            )
         )
 
     def to_pylist(self) -> List[FileBase]:
@@ -795,7 +799,7 @@ class EnumSeries(Series):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_policy_manager: _OPM = None,  # pylint: disable=unused-argument
+        object_permission_manager: _OPM = None,  # pylint: disable=unused-argument
     ) -> _E:
         obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)

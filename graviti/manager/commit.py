@@ -264,7 +264,7 @@ class Commit(Sheets):
         )
 
         return DataFrame._from_factory(  # pylint: disable=protected-access
-            factory, schema, object_policy_manager=self._dataset.object_policy_manager
+            factory, schema, object_permission_manager=self._dataset.object_permission_manager
         )
 
 

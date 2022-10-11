@@ -8,16 +8,16 @@ from graviti.manager.branch import BranchManager
 from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.dataset import Dataset, DatasetManager
 from graviti.manager.draft import Draft, DraftManager
-from graviti.manager.policy import (
-    AZUREObjectPolicyManager,
-    ObjectPolicyManager,
-    OSSObjectPolicyManager,
-    S3ObjectPolicyManager,
+from graviti.manager.permission import (
+    AZUREObjectPermissionManager,
+    ObjectPermissionManager,
+    OSSObjectPermissionManager,
+    S3ObjectPermissionManager,
 )
 from graviti.manager.tag import TagManager
 
 __all__ = [
-    "AZUREObjectPolicyManager",
+    "AZUREObjectPermissionManager",
     "BranchManager",
     "Commit",
     "CommitManager",
@@ -25,8 +25,8 @@ __all__ = [
     "DatasetManager",
     "Draft",
     "DraftManager",
-    "OSSObjectPolicyManager",
-    "ObjectPolicyManager",
-    "S3ObjectPolicyManager",
+    "OSSObjectPermissionManager",
+    "ObjectPermissionManager",
+    "S3ObjectPermissionManager",
     "TagManager",
 ]
