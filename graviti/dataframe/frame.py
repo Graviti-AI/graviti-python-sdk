@@ -607,27 +607,17 @@ class DataFrame(Container):
         return obj
 
     @classmethod
-    def from_pyarrow(
-        cls: Type[_T], array: pa.StructArray, schema: Optional[pt.PortexRecordBase] = None
-    ) -> _T:
+    def from_pyarrow(cls: Type[_T], array: pa.StructArray) -> _T:
         """Create DataFrame with pyarrow struct array.
 
         Arguments:
             array: The input pyarrow struct array.
-            schema: The schema of the DataFrame.
-
-        Raises:
-            TypeError: When the given schema is mismatched with the pyarrow array type.
 
         Returns:
             The loaded :class:`~graviti.dataframe.DataFrame` instance.
 
         """
-        if schema is None:
-            schema = pt.record.from_pyarrow(array.type)
-        elif not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array")
-
+        schema = pt.record.from_pyarrow(array.type)
         return cls._from_pyarrow(array, schema)
 
     @property
