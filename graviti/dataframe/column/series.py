@@ -361,29 +361,17 @@ class Series(Container):  # pylint: disable=abstract-method
         return self.to_pylist()
 
     @classmethod
-    def from_pyarrow(
-        cls: Type[_S],
-        array: pa.Array,
-        schema: Optional[pt.PortexType] = None,
-    ) -> _S:
+    def from_pyarrow(cls: Type[_S], array: pa.Array) -> _S:
         """Instantiate a Series backed by an pyarrow array.
 
         Arguments:
             array: The input pyarrow array.
-            schema: The schema of the series. If None, will be inferred from `array`.
-
-        Raises:
-            TypeError: When the schema is mismatched with the pyarrow array type.
 
         Returns:
             The loaded :class:`~graviti.dataframe.column.Series` instance.
 
         """
-        if schema is None:
-            schema = pt.PortexType.from_pyarrow(array.type)
-        elif not array.type.equals(schema.to_pyarrow()):
-            raise TypeError("The schema is mismatched with the pyarrow array")
-
+        schema = pt.PortexType.from_pyarrow(array.type)
         return cls._from_pyarrow(array, schema)
 
     @classmethod
