@@ -7,7 +7,7 @@
 
 from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union, overload
 
-from graviti.dataframe.column.series import SeriesBase
+from graviti.dataframe.column.series import Series
 from graviti.dataframe.container import RECORD_KEY
 from graviti.operation import UpdateData
 from graviti.utility import NestedDict
@@ -66,7 +66,7 @@ class DataFrameILocIndexer:
         ...
 
     @overload
-    def __setitem__(self, key: Tuple[slice, str], value: Union[Iterable[Any], SeriesBase]) -> None:
+    def __setitem__(self, key: Tuple[slice, str], value: Union[Iterable[Any], Series]) -> None:
         ...
 
     def __setitem__(
@@ -78,7 +78,7 @@ class DataFrameILocIndexer:
             Iterable[NestedDict[str, Any]],
             Any,
             Iterable[Any],
-            SeriesBase,
+            Series,
         ],
     ) -> None:
         if isinstance(key, tuple):
@@ -166,7 +166,7 @@ class DataFrameLocIndexer:
         ...
 
     @overload
-    def __setitem__(self, key: Tuple[slice, str], value: Union[Iterable[Any], SeriesBase]) -> None:
+    def __setitem__(self, key: Tuple[slice, str], value: Union[Iterable[Any], Series]) -> None:
         ...
 
     def __setitem__(
@@ -178,7 +178,7 @@ class DataFrameLocIndexer:
             Iterable[NestedDict[str, Any]],
             Any,
             Iterable[Any],
-            SeriesBase,
+            Series,
         ],
     ) -> None:
         if isinstance(key, tuple):
