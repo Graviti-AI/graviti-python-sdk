@@ -35,9 +35,17 @@ from graviti.dataframe.sql import RowSeries as SqlRowSeries
 from graviti.file import FileBase
 from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
-from graviti.utility import MAX_REPR_ROWS, Mode, engine
+from graviti.utility import MAX_REPR_ROWS, Mode, ModuleMocker, engine
+
+try:
+    import pandas as pd
+except ModuleNotFoundError:
+    pd = ModuleMocker("No module named 'pandas'")
+
 
 if TYPE_CHECKING:
+    import pandas
+
     from graviti.manager.permission import ObjectPermissionManager
 
 
@@ -619,6 +627,28 @@ class DataFrame(Container):
         """
         schema = pt.record.from_pyarrow(array.type)
         return cls._from_pyarrow(array, schema)
+
+    @classmethod
+    def from_pandas(cls: Type[_T], df: "pandas.DataFrame") -> _T:
+        """Create DataFrame with pandas DataFrame.
+
+        Arguments:
+            df: The input pandas DataFrame.
+
+        Raises:
+            NotImplementedError: When the column index of input DataFrame is MultiIndex.
+
+        Returns:
+            The loaded :class:`~graviti.dataframe.DataFrame` instance.
+
+        """
+        if isinstance(df.columns, pd.MultiIndex):
+            raise NotImplementedError("pandas 'MultiIndex' is not supported now")
+
+        record_batch = pa.RecordBatch.from_pandas(df)
+        array = pa.StructArray.from_arrays(record_batch.columns, record_batch.schema.names)
+
+        return cls.from_pyarrow(array)
 
     @property
     def iloc(self) -> DataFrameILocIndexer:
