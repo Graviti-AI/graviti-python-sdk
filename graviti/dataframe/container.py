@@ -90,9 +90,6 @@ class Container:
     ) -> _T:
         raise NotImplementedError
 
-    def _to_post_data(self) -> List[Any]:
-        raise NotImplementedError
-
     def _get_item_by_location(self, key: int) -> Any:
         raise NotImplementedError
 
@@ -139,7 +136,7 @@ class Container:
         """
         raise NotImplementedError
 
-    def to_pylist(self) -> List[Any]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
         """Convert the container to a python list.
 
         Raises:

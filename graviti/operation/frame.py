@@ -172,7 +172,7 @@ class AddData(DataOperation):
                 dataset,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch._to_post_data(),
+                data=batch.to_pylist(_to_backend=True),
             )
             data_pbar.update(len(batch))
 
@@ -292,7 +292,7 @@ class UpdateData(DataOperation):
                 dataset,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch._to_post_data(),
+                data=batch.to_pylist(_to_backend=True),
             )
             data_pbar.update(len(batch))
 
