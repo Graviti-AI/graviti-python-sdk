@@ -13,6 +13,8 @@ from graviti.paging import LazyFactoryBase
 from graviti.portex import PortexType
 
 if TYPE_CHECKING:
+    import pandas
+
     from graviti.dataframe.frame import DataFrame
     from graviti.manager.permission import ObjectPermissionManager
 
@@ -113,6 +115,9 @@ class Container:
     ) -> None:
         raise NotImplementedError
 
+    def _to_pandas_series(self) -> "pandas.Series":
+        raise NotImplementedError
+
     # TODO: Defines a base indexer for the loc and iloc return type.
     @property
     def iloc(self) -> Any:
@@ -136,6 +141,15 @@ class Container:
 
     def to_pylist(self) -> List[Any]:
         """Convert the container to a python list.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    def to_pandas(self) -> Union["pandas.Series", "pandas.DataFrame"]:
+        """Convert the graviti Container to a pandas Series or DataFrame.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.

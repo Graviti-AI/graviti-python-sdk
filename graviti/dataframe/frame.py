@@ -589,6 +589,9 @@ class DataFrame(Container):
             )
         ]
 
+    def _to_pandas_series(self) -> "pandas.Series":
+        return pd.Series(self.to_pylist())
+
     def _copy(  # type: ignore[override]
         self: _T,
         schema: pt.PortexRecordBase,
@@ -942,6 +945,20 @@ class DataFrame(Container):
             dict(zip(column_names, values))
             for values in zip(*(column.to_pylist() for column in self._columns.values()))
         ]
+
+    def to_pandas(self) -> "pandas.DataFrame":
+        """Convert the graviti DataFrame to a pandas DataFrame.
+
+        Returns:
+            The converted pandas DataFrame.
+
+        """
+        df = pd.DataFrame()
+
+        for key in self.schema.keys():
+            df[key] = self._columns[key]._to_pandas_series()  # pylint: disable=protected-access
+
+        return df
 
     def query(self, func: Callable[[Any], Any]) -> "DataFrame":
         """Query the columns of a DataFrame with a lambda function.
