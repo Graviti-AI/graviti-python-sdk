@@ -823,22 +823,6 @@ class EnumSeries(PyarrowSeries):
         enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
         self._index_to_value = enum_values.index_to_value
 
-    @classmethod
-    def from_pandas(cls: Type[_E], series: "pandas.Series") -> _E:
-        """Convert a pandas Categorical Series to a graviti EnumSeries.
-
-        Arguments:
-            series: The input pandas Categorical Series.
-
-        Returns:
-            The converted graviti EnumSeries.
-
-        """
-        array = pa.Array.from_pandas(series)
-        schema = pt.enum(array.dictionary.to_pylist())
-
-        return cls._from_pyarrow(array.indices, schema)
-
     def to_pylist(self) -> List[Any]:
         """Convert the Series to a python list.
 
