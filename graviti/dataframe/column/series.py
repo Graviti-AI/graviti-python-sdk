@@ -242,7 +242,7 @@ class Series(Container):
     ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
         container = schema.container
         if value.__class__.__name__ == "DataFrame":
-            return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
+            return lambda x: x.to_pylist(_to_backend=True), True
 
         if container == ArraySeries:
             return Series._process_array(
@@ -357,9 +357,6 @@ class Series(Container):
 
         return obj
 
-    def _to_post_data(self) -> List[Any]:
-        return self.to_pylist()
-
     def _to_pandas_series(self) -> "pandas.Series":
         return self.to_pandas()
 
@@ -459,7 +456,7 @@ class Series(Container):
         """
         return ColumnSeriesLocIndexer(self)
 
-    def to_pylist(self) -> List[Any]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
         """Convert the container to a python list.
 
         Raises:
@@ -504,7 +501,7 @@ class PyarrowSeries(Series):
     def _get_item_by_location(self, key: int) -> Any:
         return self._data.get_item(key).as_py()
 
-    def to_pylist(self) -> List[Any]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
         """Convert the Series to a python list.
 
         Returns:
@@ -671,17 +668,14 @@ class ArraySeries(Series):
 
         return obj
 
-    def to_pylist(self) -> List[Any]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
         """Convert the Series to a python list.
 
         Returns:
             The python list representing the Series.
 
         """
-        return [item.to_pylist() for item in self._data]
-
-    def _to_post_data(self) -> List[Any]:
-        return [item._to_post_data() for item in self._data]  # pylint: disable=protected-access
+        return [item.to_pylist(_to_backend=_to_backend) for item in self._data]
 
     def to_pandas(self) -> "pandas.Series":
         """Convert the graviti Series to a pandas Series.
@@ -743,9 +737,6 @@ class FileSeries(Series):
 
         return obj
 
-    def _to_post_data(self) -> List[Dict[str, Any]]:
-        return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
-
     def _refresh_data_from_factory(
         self, factory: LazyFactoryBase, object_permission_manager: _OPM
     ) -> None:
@@ -756,13 +747,16 @@ class FileSeries(Series):
             )
         )
 
-    def to_pylist(self) -> List[FileBase]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
         """Convert the BinaryFileSeries to python list.
 
         Returns:
             The python list.
 
         """
+        if _to_backend:
+            return [file._to_post_data() for file in self._data]  # pylint: disable=protected-access
+
         return list(self._data)
 
     def to_pandas(self) -> "pandas.Series":
@@ -796,9 +790,6 @@ class EnumSeries(PyarrowSeries):
         obj._index_to_value = enum_values.index_to_value  # pylint: disable=protected-access
 
         return obj
-
-    def _to_post_data(self) -> List[int]:
-        return self._data.to_pyarrow().to_pylist()  # type: ignore[no-any-return]
 
     def _copy(
         self,
@@ -835,13 +826,16 @@ class EnumSeries(PyarrowSeries):
         enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
         self._index_to_value = enum_values.index_to_value
 
-    def to_pylist(self) -> List[Any]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
         """Convert the Series to a python list.
 
         Returns:
             The python list representing the Series.
 
         """
+        if _to_backend:
+            return super().to_pylist()
+
         _index_to_value = self._index_to_value
         return [_index_to_value[i.as_py()] for i in self._data]
 
@@ -872,8 +866,18 @@ class EnumSeries(PyarrowSeries):
 class TimeSeries(PyarrowSeries):
     """One-dimensional array for portex builtin temporal type."""
 
-    def _to_post_data(self) -> List[Any]:
-        array = self._data.to_pyarrow()
-        bit_width = array.type.bit_width
-        target_type = pa.int32() if bit_width == 32 else pa.int64()
-        return array.cast(target_type).to_pylist()  # type: ignore[no-any-return]
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Any]:
+        """Convert the Series to a python list.
+
+        Returns:
+            The python list representing the Series.
+
+        """
+        if _to_backend:
+            array = self._data.to_pyarrow()
+            bit_width = array.type.bit_width
+            target_type = pa.int32() if bit_width == 32 else pa.int64()
+
+            return array.cast(target_type).to_pylist()  # type: ignore[no-any-return]
+
+        return super().to_pylist()

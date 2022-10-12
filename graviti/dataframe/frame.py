@@ -254,7 +254,7 @@ class DataFrame(Container):
         values: Iterable[Any], schema: pt.PortexType
     ) -> Tuple[Callable[[Any], Any], Optional[bool]]:
         if isinstance(values, DataFrame):
-            return lambda x: x._to_post_data(), True  # pylint: disable=protected-access
+            return lambda x: x.to_pylist(_to_backend=True), True
 
         if not values:
             return lambda x: x, None
@@ -576,18 +576,6 @@ class DataFrame(Container):
     def _extend(self, values: "DataFrame") -> None:
         for key, value in self._columns.items():
             value._extend(values[key])  # pylint: disable=protected-access
-
-    def _to_post_data(self) -> List[Dict[str, Any]]:
-        column_names = self.schema.keys()
-        return [
-            dict(zip(column_names, values))
-            for values in zip(
-                *(
-                    column._to_post_data()  # pylint: disable=protected-access
-                    for column in self._columns.values()
-                )
-            )
-        ]
 
     def _to_pandas_series(self) -> "pandas.Series":
         return pd.Series(self.to_pylist())
@@ -933,7 +921,7 @@ class DataFrame(Container):
         if self._record_key is not None:
             self._record_key._data.extend_nulls(values_length)  # pylint: disable=protected-access
 
-    def to_pylist(self) -> List[Dict[str, Any]]:
+    def to_pylist(self, *, _to_backend: bool = False) -> List[Dict[str, Any]]:
         """Convert the DataFrame to a python list.
 
         Returns:
@@ -943,7 +931,9 @@ class DataFrame(Container):
         column_names = self.schema.keys()
         return [
             dict(zip(column_names, values))
-            for values in zip(*(column.to_pylist() for column in self._columns.values()))
+            for values in zip(
+                *(column.to_pylist(_to_backend=_to_backend) for column in self._columns.values())
+            )
         ]
 
     def to_pandas(self) -> "pandas.DataFrame":
