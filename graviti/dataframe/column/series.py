@@ -360,6 +360,9 @@ class Series(Container):
     def _to_post_data(self) -> List[Any]:
         return self.to_pylist()
 
+    def _to_pandas_series(self) -> "pandas.Series":
+        return self.to_pandas()
+
     @classmethod
     def from_pyarrow(cls, array: pa.Array) -> "Series":
         """Instantiate a Series backed by an pyarrow array.
@@ -458,6 +461,15 @@ class Series(Container):
 
     def to_pylist(self) -> List[Any]:
         """Convert the container to a python list.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    def to_pandas(self) -> "pandas.Series":
+        """Convert the graviti Container to a pandas Series or DataFrame.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
