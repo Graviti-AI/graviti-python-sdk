@@ -260,7 +260,7 @@ class Commit(Sheets):
             total_count,
             LIMIT,
             _getter,
-            schema.to_pyarrow(),
+            schema.to_pyarrow(_to_backend=True),
         )
 
         return DataFrame._from_factory(  # pylint: disable=protected-access

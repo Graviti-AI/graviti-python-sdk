@@ -37,7 +37,7 @@ from graviti.paging import (
     PagingListBase,
     PyArrowPagingList,
 )
-from graviti.portex.enum import EnumValueList, EnumValueType
+from graviti.portex.enum import EnumValueType
 from graviti.utility import MAX_REPR_ROWS, ModuleMocker
 
 try:
@@ -213,9 +213,9 @@ class Series(Container):
         processor, need_process = Series._process_array(values, schema)
 
         if not need_process:
-            return pa.array(values, schema.to_pyarrow())
+            return pa.array(values, schema.to_pyarrow(_to_backend=True))
 
-        return pa.array(processor(values), schema.to_pyarrow())
+        return pa.array(processor(values), schema.to_pyarrow(_to_backend=True))
 
     @staticmethod
     def _process_array(
@@ -849,17 +849,9 @@ class EnumSeries(PyarrowSeries):
         Returns:
             The converted pandas Categorical Series.
 
-        Raises:
-            TypeError: When the enum values in 'dict' format.
-
         """
         enum_values = self.schema.to_builtin().values  # type: ignore[attr-defined]
-        if not isinstance(enum_values, EnumValueList):
-            raise TypeError(
-                "The enum values in 'dict' format is not supported to converted to pandas"
-            )
-
-        dictionary = enum_values.to_pyobj()
+        dictionary = enum_values.to_pyarrow()
 
         array = self._data.to_pyarrow().combine_chunks()
         dictionary_array = pa.DictionaryArray.from_arrays(array, dictionary)

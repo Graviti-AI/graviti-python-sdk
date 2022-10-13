@@ -59,7 +59,7 @@ APPLY_KEY = "apply_result"
 
 def _to_simple_pyarrow(schema: pt.PortexType) -> pa.DataType:
     if not isinstance(schema, pt.PortexRecordBase):
-        return schema.to_pyarrow()
+        return schema.to_pyarrow(_to_backend=True)
 
     fields = []
     for name, portex_type in schema.items():
@@ -300,9 +300,9 @@ class DataFrame(Container):
         processor, need_process = DataFrame._process_array(values, schema)
 
         if not need_process:
-            return pa.array(values, schema.to_pyarrow())
+            return pa.array(values, schema.to_pyarrow(_to_backend=True))
 
-        return pa.array(processor(values), schema.to_pyarrow())
+        return pa.array(processor(values), schema.to_pyarrow(_to_backend=True))
 
     @staticmethod
     def _pylist_to_pyarrow_and_pydict(
