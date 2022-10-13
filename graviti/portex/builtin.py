@@ -63,7 +63,7 @@ class PortexBuiltinType(PortexType):  # pylint: disable=abstract-method
         self.nullable = PTYPE.Boolean.check(nullable)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+    def _from_pyarrow(cls: Type[_T], paarray: pa.Array) -> _T:
         return cls()
 
     def to_builtin(self: _T) -> _T:
@@ -309,8 +309,10 @@ class record(PortexBuiltinType, PortexRecordBase):  # pylint: disable=invalid-na
         super().__init__(nullable=nullable)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.StructType) -> _T:
-        return cls((field.name, cls.from_pyarrow(field.type)) for field in pyarrow_type)
+    def _from_pyarrow(cls: Type[_T], paarray: pa.StructArray) -> _T:
+        return cls(
+            (field.name, cls.from_pyarrow(paarray.field(field.name))) for field in paarray.type
+        )
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -322,6 +324,7 @@ class record(PortexBuiltinType, PortexRecordBase):  # pylint: disable=invalid-na
         return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member
 
 
+@PyArrowConversionRegister(pa.lib.Type_DICTIONARY)
 class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     """Portex complex type ``enum``.
 
@@ -338,12 +341,18 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
 
     """
 
+    _T = TypeVar("_T", bound="enum")
+
     values: EnumValues = param(ptype=PTYPE.Enum)
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
     def __init__(self, values: Iterable[_E], nullable: bool = False) -> None:
         self.values = PTYPE.Enum.check(values)
         super().__init__(nullable=nullable)
+
+    @classmethod
+    def _from_pyarrow(cls: Type[_T], paarray: pa.DictionaryArray) -> _T:
+        return cls(paarray.dictionary.to_pylist())
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -400,10 +409,11 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: Union[pa.ListType, pa.FixedSizeListType]) -> _T:
+    def _from_pyarrow(cls: Type[_T], paarray: Union[pa.ListArray, pa.FixedSizeListArray]) -> _T:
+        patype = paarray.type
         return cls(
-            cls.from_pyarrow(pyarrow_type.value_type),
-            getattr(pyarrow_type, "list_size", None),
+            cls.from_pyarrow(paarray.values),
+            getattr(patype, "list_size", None),
         )
 
     def _get_column_count(self) -> int:
@@ -492,8 +502,8 @@ class time(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
-        return cls(cls._TYPE_TO_UNIT[pyarrow_type])
+    def _from_pyarrow(cls: Type[_T], paarray: Union[pa.Time32Array, pa.Time64Array]) -> _T:
+        return cls(cls._TYPE_TO_UNIT[paarray.type])
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -547,8 +557,9 @@ class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.TimestampType) -> _T:
-        return cls(pyarrow_type.unit, pyarrow_type.tz)
+    def _from_pyarrow(cls: Type[_T], paarray: pa.TimestampArray) -> _T:
+        patype = paarray.type
+        return cls(patype.unit, patype.tz)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
@@ -587,8 +598,8 @@ class timedelta(PortexBuiltinType):  # pylint: disable=invalid-name
         super().__init__(nullable=nullable)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DurationType) -> _T:
-        return cls(pyarrow_type.unit)
+    def _from_pyarrow(cls: Type[_T], paarray: pa.DurationArray) -> _T:
+        return cls(paarray.type.unit)
 
     def to_pyarrow(self) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.

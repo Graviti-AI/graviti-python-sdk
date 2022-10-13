@@ -519,7 +519,7 @@ class DataFrame(Container):
         else:
             # TODO: Need to support the case where iterable elements are subclass of Container.
             array = pa.array(value)
-            schema = pt.PortexType.from_pyarrow(array.type)
+            schema = pt.PortexType.from_pyarrow(array)
             column = schema.container._from_pyarrow(  # pylint: disable=protected-access
                 array, schema, root, (key,) + self._name
             )
@@ -616,7 +616,7 @@ class DataFrame(Container):
             The loaded :class:`~graviti.dataframe.DataFrame` instance.
 
         """
-        schema = pt.record.from_pyarrow(array.type)
+        schema = pt.record.from_pyarrow(array)
         return cls._from_pyarrow(array, schema)
 
     @classmethod
