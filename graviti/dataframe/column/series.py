@@ -113,7 +113,7 @@ class Series(Container):
 
         if schema is None:
             array = pa.array(data)
-            schema = pt.PortexType.from_pyarrow(array.type)
+            schema = pt.PortexType.from_pyarrow(array)
         elif issubclass(schema.container, FileSeries):
             return FileSeries._from_iterable(data, schema)
         else:
@@ -382,7 +382,7 @@ class Series(Container):
 
             return EnumSeries._from_pyarrow(array.indices, schema)
 
-        schema = pt.PortexType.from_pyarrow(array.type)
+        schema = pt.PortexType.from_pyarrow(array)
         container = schema.container
         if not issubclass(container, Series):
             raise TypeError(
@@ -806,7 +806,7 @@ class EnumSeries(PyarrowSeries):
     @classmethod
     def _from_pyarrow(
         cls: Type[_E],
-        array: pa.IntegerArray,
+        array: Union[pa.IntegerArray, pa.DictionaryArray],
         schema: pt.PortexType,
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
@@ -814,6 +814,10 @@ class EnumSeries(PyarrowSeries):
         object_permission_manager: _OPM = None,  # pylint: disable=unused-argument
     ) -> _E:
         obj = cls._create(schema, root, name)
+
+        if isinstance(array, pa.DictionaryArray):
+            array = array.indices
+
         obj._data = PyArrowPagingList.from_pyarrow(array)
 
         enum_values = schema.to_builtin().values  # type: ignore[attr-defined]
