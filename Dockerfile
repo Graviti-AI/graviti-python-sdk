@@ -12,7 +12,7 @@ RUN pip3 install --no-cache-dir \
         pillow==9.2.0
 
 RUN pip3 install --no-cache-dir \
-        graviti==0.9.4
+        graviti==0.10.0
 
 ENV PORTEX_STANDARD_URL https://github.com/Project-OpenBytes/portex-standard
 RUN echo "import graviti.portex as pt\npt.build_package('$PORTEX_STANDARD_URL', 'main')" | python3
