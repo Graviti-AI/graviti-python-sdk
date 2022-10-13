@@ -254,11 +254,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         self._upload_to_draft(self.number, jobs, quiet)
 
         for name, df in modified_sheets.items():
+            patype = df.schema.to_pyarrow(_to_backend=True)
             factory = LazyLowerCaseFactory(
                 len(df),
                 LIMIT,
                 partial(self._list_data, sheet_name=name),
-                pa.struct([pa.field(RECORD_KEY, pa.string()), *df.schema.to_pyarrow()]),
+                pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
             )
             df._refresh_data_from_factory(  # pylint: disable=protected-access)
                 factory, self._dataset.object_permission_manager

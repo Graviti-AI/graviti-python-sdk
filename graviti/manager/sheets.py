@@ -88,7 +88,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         sheet = self._get_sheet(sheet_name)
         schema = PortexRecordBase.from_yaml(sheet["schema"])
 
-        patype = schema.to_pyarrow()
+        patype = schema.to_pyarrow(_to_backend=True)
 
         factory = LazyLowerCaseFactory(
             sheet["record_count"],

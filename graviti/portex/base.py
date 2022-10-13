@@ -211,7 +211,7 @@ class PortexType:
         """
         return yaml.dump(self.to_pyobj(), sort_keys=False, allow_unicode=True)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Raises:
@@ -296,7 +296,7 @@ class PortexRecordBase(
         """
         self._data.rename(old_name, new_name)
 
-    def to_pyarrow(self) -> pa.StructType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.StructType:
         """Convert the Portex type to the corresponding builtin PyArrow StructType.
 
         Returns:
@@ -304,7 +304,10 @@ class PortexRecordBase(
 
         """
         return pa.struct(
-            [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self._data.items()]
+            [
+                pa.field(key, value.to_pyarrow(_to_backend=_to_backend))
+                for key, value in self._data.items()
+            ]
         )
 
 

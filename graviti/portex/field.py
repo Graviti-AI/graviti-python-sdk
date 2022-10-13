@@ -204,14 +204,16 @@ class Fields(NameOrderedDict[PortexType], FrozenFields):  # type: ignore[misc]
         """
         return [{"name": name, **portex_type.to_pyobj(False)} for name, portex_type in self.items()]
 
-    def to_pyarrow(self) -> List[pa.Field]:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> List[pa.Field]:
         """Convert the fields to a list of PyArrow Field.
 
         Returns:
             A list of PyArrow Field representing the fields of Portex record.
 
         """
-        return [pa.field(name, portex_type.to_pyarrow()) for name, portex_type in self.items()]
+        return [
+            pa.field(key, value.to_pyarrow(_to_backend=_to_backend)) for key, value in self.items()
+        ]
 
     def copy(self: _T) -> _T:
         """Get a copy of the fields.

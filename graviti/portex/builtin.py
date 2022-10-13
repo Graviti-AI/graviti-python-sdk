@@ -92,7 +92,7 @@ class string(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -118,7 +118,7 @@ class binary(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -144,7 +144,7 @@ class boolean(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -170,7 +170,7 @@ class int32(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -196,7 +196,7 @@ class int64(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -222,7 +222,7 @@ class float32(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -248,7 +248,7 @@ class float64(PortexBuiltinType):  # pylint: disable=invalid-name
 
     nullable: bool = param(False, ptype=PTYPE.Boolean)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -314,14 +314,14 @@ class record(PortexBuiltinType, PortexRecordBase):  # pylint: disable=invalid-na
             (field.name, cls.from_pyarrow(paarray.field(field.name))) for field in paarray.type
         )
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
             The corresponding builtin PyArrow struct DataType.
 
         """
-        return pa.struct(self.fields.to_pyarrow())  # pylint: disable=no-member
+        return pa.struct(self.fields.to_pyarrow(_to_backend=_to_backend))
 
 
 @PyArrowConversionRegister(pa.lib.Type_DICTIONARY)
@@ -354,7 +354,7 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
     def _from_pyarrow(cls: Type[_T], paarray: pa.DictionaryArray) -> _T:
         return cls(paarray.dictionary.to_pylist())
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -363,15 +363,21 @@ class enum(PortexBuiltinType):  # pylint: disable=invalid-name
         """
         min_index, max_index = self.values.index_scope
         if min_index >= -128 and max_index <= 127:
-            return pa.int8()
+            index_type = pa.int8()
 
-        if min_index >= -32768 and max_index <= 32767:
-            return pa.int16()
+        elif min_index >= -32768 and max_index <= 32767:
+            index_type = pa.int16()
 
-        if min_index >= -2147483648 and max_index <= 2147483647:
-            return pa.int32()
+        elif min_index >= -2147483648 and max_index <= 2147483647:
+            index_type = pa.int32()
 
-        return pa.int64()
+        else:
+            index_type = pa.int64()
+
+        if _to_backend:
+            return index_type
+
+        return pa.dictionary(index_type, self.values.to_pyarrow().type)
 
 
 @PyArrowConversionRegister(pa.lib.Type_LIST, pa.lib.Type_FIXED_SIZE_LIST)
@@ -425,7 +431,7 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
         """
         return self.items._get_column_count()  # pylint: disable=protected-access
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -433,7 +439,7 @@ class array(PortexBuiltinType):  # pylint: disable=invalid-name
 
         """
         list_size = self.length if self.length else -1
-        return pa.list_(self.items.to_pyarrow(), list_size)  # pylint: disable=no-member
+        return pa.list_(self.items.to_pyarrow(_to_backend=_to_backend), list_size)
 
 
 @PyArrowConversionRegister(pa.lib.Type_DATE32)
@@ -457,7 +463,7 @@ class date(PortexBuiltinType):  # pylint: disable=invalid-name
     def __init__(self, nullable: bool = False) -> None:
         super().__init__(nullable=nullable)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -505,7 +511,7 @@ class time(PortexBuiltinType):  # pylint: disable=invalid-name
     def _from_pyarrow(cls: Type[_T], paarray: Union[pa.Time32Array, pa.Time64Array]) -> _T:
         return cls(cls._TYPE_TO_UNIT[paarray.type])
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -561,7 +567,7 @@ class timestamp(PortexBuiltinType):  # pylint: disable=invalid-name
         patype = paarray.type
         return cls(patype.unit, patype.tz)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
@@ -601,7 +607,7 @@ class timedelta(PortexBuiltinType):  # pylint: disable=invalid-name
     def _from_pyarrow(cls: Type[_T], paarray: pa.DurationArray) -> _T:
         return cls(paarray.type.unit)
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
