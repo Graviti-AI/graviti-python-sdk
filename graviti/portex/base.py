@@ -43,7 +43,7 @@ class PortexType:
         return self._repr1(0)
 
     @classmethod
-    def _from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+    def _from_pyarrow(cls: Type[_T], paarray: pa.Array) -> _T:
         raise NotImplementedError
 
     def _repr1(self, level: int) -> str:
@@ -124,11 +124,11 @@ class PortexType:
         return type_
 
     @classmethod
-    def from_pyarrow(cls: Type[_T], pyarrow_type: pa.DataType) -> _T:
+    def from_pyarrow(cls: Type[_T], paarray: pa.Array) -> _T:
         """Create Portex type instance from PyArrow type.
 
         Arguments:
-            pyarrow_type: The PyArrow type.
+            paarray: The PyArrow array.
 
         Raises:
             TypeError: When the PyArrow type is not supported.
@@ -137,13 +137,14 @@ class PortexType:
             The created Portex type instance.
 
         """
+        patype = paarray.type
         try:
-            portex_type = PYARROW_TYPE_ID_TO_PORTEX_TYPE[pyarrow_type.id]
+            portex_type = PYARROW_TYPE_ID_TO_PORTEX_TYPE[patype.id]
         except KeyError:
-            raise TypeError(f'Not supported PyArrow type "{pyarrow_type}"') from None
+            raise TypeError(f'Not supported PyArrow type "{patype}"') from None
 
         # pylint: disable=protected-access
-        return portex_type._from_pyarrow(pyarrow_type)  # type: ignore[return-value]
+        return portex_type._from_pyarrow(paarray)  # type: ignore[return-value]
 
     @classmethod
     def from_json(cls: Type[_T], content: str) -> _T:
