@@ -77,14 +77,14 @@ class PortexExternalType(PortexType):  # pylint: disable=abstract-method
         """
         return self._factory({name: getattr(self, name) for name in self.params})
 
-    def to_pyarrow(self) -> pa.DataType:
+    def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
 
         Returns:
             The corresponding builtin PyArrow DataType.
 
         """
-        return self.internal_type.to_pyarrow()
+        return self.internal_type.to_pyarrow(_to_backend=_to_backend)
 
     def to_builtin(self) -> "PortexBuiltinType":
         """Expand the top level of the Portex external type to Portex builtin type.

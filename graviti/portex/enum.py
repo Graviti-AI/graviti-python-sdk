@@ -5,7 +5,9 @@
 """Portex enum values releated classes."""
 
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
+
+import pyarrow as pa
 
 from graviti.utility import INDENT, UserMapping, UserSequence
 
@@ -44,6 +46,15 @@ class EnumValues:
 
     def to_pyobj(self) -> Union[List[EnumValueType], Dict[int, EnumValueType]]:
         """Dump the instance to a python list or dict.
+
+        Raises:
+            NotImplementedError: The method of the base class should not be called.
+
+        """
+        raise NotImplementedError
+
+    def to_pyarrow(self) -> pa.Array:
+        """Dump the instance to a pyarrow array.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -91,6 +102,35 @@ class EnumValueList(EnumValues, UserSequence[EnumValueType]):
         """
         return self._data.copy()
 
+    def to_pyarrow(self) -> pa.Array:
+        """Dump the instance to a pyarrow array.
+
+        Returns:
+            A pyarrow array representation of the enum values.
+
+        """
+        try:
+            return pa.array(self._data)
+        except (pa.ArrowInvalid, pa.ArrowTypeError):
+            length = len(self._data)
+            type_ids: List[Optional[int]] = [None] * length
+            children: List[List[EnumValueType]] = []
+            type_to_id: Dict[Type[EnumValueType], int] = {}
+            next_type_id = 0
+
+            for i, item in enumerate(self._data):
+                type_id = type_to_id.setdefault(type(item), next_type_id)
+                if type_id == next_type_id:
+                    next_type_id += 1
+                    children.append([None] * length)
+
+                type_ids[i] = type_id
+                children[type_id][i] = item
+
+            return pa.UnionArray.from_sparse(
+                pa.array(type_ids, pa.int8()), list(map(pa.array, children))
+            )
+
 
 class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
     """The portex enum values in dict format.
@@ -133,6 +173,17 @@ class EnumValueDict(EnumValues, UserMapping[int, EnumValueType]):
 
         """
         return self._data.copy()
+
+    def to_pyarrow(self) -> pa.Array:
+        """Dump the instance to a pyarrow array.
+
+        Raises:
+            TypeError: EnumValueDict is not supported converting to pyarrow.
+
+        """
+        raise TypeError(
+            "The enum values in 'dict' format is not supported converting to 'pandas' or 'pyarrow'"
+        )
 
 
 def create_enum_values(
