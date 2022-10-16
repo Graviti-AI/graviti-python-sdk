@@ -37,6 +37,12 @@ It provides a pythonic way to access datasets by Graviti OpenAPI.
 
 .. toctree::
    :hidden:
+   :caption: INTEGRATION
+
+   integration/pandas
+
+.. toctree::
+   :hidden:
    :caption: Reference
 
    API Reference <autoapi/graviti/index>
