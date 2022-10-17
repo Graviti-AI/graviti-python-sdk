@@ -1,11 +1,11 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ##############
  Installation
 ##############
 
-Graviti SDK can be installed with pip or from source. 
+Graviti SDK can be installed with pip or from source.
 
 *****
  Pip

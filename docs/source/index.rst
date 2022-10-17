@@ -1,23 +1,22 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ##################
  What is Graviti?
 ##################
 
-As a platform for unstructured data management, `Graviti`_ provides services in data hosting,
-version control, data visualization, and collaboration. Users can also integrate Graviti Data
-Platform into your own pipeline using developer tools.
+As a platform for unstructured data management, Graviti_ provides services in data hosting, version
+control, data visualization, and collaboration. Users can also integrate Graviti Data Platform into
+your own pipeline using developer tools.
 
-.. _Graviti: https://gas.graviti.com/
-
+.. _graviti: https://gas.graviti.com/
 
 **************************
- What can Graviti SDK do? 
+ What can Graviti SDK do?
 **************************
 
-Graviti Python SDK is a python library to access Graviti workspace and manage datasets.
-It provides a pythonic way to access datasets by Graviti OpenAPI.
+Graviti Python SDK is a python library to access Graviti workspace and manage datasets. It provides
+a pythonic way to access datasets by Graviti OpenAPI.
 
 .. toctree::
    :hidden:

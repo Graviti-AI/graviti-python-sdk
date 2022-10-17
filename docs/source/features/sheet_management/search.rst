@@ -1,5 +1,5 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ########
  Search
@@ -7,12 +7,12 @@
 
 This topic describes DataFrame search methods:
 
-* :py:meth:`~graviti.dataframe.frame.DataFrame.query`
-* :py:meth:`~graviti.dataframe.frame.DataFrame.apply`
+-  :py:meth:`~graviti.dataframe.frame.DataFrame.query`
+-  :py:meth:`~graviti.dataframe.frame.DataFrame.apply`
 
-********************
-Dataset Preparation
-********************
+*********************
+ Dataset Preparation
+*********************
 
 Take the following DataFrame as an example:
 
@@ -86,12 +86,11 @@ Get the uploaded DataFrame:
  Query
 *******
 
-The query operation will use the lambda function to evaluate each rows,
-and return the True rows.
+The query operation will use the lambda function to evaluate each rows, and return the True rows.
 The lambda function must return a boolean value.
 
-SDK uses the ``engine.online()`` to start online searching.
-For example, search for all rows with filename as "a.jpg":
+SDK uses the ``engine.online()`` to start online searching. For example, search for all rows with
+filename as "a.jpg":
 
 .. code:: python
 

@@ -1,12 +1,12 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
- 
+   Copyright 2022 Graviti. Licensed under MIT License.
+
 #####
  Tag
 #####
 
-Graviti supports tagging specific commits in a dataset's history as being important, for
-example, to mark release revisions (v1.0, v2.0 and so on).
+Graviti supports tagging specific commits in a dataset's history as being important, for example, to
+mark release revisions (v1.0, v2.0 and so on).
 
 Before operating tags, a dataset with existing commits is needed:
 
@@ -21,15 +21,15 @@ Before operating tags, a dataset with existing commits is needed:
  Create a Tag
 **************
 
-SDK provides method :meth:`~graviti.manager.tag.TagManager.create` to support creating a
-tag based on a revision. The revision can be one commit ID:
+SDK provides method :meth:`~graviti.manager.tag.TagManager.create` to support creating a tag based
+on a revision. The revision can be one commit ID:
 
 .. code:: python
 
    dataset.tags.create(f"{TAG_NAME}", f"{COMMIT_ID}")
 
-The revision can also be the branch name. In this situation, the tag will be created based
-on the latest commit of the branch:
+The revision can also be the branch name. In this situation, the tag will be created based on the
+latest commit of the branch:
 
 .. code:: python
 

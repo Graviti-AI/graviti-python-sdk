@@ -1,5 +1,5 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ##################
  Sheet Management
@@ -7,9 +7,9 @@
 
 In the Graviti SDK, Sheet and DataFrame are interpretations of the same thing at different levels.
 
-Sheet refers to the form of data organization that is one level lower than the dataset. One
-dataset can have many different sheets, such as train, test, or frame-by-frame pictures from
-different videos. Each sheet has its own schema.
+Sheet refers to the form of data organization that is one level lower than the dataset. One dataset
+can have many different sheets, such as train, test, or frame-by-frame pictures from different
+videos. Each sheet has its own schema.
 
 Graviti SDK organizes the data of a sheet into a DataFrame format, which makes it more convenient
 and intuitive to get and modify the data.
@@ -42,8 +42,7 @@ all, it is necessary to get a dataset:
  Create a Sheet
 ****************
 
-SDK supports managing sheets of open drafts. Thus, it is necessary to create or get an open
-draft:
+SDK supports managing sheets of open drafts. Thus, it is necessary to create or get an open draft:
 
 .. code:: python
 
@@ -65,7 +64,7 @@ Then users need to :ref:`features/sheet_management/dataframe:Initialize a DataFr
    0  a.jpg
    1  b.jpg
    2  c.jpg
- 
+
 Next, users can create a new sheet:
 
 .. code:: python
@@ -74,6 +73,7 @@ Next, users can create a new sheet:
    draft.upload()
 
 .. note::
+
    Only changes made on the open draft can be synchronized to Graviti via the method
    :meth:`~graviti.manager.draft.Draft.upload`.
 
