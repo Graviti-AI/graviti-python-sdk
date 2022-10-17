@@ -1,15 +1,15 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
- 
+   Copyright 2022 Graviti. Licensed under MIT License.
+
 ########
  Branch
 ########
 
-Each dataset is created with a default branch ``main``. When getting a dataset through the SDK,
-its version is the latest commit of the default branch.
+Each dataset is created with a default branch ``main``. When getting a dataset through the SDK, its
+version is the latest commit of the default branch.
 
-The following sections will introduce the operations and precautions related to branches
-in the SDK. Of course, it is necessary to get a dataset first:
+The following sections will introduce the operations and precautions related to branches in the SDK.
+Of course, it is necessary to get a dataset first:
 
 .. code:: python
 
@@ -19,9 +19,9 @@ in the SDK. Of course, it is necessary to get a dataset first:
    dataset = ws.datasets.get(f"{DATASET_NAME}")
 
 .. note::
-   In most cases, a branch can be thought of as a named commit. But if there is a dataset that
-   has just been created and has no commit history, the commit id of its default branch is
-   ``None``.
+
+   In most cases, a branch can be thought of as a named commit. But if there is a dataset that has
+   just been created and has no commit history, the commit id of its default branch is ``None``.
 
 *****************
  Create a Branch
@@ -34,8 +34,8 @@ branch based on a revision. The revision can be one commit ID:
 
    dataset.branches.create(f"{BRANCH_NAME}", f"{COMMIT_ID}")
 
-The revision can also be the branch name. In this situation, the new branch will be created based
-on the latest commit of the source branch:
+The revision can also be the branch name. In this situation, the new branch will be created based on
+the latest commit of the source branch:
 
 .. code:: python
 
@@ -47,8 +47,7 @@ The revision can also be the tag name:
 
    dataset.branches.create(f"{BRANCH_NAME}", f"{TAG_NAME}")
 
-If no revision is specified, the created branch will be based on the current commit of the
-dataset:
+If no revision is specified, the created branch will be based on the current commit of the dataset:
 
 .. code:: python
 
@@ -58,8 +57,7 @@ dataset:
  List Branches
 ***************
 
-SDK provides method :meth:`~graviti.manager.branch.BranchManager.list` to support listing
-branches:
+SDK provides method :meth:`~graviti.manager.branch.BranchManager.list` to support listing branches:
 
 .. code:: python
 
@@ -69,8 +67,8 @@ branches:
  Get a Branch
 **************
 
-SDK provides method :meth:`~graviti.manager.branch.BranchManager.get` to support getting a branch
-by name:
+SDK provides method :meth:`~graviti.manager.branch.BranchManager.get` to support getting a branch by
+name:
 
 .. code:: python
 

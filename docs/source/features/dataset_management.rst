@@ -1,5 +1,5 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ####################
  Dataset Management
@@ -18,8 +18,8 @@ operations require a dataset first. Of course, it is necessary to initialize a
  Create a Dataset
 ******************
 
-SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.create` to support creating
-a dataset based on the given name:
+SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.create` to support creating a
+dataset based on the given name:
 
 .. code:: python
 
@@ -32,15 +32,16 @@ In addition to name, alias and storage config can also be specified:
    ws.datasets.create(f"{DATASET_NAME}", f"{DATASET_ALIAS}", f"{STORAGE_CONFIG}")
 
 .. note::
-   Unlike the operation on the web page, here SDK will not create an empty draft after
-   creating the dataset.
+
+   Unlike the operation on the web page, here SDK will not create an empty draft after creating the
+   dataset.
 
 ***************
  List Datasets
 ***************
 
-SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.list` to support listing
-datasets on the workspace:
+SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.list` to support listing datasets
+on the workspace:
 
 .. code:: python
 
@@ -50,8 +51,8 @@ datasets on the workspace:
  Get a Dataset
 ***************
 
-SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.get` to support getting
-a dataset by name:
+SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.get` to support getting a dataset
+by name:
 
 .. code:: python
 
@@ -61,8 +62,8 @@ a dataset by name:
  Delete a Dataset
 ******************
 
-SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.delete` to support deleting
-a dataset by name:
+SDK provides method :meth:`~graviti.manager.dataset.DatasetManager.delete` to support deleting a
+dataset by name:
 
 .. code:: python
 

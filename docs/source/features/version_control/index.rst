@@ -1,12 +1,12 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 #################
  Version Control
 #################
 
-Version control is one of the important features of Graviti. It can help teams or individual
-users develop datasets in parallel and trace the history of the data.
+Version control is one of the important features of Graviti. It can help teams or individual users
+develop datasets in parallel and trace the history of the data.
 
 ******
  HEAD
@@ -38,8 +38,8 @@ SDK supports viewing the version of the dataset through property
 **********
 
 SDK provides method :meth:`~graviti.manager.dataset.Dataset.checkout` to support switching the
-version of the dataset. This method will modify the ``HEAD`` of the dataset and discard the
-previous modification on the dataset.
+version of the dataset. This method will modify the ``HEAD`` of the dataset and discard the previous
+modification on the dataset.
 
 Checkout the ``Branch("dev")``:
 
@@ -81,7 +81,7 @@ Checkout the ``Tag("v1.0")``:
 Checkout the ``Commit("2cd4496")``:
 
 .. code:: python
- 
+
    >>> dataset.checkout("2cd44960e0bf486c950536f7eeebc482")
    Commit("2cd44960e0bf486c950536f7eeebc482")(
      (parent): Commit("e8dc893eb2344b9a98bddce71a1c0eab"),

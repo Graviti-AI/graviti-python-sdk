@@ -1,5 +1,5 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ################
  Upload Dataset
@@ -31,8 +31,8 @@ Or get an existing dataset:
 ***********************
 
 Users need to organize the data into :doc:`/features/sheet_management/dataframe` format with
-:doc:`/features/sheet_management/schema`. In addition, SDK also supports uploading different
-kinds of :doc:`/features/sheet_management/binary_files`, such as image, audio, etc.
+:doc:`/features/sheet_management/schema`. In addition, SDK also supports uploading different kinds
+of :doc:`/features/sheet_management/binary_files`, such as image, audio, etc.
 
 .. code:: python
 
@@ -83,16 +83,16 @@ kinds of :doc:`/features/sheet_management/binary_files`, such as image, audio, e
  Upload and Commit
 *******************
 
-Create or modify the sheet by uploading the dataframe, more details about sheet can
-be viewed in :doc:`/features/sheet_management/index`.
+Create or modify the sheet by uploading the dataframe, more details about sheet can be viewed in
+:doc:`/features/sheet_management/index`.
 
 .. code:: python
 
    dataset["train"] = df
    dataset.commit("Commit-1")
 
-The method :meth:`~graviti.manager.dataset.Dataset.commit` actually includes creating,
-uploading and committing the draft.
+The method :meth:`~graviti.manager.dataset.Dataset.commit` actually includes creating, uploading and
+committing the draft.
 
-Interested users can learn more about dataset version management in :doc:`/features/version_control/index`,
-which can also help troubleshooting when uploads fail.
+Interested users can learn more about dataset version management in
+:doc:`/features/version_control/index`, which can also help troubleshooting when uploads fail.

@@ -1,5 +1,5 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 #######################
  10 Minutes to Graviti
@@ -13,14 +13,14 @@ This is a simple introductory tutorial for beginners.
 
 Before using Graviti SDK, please visit `Graviti Developer Tools`_ to get an AccessKey.
 
-.. _Graviti Developer Tools: https://gas.graviti.com/tensorbay/developer
+.. _graviti developer tools: https://gas.graviti.com/tensorbay/developer
 
 *********************
  Dataset Preparation
 *********************
 
-This step is only for users who do not have datasets in their workspace. By running the code
-below, users can create a very simple dataset to experience Graviti SDK.
+This step is only for users who do not have datasets in their workspace. By running the code below,
+users can create a very simple dataset to experience Graviti SDK.
 
 .. code:: python
 
