@@ -1,13 +1,13 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ###########
  DataFrame
 ###########
 
-:class:`~graviti.dataframe.frame.DataFrame` is an integrated data structure
-with an easy-to-use API for simplifying data processing in Dataset.
-A Graviti DataFrame contains 2-dimensional tabular data and a Protex schema describing the names and types of each column.
+:class:`~graviti.dataframe.frame.DataFrame` is an integrated data structure with an easy-to-use API
+for simplifying data processing in Dataset. A Graviti DataFrame contains 2-dimensional tabular data
+and a Protex schema describing the names and types of each column.
 
 ************************
  Initialize a DataFrame
@@ -192,9 +192,9 @@ DataFrame supports adding columns by ``setitem``:
      },
    )
 
-The above example shows adding a column of data with no specified type,
-and the schema of the column will be inferred.
-In this case, the column schema can only be Portex :ref:`features/sheet_management/schema:Primitive Types`.
+The above example shows adding a column of data with no specified type, and the schema of the column
+will be inferred. In this case, the column schema can only be Portex
+:ref:`features/sheet_management/schema:Primitive Types`.
 
 If specific Portex type is required, please add a Series as the column to the DataFrame.
 
@@ -228,9 +228,9 @@ If specific Portex type is required, please add a Series as the column to the Da
      },
    )
 
-Note that not all DataFrame can be modified.
-Only if the fields of the schema are from given arguments, the DataFrame can be changed, like the above example.
-If the fields are defined in a template, the DataFrame cannot be changed, and ``TypeError`` will be raised:
+Note that not all DataFrame can be modified. Only if the fields of the schema are from given
+arguments, the DataFrame can be changed, like the above example. If the fields are defined in a
+template, the DataFrame cannot be changed, and ``TypeError`` will be raised:
 
 .. code:: python
 

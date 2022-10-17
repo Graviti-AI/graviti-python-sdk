@@ -1,21 +1,23 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ##############
  Binary Files
 ##############
 
-Graviti SDK use the :class:`~graviti.file.base.File` and :class:`~graviti.file.base.RemoteFile`
-to represent a specific file.
+Graviti SDK use the :class:`~graviti.file.base.File` and :class:`~graviti.file.base.RemoteFile` to
+represent a specific file.
 
-In addition, SDK also provides several commonly used file formats, including :class:`~graviti.file.image.Image`,
-:class:`~graviti.file.audio.Audio` and :class:`~graviti.file.point_cloud.PointCloud`.
+In addition, SDK also provides several commonly used file formats, including
+:class:`~graviti.file.image.Image`, :class:`~graviti.file.audio.Audio` and
+:class:`~graviti.file.point_cloud.PointCloud`.
 
 ******
  File
 ******
 
-SDK supports all various binary files including video files and text files by :class:`~graviti.file.base.File`.
+SDK supports all various binary files including video files and text files by
+:class:`~graviti.file.base.File`.
 
 Load the local text files to DataFrame:
 
@@ -54,8 +56,8 @@ Read the text in DataFrame:
    with text.open() as fp:
        fp.read().decode("utf-8")
 
-For all binary files, SDK supports viewing their basic information, including extension,
-size and checksum:
+For all binary files, SDK supports viewing their basic information, including extension, size and
+checksum:
 
 .. code:: python
 

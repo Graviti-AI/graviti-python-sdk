@@ -1,17 +1,16 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
+   Copyright 2022 Graviti. Licensed under MIT License.
 
 ########
  Schema
 ########
 
-Each sheet has a record type schema to describe the name and the type of each column.
-Graviti use `Portex`_ schema language to define the schema, please refer to its documentation for the syntax.
+Each sheet has a record type schema to describe the name and the type of each column. Graviti use
+Portex_ schema language to define the schema, please refer to its documentation for the syntax.
 
-.. _Portex: https://portex.readthedocs.io/en/latest/?badge=latest
+.. _portex: https://portex.readthedocs.io/en/latest/?badge=latest
 
 Graviti SDK supports the python interaction with the Portex schema.
-
 
 *****************
  Primitive Types
@@ -98,8 +97,8 @@ An enum type can be created by giving the values:
 array
 =====
 
-The array type can be created by giving the item type.
-Param ``length`` can be specified to fix the length of array.
+The array type can be created by giving the item type. Param ``length`` can be specified to fix the
+length of array.
 
 .. code:: python
 
@@ -115,24 +114,22 @@ Param ``length`` can be specified to fix the length of array.
    >>> array.length
    2
 
-
 record
 ======
 
-The record type can be created by giving the fields, including names and types.
-The record type is used to describe the name and type of each column of the tabular data,
-and all the primitive and complex types mentioned above can be used here for each column type.
+The record type can be created by giving the fields, including names and types. The record type is
+used to describe the name and type of each column of the tabular data, and all the primitive and
+complex types mentioned above can be used here for each column type.
 
-The names and types can be accessed by ``fields``,
-which acts like a dict whose key is the column name and the value is column type.
-
+The names and types can be accessed by ``fields``, which acts like a dict whose key is the column
+name and the value is column type.
 
 .. tabs::
 
    .. tab:: Init record with list
 
       .. code:: python
-      
+
          >>> import graviti.portex as pt
          >>> record = pt.record(
          ...    [
@@ -192,12 +189,12 @@ which acts like a dict whose key is the column name and the value is column type
            ),
          }
 
-
 ***************
  Template Type
 ***************
 
-The template type can be created by giving the parameters and the declaration. And the type can be instantiated by giving the arguments.
+The template type can be created by giving the parameters and the declaration. And the type can be
+instantiated by giving the arguments.
 
 .. code:: python
 
@@ -244,12 +241,12 @@ The template type can be created by giving the parameters and the declaration. A
      labels=['cat', 'dog'],
    )
 
-
 **************
  Schema Files
 **************
 
-Graviti SDK provides :func:`~graviti.portex.base.read_yaml` and :func:`~graviti.portex.base.read_json` to read the Portex type from a yaml or a json file.
+Graviti SDK provides :func:`~graviti.portex.base.read_yaml` and
+:func:`~graviti.portex.base.read_json` to read the Portex type from a yaml or a json file.
 
 .. tabs::
 
@@ -361,10 +358,12 @@ Graviti SDK provides :func:`~graviti.portex.base.read_yaml` and :func:`~graviti.
  Schema Package
 ****************
 
-Graviti SDK supports to use external packages defined under a repo. By giving the repo and revision, the package can be initialized and used locally.
+Graviti SDK supports to use external packages defined under a repo. By giving the repo and revision,
+the package can be initialized and used locally.
 
-SDK provides :func:`~graviti.portex.builder.build_package` to build an external Portex type package from the repo.
-Take `standard`_ as an example, which is used as the standard external package by Graviti.
+SDK provides :func:`~graviti.portex.builder.build_package` to build an external Portex type package
+from the repo. Take standard_ as an example, which is used as the standard external package by
+Graviti.
 
 .. _standard: https://github.com/Project-OpenBytes/portex-standard
 
@@ -401,7 +400,9 @@ Take `standard`_ as an example, which is used as the standard external package b
    )
 
 .. note::
-   Using branch as the revision to build the external package is unstable, since the latest commit may change.
+
+   Using branch as the revision to build the external package is unstable, since the latest commit
+   may change.
 
    Tag name or commit ID as revision is recommended.
 
@@ -409,9 +410,8 @@ Take `standard`_ as an example, which is used as the standard external package b
  Binary Files
 **************
 
-SDK supports adding and uploading binary files, whose schema must be of type ``file.File``, ``file.Image``,
-``file.Audio`` or ``file.PointCloud`` in `standard`_ package.
-
+SDK supports adding and uploading binary files, whose schema must be of type ``file.File``,
+``file.Image``, ``file.Audio`` or ``file.PointCloud`` in standard_ package.
 
 .. code:: python
 
@@ -426,9 +426,9 @@ SDK supports adding and uploading binary files, whose schema must be of type ``f
    ...    }
    ... )
 
-When using the record in the above example as the schema of a DataFrame,
-the column of "image" stores image files.
-Please see :doc:`/features/sheet_management/binary_files` for more details about data.
+When using the record in the above example as the schema of a DataFrame, the column of "image"
+stores image files. Please see :doc:`/features/sheet_management/binary_files` for more details about
+data.
 
 ****************
  Schema Methods
@@ -473,7 +473,7 @@ Take the following schema as an example:
           'fields': [{'name': 'x', 'type': 'int32'},
            {'name': 'y', 'type': 'int32'},
            {'name': 'categories', 'type': 'enum', 'values': ['cat', 'dog']}]}
-      
+
          >>> pt.PortexType.from_pyobj(pyobj)
          record(
            fields={
@@ -526,7 +526,8 @@ Take the following schema as an example:
 Expand
 ======
 
-For better comprehension and operations, SDK provides methods to expand external Portex type to builtin types:
+For better comprehension and operations, SDK provides methods to expand external Portex type to
+builtin types:
 
 .. code:: python
 

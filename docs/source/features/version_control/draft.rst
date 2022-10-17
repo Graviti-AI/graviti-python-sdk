@@ -1,15 +1,15 @@
 ..
- Copyright 2022 Graviti. Licensed under MIT License.
- 
-########
+   Copyright 2022 Graviti. Licensed under MIT License.
+
+#######
  Draft
-########
+#######
 
 All operations related to modifying data require a draft first.
 :class:`~graviti.manager.draft.Draft` can be viewed as a writable dataset in SDK.
 
-The following sections will introduce the operations and precautions related to drafts
-in the SDK. Of course, it is necessary to get a dataset first:
+The following sections will introduce the operations and precautions related to drafts in the SDK.
+Of course, it is necessary to get a dataset first:
 
 .. code:: python
 
@@ -18,12 +18,12 @@ in the SDK. Of course, it is necessary to get a dataset first:
    ws = Workspace(f"{YOUR_ACCESSKEY}")
    dataset = ws.datasets.get(f"{DATASET_NAME}")
 
-*****************
+****************
  Create a Draft
-*****************
+****************
 
-SDK provides method :meth:`~graviti.manager.draft.DraftManager.create` to support creating a
-draft based on a branch:
+SDK provides method :meth:`~graviti.manager.draft.DraftManager.create` to support creating a draft
+based on a branch:
 
 .. code:: python
 
@@ -42,6 +42,7 @@ In addition to title, it is also allowed to add description to the draft:
    dataset.drafts.create(f"{DRAFT_TITLE}", f"{DRAFT_DESCRIPTION}")
 
 .. important::
+
    Graviti use number, not title, to uniquely identify drafts.
 
 *************
@@ -61,8 +62,8 @@ Drafts can also be filtered by the branch name:
 
    dataset.drafts.list(branch=f"{BRANCH_NAME}")
 
-If neither the state nor the branch name is specified, then all open drafts on all branches
-will be returned:
+If neither the state nor the branch name is specified, then all open drafts on all branches will be
+returned:
 
 .. code:: python
 
@@ -72,8 +73,8 @@ will be returned:
  Get a Draft
 *************
 
-SDK provides method :meth:`~graviti.manager.draft.DraftManager.get` to support getting a draft
-by number:
+SDK provides method :meth:`~graviti.manager.draft.DraftManager.get` to support getting a draft by
+number:
 
 .. code:: python
 
@@ -95,9 +96,8 @@ description of the draft:
  Upload the Draft
 ******************
 
-SDK provides method :meth:`~graviti.manager.draft.Draft.upload` to support uploading the local
-draft to Graviti. This step is essential if the user wants to save changes to the sheet
-of the dataset.
+SDK provides method :meth:`~graviti.manager.draft.Draft.upload` to support uploading the local draft
+to Graviti. This step is essential if the user wants to save changes to the sheet of the dataset.
 
 .. code:: python
 
@@ -106,15 +106,16 @@ of the dataset.
    draft.upload()
 
 .. note::
+
    SDK supports specifying the max workers in multi-thread upload. The default is 8.
 
 ******************
  Commit the Draft
 ******************
 
-SDK provides method :meth:`~graviti.manager.draft.Draft.commit` to support committing a draft.
-This action means that a new commit will be created and all the changes from the draft will be
-saved into this commit. Furthermore, it is not allowed to read or upload data on a committed draft:
+SDK provides method :meth:`~graviti.manager.draft.Draft.commit` to support committing a draft. This
+action means that a new commit will be created and all the changes from the draft will be saved into
+this commit. Furthermore, it is not allowed to read or upload data on a committed draft:
 
 .. code:: python
 
@@ -178,9 +179,9 @@ Users can avoid the automatic update by setting ``update_dataset_head`` to False
  Close the Draft
 *****************
 
-SDK provides method :meth:`~graviti.manager.draft.Draft.close` to support closing a draft:
-This action means that all changes made on this draft will be dropped. And the closed draft
-cannot be reopened. Furthermore, it is not allowed to read or upload data on a closed draft:
+SDK provides method :meth:`~graviti.manager.draft.Draft.close` to support closing a draft: This
+action means that all changes made on this draft will be dropped. And the closed draft cannot be
+reopened. Furthermore, it is not allowed to read or upload data on a closed draft:
 
 .. code:: python
 
