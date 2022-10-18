@@ -7,6 +7,7 @@
 """The Portex builtin types."""
 
 
+from sys import version_info
 from typing import Iterable, Mapping, Optional, Tuple, Type, TypeVar, Union
 
 import pyarrow as pa
@@ -21,10 +22,10 @@ from graviti.portex.param import Param, Params, param
 from graviti.portex.register import PyArrowConversionRegister
 from graviti.utility import ModuleMocker
 
-try:
+if version_info >= (3, 9):
     # pylint: disable=import-error
     from zoneinfo import ZoneInfo as tz_checker
-except ModuleNotFoundError:
+else:
     try:
         # pylint: disable=import-error
         from pytz import timezone as tz_checker  # type: ignore[import]
