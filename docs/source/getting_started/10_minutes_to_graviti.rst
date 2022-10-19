@@ -28,20 +28,21 @@ users can create a very simple dataset to experience Graviti SDK.
    import graviti.portex as pt
 
    ws = Workspace(f"{YOUR_ACCESSKEY}")
-   dataset = ws.datasets.create("Graviti-dataset-demo")
+   ds = ws.datasets.create("Graviti-dataset-demo")
 
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
-   box2ds = std.label.Box2D(
-       categories=["boat", "car"],
-       attributes={
-           "difficult": pt.boolean(),
-           "occluded": pt.boolean(),
-       },
-   )
    schema = pt.record(
        {
            "filename": pt.string(),
-           "box2ds": pt.array(box2ds),
+           "box2ds": pt.array(
+               std.label.Box2D(
+                   categories=["boat", "car"],
+                   attributes={
+                       "difficult": pt.boolean(),
+                       "occluded": pt.boolean(),
+                   },
+               )
+           ),
        }
    )
 
@@ -65,8 +66,9 @@ users can create a very simple dataset to experience Graviti SDK.
            ],
        }
        data.append(row_data)
-   dataset["train"] = DataFrame(data=data, schema=schema)
-   dataset.commit("Commit-1")
+
+   ds["train"] = DataFrame(data, schema)
+   ds.commit("Commit-1")
 
 ***************
  Get a Dataset
@@ -77,6 +79,7 @@ Workspace initialization:
 .. code:: python
 
    from graviti import Workspace
+
    ws = Workspace(f"{YOUR_ACCESSKEY}")
 
 List datasets on the workspace:
@@ -92,8 +95,8 @@ Get one dataset:
 
 .. code:: python
 
-   >>> dataset = ws.datasets.get("Graviti-dataset-demo")
-   >>> dataset
+   >>> ds = ws.datasets.get("Graviti-dataset-demo")
+   >>> ds
    Dataset("graviti-example/Graviti-dataset-demo")(
      (alias): '',
      (default_branch): 'main',
@@ -109,7 +112,7 @@ Get one dataset:
 
 .. code:: python
 
-   >>> dataset["train"]
+   >>> ds["train"]
       filename  box2ds
    0  a.jpg     DataFrame(1, 6)
    1  b.jpg     DataFrame(1, 6)
@@ -123,7 +126,7 @@ Get the DataFrame:
 
 .. code:: python
 
-   >>> df = dataset["train"]
+   >>> df = ds["train"]
    >>> df
       filename  box2ds
    0  a.jpg     DataFrame(1, 6)
@@ -155,7 +158,7 @@ Get the data by rows or columns:
 
 .. code:: python
 
-   >>> df.loc[0]
+   >>> df.iloc[0]
    filename  a.jpg
    box2ds    DataFrame(1, 6)
 
@@ -168,7 +171,7 @@ Get the data by rows or columns:
 
 .. code:: python
 
-   >>> df.loc[0]["box2ds"]
+   >>> df.iloc[0]["box2ds"]
       xmin  ymin  xmax  ymax  category  attribute
                                         difficult  occluded
    0  1.0   1.0   4.0   5.0   boat      False      False
