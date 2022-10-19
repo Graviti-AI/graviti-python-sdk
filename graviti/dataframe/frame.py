@@ -213,6 +213,9 @@ class DataFrame(Container):
         assert isinstance(self.schema, pt.record)
         root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
 
+    def __iter__(self) -> Iterator[str]:
+        return self.schema.__iter__()
+
     @staticmethod
     def _get_repr_header(flatten_header: List[Tuple[str, ...]]) -> List[List[str]]:
         lines: List[List[str]] = []
@@ -731,6 +734,25 @@ class DataFrame(Container):
         """
         return self.__len__() * len(self.schema)
 
+    def keys(self) -> Iterator[str]:
+        """Return a iterator of the column names in DataFrame.
+
+        Returns:
+            The column name iterator.
+
+        """
+        return self.schema.__iter__()
+
+    def items(self) -> Iterator[Tuple[str, "Container"]]:
+        """Return a iterator of the column names and the columns in DataFrame.
+
+        Yields:
+            The column name and the column.
+
+        """
+        for key in self.schema:
+            yield key, self._columns[key]
+
     def head(self: _T, n: int = 5) -> _T:
         """Return the first `n` rows.
 
@@ -945,8 +967,8 @@ class DataFrame(Container):
         """
         df = pd.DataFrame()
 
-        for key in self.schema.keys():
-            df[key] = self._columns[key]._to_pandas_series()  # pylint: disable=protected-access
+        for key, value in self.items():
+            df[key] = value._to_pandas_series()  # pylint: disable=protected-access
 
         return df
 
