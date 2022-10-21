@@ -36,6 +36,7 @@ from graviti.openapi.sheet import (
 )
 from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
+from graviti.openapi.workspace import get_current_workspace, get_workspace
 
 __all__ = [
     "add_data",
@@ -56,12 +57,14 @@ __all__ = [
     "get_commit",
     "get_commit_sheet",
     "get_current_user",
+    "get_current_workspace",
     "get_dataset",
     "get_draft",
     "get_draft_sheet",
     "get_object_permission",
     "get_revision",
     "get_tag",
+    "get_workspace",
     "list_branches",
     "list_commit_data",
     "list_commit_sheets",
