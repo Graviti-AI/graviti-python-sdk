@@ -84,12 +84,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                     "created_at": <str>
                     "updated_at": <str>
                     "is_public": <bool>
-                    "config": <str>
+                    "storage_config": <str>
                     "backend_type": <str>
                 }
 
     Attributes:
-        dataset_id: Dataset ID.
         name: The name of the dataset, unique for a user.
         alias: Dataset alias.
         workspace: The workspace of the dataset.
@@ -99,8 +98,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         created_at: The time when the dataset was created.
         updated_at: The time when the dataset was last modified.
         is_public: Whether the dataset is public.
-        config: The config of dataset.
-        backend_type: The backend type of dataset storage.
+        storage_config: The storage config of dataset.
 
     """
 
@@ -114,7 +112,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         "created_at",
         "updated_at",
         "is_public",
-        "config",
+        "storage_config",
         "branch",
     )
 
@@ -130,7 +128,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.created_at = convert_iso_to_datetime(response["created_at"])
         self.updated_at = convert_iso_to_datetime(response["updated_at"])
         self.is_public = response["is_public"]
-        self.config = response["config"]
+        self.storage_config = response["storage_config"]
 
         backend_type = response["backend_type"]
         self.object_permission_manager = ObjectPermissionManagerType[backend_type].value(self)
@@ -316,14 +314,14 @@ class DatasetManager:
         self,
         name: str,
         alias: str = "",
-        config: Optional[str] = None,
+        storage_config: Optional[str] = None,
     ) -> Dataset:
         """Create a Graviti dataset with given name.
 
         Arguments:
             name: The name of the dataset, unique for a user.
             alias: Alias of the dataset, default is "".
-            config: The auth storage config name.
+            storage_config: The auth storage config name.
 
         Returns:
             The created :class:`~graviti.manager.dataset.Dataset` instance.
@@ -334,7 +332,7 @@ class DatasetManager:
             self.url,
             name=name,
             alias=alias,
-            config=config,
+            storage_config=storage_config,
             with_draft=False,
         )
 

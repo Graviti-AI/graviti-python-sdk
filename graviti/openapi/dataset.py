@@ -16,7 +16,7 @@ def create_dataset(
     name: str,
     *,
     alias: str = "",
-    config: Optional[str] = None,
+    storage_config: Optional[str] = None,
     with_draft: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets`.
@@ -26,7 +26,7 @@ def create_dataset(
         url: The URL of the graviti website.
         name: Name of the dataset, unique for a user.
         alias: Alias of the dataset, default is "".
-        config: The auth storage config name.
+        storage_config: The auth storage config name.
         with_draft: Whether to create a draft after the dataset is created. The default value of
             this parameter in OpenAPIv2 is False.
 
@@ -51,7 +51,7 @@ def create_dataset(
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
            "is_public": false,
-           "config": "exampleConfigName",
+           "storage_config": "exampleConfigName",
            "backend_type": "OSS"
         }
 
@@ -59,8 +59,8 @@ def create_dataset(
     url = f"{url}/v2/datasets"
     post_data: Dict[str, Any] = {"name": name, "alias": alias}
 
-    if config is not None:
-        post_data["config"] = config
+    if storage_config is not None:
+        post_data["storage_config"] = storage_config
     if with_draft is not None:
         post_data["with_draft"] = with_draft
 
@@ -100,7 +100,7 @@ def get_dataset(access_key: str, url: str, workspace: str, dataset: str) -> Dict
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
            "is_public": false,
-           "config": "exampleConfigName",
+           "storage_config": "exampleConfigName",
            "backend_type": "OSS"
         }
 
@@ -143,7 +143,7 @@ def list_datasets(
                    "updated_at": "2021-03-03T18:58:10Z",
                    "creator": "czhual",
                    "is_public": false,
-                   "config": "exampleConfigName",
+                   "storage_config": "exampleConfigName",
                    "backend_type": "OSS"
                }
             ],
@@ -210,7 +210,7 @@ def update_dataset(
            "updated_at": "2021-03-03T18:58:10Z",
            "creator": "czhual",
            "is_public": false,
-           "config": "exampleConfigName",
+           "storage_config": "exampleConfigName",
            "backend_type": "OSS"
         }
 
