@@ -34,6 +34,11 @@ from graviti.openapi.sheet import (
     list_commit_sheets,
     list_draft_sheets,
 )
+from graviti.openapi.storage_config import (
+    get_storage_config,
+    list_storage_configs,
+    update_storage_configs,
+)
 from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 from graviti.openapi.workspace import get_current_workspace, get_workspace
@@ -63,6 +68,7 @@ __all__ = [
     "get_draft_sheet",
     "get_object_permission",
     "get_revision",
+    "get_storage_config",
     "get_tag",
     "get_workspace",
     "list_branches",
@@ -73,9 +79,11 @@ __all__ = [
     "list_draft_data",
     "list_draft_sheets",
     "list_drafts",
+    "list_storage_configs",
     "list_tags",
     "update_data",
     "update_dataset",
     "update_draft",
     "update_schema",
+    "update_storage_configs",
 ]
