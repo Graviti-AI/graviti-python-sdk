@@ -5,7 +5,7 @@
 
 """Interfaces about the dataset object."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from graviti.openapi.requests import open_api_do
 
@@ -176,3 +176,51 @@ def get_object_permission(
         params["expired"] = expired
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
+
+
+def copy_objects(
+    access_key: str,
+    url: str,
+    owner: str,
+    target_dataset: str,
+    *,
+    source_dataset: str,
+    keys: List[str],
+) -> Dict[str, List[str]]:
+    """Execute the OpenAPI `POST /v2/datasets/{owner}/{target_dataset}/objects/copy`.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        owner: The owner of the dataset.
+        target_dataset: The name of the target dataset.
+        source_dataset: The name of the source dataset.
+        keys: The keys of the objects which need to be copied.
+
+    Returns:
+        The response of OpenAPI.
+
+    Examples:
+        >>> copy_objects(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "graviti-example",
+        ...     "MNIST",
+        ...     source_dataset="EMINST",
+        ...     keys=["xxxxx/xxxxx, xxxxx/xxxxx"]
+        ... )
+        {
+            keys: [
+                "yyyyyyy/yyyyyy",
+                "yyyyyyy/yyyyyy"
+            ]
+        }
+
+
+    """
+    url = f"{url}/v2/datasets/{owner}/{target_dataset}/objects/copy"
+    post_data = {"source_dataset": source_dataset, "keys": keys}
+
+    return open_api_do(  # type: ignore[no-any-return]
+        "POST", access_key, url, json=post_data
+    ).json()
