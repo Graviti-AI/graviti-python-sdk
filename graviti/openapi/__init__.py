@@ -22,7 +22,7 @@ from graviti.openapi.dataset import (
     update_dataset,
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
-from graviti.openapi.object import get_object_permission
+from graviti.openapi.object import copy_objects, get_object_permission
 from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
 from graviti.openapi.search import create_search
@@ -46,6 +46,7 @@ from graviti.openapi.workspace import get_current_workspace, get_workspace
 __all__ = [
     "add_data",
     "commit_draft",
+    "copy_objects",
     "create_branch",
     "create_dataset",
     "create_draft",
