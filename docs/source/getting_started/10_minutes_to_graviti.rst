@@ -103,7 +103,7 @@ Get one dataset:
      (created_at): 2022-07-20 04:22:35+00:00,
      (updated_at): 2022-07-20 04:23:45+00:00,
      (is_public): False,
-     (config): 'AmazonS3-us-west-1'
+     (storage_config): 'AmazonS3-us-west-1'
    )
 
 *************
