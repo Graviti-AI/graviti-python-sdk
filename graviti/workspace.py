@@ -5,7 +5,7 @@
 
 """The implementation of the Workspace."""
 
-from graviti.manager import DatasetManager
+from graviti.manager import DatasetManager, StorageConfigManager
 from graviti.openapi import get_current_user
 from graviti.utility import urlnorm
 
@@ -43,6 +43,7 @@ class Workspace:
         self._url = url
         response = get_current_user(access_key, url)
         self._dataset_manager = DatasetManager(access_key, url, response["workspace"])
+        self._storage_config_manager = StorageConfigManager(access_key, url, response["workspace"])
 
     @property
     def access_key(self) -> str:
@@ -73,3 +74,13 @@ class Workspace:
 
         """
         return self._dataset_manager
+
+    @property
+    def storage_configs(self) -> StorageConfigManager:
+        """Get class :class:`~graviti.manager.storage_config.StorageConfigManager` instance.
+
+        Returns:
+            Required :class:`~graviti.manager.storage_config.StorageConfigManager` instance.
+
+        """
+        return self._storage_config_manager

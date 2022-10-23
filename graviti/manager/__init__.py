@@ -14,6 +14,7 @@ from graviti.manager.permission import (
     OSSObjectPermissionManager,
     S3ObjectPermissionManager,
 )
+from graviti.manager.storage_config import StorageConfigManager
 from graviti.manager.tag import TagManager
 
 __all__ = [
@@ -28,5 +29,6 @@ __all__ = [
     "OSSObjectPermissionManager",
     "ObjectPermissionManager",
     "S3ObjectPermissionManager",
+    "StorageConfigManager",
     "TagManager",
 ]
