@@ -5,18 +5,27 @@
 
 """Interfaces about the storage config."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from graviti.openapi.requests import open_api_do
 
 
-def list_storage_configs(access_key: str, url: str, workspace: str) -> Dict[str, Any]:
+def list_storage_configs(
+    access_key: str,
+    url: str,
+    workspace: str,
+    *,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
+) -> Dict[str, Any]:
     """Execute the OpenAPI `GET /v2/workspaces/{workspace}/storage-configs`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
         workspace: The name of the workspace.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
     Returns:
         The response of OpenAPI.
@@ -46,19 +55,26 @@ def list_storage_configs(access_key: str, url: str, workspace: str) -> Dict[str,
 
     """
     url = f"{url}/v2/workspaces/{workspace}/storage-configs"
-    return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
+
+    params = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
+
+    return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
 def get_storage_config(
-    access_key: str, url: str, workspace: str, config_name: str
+    access_key: str, url: str, workspace: str, storage_config: str
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/workspaces/{workspace}/storage-configs/{config_name}`.
+    """Execute the OpenAPI `GET /v2/workspaces/{workspace}/storage-configs/{storage_config}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
         workspace: The name of the workspace.
-        config_name: The name of the storage config.
+        storage_config: The name of the storage config.
 
     Returns:
         The response of OpenAPI.
@@ -78,7 +94,7 @@ def get_storage_config(
         }
 
     """
-    url = f"{url}/v2/workspaces/{workspace}/storage-configs/{config_name}"
+    url = f"{url}/v2/workspaces/{workspace}/storage-configs/{storage_config}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
