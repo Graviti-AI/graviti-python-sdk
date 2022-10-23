@@ -326,11 +326,11 @@ class DatasetManager:
 
         return Dataset(self.access_key, self.url, response)
 
-    def get(self, dataset: str) -> Dataset:
+    def get(self, name: str) -> Dataset:
         """Get a Graviti dataset with given name.
 
         Arguments:
-            dataset: The name of the dataset, unique for a user.
+            name: The name of the dataset, unique for a user.
 
         Returns:
             The requested :class:`~graviti.manager.dataset.Dataset` instance.
@@ -339,11 +339,11 @@ class DatasetManager:
             ResourceNameError: When the required dataset does not exist.
 
         """
-        check_type("dataset", dataset, str)
-        if not dataset:
-            raise ResourceNameError("dataset", dataset)
+        check_type("name", name, str)
+        if not name:
+            raise ResourceNameError("dataset", name)
 
-        response = get_dataset(self.access_key, self.url, owner=self.owner, dataset=dataset)
+        response = get_dataset(self.access_key, self.url, owner=self.owner, dataset=name)
 
         return Dataset(self.access_key, self.url, response)
 
