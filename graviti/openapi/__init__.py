@@ -43,7 +43,10 @@ from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 from graviti.openapi.workspace import get_current_workspace, get_workspace
 
+RECORD_KEY = "__record_key"
+
 __all__ = [
+    "RECORD_KEY",
     "add_data",
     "commit_draft",
     "copy_objects",

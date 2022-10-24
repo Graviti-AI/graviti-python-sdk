@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple
 
 import pyarrow as pa
 
-from graviti.dataframe import RECORD_KEY
 from graviti.exception import StatusError
 from graviti.manager.branch import Branch
 from graviti.manager.commit import Commit
@@ -18,6 +17,7 @@ from graviti.manager.common import ALL_BRANCHES, CURRENT_BRANCH, LIMIT, check_he
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
+    RECORD_KEY,
     commit_draft,
     create_draft,
     get_draft,
