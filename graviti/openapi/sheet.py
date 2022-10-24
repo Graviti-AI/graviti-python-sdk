@@ -48,7 +48,7 @@ def _get_sheet(
 def create_sheet(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
@@ -58,12 +58,12 @@ def create_sheet(
     _arrow_schema: Optional[str] = None,
     record_key_strategy: Optional[str] = None,
 ) -> None:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         name: The sheet name.
@@ -89,7 +89,7 @@ standard@main", "types": [{"name": "file.Image"}]}], "type": "record", "fields":
         ... )
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets"
     post_data = {"name": name, "schema": schema, "_avro_schema": _avro_schema}
 
     if _arrow_schema is not None:
@@ -103,7 +103,7 @@ standard@main", "types": [{"name": "file.Image"}]}], "type": "record", "fields":
 def list_draft_sheets(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
@@ -111,12 +111,12 @@ def list_draft_sheets(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         with_record_count: Whether return the record count of each sheet. The default value of
@@ -154,7 +154,7 @@ def list_draft_sheets(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets"
 
     return _list_sheet(
         access_key, url, with_record_count=with_record_count, offset=offset, limit=limit
@@ -164,7 +164,7 @@ def list_draft_sheets(
 def list_commit_sheets(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     commit_id: str,
@@ -172,12 +172,12 @@ def list_commit_sheets(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/commits/{commit_id}/sheets`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit id.
         with_record_count: Whether return the record count of each sheet. The default value of
@@ -215,7 +215,7 @@ def list_commit_sheets(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/commits/{commit_id}/sheets"
 
     return _list_sheet(
         access_key, url, with_record_count=with_record_count, offset=offset, limit=limit
@@ -225,7 +225,7 @@ def list_commit_sheets(
 def get_draft_sheet(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
@@ -233,12 +233,12 @@ def get_draft_sheet(
     with_record_count: Optional[bool] = None,
     schema_format: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The sheet name.
@@ -269,7 +269,7 @@ def get_draft_sheet(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets/{sheet}"
 
     return _get_sheet(
         access_key, url, with_record_count=with_record_count, schema_format=schema_format
@@ -279,7 +279,7 @@ def get_draft_sheet(
 def get_commit_sheet(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     commit_id: str,
@@ -287,12 +287,13 @@ def get_commit_sheet(
     with_record_count: Optional[bool] = None,
     schema_format: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/commits/\
+    {commit_id}/sheets/{sheet}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit id..
         sheet: The sheet name.
@@ -323,7 +324,7 @@ def get_commit_sheet(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/commits/{commit_id}/sheets/{sheet}"
 
     return _get_sheet(
         access_key, url, with_record_count=with_record_count, schema_format=schema_format
@@ -333,19 +334,19 @@ def get_commit_sheet(
 def delete_sheet(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
     sheet: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}/drafts/\
+    """Execute the OpenAPI `DELETE /v2/datasets/{workspace}/{dataset}/drafts/\
     {draft_number}/sheets/{sheet}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The name of the sheet to be deleted.
@@ -361,5 +362,5 @@ def delete_sheet(
         ... )
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets/{sheet}"
     open_api_do("DELETE", access_key, url)

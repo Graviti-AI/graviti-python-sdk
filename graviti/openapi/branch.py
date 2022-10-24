@@ -13,18 +13,18 @@ from graviti.openapi.requests import open_api_do
 def create_branch(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     name: str,
     revision: str,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/branches`.
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/branches`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         name: The name of the branch.
         revision: The information to locate the specific commit, which can be the commit id,
@@ -53,7 +53,7 @@ def create_branch(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/branches"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/branches"
     post_data = {"name": name, "revision": revision}
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
@@ -63,18 +63,18 @@ def create_branch(
 def list_branches(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/branches`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/branches`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
         limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
@@ -107,7 +107,7 @@ def list_branches(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/branches"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/branches"
 
     params = {}
     if offset is not None:
@@ -121,17 +121,17 @@ def list_branches(
 def get_branch(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     branch: str,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/branches/{branch}`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/branches/{branch}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         branch: The name of the branch.
 
@@ -157,24 +157,24 @@ def get_branch(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/branches/{branch}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/branches/{branch}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def delete_branch(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     branch: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}/branches/{branch}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{workspace}/{dataset}/branches/{branch}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         branch: The name of the branch.
 
@@ -188,5 +188,5 @@ def delete_branch(
         ... )
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/branches/{branch}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/branches/{branch}"
     open_api_do("DELETE", access_key, url)

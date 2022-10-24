@@ -13,7 +13,7 @@ from graviti.openapi.requests import open_api_do
 def update_schema(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
@@ -23,13 +23,13 @@ def update_schema(
     _avro_schema: str,
     _arrow_schema: Optional[str] = None,
 ) -> None:
-    """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}/drafts/{draft_number}\
+    """Execute the OpenAPI `PATCH /v2/datasets/{workspace}/{dataset}/drafts/{draft_number}\
     /sheets/{sheet}/schema`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         sheet: The sheet name.
@@ -53,7 +53,7 @@ standard@main", "types": [{"name": "file.Image"}]}], "type": "record", "fields":
         ... )
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}/sheets/{sheet}/schema"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}/sheets/{sheet}/schema"
     patch_data: Dict[str, Any] = {"_schema": _schema, "_avro_schema": _avro_schema}
 
     if _arrow_schema is not None:

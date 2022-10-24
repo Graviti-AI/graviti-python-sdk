@@ -76,12 +76,13 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                     "id": <str>
                     "name": <str>
                     "alias": <str>
+                    "workspace": <str>
                     "default_branch": <str>
                     "commit_id": <Optional[str]>
                     "cover_url": <str>
+                    "creator": <str>
                     "created_at": <str>
                     "updated_at": <str>
-                    "owner": <str>
                     "is_public": <bool>
                     "config": <str>
                     "backend_type": <str>
@@ -91,11 +92,12 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         dataset_id: Dataset ID.
         name: The name of the dataset, unique for a user.
         alias: Dataset alias.
+        workspace: The workspace of the dataset.
         default_branch: The default branch of dataset.
         commit_id: The commit ID of the dataset.
+        creator: The creator of the dataset.
         created_at: The time when the dataset was created.
         updated_at: The time when the dataset was last modified.
-        owner: The owner of the dataset.
         is_public: Whether the dataset is public.
         config: The config of dataset.
         backend_type: The backend type of dataset storage.
@@ -122,10 +124,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self._dataset_id = response["id"]
         self.name = response["name"]
         self.alias = response["alias"]
+        self.workspace = response["workspace"]
         self.default_branch = response["default_branch"]
+        self.creator = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
         self.updated_at = convert_iso_to_datetime(response["updated_at"])
-        self.owner = response["owner"]
         self.is_public = response["is_public"]
         self.config = response["config"]
 
@@ -135,7 +138,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self._data: Commit = Branch(self, response["default_branch"], response["commit_id"])
 
     def _repr_head(self) -> str:
-        return f'{self.__class__.__name__}("{self.owner}/{self.name}")'
+        return f'{self.__class__.__name__}("{self.workspace}/{self.name}")'
 
     @property
     def HEAD(self) -> Commit:  # pylint: disable=invalid-name
@@ -208,7 +211,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         response = get_revision(
             self.access_key,
             self.url,
-            self.owner,
+            self.workspace,
             self.name,
             revision=revision,
         )
@@ -236,7 +239,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         response = update_dataset(
             self.access_key,
             self.url,
-            self.owner,
+            self.workspace,
             self.name,
             name=name,
             alias=alias,
@@ -294,10 +297,10 @@ class DatasetManager:
 
     """
 
-    def __init__(self, access_key: str, url: str, owner: str) -> None:
+    def __init__(self, access_key: str, url: str, workspace: str) -> None:
         self.access_key = access_key
         self.url = url
-        self.owner = owner
+        self.workspace = workspace
 
     def _generate(self, offset: int, limit: int) -> Generator[Dataset, None, int]:
         access_key = self.access_key
@@ -354,7 +357,7 @@ class DatasetManager:
         if not name:
             raise ResourceNameError("dataset", name)
 
-        response = get_dataset(self.access_key, self.url, owner=self.owner, dataset=name)
+        response = get_dataset(self.access_key, self.url, workspace=self.workspace, dataset=name)
 
         return Dataset(self.access_key, self.url, response)
 
@@ -375,4 +378,4 @@ class DatasetManager:
 
         """
         check_type("name", name, str)
-        delete_dataset(self.access_key, self.url, self.owner, name)
+        delete_dataset(self.access_key, self.url, self.workspace, name)

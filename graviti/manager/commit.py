@@ -77,7 +77,7 @@ class Commit(Sheets):
             commit_info = get_commit(
                 self._dataset.access_key,
                 self._dataset.url,
-                self._dataset.owner,
+                self._dataset.workspace,
                 self._dataset.name,
                 commit_id=self.commit_id,
             )
@@ -86,10 +86,10 @@ class Commit(Sheets):
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         return list_commit_data(  # type: ignore[no-any-return]
-            access_key=self._dataset.access_key,
-            url=self._dataset.url,
-            owner=self._dataset.owner,
-            dataset=self._dataset.name,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.workspace,
+            self._dataset.name,
             commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             offset=offset,
@@ -101,19 +101,19 @@ class Commit(Sheets):
             return {"sheets": []}
 
         return list_commit_sheets(
-            access_key=self._dataset.access_key,
-            url=self._dataset.url,
-            owner=self._dataset.owner,
-            dataset=self._dataset.name,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.workspace,
+            self._dataset.name,
             commit_id=self.commit_id,
         )
 
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
         return get_commit_sheet(
-            access_key=self._dataset.access_key,
-            url=self._dataset.url,
-            owner=self._dataset.owner,
-            dataset=self._dataset.name,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.workspace,
+            self._dataset.name,
             commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             with_record_count=True,
@@ -222,7 +222,7 @@ class Commit(Sheets):
         search_id = create_search(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             commit_id=self.commit_id,
             sheet=sheet,
@@ -239,7 +239,7 @@ class Commit(Sheets):
             return create_search(  # type: ignore[no-any-return]
                 self._dataset.access_key,
                 self._dataset.url,
-                self._dataset.owner,
+                self._dataset.workspace,
                 self._dataset.name,
                 commit_id=self.commit_id,  # type: ignore[arg-type]
                 sheet=sheet,
@@ -339,7 +339,7 @@ class CommitManager:
         response = list_commits(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             revision=revision,
             offset=offset,
@@ -383,7 +383,7 @@ class CommitManager:
         response = get_revision(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             revision=_revision,
         )

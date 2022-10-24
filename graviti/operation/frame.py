@@ -157,7 +157,7 @@ class AddData(DataOperation):
             add_data(
                 dataset.access_key,
                 dataset.url,
-                dataset.owner,
+                dataset.workspace,
                 dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
@@ -210,7 +210,7 @@ class UpdateSchema(DataFrameOperation):
         update_schema(
             dataset.access_key,
             dataset.url,
-            dataset.owner,
+            dataset.workspace,
             dataset.name,
             draft_number=draft_number,
             sheet=sheet,
@@ -266,7 +266,7 @@ class UpdateData(DataOperation):
             update_data(
                 dataset.access_key,
                 dataset.url,
-                dataset.owner,
+                dataset.workspace,
                 dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
@@ -310,7 +310,7 @@ class DeleteData(DataFrameOperation):
         delete_data(
             dataset.access_key,
             dataset.url,
-            dataset.owner,
+            dataset.workspace,
             dataset.name,
             draft_number=draft_number,
             sheet=sheet,
@@ -328,7 +328,7 @@ def _copy_files(
             keys = copy_objects(
                 dataset.access_key,
                 dataset.url,
-                dataset.owner,
+                dataset.workspace,
                 dataset.name,
                 source_dataset=source_dataset,
                 keys=[file.key for file in batch],
@@ -382,15 +382,15 @@ def _separate_files(
             try:
                 remote_files[source_dataset.name].append(file)
             except KeyError:
-                if source_dataset.owner != target_dataset.owner:
+                if source_dataset.workspace != target_dataset.workspace:
                     raise ObjectCopyError(
                         "It is not allowed to copy object between diffenent workspaces.\n"
                         "  Source:\n"
-                        f"    workspace: {source_dataset.owner},\n"
+                        f"    workspace: {source_dataset.workspace},\n"
                         f"    dataset: {source_dataset.name},\n"
                         f"    object key: {file.key}"
                         "  Target:\n"
-                        f"    workspace: {target_dataset.owner},\n"
+                        f"    workspace: {target_dataset.workspace},\n"
                         f"    dataset: {target_dataset.name},\n"
                     ) from None
 
@@ -399,12 +399,12 @@ def _separate_files(
                         "It is not allowed to copy object between datasets "
                         "with different storage configs.\n"
                         "  Source:\n"
-                        f"    workspace: {source_dataset.owner},\n"
+                        f"    workspace: {source_dataset.workspace},\n"
                         f"    dataset: {source_dataset.name},\n"
                         f"    storage config: {source_dataset.config},\n"
                         f"    object key: {file.key}"
                         "  Target:\n"
-                        f"    workspace: {target_dataset.owner},\n"
+                        f"    workspace: {target_dataset.workspace},\n"
                         f"    dataset: {target_dataset.name},\n"
                         f"    storage config: {target_dataset.config}\n"
                     ) from None
