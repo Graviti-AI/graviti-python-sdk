@@ -162,15 +162,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
             self._check_record_names(self[sheet_name].schema, sheet_name)
 
         dataset = self._dataset
-        object_permission_manager = dataset.object_permission_manager
         for sheet_operation in self.operations:
-            sheet_operation.do(
-                dataset.access_key,
-                dataset.url,
-                dataset.owner,
-                dataset.name,
-                draft_number=draft_number,
-            )
+            sheet_operation.do(dataset, draft_number)
+
         self.operations = []
 
         df_total = 0
@@ -192,16 +186,12 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
                     for df_operation in df.operations:
                         df_operation.do(
-                            dataset.access_key,
-                            dataset.url,
-                            dataset.owner,
-                            dataset.name,
+                            dataset,
                             draft_number=draft_number,
                             sheet=sheet_name,
                             jobs=jobs,
                             data_pbar=data_pbar,
                             file_pbar=file_pbar,
-                            object_permission_manager=object_permission_manager,
                         )
                     df.operations = []
 

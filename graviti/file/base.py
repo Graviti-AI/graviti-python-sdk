@@ -29,14 +29,15 @@ _ENCODINGS = mimetypes.encodings_map
 class FileBase(ReprMixin):
     """This class represents the file in a DataFrame."""
 
-    __slots__ = ("_key", "_extension", "_size")
+    __slots__ = ("_key", "_extension", "_size", "_post_key")
 
     _key: str
     _extension: str
     _size: int
+    _post_key: str
 
     def _to_post_data(self) -> Dict[str, Union[int, str]]:
-        return {"key": self.key, "extension": self.extension, "size": self.size}
+        return {"key": self._post_key, "extension": self.extension, "size": self.size}
 
     @classmethod
     def _from_pyarrow(
@@ -101,21 +102,17 @@ class File(FileBase):
 
     """
 
-    __slots__ = FileBase.__slots__ + ("_path", "_checksum", "_post_key")
+    __slots__ = FileBase.__slots__ + ("_path", "_checksum")
 
     _BUFFER_SIZE = 65536
 
     _checksum: str
-    _post_key: str
 
     def __init__(self, path: PathLike) -> None:
         self._path = Path(path).absolute()
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self._path.name}")'
-
-    def _to_post_data(self) -> Dict[str, Union[int, str]]:
-        return {"key": self._post_key, "extension": self.extension, "size": self.size}
 
     @classmethod
     def _from_pyarrow(
@@ -234,6 +231,7 @@ class RemoteFile(FileBase):
         object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         self._key = key
+        self._post_key = key
         self._extension = extension
         self._size = size
         self._object_permission = object_permission_manager
