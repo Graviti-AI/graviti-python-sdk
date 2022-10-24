@@ -84,6 +84,14 @@ class GitCommandError(PortexError):
         )
 
 
+class OperationError(GravitiException):
+    """This is the base class for custom exceptions in Graviti operation module."""
+
+
+class ObjectCopyError(OperationError):
+    """This class defines the exception for object copy error."""
+
+
 class ManagerError(GravitiException):
     """This is the base class for custom exceptions in Graviti manager module."""
 

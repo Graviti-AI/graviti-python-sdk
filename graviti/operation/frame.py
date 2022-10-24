@@ -5,20 +5,28 @@
 
 """Definitions of different operations on a DataFrame."""
 
-from typing import TYPE_CHECKING, Iterable, List
+from typing import TYPE_CHECKING, Dict, Iterable, List, Tuple
 
 from tqdm import tqdm
 
-from graviti.file import File, FileBase
-from graviti.openapi import RECORD_KEY, add_data, delete_data, update_data, update_schema
+from graviti.exception import ObjectCopyError
+from graviti.file import File, FileBase, RemoteFile
+from graviti.openapi import (
+    RECORD_KEY,
+    add_data,
+    copy_objects,
+    delete_data,
+    update_data,
+    update_schema,
+)
 from graviti.operation.common import get_schema
 from graviti.portex import record
-from graviti.utility import submit_multithread_tasks
+from graviti.utility import chunked, submit_multithread_tasks
 
 if TYPE_CHECKING:
     from graviti.dataframe import DataFrame
     from graviti.dataframe.column.series import NumberSeries
-    from graviti.manager import ObjectPermissionManager
+    from graviti.manager import Dataset, ObjectPermissionManager
 
 _MAX_BATCH_SIZE = 2048
 _MAX_ITEMS = 60000
@@ -47,31 +55,23 @@ class DataFrameOperation:
 
     def do(  # pylint: disable=invalid-name
         self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
+        dataset: "Dataset",
         *,
         draft_number: int,
         sheet: str,
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI create sheet.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_permission_manager: The object permission manager of the dataset.
 
         Raises:
             NotImplementedError: The method of the base class should not be called.
@@ -82,8 +82,6 @@ class DataFrameOperation:
 
 class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
     """This class defines the basic method of the data operation on a DataFrame."""
-
-    _files: List[FileBase]
 
     def __init__(self, data: "DataFrame") -> None:
         self._data = data
@@ -123,31 +121,23 @@ class AddData(DataOperation):
 
     def do(  # pylint: disable=invalid-name
         self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
+        dataset: "Dataset",
         *,
         draft_number: int,
         sheet: str,
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI add data.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_permission_manager: The object permission manager of the dataset.
 
         """
         batch_size = self._get_max_batch_size()
@@ -157,20 +147,18 @@ class AddData(DataOperation):
             batch = df.iloc[i : i + batch_size]
 
             # pylint: disable=protected-access
-            _upload_files(
-                filter(
-                    lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
-                ),
-                object_permission_manager,
-                jobs=jobs,
-                pbar=file_pbar,
-            )
+            local_files, remote_files = _separate_files(batch._generate_file(), dataset)
+            if remote_files:
+                _copy_files(dataset, remote_files, file_pbar)
+
+            if local_files:
+                _upload_files(local_files, dataset.object_permission_manager, file_pbar, jobs)
 
             add_data(
-                access_key,
-                url,
-                owner,
-                dataset,
+                dataset.access_key,
+                dataset.url,
+                dataset.owner,
+                dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
                 data=batch.to_pylist(_to_backend=True),
@@ -192,31 +180,23 @@ class UpdateSchema(DataFrameOperation):
 
     def do(  # pylint: disable=invalid-name, unused-argument, too-many-locals
         self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
+        dataset: "Dataset",
         *,
         draft_number: int,
         sheet: str,
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI update schema.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_permission_manager: The object permission manager of the dataset.
 
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
@@ -228,10 +208,10 @@ class UpdateSchema(DataFrameOperation):
             page.get_array()
 
         update_schema(
-            access_key,
-            url,
-            owner,
-            dataset,
+            dataset.access_key,
+            dataset.url,
+            dataset.owner,
+            dataset.name,
             draft_number=draft_number,
             sheet=sheet,
             _schema=portex_schema,
@@ -250,31 +230,23 @@ class UpdateData(DataOperation):
 
     def do(  # pylint: disable=invalid-name
         self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
+        dataset: "Dataset",
         *,
         draft_number: int,
         sheet: str,
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI add data.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_permission_manager: The object permission manager of the dataset.
 
         """
         batch_size = self._get_max_batch_size()
@@ -284,20 +256,18 @@ class UpdateData(DataOperation):
             batch = df.iloc[i : i + batch_size]
 
             # pylint: disable=protected-access
-            _upload_files(
-                filter(
-                    lambda f: isinstance(f, File), batch._generate_file()  # type: ignore[arg-type]
-                ),
-                object_permission_manager,
-                jobs=jobs,
-                pbar=file_pbar,
-            )
+            local_files, remote_files = _separate_files(batch._generate_file(), dataset)
+            if remote_files:
+                _copy_files(dataset, remote_files, file_pbar)
+
+            if local_files:
+                _upload_files(local_files, dataset.object_permission_manager, file_pbar, jobs)
 
             update_data(
-                access_key,
-                url,
-                owner,
-                dataset,
+                dataset.access_key,
+                dataset.url,
+                dataset.owner,
+                dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
                 data=batch.to_pylist(_to_backend=True),
@@ -318,42 +288,55 @@ class DeleteData(DataFrameOperation):
 
     def do(  # pylint: disable=invalid-name, unused-argument
         self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
+        dataset: "Dataset",
         *,
         draft_number: int,
         sheet: str,
         jobs: int,
         data_pbar: tqdm,
         file_pbar: tqdm,
-        object_permission_manager: "ObjectPermissionManager",
     ) -> None:
         """Execute the OpenAPI delete data.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
             sheet: The sheet name.
             jobs: The number of the max workers in multi-thread operation.
             data_pbar: The process bar for uploading structured data.
             file_pbar: The process bar for uploading binary files.
-            object_permission_manager: The object permission manager of the dataset.
 
         """
         delete_data(
-            access_key,
-            url,
-            owner,
-            dataset,
+            dataset.access_key,
+            dataset.url,
+            dataset.owner,
+            dataset.name,
             draft_number=draft_number,
             sheet=sheet,
             record_keys=self.record_keys,
         )
+
+
+def _copy_files(
+    dataset: "Dataset",
+    remote_files: Dict[str, List[RemoteFile]],
+    pbar: tqdm,
+) -> None:
+    for source_dataset, files in remote_files.items():
+        for batch in chunked(files, _MAX_BATCH_SIZE):
+            keys = copy_objects(
+                dataset.access_key,
+                dataset.url,
+                dataset.owner,
+                dataset.name,
+                source_dataset=source_dataset,
+                keys=[file.key for file in batch],
+            )
+            for file, key in zip(batch, keys):
+                file._post_key = key  # pylint: disable=protected-access
+
+            pbar.update(len(batch))
 
 
 def _upload_files(
@@ -378,3 +361,57 @@ def _upload_file(
     object_permission_manager.put_object(post_key, file.path)
     file._post_key = post_key  # pylint: disable=protected-access
     pbar.update()
+
+
+def _separate_files(
+    files: Iterable[FileBase], target_dataset: "Dataset"
+) -> Tuple[List[File], Dict[str, List[RemoteFile]]]:
+    local_files: List[File] = []
+    remote_files: Dict[str, List[RemoteFile]] = {}
+
+    for file in files:
+        # pylint: disable=protected-access
+        if isinstance(file, File):
+            local_files.append(file)
+
+        elif isinstance(file, RemoteFile):
+            source_dataset = file._object_permission._dataset
+            if source_dataset._dataset_id == target_dataset._dataset_id:
+                continue
+
+            try:
+                remote_files[source_dataset.name].append(file)
+            except KeyError:
+                if source_dataset.owner != target_dataset.owner:
+                    raise ObjectCopyError(
+                        "It is not allowed to copy object between diffenent workspaces.\n"
+                        "  Source:\n"
+                        f"    workspace: {source_dataset.owner},\n"
+                        f"    dataset: {source_dataset.name},\n"
+                        f"    object key: {file.key}"
+                        "  Target:\n"
+                        f"    workspace: {target_dataset.owner},\n"
+                        f"    dataset: {target_dataset.name},\n"
+                    ) from None
+
+                if source_dataset.config != target_dataset.config:
+                    raise ObjectCopyError(
+                        "It is not allowed to copy object between datasets "
+                        "with different storage configs.\n"
+                        "  Source:\n"
+                        f"    workspace: {source_dataset.owner},\n"
+                        f"    dataset: {source_dataset.name},\n"
+                        f"    storage config: {source_dataset.config},\n"
+                        f"    object key: {file.key}"
+                        "  Target:\n"
+                        f"    workspace: {target_dataset.owner},\n"
+                        f"    dataset: {target_dataset.name},\n"
+                        f"    storage config: {target_dataset.config}\n"
+                    ) from None
+
+                remote_files[source_dataset.name] = [file]
+
+        else:
+            raise TypeError("The file instance is neither 'File' nor 'RemoteFile'")
+
+    return local_files, remote_files

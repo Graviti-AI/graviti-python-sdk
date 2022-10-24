@@ -5,9 +5,14 @@
 
 """Definitions of different operations about the sheet on a draft."""
 
+from typing import TYPE_CHECKING
+
 from graviti.openapi import create_sheet, delete_sheet
 from graviti.operation.common import get_schema
 from graviti.portex import record
+
+if TYPE_CHECKING:
+    from graviti.manager import Dataset
 
 
 class SheetOperation:
@@ -21,22 +26,11 @@ class SheetOperation:
     def __init__(self, sheet: str) -> None:
         self.sheet = sheet
 
-    def do(  # pylint: disable=invalid-name
-        self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
-        *,
-        draft_number: int,
-    ) -> None:
+    def do(self, dataset: "Dataset", draft_number: int) -> None:  # pylint: disable=invalid-name
         """Execute the OpenAPI create sheet.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
 
         Raises:
@@ -59,32 +53,21 @@ class CreateSheet(SheetOperation):
         super().__init__(sheet)
         self.schema = schema
 
-    def do(  # pylint: disable=invalid-name
-        self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
-        *,
-        draft_number: int,
-    ) -> None:
+    def do(self, dataset: "Dataset", draft_number: int) -> None:  # pylint: disable=invalid-name
         """Execute the OpenAPI create sheet.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
 
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
 
         create_sheet(
-            access_key,
-            url,
-            owner,
-            dataset,
+            dataset.access_key,
+            dataset.url,
+            dataset.owner,
+            dataset.name,
             draft_number=draft_number,
             name=self.sheet,
             schema=portex_schema,
@@ -96,30 +79,19 @@ class CreateSheet(SheetOperation):
 class DeleteSheet(SheetOperation):
     """This class defines the operation that delete a sheet."""
 
-    def do(  # pylint: disable=invalid-name
-        self,
-        access_key: str,
-        url: str,
-        owner: str,
-        dataset: str,
-        *,
-        draft_number: int,
-    ) -> None:
+    def do(self, dataset: "Dataset", draft_number: int) -> None:  # pylint: disable=invalid-name
         """Execute the OpenAPI delete sheet.
 
         Arguments:
-            access_key: User's access key.
-            url: The URL of the graviti website.
-            owner: The owner of the dataset.
-            dataset: Name of the dataset, unique for a user.
+            dataset: The Dataset instance.
             draft_number: The draft number.
 
         """
         delete_sheet(
-            access_key,
-            url,
-            owner,
-            dataset,
+            dataset.access_key,
+            dataset.url,
+            dataset.owner,
+            dataset.name,
             draft_number=draft_number,
             sheet=self.sheet,
         )
