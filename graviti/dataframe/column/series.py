@@ -27,8 +27,9 @@ import pyarrow as pa
 
 import graviti.portex as pt
 from graviti.dataframe.column.indexing import ColumnSeriesILocIndexer, ColumnSeriesLocIndexer
-from graviti.dataframe.container import RECORD_KEY, Container
+from graviti.dataframe.container import Container
 from graviti.file import FileBase
+from graviti.openapi import RECORD_KEY
 from graviti.operation import UpdateData
 from graviti.paging import (
     LazyFactoryBase,

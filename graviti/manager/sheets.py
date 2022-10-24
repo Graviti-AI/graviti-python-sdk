@@ -22,9 +22,10 @@ import pyarrow as pa
 from tqdm.auto import tqdm
 
 import graviti.portex as pt
-from graviti.dataframe import RECORD_KEY, DataFrame
+from graviti.dataframe import DataFrame
 from graviti.exception import FieldNameConflictError
 from graviti.manager.common import LIMIT
+from graviti.openapi import RECORD_KEY
 from graviti.operation import AddData, CreateSheet, DeleteSheet, SheetOperation
 from graviti.paging import LazyLowerCaseFactory
 from graviti.portex import PortexRecordBase

@@ -28,11 +28,12 @@ import pyarrow as pa
 import graviti.portex as pt
 from graviti.dataframe.column.series import ArraySeries, EnumSeries, FileSeries, NumberSeries
 from graviti.dataframe.column.series import Series as ColumnSeries
-from graviti.dataframe.container import RECORD_KEY, Container
+from graviti.dataframe.container import Container
 from graviti.dataframe.indexing import DataFrameILocIndexer, DataFrameLocIndexer
 from graviti.dataframe.row.series import Series as RowSeries
 from graviti.dataframe.sql import RowSeries as SqlRowSeries
 from graviti.file import FileBase
+from graviti.openapi import RECORD_KEY
 from graviti.operation import AddData, DataFrameOperation, DeleteData, UpdateData, UpdateSchema
 from graviti.paging import LazyFactoryBase
 from graviti.utility import MAX_REPR_ROWS, Mode, ModuleMocker, engine
@@ -211,7 +212,7 @@ class DataFrame(Container):
         df[RECORD_KEY] = root._record_key  # type: ignore[index, assignment]
 
         assert isinstance(self.schema, pt.record)
-        root.operations.extend((UpdateSchema(self.schema), UpdateData(df)))
+        root.operations.extend((UpdateSchema(self.schema, df), UpdateData(df)))
 
     def __iter__(self) -> Iterator[str]:
         return self.schema.__iter__()
