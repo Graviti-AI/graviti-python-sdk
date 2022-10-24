@@ -352,11 +352,10 @@ def _upload_files(
     files: Iterable[File],
     object_permission_manager: "ObjectPermissionManager",
     pbar: tqdm,
-    _allow_retry: bool = True,
     jobs: int = 8,
 ) -> None:
     submit_multithread_tasks(
-        lambda file: _upload_file(file, object_permission_manager, pbar, _allow_retry),
+        lambda file: _upload_file(file, object_permission_manager, pbar),
         files,
         jobs=jobs,
     )
@@ -366,9 +365,8 @@ def _upload_file(
     file: File,
     object_permission_manager: "ObjectPermissionManager",
     pbar: tqdm,
-    _allow_retry: bool = True,
 ) -> None:
     post_key = f"{object_permission_manager.prefix}{file.get_checksum()}"
-    object_permission_manager.put_object(post_key, file.path, _allow_retry)
+    object_permission_manager.put_object(post_key, file.path)
     file._post_key = post_key  # pylint: disable=protected-access
     pbar.update()
