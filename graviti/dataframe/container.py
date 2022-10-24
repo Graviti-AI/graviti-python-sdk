@@ -20,8 +20,6 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T", bound="Container")
 
-RECORD_KEY = "__record_key"
-
 
 class Container:
     """The base class for the table-structured data container."""

@@ -37,7 +37,10 @@ from graviti.openapi.sheet import (
 from graviti.openapi.tag import create_tag, delete_tag, get_tag, list_tags
 from graviti.openapi.user import get_current_user
 
+RECORD_KEY = "__record_key"
+
 __all__ = [
+    "RECORD_KEY",
     "add_data",
     "commit_draft",
     "create_branch",

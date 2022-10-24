@@ -8,7 +8,7 @@
 from typing import TYPE_CHECKING, Any, Iterable, Tuple, Union, overload
 
 from graviti.dataframe.column.series import Series
-from graviti.dataframe.container import RECORD_KEY
+from graviti.openapi import RECORD_KEY
 from graviti.operation import UpdateData
 from graviti.utility import NestedDict
 

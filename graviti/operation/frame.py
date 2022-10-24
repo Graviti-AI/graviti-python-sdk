@@ -10,13 +10,14 @@ from typing import TYPE_CHECKING, Iterable, List
 from tqdm import tqdm
 
 from graviti.file import File, FileBase
-from graviti.openapi import add_data, delete_data, update_data, update_schema
+from graviti.openapi import RECORD_KEY, add_data, delete_data, update_data, update_schema
 from graviti.operation.common import get_schema
 from graviti.portex import record
 from graviti.utility import submit_multithread_tasks
 
 if TYPE_CHECKING:
     from graviti.dataframe import DataFrame
+    from graviti.dataframe.column.series import NumberSeries
     from graviti.manager import ObjectPermissionManager
 
 _MAX_BATCH_SIZE = 2048
@@ -185,10 +186,11 @@ class UpdateSchema(DataFrameOperation):
 
     """
 
-    def __init__(self, schema: record) -> None:
+    def __init__(self, schema: record, data: "DataFrame") -> None:
+        self._data = data
         self.schema = schema
 
-    def do(  # pylint: disable=invalid-name, unused-argument
+    def do(  # pylint: disable=invalid-name, unused-argument, too-many-locals
         self,
         access_key: str,
         url: str,
@@ -218,6 +220,12 @@ class UpdateSchema(DataFrameOperation):
 
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
+
+        # Request data between "Update Schema" and "Update Data" will make Graviti backend report
+        # error. So here to move the "request data" before "UpdateSchema" to bypass this issue.
+        record_keys: "NumberSeries" = self._data[RECORD_KEY]  # type: ignore[assignment]
+        for page in record_keys._data._pages:  # pylint: disable=protected-access
+            page.get_array()
 
         update_schema(
             access_key,
