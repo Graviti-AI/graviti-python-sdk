@@ -227,6 +227,8 @@ class OSSObjectPermissionManager(ObjectPermissionManager):
             if _allow_retry and code in self._RETRY_CODE:
                 self._clear_put_permission()
                 self.put_object(key, path, False)
+                return
+
             raise error from None
 
 
@@ -284,6 +286,7 @@ class AZUREObjectPermissionManager(ObjectPermissionManager):
             if _allow_retry and code == self._RETRY_CODE:
                 self._clear_get_permission()
                 return self.get_object(key, False)
+
             raise error from None
 
     def put_object(self, key: str, path: Path, _allow_retry: bool = True) -> None:
@@ -315,6 +318,8 @@ class AZUREObjectPermissionManager(ObjectPermissionManager):
             if _allow_retry and code == self._RETRY_CODE:
                 self._clear_put_permission()
                 self.put_object(key, path, False)
+                return
+
             raise error from None
 
 
@@ -456,6 +461,7 @@ class S3ObjectPermissionManager(ObjectPermissionManager):
             if _allow_retry and code in self._RETRY_CODE:
                 self._clear_get_permission()
                 return self.get_object(key, False)
+
             raise error from None
 
     def put_object(self, key: str, path: Path, _allow_retry: bool = True) -> None:
@@ -487,4 +493,6 @@ class S3ObjectPermissionManager(ObjectPermissionManager):
             if _allow_retry and code in self._RETRY_CODE:
                 self._clear_put_permission()
                 self.put_object(key, path, False)
+                return
+
             raise error from None
