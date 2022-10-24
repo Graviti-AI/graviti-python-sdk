@@ -107,7 +107,7 @@ class SearchManager:
         response = list_search_histories(
             _dataset.access_key,
             _dataset.url,
-            _dataset.owner,
+            _dataset.workspace,
             _dataset.name,
             commit_id=commit_id,
             draft_number=draft_number,
@@ -133,7 +133,7 @@ class SearchManager:
         response = create_search_history(
             _dataset.access_key,
             _dataset.url,
-            _dataset.owner,
+            _dataset.workspace,
             _dataset.name,
             commit_id=commit_id,
             draft_number=draft_number,
@@ -159,7 +159,7 @@ class SearchManager:
         response = get_search_history(
             _dataset.access_key,
             _dataset.url,
-            _dataset.owner,
+            _dataset.workspace,
             _dataset.name,
             search_id=search_id,
         )
@@ -209,5 +209,9 @@ class SearchManager:
 
         _dataset = self._dataset
         delete_search_history(
-            _dataset.access_key, _dataset.url, _dataset.owner, _dataset.name, search_id=search_id
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
+            search_id=search_id,
         )

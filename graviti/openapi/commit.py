@@ -13,19 +13,19 @@ from graviti.openapi.requests import open_api_do
 def commit_draft(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
     title: str,
     description: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits`.
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/commits`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The draft number.
         title: The draft title.
@@ -53,7 +53,7 @@ def commit_draft(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/commits"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/commits"
     post_data: Dict[str, Any] = {"draft_number": draft_number, "title": title}
 
     if description:
@@ -67,19 +67,19 @@ def commit_draft(
 def list_commits(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     revision: Optional[str] = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/commits`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
@@ -113,7 +113,7 @@ def list_commits(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/commits"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/commits"
 
     params: Dict[str, Any] = {}
     if offset is not None:
@@ -127,14 +127,14 @@ def list_commits(
 
 
 def get_commit(
-    access_key: str, url: str, owner: str, dataset: str, *, commit_id: str
+    access_key: str, url: str, workspace: str, dataset: str, *, commit_id: str
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/commits/{commit_id}`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/commits/{commit_id}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit ID.
 
@@ -159,19 +159,19 @@ def get_commit(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/commits/{commit_id}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def get_revision(
-    access_key: str, url: str, owner: str, dataset: str, *, revision: str
+    access_key: str, url: str, workspace: str, dataset: str, *, revision: str
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/revisions/{revision}`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/revisions/{revision}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         revision: The information to locate the specific commit, which can be the commit id,
             the branch name, or the tag name.
@@ -197,5 +197,5 @@ def get_revision(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/revisions/{revision}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/revisions/{revision}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]

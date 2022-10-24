@@ -13,19 +13,19 @@ from graviti.openapi.requests import open_api_do
 def create_draft(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     title: str,
     branch: Optional[str] = None,
     description: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/drafts`.
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/drafts`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         title: The draft title.
         branch: The specified branch name. None means the default branch of the dataset.
@@ -56,7 +56,7 @@ def create_draft(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts"
     post_data = {"title": title}
 
     if description:
@@ -72,7 +72,7 @@ def create_draft(
 def list_drafts(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     state: Optional[str] = None,
@@ -80,12 +80,12 @@ def list_drafts(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/drafts`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         state: The draft state which includes "OPEN", "CLOSED", "COMMITTED", "ALL" and None.
             None means listing open drafts.
@@ -123,7 +123,7 @@ def list_drafts(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts"
 
     params: Dict[str, Any] = {}
     if state:
@@ -139,14 +139,14 @@ def list_drafts(
 
 
 def get_draft(
-    access_key: str, url: str, owner: str, dataset: str, *, draft_number: int
+    access_key: str, url: str, workspace: str, dataset: str, *, draft_number: int
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/drafts/{draft_number}`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/drafts/{draft_number}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: Number of the draft.
 
@@ -174,14 +174,14 @@ def get_draft(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def update_draft(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     draft_number: int,
@@ -189,12 +189,12 @@ def update_draft(
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}/drafts/{draft_number}`.
+    """Execute the OpenAPI `PATCH /v2/datasets/{workspace}/{dataset}/drafts/{draft_number}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         draft_number: The updated draft number.
         state: The updated draft state which could be "CLOSED" or None.
@@ -249,7 +249,7 @@ def update_draft(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/drafts/{draft_number}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}"
     patch_data: Dict[str, Any] = {"draft_number": draft_number}
 
     if state:

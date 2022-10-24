@@ -14,7 +14,7 @@ from graviti.utility import SortParam
 def create_search(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     commit_id: str,
@@ -24,13 +24,13 @@ def create_search(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets\
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/commits/{commit_id}/sheets\
     /{sheet}/search`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         commit_id: The commit id.
         sheet: The sheet name.
@@ -126,7 +126,7 @@ def create_search(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/commits/{commit_id}/sheets/{sheet}/search"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/commits/{commit_id}/sheets/{sheet}/search"
 
     criteria = criteria.copy()
     if offset is not None:

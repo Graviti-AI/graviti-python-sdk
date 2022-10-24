@@ -43,12 +43,13 @@ def create_dataset(
            "id": "2bc95d506db2401b898067f1045d7f68",
            "name": "OxfordIIITPet",
            "alias": "",
+           "workspace": "graviti-example",
            "default_branch": "main",
            "commit_id": None,
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
+           "creator": "czhual",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
-           "owner": "graviti-example",
            "is_public": false,
            "config": "exampleConfigName",
            "backend_type": "OSS"
@@ -68,13 +69,13 @@ def create_dataset(
     ).json()
 
 
-def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}`.
+def get_dataset(access_key: str, url: str, workspace: str, dataset: str) -> Dict[str, Any]:
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
 
     Returns:
@@ -91,19 +92,20 @@ def get_dataset(access_key: str, url: str, owner: str, dataset: str) -> Dict[str
            "id": "2bc95d506db2401b898067f1045d7f68",
            "name": "OxfordIIITPet",
            "alias": "Oxford-IIIT Pet",
+           "workspace": "graviti-example",
            "default_branch": "main",
            "commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
+           "creator": "czhual",
            "created_at": "2021-03-03T18:58:10Z",
            "updated_at": "2021-03-03T18:58:10Z",
-           "owner": "graviti-example",
            "is_public": false,
            "config": "exampleConfigName",
            "backend_type": "OSS"
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
@@ -133,12 +135,13 @@ def list_datasets(
                    "id": "2bc95d506db2401b898067f1045d7f68",
                    "name": "OxfordIIITPet",
                    "alias": "Oxford-IIIT Pet",
+                   "workspace": "graviti-example",
                    "default_branch": "main",
                    "commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
                    "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
                    "created_at": "2021-03-03T18:58:10Z",
                    "updated_at": "2021-03-03T18:58:10Z",
-                   "owner": "graviti-example",
+                   "creator": "czhual",
                    "is_public": false,
                    "config": "exampleConfigName",
                    "backend_type": "OSS"
@@ -164,19 +167,19 @@ def list_datasets(
 def update_dataset(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     name: Optional[str] = None,
     alias: Optional[str] = None,
     default_branch: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `PATCH /v2/datasets/{owner}/{dataset}`.
+    """Execute the OpenAPI `PATCH /v2/datasets/{workspace}/{dataset}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         name: New name of the dataset, unique for a user.
         alias: New alias of the dataset.
@@ -197,21 +200,22 @@ def update_dataset(
         ... )
         {
            "id": "2bc95d506db2401b898067f1045d7f68",
-           "name": "OxfordIIITPets",
+           "name": "OxfordIIITPet",
            "alias": "Oxford-IIIT Pet",
+           "workspace": "graviti-example",
            "default_branch": "main",
            "commit_id": "a0d4065872f245e4ad1d0d1186e3d397",
            "cover_url": "https://tutu.s3.cn-northwest-1.amazonaws.com.cn/",
            "created_at": "2021-03-03T18:58:10Z",
-           "updated_at": "2021-03-04T18:58:10Z",
-           "owner": "graviti-example",
+           "updated_at": "2021-03-03T18:58:10Z",
+           "creator": "czhual",
            "is_public": false,
            "config": "exampleConfigName",
            "backend_type": "OSS"
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}"
     patch_data: Dict[str, Any] = {}
 
     if name is not None:
@@ -231,15 +235,15 @@ def update_dataset(
 def delete_dataset(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{workspace}/{dataset}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
 
     Examples:
@@ -251,5 +255,5 @@ def delete_dataset(
         ... )
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}"
     open_api_do("DELETE", access_key, url)

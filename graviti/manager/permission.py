@@ -43,7 +43,7 @@ class ObjectPermissionManager:
         return get_object_permission(  # type: ignore[no-any-return]
             dataset.access_key,
             dataset.url,
-            dataset.owner,
+            dataset.workspace,
             dataset.name,
             actions=actions,
             is_internal=config.is_internal,

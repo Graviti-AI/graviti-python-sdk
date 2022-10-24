@@ -88,10 +88,10 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         return list_draft_data(  # type: ignore[no-any-return]
-            access_key=self._dataset.access_key,
-            url=self._dataset.url,
-            owner=self._dataset.owner,
-            dataset=self._dataset.name,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.workspace,
+            self._dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
             offset=offset,
@@ -100,19 +100,19 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
     def _list_sheets(self) -> Dict[str, Any]:
         return list_draft_sheets(
-            access_key=self._dataset.access_key,
-            url=self._dataset.url,
-            owner=self._dataset.owner,
-            dataset=self._dataset.name,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.workspace,
+            self._dataset.name,
             draft_number=self.number,
         )
 
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
         return get_draft_sheet(
-            access_key=self._dataset.access_key,
-            url=self._dataset.url,
-            owner=self._dataset.owner,
-            dataset=self._dataset.name,
+            self._dataset.access_key,
+            self._dataset.url,
+            self._dataset.workspace,
+            self._dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
             with_record_count=True,
@@ -129,7 +129,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         response = update_draft(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             draft_number=self.number,
             title=title,
@@ -144,7 +144,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         response = update_draft(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             draft_number=self.number,
             state="CLOSED",
@@ -217,7 +217,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         branch_info = commit_draft(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             draft_number=self.number,
             title=title,
@@ -229,7 +229,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         draft_info = get_draft(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             draft_number=self.number,
         )
@@ -287,7 +287,7 @@ class DraftManager:
         response = list_drafts(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             state=state,
             branch=branch,
@@ -329,7 +329,7 @@ class DraftManager:
         response = create_draft(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             title=title,
             branch=branch,
@@ -353,7 +353,7 @@ class DraftManager:
         response = get_draft(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             draft_number=draft_number,
         )

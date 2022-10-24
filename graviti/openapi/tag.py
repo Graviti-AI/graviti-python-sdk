@@ -11,14 +11,14 @@ from graviti.openapi.requests import open_api_do
 
 
 def create_tag(
-    access_key: str, url: str, owner: str, dataset: str, *, name: str, revision: str
+    access_key: str, url: str, workspace: str, dataset: str, *, name: str, revision: str
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{dataset}/tags`.
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/tags`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         name: The tag name to be created for the specific commit.
         revision: The information to locate the specific commit, which can be the commit id,
@@ -47,7 +47,7 @@ def create_tag(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/tags"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/tags"
     post_data = {"name": name, "revision": revision}
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
@@ -57,18 +57,18 @@ def create_tag(
 def list_tags(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/tags`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
         limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
@@ -101,7 +101,7 @@ def list_tags(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/tags"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/tags"
 
     params = {}
     if offset is not None:
@@ -112,13 +112,13 @@ def list_tags(
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
 
-def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/tags/{tag}`.
+def get_tag(access_key: str, url: str, workspace: str, dataset: str, *, tag: str) -> Dict[str, Any]:
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/tags/{tag}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         tag: The name of the tag to be got.
 
@@ -144,24 +144,24 @@ def get_tag(access_key: str, url: str, owner: str, dataset: str, *, tag: str) ->
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/tags/{tag}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/tags/{tag}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
 
 def delete_tag(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     tag: str,
 ) -> None:
-    """Execute the OpenAPI `DELETE /v2/datasets/{owner}/{dataset}/tags/{tag}`.
+    """Execute the OpenAPI `DELETE /v2/datasets/{workspace}/{dataset}/tags/{tag}`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         tag: The name of the tag to be deleted.
 
@@ -175,5 +175,5 @@ def delete_tag(
         ... )
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/tags/{tag}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/tags/{tag}"
     open_api_do("DELETE", access_key, url)

@@ -44,7 +44,7 @@ class BranchManager:
         response = list_branches(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             offset=offset,
             limit=limit,
@@ -87,7 +87,7 @@ class BranchManager:
         response = create_branch(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             name=name,
             revision=_revision,
@@ -116,7 +116,7 @@ class BranchManager:
         response = get_branch(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             branch=name,
         )
@@ -150,7 +150,7 @@ class BranchManager:
         delete_branch(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             branch=name,
         )

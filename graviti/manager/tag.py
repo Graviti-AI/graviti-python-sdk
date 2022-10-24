@@ -44,7 +44,7 @@ class TagManager:
         response = list_tags(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             offset=offset,
             limit=limit,
@@ -87,7 +87,7 @@ class TagManager:
         response = create_tag(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             name=name,
             revision=_revision,
@@ -116,7 +116,7 @@ class TagManager:
         response = get_tag(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             tag=name,
         )
@@ -149,7 +149,7 @@ class TagManager:
         delete_tag(
             self._dataset.access_key,
             self._dataset.url,
-            self._dataset.owner,
+            self._dataset.workspace,
             self._dataset.name,
             tag=name,
         )

@@ -66,7 +66,7 @@ class CreateSheet(SheetOperation):
         create_sheet(
             dataset.access_key,
             dataset.url,
-            dataset.owner,
+            dataset.workspace,
             dataset.name,
             draft_number=draft_number,
             name=self.sheet,
@@ -90,7 +90,7 @@ class DeleteSheet(SheetOperation):
         delete_sheet(
             dataset.access_key,
             dataset.url,
-            dataset.owner,
+            dataset.workspace,
             dataset.name,
             draft_number=draft_number,
             sheet=self.sheet,

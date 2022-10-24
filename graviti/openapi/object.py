@@ -13,19 +13,19 @@ from graviti.openapi.requests import open_api_do
 def get_object_permission(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     dataset: str,
     *,
     actions: str,
     is_internal: Optional[bool] = None,
     expired: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the OpenAPI `GET /v2/datasets/{owner}/{dataset}/objects/permissions`.
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/objects/permissions`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         actions: The specific actions including "GET" and "PUT". Supports multiple actions,
             which need to be separated by ``|``, like "GET|PUT".
@@ -167,7 +167,7 @@ def get_object_permission(
         }
 
     """
-    url = f"{url}/v2/datasets/{owner}/{dataset}/objects/permissions"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/objects/permissions"
     params: Dict[str, Any] = {"actions": actions}
 
     if is_internal is not None:
@@ -181,18 +181,18 @@ def get_object_permission(
 def copy_objects(
     access_key: str,
     url: str,
-    owner: str,
+    workspace: str,
     target_dataset: str,
     *,
     source_dataset: str,
     keys: List[str],
 ) -> Dict[str, List[str]]:
-    """Execute the OpenAPI `POST /v2/datasets/{owner}/{target_dataset}/objects/copy`.
+    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{target_dataset}/objects/copy`.
 
     Arguments:
         access_key: User's access key.
         url: The URL of the graviti website.
-        owner: The owner of the dataset.
+        workspace: The workspace of the dataset.
         target_dataset: The name of the target dataset.
         source_dataset: The name of the source dataset.
         keys: The keys of the objects which need to be copied.
@@ -218,7 +218,7 @@ def copy_objects(
 
 
     """
-    url = f"{url}/v2/datasets/{owner}/{target_dataset}/objects/copy"
+    url = f"{url}/v2/datasets/{workspace}/{target_dataset}/objects/copy"
     post_data = {"source_dataset": source_dataset, "keys": keys}
 
     return open_api_do(  # type: ignore[no-any-return]
