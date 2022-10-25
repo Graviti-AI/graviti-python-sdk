@@ -574,6 +574,9 @@ class DataFrame(Container):
         return lines
 
     def _generate_file(self) -> Iterator[FileBase]:
+        return chain.from_iterable(self._generate_file_series())
+
+    def _generate_file_series(self) -> Iterator[FileSeries]:
         for extrator in _generate_file_extractor(self.schema):
             yield from extrator(self)
 
@@ -1065,26 +1068,24 @@ class DataFrame(Container):
 
 def _generate_file_extractor(
     schema: pt.PortexRecordBase, base_extrator: Callable[[DataFrame], Any] = lambda df: df
-) -> Iterator[Callable[[DataFrame], Iterable[FileBase]]]:
+) -> Iterator[Callable[[DataFrame], Iterable[FileSeries]]]:
     for key, value in schema.items():
-
-        def extrator(df: DataFrame, _key: str = key) -> Any:
-            return base_extrator(df)[_key]
-
         container = value.container
         if container == FileSeries:
-            yield extrator
+            yield lambda df, _key=key: (base_extrator(df)[_key],)  # type: ignore[misc]
         elif container == DataFrame:
-            yield from _generate_file_extractor(value, extrator)  # type: ignore[arg-type]
+            yield from _generate_file_extractor(
+                value, lambda df, _key=key: base_extrator(df)[_key]  # type: ignore[arg-type, misc]
+            )
         elif container == ArraySeries:
             yield from _generate_file_extrator_from_array(
-                value, lambda df, _e=extrator: (_e(df),)  # type: ignore[misc]
+                value, lambda df, _key=key: (base_extrator(df)[_key],)  # type: ignore[misc]
             )
 
 
 def _generate_file_extrator_from_record(
     schema: pt.PortexRecordBase, base_extrator: Callable[[DataFrame], Iterable[Any]]
-) -> Iterator[Callable[[DataFrame], Iterator[FileBase]]]:
+) -> Iterator[Callable[[DataFrame], Iterator[FileSeries]]]:
     for key, value in schema.items():
         yield from _assign_extrator(
             value,
@@ -1094,7 +1095,7 @@ def _generate_file_extrator_from_record(
 
 def _generate_file_extrator_from_array(
     schema: pt.PortexType, base_extrator: Callable[[DataFrame], Iterable[Any]]
-) -> Iterator[Callable[[DataFrame], Iterator[FileBase]]]:
+) -> Iterator[Callable[[DataFrame], Iterator[FileSeries]]]:
     yield from _assign_extrator(
         schema.to_builtin().items,  # type: ignore[attr-defined]
         lambda df: chain.from_iterable(base_extrator(df)),
@@ -1103,11 +1104,11 @@ def _generate_file_extrator_from_array(
 
 def _assign_extrator(
     schema: pt.PortexType, extrator: Callable[[DataFrame], Iterable[Any]]
-) -> Iterator[Callable[[DataFrame], Iterator[FileBase]]]:
+) -> Iterator[Callable[[DataFrame], Iterator[FileSeries]]]:
     container = schema.container
 
     if container == FileSeries:
-        yield lambda df: chain.from_iterable(extrator(df))
+        yield extrator  # type: ignore[misc]
     elif container == DataFrame:
         yield from _generate_file_extrator_from_record(schema, extrator)  # type: ignore[arg-type]
     elif container == ArraySeries:

@@ -99,7 +99,7 @@ class DataOperation(DataFrameOperation):  # pylint: disable=abstract-method
             The file amount to be uploaded.
 
         """
-        return len(list(self._data._generate_file()))  # pylint: disable=protected-access
+        return sum(map(len, self._data._generate_file_series()))  # pylint: disable=protected-access
 
     def get_data_count(self) -> int:
         """Get the data amount to be uploaded.
