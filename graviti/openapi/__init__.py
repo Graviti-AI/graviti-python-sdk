@@ -25,7 +25,15 @@ from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_d
 from graviti.openapi.object import copy_objects, get_object_permission
 from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
-from graviti.openapi.search import create_search
+from graviti.openapi.search import (
+    create_search,
+    create_search_history,
+    delete_search_history,
+    get_search_history,
+    list_search_histories,
+    search,
+    update_search_history,
+)
 from graviti.openapi.sheet import (
     create_sheet,
     delete_sheet,
@@ -54,11 +62,13 @@ __all__ = [
     "create_dataset",
     "create_draft",
     "create_search",
+    "create_search_history",
     "create_sheet",
     "create_tag",
     "delete_branch",
     "delete_data",
     "delete_dataset",
+    "delete_search_history",
     "delete_sheet",
     "delete_tag",
     "do",
@@ -72,6 +82,7 @@ __all__ = [
     "get_draft_sheet",
     "get_object_permission",
     "get_revision",
+    "get_search_history",
     "get_storage_config",
     "get_tag",
     "get_workspace",
@@ -83,11 +94,14 @@ __all__ = [
     "list_draft_data",
     "list_draft_sheets",
     "list_drafts",
+    "list_search_histories",
     "list_storage_configs",
     "list_tags",
+    "search",
     "update_data",
     "update_dataset",
     "update_draft",
     "update_schema",
+    "update_search_history",
     "update_storage_configs",
 ]
