@@ -21,6 +21,7 @@ from graviti.manager.permission import (
     OSSObjectPermissionManager,
     S3ObjectPermissionManager,
 )
+from graviti.manager.search import SearchManager
 from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
     create_dataset,
@@ -185,6 +186,16 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
 
         """
         return TagManager(self)
+
+    @property
+    def searches(self) -> SearchManager:
+        """Get class :class:`~graviti.manager.search.SearchManager` instance.
+
+        Returns:
+            Required :class:`~graviti.manager.search.SearchManager` instance.
+
+        """
+        return SearchManager(self)
 
     def checkout(self, revision: str) -> None:
         """Checkout to a commit.
