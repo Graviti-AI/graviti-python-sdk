@@ -8,6 +8,7 @@
 from typing import Any, Dict, Optional
 
 from graviti.openapi.requests import open_api_do
+from graviti.utility import SortParam
 
 
 def create_search(
@@ -216,8 +217,7 @@ def list_search_histories(
     commit_id: Optional[str] = None,
     draft_number: Optional[int] = None,
     sheet: Optional[str] = None,
-    order_by: Optional[str] = None,
-    sort: Optional[str] = None,
+    sort: SortParam = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -231,8 +231,7 @@ def list_search_histories(
         commit_id: The commit id.
         draft_number: The draft number.
         sheet: The name of the sheet.
-        order_by: Return the requests ordered by which field, default is "created_at".
-        sort: Return the requests sorted in ASC or DESC order, default is DESC.
+        sort: The column and the direction the list result sorted by.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
         limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
@@ -290,8 +289,6 @@ def list_search_histories(
         params["draft_number"] = draft_number
     if sheet is not None:
         params["sheet"] = sheet
-    if order_by is not None:
-        params["order_by"] = order_by
     if sort is not None:
         params["sort"] = sort
     if offset is not None:
@@ -424,6 +421,7 @@ def list_search_records(
     dataset: str,
     *,
     search_id: str,
+    sort: SortParam = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -435,6 +433,7 @@ def list_search_records(
         workspace: The name of the workspace.
         dataset: The name of the dataset.
         search_id: The search id.
+        sort: The column and the direction the list result sorted by.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
         limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
@@ -475,6 +474,8 @@ def list_search_records(
     url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/records"
 
     params: Dict[str, Any] = {}
+    if sort is not None:
+        params["sort"] = sort
     if offset is not None:
         params["offset"] = offset
     if limit is not None:
