@@ -188,8 +188,6 @@ def create_search_history(
             },
             "creator": "linjiX",
             "created_at": "2021-03-05T18:58:10Z",
-            "updater": "linjiX",
-            "updated_at": "2021-03-05T18:58:10Z",
             "total_count": null
         }
 
@@ -261,8 +259,6 @@ def list_search_histories(
                     },
                     "creator": "linjiX",
                     "created_at": "2021-03-06T18:58:10Z",
-                    "updater": "linjiX",
-                    "updated_at": "2021-03-06T18:58:10Z",
                     "total_count": 200
                 },
                 {
@@ -276,8 +272,6 @@ def list_search_histories(
                     },
                     "creator": "linjiX",
                     "created_at": "2021-03-05T18:58:10Z",
-                    "updater": "linjiX",
-                    "updated_at": "2021-03-05T18:58:10Z",
                     "total_count": 1000
                 }
             ],
@@ -347,70 +341,12 @@ def get_search_history(
             },
             "creator": "linjiX",
             "created_at": "2021-03-05T18:58:10Z",
-            "updater": "linjiX",
-            "updated_at": "2021-03-05T18:58:10Z",
             "total_count": 1000
         }
 
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}"
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
-
-
-def update_search_history(
-    access_key: str,
-    url: str,
-    workspace: str,
-    dataset: str,
-    *,
-    search_id: str,
-    total_count: int,
-) -> Dict[str, Any]:
-    """Execute the OpenAPI `PATCH /v2/datasets/{workspace}/{dataset}/searches/{search_id}`.
-
-    Arguments:
-        access_key: User's access key.
-        url: The URL of the graviti website.
-        workspace: The name of the workspace.
-        dataset: The name of the dataset.
-        search_id: The search id.
-        total_count: The total count of the search.
-
-    Returns:
-        The response of OpenAPI.
-
-    Examples:
-        >>> update_search_history(
-        ...     "ACCESSKEY-********",
-        ...     "https://api.graviti.com",
-        ...     "portex-test",
-        ...     "BDD100K",
-        ...     search_id="53dbbedf35064f21a7b85def60de840e",
-        ...     total_count=1000,
-        ... )
-        {
-            "id": "53dbbedf35064f21a7b85def60de840e",
-            "commit_id": "89c33716f3834e188ac1ff749c6c270d",
-            "sheet": "train",
-            "criteria": {
-                "where": {
-                    "$any_match": ["$.box2ds", { "$eq": ["$.category", 7] }]
-                }
-            },
-            "creator": "linjiX",
-            "created_at": "2021-03-05T18:58:10Z",
-            "updater": "linjiX",
-            "updated_at": "2021-03-05T18:58:10Z",
-            "total_count": 1000
-        }
-
-    """
-    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}"
-    patch_data = {"total_count": total_count}
-
-    return open_api_do(  # type: ignore[no-any-return]
-        "PATCH", access_key, url, json=patch_data
-    ).json()
 
 
 def delete_search_history(
@@ -444,16 +380,16 @@ def delete_search_history(
     open_api_do("DELETE", access_key, url)
 
 
-def search(
+def get_search_total_count(
     access_key: str,
     url: str,
     workspace: str,
     dataset: str,
     *,
     search_id: str,
-    criteria: Optional[Dict[str, Any]],
-) -> Dict[str, Any]:
-    """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/searches/{search_id}`.
+) -> int:
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/searches/{search_id}\
+    /total-count`.
 
     Arguments:
         access_key: User's access key.
@@ -461,22 +397,60 @@ def search(
         workspace: The name of the workspace.
         dataset: The name of the dataset.
         search_id: The search id.
-        criteria: The criteria of the search.
 
     Returns:
         The response of OpenAPI.
 
     Examples:
-        >>> search(
+        >>> get_search_total_count(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "portex-test",
         ...     "BDD100K",
         ...     search_id="53dbbedf35064f21a7b85def60de840e",
-        ...     criteria={"where": {"$any_match": ["$.box2ds", {"$eq": ["$.category", 7]}]}},
+        ... )
+        1000
+
+    """
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/total_count"
+
+    return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
+
+
+def list_search_records(
+    access_key: str,
+    url: str,
+    workspace: str,
+    dataset: str,
+    *,
+    search_id: str,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/searches/{search_id}/records`.
+
+    Arguments:
+        access_key: User's access key.
+        url: The URL of the graviti website.
+        workspace: The name of the workspace.
+        dataset: The name of the dataset.
+        search_id: The search id.
+        offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
+        limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
+
+    Returns:
+        The response of OpenAPI.
+
+    Examples:
+        >>> list_search_records(
+        ...     "ACCESSKEY-********",
+        ...     "https://api.graviti.com",
+        ...     "portex-test",
+        ...     "BDD100K",
+        ...     search_id="53dbbedf35064f21a7b85def60de840e",
         ... )
         {
-            "data": [
+            "records": [
                 {
                     "__record_key": "2312312312321",
                     "filename": "0000f77c-6257be58.jpg",
@@ -498,12 +472,12 @@ def search(
         }
 
     """
-    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/records"
 
-    post_data = {}
-    if criteria:
-        post_data["criteria"] = criteria
+    params: Dict[str, Any] = {}
+    if offset is not None:
+        params["offset"] = offset
+    if limit is not None:
+        params["limit"] = limit
 
-    return open_api_do(  # type: ignore[no-any-return]
-        "POST", access_key, url, json=post_data
-    ).json()
+    return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]

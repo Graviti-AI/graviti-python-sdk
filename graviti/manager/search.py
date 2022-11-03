@@ -15,7 +15,6 @@ from graviti.openapi import (
     delete_search_history,
     get_search_history,
     list_search_histories,
-    update_search_history,
 )
 from graviti.utility import ReprMixin, check_type, convert_iso_to_datetime
 
@@ -39,8 +38,6 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
                     "total_count": <int>,
                     "creator": <str>,
                     "created_at": <str>,
-                    "updater": <str>,
-                    "updated_at": <str>,
                 },
 
     Attributes:
@@ -52,8 +49,6 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         total_count: The total count of this search history.
         creator: The creator of this search history.
         created_at: The create time of this search history.
-        updater: The updater of this search history.
-        updated_at: The update time of this search history.
 
     """
 
@@ -65,8 +60,6 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         "total_count",
         "creator",
         "created_at",
-        "updater",
-        "updated_at",
     )
 
     def __init__(self, dataset: "Dataset", response: Dict[str, Any]) -> None:
@@ -83,25 +76,9 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.total_count = response["total_count"]
         self.creator = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
-        self.updater = response["updater"]
-        self.updated_at = convert_iso_to_datetime(response["updated_at"])
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.search_id}")'
-
-    def _edit(self, *, total_count: int) -> None:
-        _dataset = self._dataset
-        response = update_search_history(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.owner,
-            _dataset.name,
-            search_id=self.search_id,
-            total_count=total_count,
-        )
-        self.total_count = response["total_count"]
-        self.updater = response["updater"]
-        self.updated_at = convert_iso_to_datetime(response["updated_at"])
 
 
 class SearchManager:
