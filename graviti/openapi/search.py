@@ -409,7 +409,7 @@ def get_search_total_count(
         1000
 
     """
-    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/total_count"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/total-count"
 
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 
