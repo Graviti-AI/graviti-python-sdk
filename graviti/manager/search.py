@@ -16,7 +16,7 @@ from graviti.openapi import (
     get_search_history,
     list_search_histories,
 )
-from graviti.utility import ReprMixin, check_type, convert_iso_to_datetime
+from graviti.utility import ReprMixin, SortParam, check_type, convert_iso_to_datetime
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -101,8 +101,7 @@ class SearchManager:
         commit_id: Optional[str],
         draft_number: Optional[int],
         sheet: Optional[str],
-        order_by: Optional[str],
-        sort: Optional[str],
+        sort: SortParam,
     ) -> Generator[SearchHistory, None, int]:
         _dataset = self._dataset
         response = list_search_histories(
@@ -113,7 +112,6 @@ class SearchManager:
             commit_id=commit_id,
             draft_number=draft_number,
             sheet=sheet,
-            order_by=order_by,
             sort=sort,
             limit=limit,
             offset=offset,
@@ -174,8 +172,7 @@ class SearchManager:
         commit_id: Optional[str],
         draft_number: Optional[int],
         sheet: Optional[str],
-        order_by: Optional[str],
-        sort: Optional[str],
+        sort: SortParam,
     ) -> LazyPagingList[SearchHistory]:
         """List Graviti search histories.
 
@@ -183,8 +180,7 @@ class SearchManager:
             commit_id: The commit id.
             draft_number: The draft number.
             sheet: The name of the sheet.
-            order_by: Return the requests ordered by which field, default is "created_at".
-            sort: Return the requests sorted in ASC or DESC order, default is DESC.
+            sort: The column and the direction the list result sorted by.
 
         Returns:
             The LazyPagingList of :class:`~graviti.manager.search.SearchHistory` instances.
@@ -197,7 +193,6 @@ class SearchManager:
                 commit_id=commit_id,
                 draft_number=draft_number,
                 sheet=sheet,
-                order_by=order_by,
                 sort=sort,
             ),
             LIMIT,

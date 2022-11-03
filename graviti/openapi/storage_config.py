@@ -8,6 +8,7 @@
 from typing import Any, Dict, Optional
 
 from graviti.openapi.requests import open_api_do
+from graviti.utility import SortParam
 
 
 def list_storage_configs(
@@ -15,6 +16,7 @@ def list_storage_configs(
     url: str,
     workspace: str,
     *,
+    sort: SortParam = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -24,6 +26,7 @@ def list_storage_configs(
         access_key: User's access key.
         url: The URL of the graviti website.
         workspace: The name of the workspace.
+        sort: The column and the direction the list result sorted by.
         offset: The offset of the page. The default value of this param in OpenAPIv2 is 0.
         limit: The limit of the page. The default value of this param in OpenAPIv2 is 128.
 
@@ -56,7 +59,9 @@ def list_storage_configs(
     """
     url = f"{url}/v2/workspaces/{workspace}/storage-configs"
 
-    params = {}
+    params: Dict[str, Any] = {}
+    if sort is not None:
+        params["sort"] = sort
     if offset is not None:
         params["offset"] = offset
     if limit is not None:

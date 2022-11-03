@@ -7,7 +7,7 @@
 
 import inspect
 from pathlib import Path
-from typing import AbstractSet, Any, Tuple, Type, TypeVar, Union
+from typing import AbstractSet, Any, Iterable, Tuple, Type, TypeVar, Union
 
 from typing_extensions import Protocol
 
@@ -15,6 +15,7 @@ _K = TypeVar("_K")
 _V = TypeVar("_V")
 
 PathLike = Union[str, Path]
+SortParam = Union[str, Iterable[str], None]
 
 
 class NestedDict(Protocol[_K, _V]):
