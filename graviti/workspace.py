@@ -6,11 +6,11 @@
 """The implementation of the Workspace."""
 
 from graviti.manager import DatasetManager, StorageConfigManager
-from graviti.openapi import get_current_user
+from graviti.openapi import get_current_workspace
 from graviti.utility import urlnorm
 
 
-class Workspace:
+class Workspace:  # pylint: disable=too-many-instance-attributes
     """This class defines the initial client to interact between local and server.
 
     Arguments:
@@ -41,9 +41,23 @@ class Workspace:
 
         self._access_key = access_key
         self._url = url
-        response = get_current_user(access_key, url)
-        self._dataset_manager = DatasetManager(access_key, url, response["workspace"])
-        self._storage_config_manager = StorageConfigManager(access_key, url, response["workspace"])
+
+        response = get_current_workspace(access_key, url)
+
+        self._workspace_id = response["id"]
+        self.type = response["type"]
+
+        name = response["name"]
+        self.name = name
+        self.alias = response["alias"]
+        self.description = response["description"]
+        self.email = response["email"]
+
+        self._dataset_manager = DatasetManager(access_key, url, name)
+        self._storage_config_manager = StorageConfigManager(access_key, url, name)
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}("{self.name}")'
 
     @property
     def access_key(self) -> str:
