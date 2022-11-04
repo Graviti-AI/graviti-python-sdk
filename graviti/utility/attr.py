@@ -84,7 +84,7 @@ class _AttrDict(Generic[_T], ReprMixin):
 
         yield from self._externals
 
-    def __getattr__(self, key: str) -> Union["_AttrDict[_T]", _T]:
+    def __getattr__(self, key: str) -> Any:
         try:
             return self._externals.__getitem__(key)
         except KeyError:
