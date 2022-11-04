@@ -115,13 +115,11 @@ def list_commits(
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/commits"
 
-    params: Dict[str, Any] = {}
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
-    if revision is not None:
-        params["revision"] = revision
+    params = {
+        "revision": revision,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 

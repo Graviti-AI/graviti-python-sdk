@@ -168,12 +168,12 @@ def get_object_permission(
 
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/objects/permissions"
-    params: Dict[str, Any] = {"actions": actions}
 
-    if is_internal is not None:
-        params["is_internal"] = is_internal
-    if expired is not None:
-        params["expired"] = expired
+    params = {
+        "actions": actions,
+        "is_internal": is_internal,
+        "expired": expired,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 

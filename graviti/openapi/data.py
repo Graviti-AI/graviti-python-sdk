@@ -20,16 +20,12 @@ def _list_data(
     limit: Optional[int],
 ) -> Dict[str, Any]:
 
-    params: Dict[str, Any] = {}
-
-    if columns is not None:
-        params["columns"] = columns
-    if order_by is not None:
-        params["order_by"] = order_by
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
+    params = {
+        "columns": columns,
+        "order_by": order_by,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 

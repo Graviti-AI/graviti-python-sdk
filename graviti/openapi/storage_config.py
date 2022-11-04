@@ -59,13 +59,11 @@ def list_storage_configs(
     """
     url = f"{url}/v2/workspaces/{workspace}/storage-configs"
 
-    params: Dict[str, Any] = {}
-    if sort is not None:
-        params["sort"] = sort
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
+    params = {
+        "sort": sort,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 

@@ -282,19 +282,14 @@ def list_search_histories(
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/searches"
 
-    params: Dict[str, Any] = {}
-    if commit_id is not None:
-        params["commit_id"] = commit_id
-    if draft_number is not None:
-        params["draft_number"] = draft_number
-    if sheet is not None:
-        params["sheet"] = sheet
-    if sort is not None:
-        params["sort"] = sort
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
+    params = {
+        "commit_id": commit_id,
+        "draft_number": draft_number,
+        "sheet": sheet,
+        "sort": sort,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -473,12 +468,10 @@ def list_search_records(
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/records"
 
-    params: Dict[str, Any] = {}
-    if sort is not None:
-        params["sort"] = sort
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
+    params: Dict[str, Any] = {
+        "sort": sort,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]

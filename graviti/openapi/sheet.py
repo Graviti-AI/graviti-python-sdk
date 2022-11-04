@@ -18,13 +18,11 @@ def _list_sheet(
     limit: Optional[int],
 ) -> Dict[str, Any]:
 
-    params: Dict[str, Any] = {}
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
-    if with_record_count is not None:
-        params["with_record_count"] = with_record_count
+    params = {
+        "with_record_count": with_record_count,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
@@ -35,12 +33,10 @@ def _get_sheet(
     with_record_count: Optional[bool],
     schema_format: Optional[str],
 ) -> Dict[str, Any]:
-    params: Dict[str, Any] = {}
-
-    if schema_format is not None:
-        params["schema_format"] = schema_format
-    if with_record_count is not None:
-        params["with_record_count"] = with_record_count
+    params = {
+        "with_record_count": with_record_count,
+        "schema_format": schema_format,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
