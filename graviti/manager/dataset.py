@@ -109,11 +109,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     _repr_attrs: Tuple[str, ...] = (
         "alias",
         "default_branch",
+        "creator",
         "created_at",
         "updated_at",
         "is_public",
         "storage_config",
-        "branch",
     )
 
     def __init__(self, access_key: str, url: str, response: Dict[str, Any]) -> None:
