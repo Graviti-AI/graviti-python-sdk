@@ -376,7 +376,7 @@ def _separate_files(
 
         elif isinstance(file, RemoteFile):
             source_dataset = file._object_permission._dataset
-            if source_dataset._dataset_id == target_dataset._dataset_id:
+            if source_dataset._id == target_dataset._id:
                 continue
 
             try:

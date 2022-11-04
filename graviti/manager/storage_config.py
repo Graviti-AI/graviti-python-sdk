@@ -39,7 +39,7 @@ class StorageConfig(ReprMixin):
     _repr_attrs = ("workspace", "config_type", "backend_type")
 
     def __init__(self, workspace: str, response: Dict[str, Any]) -> None:
-        self._storage_config_id = response["id"]
+        self._id = response["id"]
         self.workspace = workspace
         self.name = response["name"]
         self.config_type = response["config_type"]
