@@ -7,7 +7,7 @@
 
 import logging
 from enum import Enum
-from typing import Any, Dict, Generator, Optional, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, TypeVar
 
 from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNameError, StatusError
@@ -18,6 +18,7 @@ from graviti.manager.draft import DraftManager
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.permission import (
     AZUREObjectPermissionManager,
+    ObjectPermissionManager,
     OSSObjectPermissionManager,
     S3ObjectPermissionManager,
 )
@@ -38,6 +39,9 @@ from graviti.utility import (
     check_type,
     convert_iso_to_datetime,
 )
+
+if TYPE_CHECKING:
+    from graviti import Workspace
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -68,8 +72,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     """This class defines the basic concept of the dataset on Graviti.
 
     Arguments:
-        access_key: User's access key.
-        url: The URL of the graviti website.
+        workspace: Class :class:`~graviti.workspace.Workspace` instance.
         response: The response of the OpenAPI associated with the dataset::
 
                 {
@@ -116,22 +119,24 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         "storage_config",
     )
 
-    def __init__(self, access_key: str, url: str, response: Dict[str, Any]) -> None:
-        self.access_key = access_key
-        self.url = url
-        self._id = response["id"]
-        self.name = response["name"]
-        self.alias = response["alias"]
-        self.workspace = response["workspace"]
-        self.default_branch = response["default_branch"]
-        self.creator = response["creator"]
+    def __init__(self, workspace: "Workspace", response: Dict[str, Any]) -> None:
+        self.access_key: str = workspace.access_key
+        self.url: str = workspace.url
+
+        self._id: str = response["id"]
+        self.name: str = response["name"]
+        self.alias: str = response["alias"]
+        self.workspace: str = response["workspace"]
+        self.default_branch: str = response["default_branch"]
+        self.creator: str = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
         self.updated_at = convert_iso_to_datetime(response["updated_at"])
-        self.is_public = response["is_public"]
-        self.storage_config = response["storage_config"]
+        self.is_public: str = response["is_public"]
+        self.storage_config: str = response["storage_config"]
 
-        backend_type = response["backend_type"]
-        self.object_permission_manager = ObjectPermissionManagerType[backend_type].value(self)
+        self.object_permission_manager: ObjectPermissionManager = ObjectPermissionManagerType[
+            response["backend_type"]
+        ].value(self)
 
         self._data: Commit = Branch(self, response["default_branch"], response["commit_id"])
 
@@ -290,23 +295,19 @@ class DatasetManager:
     """This class defines the operations on the dataset on Graviti.
 
     Arguments:
-        access_key: User's access key.
-        url: The URL of the graviti website.
+        workspace: Class :class:`~graviti.workspace.Workspace` instance.
 
     """
 
-    def __init__(self, access_key: str, url: str, workspace: str) -> None:
-        self.access_key = access_key
-        self.url = url
-        self.workspace = workspace
+    def __init__(self, workspace: "Workspace") -> None:
+        self._workspace = workspace
 
     def _generate(self, offset: int, limit: int) -> Generator[Dataset, None, int]:
-        access_key = self.access_key
-        url = self.url
-        response = list_datasets(access_key, url, limit=limit, offset=offset)
+        _workspace = self._workspace
+        response = list_datasets(_workspace.access_key, _workspace.url, limit=limit, offset=offset)
 
         for item in response["datasets"]:
-            yield Dataset(access_key, url, item)
+            yield Dataset(_workspace, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -327,16 +328,17 @@ class DatasetManager:
             The created :class:`~graviti.manager.dataset.Dataset` instance.
 
         """
+        _workspace = self._workspace
         response = create_dataset(
-            self.access_key,
-            self.url,
+            _workspace.access_key,
+            _workspace.url,
             name=name,
             alias=alias,
             storage_config=storage_config,
             with_draft=False,
         )
 
-        return Dataset(self.access_key, self.url, response)
+        return Dataset(_workspace, response)
 
     def get(self, name: str) -> Dataset:
         """Get a Graviti dataset with given name.
@@ -355,9 +357,10 @@ class DatasetManager:
         if not name:
             raise ResourceNameError("dataset", name)
 
-        response = get_dataset(self.access_key, self.url, workspace=self.workspace, dataset=name)
+        _workspace = self._workspace
+        response = get_dataset(_workspace.access_key, _workspace.url, _workspace.name, dataset=name)
 
-        return Dataset(self.access_key, self.url, response)
+        return Dataset(_workspace, response)
 
     def list(self) -> LazyPagingList[Dataset]:
         """List Graviti datasets.
@@ -376,4 +379,6 @@ class DatasetManager:
 
         """
         check_type("name", name, str)
-        delete_dataset(self.access_key, self.url, self.workspace, name)
+
+        _workspace = self._workspace
+        delete_dataset(_workspace.access_key, _workspace.url, _workspace.name, name)
