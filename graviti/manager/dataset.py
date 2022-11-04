@@ -119,7 +119,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     def __init__(self, access_key: str, url: str, response: Dict[str, Any]) -> None:
         self.access_key = access_key
         self.url = url
-        self._dataset_id = response["id"]
+        self._id = response["id"]
         self.name = response["name"]
         self.alias = response["alias"]
         self.workspace = response["workspace"]

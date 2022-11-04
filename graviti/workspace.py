@@ -44,7 +44,7 @@ class Workspace:  # pylint: disable=too-many-instance-attributes
 
         response = get_current_workspace(access_key, url)
 
-        self._workspace_id = response["id"]
+        self._id = response["id"]
         self.type = response["type"]
 
         name = response["name"]
