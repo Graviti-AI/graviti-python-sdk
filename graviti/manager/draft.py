@@ -87,11 +87,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         return f'{self.__class__.__name__}("#{self.number}: {self.title}")'
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+        _dataset = self._dataset
         return list_draft_data(  # type: ignore[no-any-return]
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
             offset=offset,
@@ -99,20 +100,22 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         )["data"]
 
     def _list_sheets(self) -> Dict[str, Any]:
+        _dataset = self._dataset
         return list_draft_sheets(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
         )
 
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
+        _dataset = self._dataset
         return get_draft_sheet(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
             with_record_count=True,
@@ -126,11 +129,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             description: The description of the draft.
 
         """
+        _dataset = self._dataset
         response = update_draft(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
             title=title,
             description=description,
@@ -141,11 +145,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
     def close(self) -> None:
         """Close the draft."""
+        _dataset = self._dataset
         response = update_draft(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
             state="CLOSED",
         )
@@ -214,30 +219,31 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             "524d110ecae7474eaec9471f4a6c28b0"
 
         """
+        _dataset = self._dataset
         branch_info = commit_draft(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
             title=title,
             description=description,
         )
         branch_info["name"] = self.branch
-        branch = Branch.from_response(self._dataset, branch_info)
+        branch = Branch.from_response(_dataset, branch_info)
 
         draft_info = get_draft(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=self.number,
         )
         self.state = draft_info["state"]
         self.updated_at = convert_iso_to_datetime(draft_info["updated_at"])
 
         if update_dataset_head:
-            self._dataset._data = branch  # pylint: disable=protected-access
+            _dataset._data = branch  # pylint: disable=protected-access
 
         return branch
 
@@ -284,11 +290,12 @@ class DraftManager:
         offset: int,
         limit: int,
     ) -> Generator[Draft, None, int]:
+        _dataset = self._dataset
         response = list_drafts(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             state=state,
             branch=branch,
             offset=offset,
@@ -296,7 +303,7 @@ class DraftManager:
         )
 
         for item in response["drafts"]:
-            yield Draft(self._dataset, **item)
+            yield Draft(_dataset, **item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -317,7 +324,8 @@ class DraftManager:
             StatusError: When creating the draft without basing on a branch.
 
         """
-        head = self._dataset.HEAD
+        _dataset = self._dataset
+        head = _dataset.HEAD
         if branch is CURRENT_BRANCH:
             if not isinstance(head, Branch):
                 raise StatusError(
@@ -327,17 +335,17 @@ class DraftManager:
             branch = head.name
 
         response = create_draft(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             title=title,
             branch=branch,
             description=description,
         )
 
         check_head_status(head, branch, response["parent_commit_id"])
-        return Draft(self._dataset, **response)
+        return Draft(_dataset, **response)
 
     def get(self, draft_number: int) -> Draft:
         """Get the certain draft with the given draft number.
@@ -350,14 +358,15 @@ class DraftManager:
 
         """
         check_type("draft_number", draft_number, int)
+        _dataset = self._dataset
         response = get_draft(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             draft_number=draft_number,
         )
-        return Draft(self._dataset, **response)
+        return Draft(_dataset, **response)
 
     def list(self, state: str = "OPEN", branch: str = ALL_BRANCHES) -> LazyPagingList[Draft]:
         """List all the drafts.
