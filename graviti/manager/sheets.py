@@ -163,7 +163,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
         dataset = self._dataset
         for sheet_operation in self.operations:
-            sheet_operation.do(dataset, draft_number)
+            sheet_operation.execute(dataset, draft_number)
 
         self.operations = []
 
@@ -185,7 +185,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
                         continue
 
                     for df_operation in df.operations:
-                        df_operation.do(
+                        df_operation.execute(
                             dataset,
                             draft_number=draft_number,
                             sheet=sheet_name,

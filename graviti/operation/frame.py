@@ -53,7 +53,7 @@ class DataFrameOperation:
         """
         return 0
 
-    def do(  # pylint: disable=invalid-name
+    def execute(
         self,
         dataset: "Dataset",
         *,
@@ -119,7 +119,7 @@ class AddData(DataOperation):
 
     """
 
-    def do(  # pylint: disable=invalid-name
+    def execute(
         self,
         dataset: "Dataset",
         *,
@@ -178,7 +178,7 @@ class UpdateSchema(DataFrameOperation):
         self._data = data
         self.schema = schema
 
-    def do(  # pylint: disable=invalid-name, unused-argument, too-many-locals
+    def execute(  # pylint: disable=unused-argument
         self,
         dataset: "Dataset",
         *,
@@ -228,7 +228,7 @@ class UpdateData(DataOperation):
 
     """
 
-    def do(  # pylint: disable=invalid-name
+    def execute(
         self,
         dataset: "Dataset",
         *,
@@ -286,7 +286,7 @@ class DeleteData(DataFrameOperation):
     def __init__(self, record_keys: List[str]) -> None:
         self.record_keys = record_keys
 
-    def do(  # pylint: disable=invalid-name, unused-argument
+    def execute(  # pylint: disable=unused-argument
         self,
         dataset: "Dataset",
         *,

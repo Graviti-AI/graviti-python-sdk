@@ -26,7 +26,7 @@ class SheetOperation:
     def __init__(self, sheet: str) -> None:
         self.sheet = sheet
 
-    def do(self, dataset: "Dataset", draft_number: int) -> None:  # pylint: disable=invalid-name
+    def execute(self, dataset: "Dataset", draft_number: int) -> None:
         """Execute the OpenAPI create sheet.
 
         Arguments:
@@ -53,7 +53,7 @@ class CreateSheet(SheetOperation):
         super().__init__(sheet)
         self.schema = schema
 
-    def do(self, dataset: "Dataset", draft_number: int) -> None:  # pylint: disable=invalid-name
+    def execute(self, dataset: "Dataset", draft_number: int) -> None:
         """Execute the OpenAPI create sheet.
 
         Arguments:
@@ -79,7 +79,7 @@ class CreateSheet(SheetOperation):
 class DeleteSheet(SheetOperation):
     """This class defines the operation that delete a sheet."""
 
-    def do(self, dataset: "Dataset", draft_number: int) -> None:  # pylint: disable=invalid-name
+    def execute(self, dataset: "Dataset", draft_number: int) -> None:
         """Execute the OpenAPI delete sheet.
 
         Arguments:
