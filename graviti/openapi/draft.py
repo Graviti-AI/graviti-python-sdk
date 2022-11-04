@@ -125,15 +125,12 @@ def list_drafts(
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts"
 
-    params: Dict[str, Any] = {}
-    if state:
-        params["state"] = state
-    if branch:
-        params["branch"] = branch
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
+    params = {
+        "state": state,
+        "branch": branch,
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 

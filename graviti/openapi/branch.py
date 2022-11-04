@@ -109,11 +109,10 @@ def list_branches(
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/branches"
 
-    params = {}
-    if offset is not None:
-        params["offset"] = offset
-    if limit is not None:
-        params["limit"] = limit
+    params = {
+        "offset": offset,
+        "limit": limit,
+    }
 
     return open_api_do("GET", access_key, url, params=params).json()  # type: ignore[no-any-return]
 
