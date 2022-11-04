@@ -74,22 +74,24 @@ class Commit(Sheets):
                 "This attribute is not available due to this branch has no commit history."
             )
         if not hasattr(self, "_commit_info"):
+            _dataset = self._dataset
             commit_info = get_commit(
-                self._dataset.access_key,
-                self._dataset.url,
-                self._dataset.workspace,
-                self._dataset.name,
+                _dataset.access_key,
+                _dataset.url,
+                _dataset.workspace,
+                _dataset.name,
                 commit_id=self.commit_id,
             )
             self._commit_info = self._process_commit_info(commit_info)
         return self._commit_info
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+        _dataset = self._dataset
         return list_commit_data(  # type: ignore[no-any-return]
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             offset=offset,
@@ -100,20 +102,22 @@ class Commit(Sheets):
         if self.commit_id is None:
             return {"sheets": []}
 
+        _dataset = self._dataset
         return list_commit_sheets(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             commit_id=self.commit_id,
         )
 
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
+        _dataset = self._dataset
         return get_commit_sheet(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             with_record_count=True,
@@ -219,11 +223,12 @@ class Commit(Sheets):
         if self.commit_id is None:
             raise NoCommitsError("No commit on the current branch. Please commit a draft first")
 
+        _dataset = self._dataset
         search_id = create_search(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             commit_id=self.commit_id,
             sheet=sheet,
             criteria=criteria,
@@ -236,11 +241,12 @@ class Commit(Sheets):
             limit: Optional[int] = None,
             getter_criteria: Dict[str, Any] = criteria,
         ) -> List[Dict[str, Any]]:
+            _dataset = self._dataset
             return create_search(  # type: ignore[no-any-return]
-                self._dataset.access_key,
-                self._dataset.url,
-                self._dataset.workspace,
-                self._dataset.name,
+                _dataset.access_key,
+                _dataset.url,
+                _dataset.workspace,
+                _dataset.name,
                 commit_id=self.commit_id,  # type: ignore[arg-type]
                 sheet=sheet,
                 search_id=search_id,
@@ -264,7 +270,7 @@ class Commit(Sheets):
         )
 
         return DataFrame._from_factory(  # pylint: disable=protected-access
-            factory, schema, object_permission_manager=self._dataset.object_permission_manager
+            factory, schema, object_permission_manager=_dataset.object_permission_manager
         )
 
 
@@ -334,13 +340,14 @@ class CommitManager:
         self._dataset = dataset
 
     def _generate(self, revision: str, offset: int, limit: int) -> Generator[Commit, None, int]:
-        head = self._dataset.HEAD
+        _dataset = self._dataset
+        head = _dataset.HEAD
 
         response = list_commits(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             revision=revision,
             offset=offset,
             limit=limit,
@@ -351,7 +358,7 @@ class CommitManager:
             check_head_status(head, revision, commits[0]["commit_id"])
 
         for item in commits:
-            yield Commit.from_response(self._dataset, item)
+            yield Commit.from_response(_dataset, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -371,7 +378,8 @@ class CommitManager:
             The :class:`.Commit` instance with the given revision.
 
         """
-        head = self._dataset.HEAD
+        _dataset = self._dataset
+        head = _dataset.HEAD
         if revision is CURRENT_COMMIT:
             _revision = head.commit_id
             if _revision is None:
@@ -381,10 +389,10 @@ class CommitManager:
             _revision = revision
 
         response = get_revision(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             revision=_revision,
         )
         if response["commit_id"] is None:
@@ -392,7 +400,7 @@ class CommitManager:
 
         check_head_status(head, _revision, response["commit_id"])
 
-        return Commit.from_response(self._dataset, response)
+        return Commit.from_response(_dataset, response)
 
     def list(
         self, revision: str = CURRENT_COMMIT

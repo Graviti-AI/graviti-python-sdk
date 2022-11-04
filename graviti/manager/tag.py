@@ -41,19 +41,20 @@ class TagManager:
         self._dataset = dataset
 
     def _generate(self, offset: int, limit: int) -> Generator[Tag, None, int]:
+        _dataset = self._dataset
         response = list_tags(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             offset=offset,
             limit=limit,
         )
 
-        head = self._dataset.HEAD
+        head = _dataset.HEAD
         for item in response["tags"]:
             check_head_status(head, item["name"], item["commit_id"])
-            yield Tag.from_response(self._dataset, item)
+            yield Tag.from_response(_dataset, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -73,7 +74,8 @@ class TagManager:
             The :class:`.Tag` instance with the given name.
 
         """
-        head = self._dataset.HEAD
+        _dataset = self._dataset
+        head = _dataset.HEAD
         if revision is CURRENT_COMMIT:
             _revision = head.commit_id
             if _revision is None:
@@ -85,16 +87,16 @@ class TagManager:
             _revision = revision
 
         response = create_tag(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             name=name,
             revision=_revision,
         )
 
         check_head_status(head, _revision, response["commit_id"])
-        return Tag.from_response(self._dataset, response)
+        return Tag.from_response(_dataset, response)
 
     def get(self, name: str) -> Tag:
         """Get the certain tag with the given name.
@@ -113,15 +115,16 @@ class TagManager:
         if not name:
             raise ResourceNameError("tag", name)
 
+        _dataset = self._dataset
         response = get_tag(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             tag=name,
         )
-        check_head_status(self._dataset.HEAD, name, response["commit_id"])
-        return Tag.from_response(self._dataset, response)
+        check_head_status(_dataset.HEAD, name, response["commit_id"])
+        return Tag.from_response(_dataset, response)
 
     def list(self) -> LazyPagingList[Tag]:
         """List the information of tags.
@@ -146,10 +149,11 @@ class TagManager:
         if not name:
             raise ResourceNameError("tag", name)
 
+        _dataset = self._dataset
         delete_tag(
-            self._dataset.access_key,
-            self._dataset.url,
-            self._dataset.workspace,
-            self._dataset.name,
+            _dataset.access_key,
+            _dataset.url,
+            _dataset.workspace,
+            _dataset.name,
             tag=name,
         )
