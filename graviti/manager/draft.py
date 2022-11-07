@@ -40,18 +40,32 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
     Arguments:
         dataset: Class :class:`~graviti.dataset.dataset.Dataset` instance.
+        response: The response of the OpenAPI associated with the draft::
+
+                {
+                    "id": <str>
+                    "number": <int>
+                    "state": <str>
+                    "title": <str>
+                    "description": <str>
+                    "branch": <str>
+                    "parent_commit_id": <Optional[str]>
+                    "creator": <str>
+                    "created_at": <str>
+                    "updated_at": <str>
+                }
+
+
+    Attributes:
         number: The number of the draft.
-        title: The title of the draft.
-        branch: The based branch of the draft.
         state: The draft state which includes "OPEN", "CLOSED", "COMMITTED".
-        parent_commit_id: The parent commit id.
+        title: The title of the draft.
+        description: The draft description.
+        branch: The based branch of the draft.
+        parent: The parent of the draft.
         creator: The creator of the draft.
         created_at: The time when the draft is created.
         updated_at: The time of last update.
-        description: The draft description.
-
-    Attributes:
-        parent: The parent of the draft.
 
     """
 
@@ -60,27 +74,22 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         dataset: "Dataset",
-        number: int,
-        *,
-        title: str,
-        branch: str,
-        state: str,
-        parent_commit_id: Optional[str],
-        creator: str,
-        created_at: str,
-        updated_at: str,
-        description: str = "",
+        response: Dict[str, Any],
     ) -> None:
         self._dataset = dataset
-        self.number = number
-        self.title = title
-        self.branch = branch
-        self.state = state
+
+        self.number: int = response["number"]
+        self.state: str = response["state"]
+        self.title: str = response["title"]
+        self.description: str = response["description"]
+        self.branch: str = response["branch"]
+
+        parent_commit_id = response["parent_commit_id"]
         self.parent = None if parent_commit_id is None else Commit(dataset, parent_commit_id)
-        self.creator = creator
-        self.created_at = convert_iso_to_datetime(created_at)
-        self.updated_at = convert_iso_to_datetime(updated_at)
-        self.description = description
+
+        self.creator: str = response["creator"]
+        self.created_at = convert_iso_to_datetime(response["created_at"])
+        self.updated_at = convert_iso_to_datetime(response["updated_at"])
         self.operations: List[SheetOperation] = []
 
     def _repr_head(self) -> str:
@@ -305,7 +314,7 @@ class DraftManager:
         )
 
         for item in response["drafts"]:
-            yield Draft(_dataset, **item)
+            yield Draft(_dataset, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -348,7 +357,7 @@ class DraftManager:
         )
 
         check_head_status(head, branch, response["parent_commit_id"])
-        return Draft(_dataset, **response)
+        return Draft(_dataset, response)
 
     def get(self, draft_number: int) -> Draft:
         """Get the certain draft with the given draft number.
@@ -370,7 +379,7 @@ class DraftManager:
             _dataset.name,
             draft_number=draft_number,
         )
-        return Draft(_dataset, **response)
+        return Draft(_dataset, response)
 
     def list(self, state: str = "OPEN", branch: str = ALL_BRANCHES) -> LazyPagingList[Draft]:
         """List all the drafts.
