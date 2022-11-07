@@ -5,7 +5,7 @@
 
 """The implementation of the StorageConfig and StorageConfigManager."""
 
-from typing import TYPE_CHECKING, Any, Dict, Generator
+from typing import TYPE_CHECKING, Any, Dict, Generator, Type, TypeVar
 
 from graviti.exception import ResourceNameError
 from graviti.manager.common import LIMIT
@@ -15,6 +15,9 @@ from graviti.utility import ReprMixin, check_type
 
 if TYPE_CHECKING:
     from graviti import Workspace
+
+
+_T = TypeVar("_T", bound="StorageConfig")
 
 
 class StorageConfig(ReprMixin):
@@ -32,21 +35,88 @@ class StorageConfig(ReprMixin):
 
     Attributes:
         name: The name of the storage config.
-        config_type: The config type of the storage config.
-        backend_type: The backend tyep of the storage config.
 
     """
 
     _repr_attrs = ("config_type", "backend_type")
 
-    def __init__(self, response: Dict[str, Any]) -> None:
-        self._id = response["id"]
-        self.name = response["name"]
-        self.config_type = response["config_type"]
-        self.backend_type = response["backend_type"]
+    _storage_config_info: Dict[str, Any]
+
+    def __init__(self, workspace: "Workspace", name: str) -> None:
+        self._workspace = workspace
+        self.name = name
+
+    @staticmethod
+    def _process_storage_config_info(response: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "_id": response["id"],
+            "config_type": response["config_type"],
+            "backend_type": response["backend_type"],
+        }
+
+    def _get_storage_config_info(self) -> Dict[str, Any]:
+        if not hasattr(self, "_storage_config_info"):
+            _workspace = self._workspace
+            response = get_storage_config(
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
+                self.name,
+            )
+            self._storage_config_info = self._process_storage_config_info(response)
+
+        return self._storage_config_info
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.name}")'
+
+    @classmethod
+    def from_response(cls: Type[_T], workspace: "Workspace", response: Dict[str, Any]) -> _T:
+        """Create a :class:`StorageConfig` instance from the response.
+
+        Arguments:
+            workspace: The workspace of the storage config.
+            response: The response of the storage config::
+
+                {
+                    "id": <str>
+                    "name": <str>
+                    "config_type": <str>
+                    "backend_type":  <str>
+                }
+
+        Returns:
+            A :class:`StorageConfig` instance created from the response.
+
+        """
+        obj = cls(workspace, response["name"])
+        obj._storage_config_info = obj._process_storage_config_info(response)
+
+        return obj
+
+    @property
+    def _id(self) -> str:
+        return self._get_storage_config_info()["_id"]  # type: ignore[no-any-return]
+
+    @property
+    def config_type(self) -> str:
+        """Return the config type of the storage config.
+
+        Returns:
+            The config type of the storage config.
+
+        """
+        return self._get_storage_config_info()["config_type"]  # type: ignore[no-any-return]
+
+    @property
+    def backend_type(self) -> str:
+        """Return the backend type of the storage config.
+
+        Returns:
+            The backend type of the storage config.
+
+        """
+        return self._get_storage_config_info()["backend_type"]  # type: ignore[no-any-return]
 
 
 class StorageConfigManager:
@@ -67,7 +137,7 @@ class StorageConfigManager:
         )
 
         for item in response["storage_configs"]:
-            yield StorageConfig(item)
+            yield StorageConfig.from_response(_workspace, item)
 
         return response["total_count"]  # type: ignore[no-any-return]
 
@@ -107,7 +177,7 @@ class StorageConfigManager:
             _workspace.access_key, _workspace.url, _workspace.name, storage_config=name
         )
 
-        return StorageConfig(response)
+        return StorageConfig.from_response(_workspace, response)
 
     def list(self) -> LazyPagingList[StorageConfig]:
         """List Graviti storage configs.
