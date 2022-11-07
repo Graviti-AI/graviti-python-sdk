@@ -399,19 +399,19 @@ def _separate_files(
                         f"    dataset: {target_dataset.name},\n"
                     ) from None
 
-                if source_dataset.storage_config != target_dataset.storage_config:
+                if source_dataset.storage_config.name != target_dataset.storage_config.name:
                     raise ObjectCopyError(
                         "It is not allowed to copy object between datasets "
                         "with different storage configs.\n"
                         "  Source:\n"
                         f"    workspace: {source_dataset.workspace.name},\n"
                         f"    dataset: {source_dataset.name},\n"
-                        f"    storage config: {source_dataset.storage_config},\n"
+                        f"    storage config: {source_dataset.storage_config.name},\n"
                         f"    object key: {file.key}"
                         "  Target:\n"
                         f"    workspace: {target_dataset.workspace.name},\n"
                         f"    dataset: {target_dataset.name},\n"
-                        f"    storage config: {target_dataset.storage_config}\n"
+                        f"    storage config: {target_dataset.storage_config.name}\n"
                     ) from None
 
                 remote_files[source_dataset.name] = [file]

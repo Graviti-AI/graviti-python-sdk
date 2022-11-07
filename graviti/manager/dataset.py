@@ -23,6 +23,7 @@ from graviti.manager.permission import (
     S3ObjectPermissionManager,
 )
 from graviti.manager.search import SearchManager
+from graviti.manager.storage_config import StorageConfig
 from graviti.manager.tag import Tag, TagManager
 from graviti.openapi import (
     create_dataset,
@@ -130,7 +131,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self.created_at = convert_iso_to_datetime(response["created_at"])
         self.updated_at = convert_iso_to_datetime(response["updated_at"])
         self.is_public: str = response["is_public"]
-        self.storage_config: str = response["storage_config"]
+        self.storage_config = StorageConfig(workspace, response["storage_config"])
 
         self.object_permission_manager: ObjectPermissionManager = ObjectPermissionManagerType[
             response["backend_type"]
