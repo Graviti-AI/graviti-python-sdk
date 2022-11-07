@@ -104,10 +104,11 @@ class SearchManager:
         sort: SortParam,
     ) -> Generator[SearchHistory, None, int]:
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = list_search_histories(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             commit_id=commit_id,
             draft_number=draft_number,
@@ -130,10 +131,11 @@ class SearchManager:
         criteria: Dict[str, Any],
     ) -> SearchHistory:
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = create_search_history(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             commit_id=commit_id,
             draft_number=draft_number,
@@ -156,15 +158,16 @@ class SearchManager:
         check_type("search_id", search_id, str)
 
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = get_search_history(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             search_id=search_id,
         )
 
-        return SearchHistory(self._dataset, response)
+        return SearchHistory(_dataset, response)
 
     def list(
         self,
@@ -207,11 +210,11 @@ class SearchManager:
         """
         check_type("search_id", search_id, str)
 
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         delete_search_history(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             search_id=search_id,
         )

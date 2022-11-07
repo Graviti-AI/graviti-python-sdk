@@ -120,13 +120,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
     )
 
     def __init__(self, workspace: "Workspace", response: Dict[str, Any]) -> None:
-        self.access_key: str = workspace.access_key
-        self.url: str = workspace.url
-
         self._id: str = response["id"]
+
+        self.workspace = workspace
         self.name: str = response["name"]
         self.alias: str = response["alias"]
-        self.workspace: str = response["workspace"]
         self.default_branch: str = response["default_branch"]
         self.creator: str = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
@@ -141,7 +139,7 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
         self._data: Commit = Branch(self, response["default_branch"], response["commit_id"])
 
     def _repr_head(self) -> str:
-        return f'{self.__class__.__name__}("{self.workspace}/{self.name}")'
+        return f'{self.__class__.__name__}("{self.workspace.name}/{self.name}")'
 
     @property
     def HEAD(self) -> Commit:  # pylint: disable=invalid-name
@@ -211,10 +209,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
                 the branch, or the tag.
 
         """
+        _workspace = self.workspace
         response = get_revision(
-            self.access_key,
-            self.url,
-            self.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             self.name,
             revision=revision,
         )
@@ -239,10 +238,11 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
             default_branch: The new default branch of the dataset.
 
         """
+        _workspace = self.workspace
         response = update_dataset(
-            self.access_key,
-            self.url,
-            self.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             self.name,
             name=name,
             alias=alias,

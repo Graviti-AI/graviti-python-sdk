@@ -154,10 +154,11 @@ class AddData(DataOperation):
             if local_files:
                 _upload_files(local_files, dataset.object_permission_manager, file_pbar, jobs)
 
+            _workspace = dataset.workspace
             add_data(
-                dataset.access_key,
-                dataset.url,
-                dataset.workspace,
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
                 dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
@@ -207,10 +208,11 @@ class UpdateSchema(DataFrameOperation):
         for page in record_keys._data._pages:  # pylint: disable=protected-access
             page.get_array()
 
+        _workspace = dataset.workspace
         update_schema(
-            dataset.access_key,
-            dataset.url,
-            dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             dataset.name,
             draft_number=draft_number,
             sheet=sheet,
@@ -263,10 +265,11 @@ class UpdateData(DataOperation):
             if local_files:
                 _upload_files(local_files, dataset.object_permission_manager, file_pbar, jobs)
 
+            _workspace = dataset.workspace
             update_data(
-                dataset.access_key,
-                dataset.url,
-                dataset.workspace,
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
                 dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
@@ -307,10 +310,11 @@ class DeleteData(DataFrameOperation):
             file_pbar: The process bar for uploading binary files.
 
         """
+        _workspace = dataset.workspace
         delete_data(
-            dataset.access_key,
-            dataset.url,
-            dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             dataset.name,
             draft_number=draft_number,
             sheet=sheet,
@@ -323,12 +327,13 @@ def _copy_files(
     remote_files: Dict[str, List[RemoteFile]],
     pbar: tqdm,
 ) -> None:
+    _workspace = dataset.workspace
     for source_dataset, files in remote_files.items():
         for batch in chunked(files, _MAX_BATCH_SIZE):
             keys = copy_objects(
-                dataset.access_key,
-                dataset.url,
-                dataset.workspace,
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
                 dataset.name,
                 source_dataset=source_dataset,
                 keys=[file.key for file in batch],
@@ -382,15 +387,15 @@ def _separate_files(
             try:
                 remote_files[source_dataset.name].append(file)
             except KeyError:
-                if source_dataset.workspace != target_dataset.workspace:
+                if source_dataset.workspace._id != target_dataset.workspace._id:
                     raise ObjectCopyError(
                         "It is not allowed to copy object between diffenent workspaces.\n"
                         "  Source:\n"
-                        f"    workspace: {source_dataset.workspace},\n"
+                        f"    workspace: {source_dataset.workspace.name},\n"
                         f"    dataset: {source_dataset.name},\n"
                         f"    object key: {file.key}"
                         "  Target:\n"
-                        f"    workspace: {target_dataset.workspace},\n"
+                        f"    workspace: {target_dataset.workspace.name},\n"
                         f"    dataset: {target_dataset.name},\n"
                     ) from None
 
@@ -399,12 +404,12 @@ def _separate_files(
                         "It is not allowed to copy object between datasets "
                         "with different storage configs.\n"
                         "  Source:\n"
-                        f"    workspace: {source_dataset.workspace},\n"
+                        f"    workspace: {source_dataset.workspace.name},\n"
                         f"    dataset: {source_dataset.name},\n"
                         f"    storage config: {source_dataset.storage_config},\n"
                         f"    object key: {file.key}"
                         "  Target:\n"
-                        f"    workspace: {target_dataset.workspace},\n"
+                        f"    workspace: {target_dataset.workspace.name},\n"
                         f"    dataset: {target_dataset.name},\n"
                         f"    storage config: {target_dataset.storage_config}\n"
                     ) from None

@@ -63,10 +63,11 @@ class CreateSheet(SheetOperation):
         """
         portex_schema, avro_schema, arrow_schema = get_schema(self.schema)
 
+        _workspace = dataset.workspace
         create_sheet(
-            dataset.access_key,
-            dataset.url,
-            dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             dataset.name,
             draft_number=draft_number,
             name=self.sheet,
@@ -87,10 +88,11 @@ class DeleteSheet(SheetOperation):
             draft_number: The draft number.
 
         """
+        _workspace = dataset.workspace
         delete_sheet(
-            dataset.access_key,
-            dataset.url,
-            dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             dataset.name,
             draft_number=draft_number,
             sheet=self.sheet,
