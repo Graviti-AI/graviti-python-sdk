@@ -74,24 +74,24 @@ class Commit(Sheets):
                 "This attribute is not available due to this branch has no commit history."
             )
         if not hasattr(self, "_commit_info"):
-            _dataset = self._dataset
+            _workspace = self._dataset.workspace
             commit_info = get_commit(
-                _dataset.access_key,
-                _dataset.url,
-                _dataset.workspace,
-                _dataset.name,
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
+                self._dataset.name,
                 commit_id=self.commit_id,
             )
             self._commit_info = self._process_commit_info(commit_info)
         return self._commit_info
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return list_commit_data(  # type: ignore[no-any-return]
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             offset=offset,
@@ -102,22 +102,22 @@ class Commit(Sheets):
         if self.commit_id is None:
             return {"sheets": []}
 
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return list_commit_sheets(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             commit_id=self.commit_id,
         )
 
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return get_commit_sheet(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             commit_id=self.commit_id,  # type: ignore[arg-type]
             sheet=sheet_name,
             with_record_count=True,
@@ -224,10 +224,11 @@ class Commit(Sheets):
             raise NoCommitsError("No commit on the current branch. Please commit a draft first")
 
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         search_id = create_search(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             commit_id=self.commit_id,
             sheet=sheet,
@@ -241,11 +242,10 @@ class Commit(Sheets):
             limit: Optional[int] = None,
             getter_criteria: Dict[str, Any] = criteria,
         ) -> List[Dict[str, Any]]:
-            _dataset = self._dataset
             return create_search(  # type: ignore[no-any-return]
-                _dataset.access_key,
-                _dataset.url,
-                _dataset.workspace,
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
                 _dataset.name,
                 commit_id=self.commit_id,  # type: ignore[arg-type]
                 sheet=sheet,
@@ -341,12 +341,13 @@ class CommitManager:
 
     def _generate(self, revision: str, offset: int, limit: int) -> Generator[Commit, None, int]:
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         head = _dataset.HEAD
 
         response = list_commits(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             revision=revision,
             offset=offset,
@@ -379,6 +380,7 @@ class CommitManager:
 
         """
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         head = _dataset.HEAD
         if revision is CURRENT_COMMIT:
             _revision = head.commit_id
@@ -389,9 +391,9 @@ class CommitManager:
             _revision = revision
 
         response = get_revision(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             revision=_revision,
         )

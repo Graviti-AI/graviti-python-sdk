@@ -87,12 +87,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         return f'{self.__class__.__name__}("#{self.number}: {self.title}")'
 
     def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return list_draft_data(  # type: ignore[no-any-return]
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
             offset=offset,
@@ -100,22 +100,22 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         )["data"]
 
     def _list_sheets(self) -> Dict[str, Any]:
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return list_draft_sheets(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             draft_number=self.number,
         )
 
     def _get_sheet(self, sheet_name: str) -> Dict[str, Any]:
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return get_draft_sheet(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             draft_number=self.number,
             sheet=sheet_name,
             with_record_count=True,
@@ -129,12 +129,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             description: The description of the draft.
 
         """
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         response = update_draft(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             draft_number=self.number,
             title=title,
             description=description,
@@ -145,12 +145,12 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
     def close(self) -> None:
         """Close the draft."""
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         response = update_draft(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             draft_number=self.number,
             state="CLOSED",
         )
@@ -220,10 +220,11 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
 
         """
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         branch_info = commit_draft(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             draft_number=self.number,
             title=title,
@@ -233,9 +234,9 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
         branch = Branch.from_response(_dataset, branch_info)
 
         draft_info = get_draft(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             draft_number=self.number,
         )
@@ -291,10 +292,11 @@ class DraftManager:
         limit: int,
     ) -> Generator[Draft, None, int]:
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = list_drafts(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             state=state,
             branch=branch,
@@ -325,6 +327,7 @@ class DraftManager:
 
         """
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         head = _dataset.HEAD
         if branch is CURRENT_BRANCH:
             if not isinstance(head, Branch):
@@ -335,9 +338,9 @@ class DraftManager:
             branch = head.name
 
         response = create_draft(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             title=title,
             branch=branch,
@@ -359,10 +362,11 @@ class DraftManager:
         """
         check_type("draft_number", draft_number, int)
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = get_draft(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             draft_number=draft_number,
         )

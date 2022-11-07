@@ -39,12 +39,12 @@ class ObjectPermissionManager:
         self._dataset = dataset
 
     def _request_permission(self, actions: str) -> Dict[str, str]:
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         return get_object_permission(  # type: ignore[no-any-return]
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             actions=actions,
             is_internal=config.is_internal,
             expired=_EXPIRED_IN_SECOND,

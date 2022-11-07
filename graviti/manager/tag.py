@@ -42,10 +42,11 @@ class TagManager:
 
     def _generate(self, offset: int, limit: int) -> Generator[Tag, None, int]:
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = list_tags(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             offset=offset,
             limit=limit,
@@ -75,6 +76,7 @@ class TagManager:
 
         """
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         head = _dataset.HEAD
         if revision is CURRENT_COMMIT:
             _revision = head.commit_id
@@ -87,9 +89,9 @@ class TagManager:
             _revision = revision
 
         response = create_tag(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             name=name,
             revision=_revision,
@@ -116,10 +118,11 @@ class TagManager:
             raise ResourceNameError("tag", name)
 
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = get_tag(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             tag=name,
         )
@@ -149,11 +152,11 @@ class TagManager:
         if not name:
             raise ResourceNameError("tag", name)
 
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         delete_tag(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             tag=name,
         )

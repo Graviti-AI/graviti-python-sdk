@@ -42,10 +42,11 @@ class BranchManager:
 
     def _generate(self, offset: int, limit: int) -> Generator[Branch, None, int]:
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = list_branches(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             offset=offset,
             limit=limit,
@@ -75,6 +76,7 @@ class BranchManager:
 
         """
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         head = _dataset.HEAD
         if revision is CURRENT_COMMIT:
             _revision = head.commit_id
@@ -87,16 +89,16 @@ class BranchManager:
             _revision = revision
 
         response = create_branch(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             name=name,
             revision=_revision,
         )
 
         check_head_status(head, _revision, response["commit_id"])
-        return Branch.from_response(self._dataset, response)
+        return Branch.from_response(_dataset, response)
 
     def get(self, name: str) -> Branch:
         """Get the branch with the given name.
@@ -116,10 +118,11 @@ class BranchManager:
             raise ResourceNameError("branch", name)
 
         _dataset = self._dataset
+        _workspace = _dataset.workspace
         response = get_branch(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
             _dataset.name,
             branch=name,
         )
@@ -150,11 +153,11 @@ class BranchManager:
         if not name:
             raise ResourceNameError("branch", name)
 
-        _dataset = self._dataset
+        _workspace = self._dataset.workspace
         delete_branch(
-            _dataset.access_key,
-            _dataset.url,
-            _dataset.workspace,
-            _dataset.name,
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self._dataset.name,
             branch=name,
         )

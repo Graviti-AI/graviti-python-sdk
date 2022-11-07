@@ -161,9 +161,9 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         }:
             self._check_record_names(self[sheet_name].schema, sheet_name)
 
-        dataset = self._dataset
+        _dataset = self._dataset
         for sheet_operation in self.operations:
-            sheet_operation.execute(dataset, draft_number)
+            sheet_operation.execute(_dataset, draft_number)
 
         self.operations = []
 
@@ -186,7 +186,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
 
                     for df_operation in df.operations:
                         df_operation.execute(
-                            dataset,
+                            _dataset,
                             draft_number=draft_number,
                             sheet=sheet_name,
                             jobs=jobs,
