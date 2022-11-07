@@ -14,6 +14,7 @@ from graviti.utility.collections import (
     UserSequence,
 )
 from graviti.utility.common import (
+    LazyAttr,
     ModuleMocker,
     convert_datetime_to_gmt,
     convert_iso_to_datetime,
@@ -31,6 +32,7 @@ __all__ = [
     "AttrDict",
     "FrozenNameOrderedDict",
     "INDENT",
+    "LazyAttr",
     "MAX_REPR_ROWS",
     "Mode",
     "ModuleMocker",

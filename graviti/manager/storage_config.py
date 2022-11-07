@@ -11,7 +11,7 @@ from graviti.exception import ResourceNameError
 from graviti.manager.common import LIMIT
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import get_storage_config, list_storage_configs, update_storage_configs
-from graviti.utility import ReprMixin, check_type
+from graviti.utility import LazyAttr, ReprMixin, check_type
 
 if TYPE_CHECKING:
     from graviti import Workspace
@@ -24,6 +24,7 @@ class StorageConfig(ReprMixin):
     """This class defines the structure of the storage config of Graviti Data Platform.
 
     Arguments:
+        workspace: The workspace of the storage config.
         response: The response of the OpenAPI associated with the storage config::
 
                 {
@@ -35,37 +36,35 @@ class StorageConfig(ReprMixin):
 
     Attributes:
         name: The name of the storage config.
+        config_type: The type of the storage config.
+        backend_type: The backend type of the storage config.
 
     """
 
     _repr_attrs = ("config_type", "backend_type")
 
-    _storage_config_info: Dict[str, Any]
+    _id = LazyAttr[str]()
+    config_type = LazyAttr[str]()
+    backend_type = LazyAttr[str]()
 
     def __init__(self, workspace: "Workspace", name: str) -> None:
         self._workspace = workspace
         self.name = name
 
-    @staticmethod
-    def _process_storage_config_info(response: Dict[str, Any]) -> Dict[str, Any]:
-        return {
-            "_id": response["id"],
-            "config_type": response["config_type"],
-            "backend_type": response["backend_type"],
-        }
+    def _init(self, response: Dict[str, Any]) -> None:
+        self._id = response["id"]
+        self.config_type = response["config_type"]
+        self.backend_type = response["backend_type"]
 
-    def _get_storage_config_info(self) -> Dict[str, Any]:
-        if not hasattr(self, "_storage_config_info"):
-            _workspace = self._workspace
-            response = get_storage_config(
-                _workspace.access_key,
-                _workspace.url,
-                _workspace.name,
-                self.name,
-            )
-            self._storage_config_info = self._process_storage_config_info(response)
-
-        return self._storage_config_info
+    def _load(self) -> None:
+        _workspace = self._workspace
+        response = get_storage_config(
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            self.name,
+        )
+        self._init(response)
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.name}")'
@@ -90,33 +89,9 @@ class StorageConfig(ReprMixin):
 
         """
         obj = cls(workspace, response["name"])
-        obj._storage_config_info = obj._process_storage_config_info(response)
+        obj._init(response)
 
         return obj
-
-    @property
-    def _id(self) -> str:
-        return self._get_storage_config_info()["_id"]  # type: ignore[no-any-return]
-
-    @property
-    def config_type(self) -> str:
-        """Return the config type of the storage config.
-
-        Returns:
-            The config type of the storage config.
-
-        """
-        return self._get_storage_config_info()["config_type"]  # type: ignore[no-any-return]
-
-    @property
-    def backend_type(self) -> str:
-        """Return the backend type of the storage config.
-
-        Returns:
-            The backend type of the storage config.
-
-        """
-        return self._get_storage_config_info()["backend_type"]  # type: ignore[no-any-return]
 
 
 class StorageConfigManager:

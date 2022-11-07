@@ -10,9 +10,14 @@ from datetime import datetime, timezone
 from functools import wraps
 from sys import version_info
 from threading import Lock
-from typing import Any, Callable, DefaultDict, TypeVar
+from typing import Any, Callable, DefaultDict, Generic, Optional, Type, TypeVar, Union, overload
 
+from typing_extensions import Protocol
+
+_T = TypeVar("_T")
+_S = TypeVar("_S", bound="LazyAttr[Any]")
 _CallableWithoutReturnValue = TypeVar("_CallableWithoutReturnValue", bound=Callable[..., None])
+
 _WEEKS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
@@ -119,6 +124,35 @@ def convert_datetime_to_gmt(utctime: datetime) -> str:
         f"{_WEEKS[utctime.weekday()]}, {utctime.day:02d} {_MONTHS[utctime.month - 1]}"
         f" {utctime.year:04d} {utctime.hour:02d}:{utctime.minute:02d}:{utctime.second:02d} GMT"
     )
+
+
+class _LazyLoad(Protocol):
+    def _load(self) -> None:
+        ...
+
+
+class LazyAttr(Generic[_T]):
+    """The descriptor for the lazy loaded attr."""
+
+    _name: str
+
+    def __set_name__(self, _: Type[_LazyLoad], name: str) -> None:
+        self._name = name
+
+    @overload
+    def __get__(self: _S, obj: None, _: Type[_LazyLoad]) -> _S:
+        ...
+
+    @overload
+    def __get__(self, obj: _LazyLoad, _: Type[_LazyLoad]) -> _T:
+        ...
+
+    def __get__(self: _S, obj: Optional[_LazyLoad], _: Type[_LazyLoad]) -> Union[_S, _T]:
+        if obj is None:
+            return self
+
+        obj._load()
+        return getattr(obj, self._name)  # type: ignore[no-any-return]
 
 
 class ModuleMocker:
