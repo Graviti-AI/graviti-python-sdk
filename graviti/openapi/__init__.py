@@ -6,9 +6,14 @@
 """OpenAPI module."""
 
 from graviti.openapi.action import (
+    cancel_action_run,
     create_action,
+    create_action_run,
     delete_action,
     get_action,
+    get_action_run,
+    get_action_run_node_log,
+    list_action_runs,
     list_actions,
     update_action,
 )
@@ -63,9 +68,11 @@ RECORD_KEY = "__record_key"
 __all__ = [
     "RECORD_KEY",
     "add_data",
+    "cancel_action_run",
     "commit_draft",
     "copy_objects",
     "create_action",
+    "create_action_run",
     "create_branch",
     "create_dataset",
     "create_draft",
@@ -82,6 +89,8 @@ __all__ = [
     "delete_tag",
     "do",
     "get_action",
+    "get_action_run",
+    "get_action_run_node_log",
     "get_branch",
     "get_commit",
     "get_commit_sheet",
@@ -97,6 +106,7 @@ __all__ = [
     "get_storage_config",
     "get_tag",
     "get_workspace",
+    "list_action_runs",
     "list_actions",
     "list_branches",
     "list_commit_data",
