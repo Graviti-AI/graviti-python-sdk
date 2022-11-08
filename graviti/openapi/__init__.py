@@ -5,6 +5,13 @@
 
 """OpenAPI module."""
 
+from graviti.openapi.action import (
+    create_action,
+    delete_action,
+    get_action,
+    list_actions,
+    update_action,
+)
 from graviti.openapi.branch import create_branch, delete_branch, get_branch, list_branches
 from graviti.openapi.commit import commit_draft, get_commit, get_revision, list_commits
 from graviti.openapi.data import (
@@ -58,6 +65,7 @@ __all__ = [
     "add_data",
     "commit_draft",
     "copy_objects",
+    "create_action",
     "create_branch",
     "create_dataset",
     "create_draft",
@@ -65,6 +73,7 @@ __all__ = [
     "create_search_history",
     "create_sheet",
     "create_tag",
+    "delete_action",
     "delete_branch",
     "delete_data",
     "delete_dataset",
@@ -72,6 +81,7 @@ __all__ = [
     "delete_sheet",
     "delete_tag",
     "do",
+    "get_action",
     "get_branch",
     "get_commit",
     "get_commit_sheet",
@@ -87,6 +97,7 @@ __all__ = [
     "get_storage_config",
     "get_tag",
     "get_workspace",
+    "list_actions",
     "list_branches",
     "list_commit_data",
     "list_commit_sheets",
@@ -99,6 +110,7 @@ __all__ = [
     "list_search_records",
     "list_storage_configs",
     "list_tags",
+    "update_action",
     "update_data",
     "update_dataset",
     "update_draft",
