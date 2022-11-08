@@ -337,7 +337,7 @@ def _copy_files(
                 dataset.name,
                 source_dataset=source_dataset,
                 keys=[file.key for file in batch],
-            )
+            )["keys"]
             for file, key in zip(batch, keys):
                 file._post_key = key  # pylint: disable=protected-access
 
