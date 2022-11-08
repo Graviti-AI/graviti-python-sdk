@@ -247,9 +247,9 @@ def update_draft(
 
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/drafts/{draft_number}"
-    patch_data: Dict[str, Any] = {"draft_number": draft_number}
 
-    if state:
+    patch_data = {}
+    if state is not None:
         patch_data["state"] = state
     if title is not None:
         patch_data["title"] = title
