@@ -175,7 +175,7 @@ def create_action_run(
     dataset: str,
     *,
     action: str,
-    parameters: Optional[Dict[str, Any]],
+    arguments: Optional[Dict[str, Any]],
 ) -> Dict[str, Any]:
     """Execute the OpenAPI `POST /v2/datasets/{workspace}/{dataset}/actions/{action}/runs`.
 
@@ -185,7 +185,7 @@ def create_action_run(
         workspace: The workspace of the dataset.
         dataset: Name of the dataset, unique for a user.
         action: The name of the action.
-        parameters: The parameters of the action run.
+        arguments: The arguments of the action run.
 
     Returns:
         The response of OpenAPI.
@@ -193,7 +193,7 @@ def create_action_run(
     """
     url = f"{url}/v2/datasets/{workspace}/{dataset}/actions/{action}/runs"
 
-    post_data = {"parameters": parameters} if parameters is not None else None
+    post_data = {"arguments": arguments} if arguments is not None else None
 
     return open_api_do(  # type: ignore[no-any-return]
         "POST", access_key, url, json=post_data
