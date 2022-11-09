@@ -130,7 +130,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             with_record_count=True,
         )
 
-    def edit(self, title: Optional[str] = None, description: Optional[str] = None) -> None:
+    def edit(self, *, title: Optional[str] = None, description: Optional[str] = None) -> None:
         """Update title and description of the draft.
 
         Arguments:

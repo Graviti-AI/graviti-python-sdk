@@ -90,7 +90,7 @@ description of the draft:
 .. code:: python
 
    draft = dataset.drafts.get(DRAFT_NUMBER)
-   draft.edit(f"{NEW_TITLE}", f"{NEW_DESCRIPTION}")
+   draft.edit(title=f"{NEW_TITLE}", description=f"{NEW_DESCRIPTION}")
 
 ******************
  Upload the Draft
