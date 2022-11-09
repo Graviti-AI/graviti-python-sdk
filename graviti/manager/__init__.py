@@ -4,6 +4,7 @@
 #
 """Manager module."""
 
+from graviti.manager.action import Action, ActionManager
 from graviti.manager.branch import BranchManager
 from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.dataset import Dataset, DatasetManager
@@ -20,6 +21,8 @@ from graviti.manager.tag import TagManager
 
 __all__ = [
     "AZUREObjectPermissionManager",
+    "Action",
+    "ActionManager",
     "BranchManager",
     "Commit",
     "CommitManager",
