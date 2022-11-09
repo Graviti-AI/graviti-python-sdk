@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, TypeVar
 
 from graviti.dataframe import DataFrame
 from graviti.exception import ResourceNameError, StatusError
+from graviti.manager.action import ActionManager
 from graviti.manager.branch import Branch, BranchManager
 from graviti.manager.commit import Commit, CommitManager
 from graviti.manager.common import LIMIT
@@ -201,6 +202,16 @@ class Dataset(  # pylint: disable=too-many-instance-attributes
 
         """
         return SearchManager(self)
+
+    @property
+    def actions(self) -> ActionManager:
+        """Get class :class:`~graviti.manager.action.ActionManager` instance.
+
+        Returns:
+            Required :class:`~graviti.manager.action.ActionManager` instance.
+
+        """
+        return ActionManager(self)
 
     def checkout(self, revision: str) -> None:
         """Checkout to a commit.
