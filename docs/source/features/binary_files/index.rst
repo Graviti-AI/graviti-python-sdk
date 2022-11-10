@@ -12,6 +12,13 @@ In addition, SDK also provides several commonly used file formats, including
 :class:`~graviti.file.image.Image`, :class:`~graviti.file.audio.Audio` and
 :class:`~graviti.file.point_cloud.PointCloud`.
 
+More details about the ``Storage Config`` are as follows:
+
+.. toctree::
+   :maxdepth: 1
+
+   storage_config
+
 ******
  File
 ******
