@@ -32,7 +32,7 @@ Or get an existing dataset:
 
 Users need to organize the data into :doc:`/features/sheet_management/dataframe` format with
 :doc:`/features/sheet_management/schema`. In addition, SDK also supports uploading different kinds
-of :doc:`/features/sheet_management/binary_files`, such as image, audio, etc.
+of :doc:`/features/binary_files/index`, such as image, audio, etc.
 
 .. code:: python
 
