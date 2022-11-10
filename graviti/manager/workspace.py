@@ -5,7 +5,8 @@
 
 """The implementation of the Workspace."""
 
-from graviti.manager import DatasetManager, StorageConfigManager
+from graviti.manager.dataset import DatasetManager
+from graviti.manager.storage_config import StorageConfigManager
 from graviti.openapi import get_current_workspace
 from graviti.utility import urlnorm
 

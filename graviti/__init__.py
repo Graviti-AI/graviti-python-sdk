@@ -8,7 +8,7 @@
 from graviti.__version__ import __version__
 from graviti.dataframe import ColumnSeries as Series
 from graviti.dataframe import DataFrame
+from graviti.manager import Workspace
 from graviti.utility import engine
-from graviti.workspace import Workspace
 
 __all__ = ["DataFrame", "Series", "Workspace", "__version__", "engine"]

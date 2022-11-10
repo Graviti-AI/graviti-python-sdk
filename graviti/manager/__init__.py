@@ -18,6 +18,7 @@ from graviti.manager.permission import (
 from graviti.manager.search import SearchHistory, SearchManager
 from graviti.manager.storage_config import StorageConfigManager
 from graviti.manager.tag import TagManager
+from graviti.manager.workspace import Workspace
 
 __all__ = [
     "AZUREObjectPermissionManager",
@@ -37,4 +38,5 @@ __all__ = [
     "SearchManager",
     "StorageConfigManager",
     "TagManager",
+    "Workspace",
 ]
