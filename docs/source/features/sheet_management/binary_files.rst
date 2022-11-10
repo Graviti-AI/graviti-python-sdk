@@ -24,8 +24,7 @@ Load the local text files to DataFrame:
 .. code:: python
 
    import graviti.portex as pt
-   from graviti import DataFrame
-   from graviti.file import File
+   from graviti import DataFrame, File
 
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
@@ -74,8 +73,7 @@ Load the local image into DataFrame:
 .. code:: python
 
    import graviti.portex as pt
-   from graviti import DataFrame
-   from graviti.file import Image
+   from graviti import DataFrame, Image
 
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
@@ -124,8 +122,7 @@ Load the local audio into DataFrame:
 .. code:: python
 
    import graviti.portex as pt
-   from graviti import DataFrame
-   from graviti.file import Audio
+   from graviti import DataFrame, Audio
 
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
@@ -165,8 +162,7 @@ Load the local point_cloud into DataFrame:
 .. code:: python
 
    import graviti.portex as pt
-   from graviti import DataFrame
-   from graviti.file import PointCloud
+   from graviti import DataFrame, PointCloud
 
    std = pt.build_package("https://github.com/Project-OpenBytes/portex-standard", "main")
    schema = pt.record(
