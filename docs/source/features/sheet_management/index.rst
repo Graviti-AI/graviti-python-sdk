@@ -24,7 +24,7 @@ More details about the ``DataFrame``, ``Binary Files``, ``Schema`` and ``Search`
    schema
    search
 
-In the Graviti SDK, the relationship between sheet name, DataFrame and dataset/draft is like the
+In the Graviti SDK, the relationship between sheet name, DataFrame and dataset is like the
 relationship between key, value and dict. Thus, SDK supports managing sheets like manipulating the
 dict in python.
 
@@ -42,13 +42,7 @@ all, it is necessary to get a dataset:
  Create a Sheet
 ****************
 
-SDK supports managing sheets of open drafts. Thus, it is necessary to create or get an open draft:
-
-.. code:: python
-
-   draft = dataset.drafts.create(f"{DRAFT_TITLE}")
-
-Then users need to :ref:`features/sheet_management/dataframe:Initialize a DataFrame` like:
+First :ref:`features/sheet_management/dataframe:Initialize a DataFrame`:
 
 .. code:: python
 
@@ -58,75 +52,47 @@ Then users need to :ref:`features/sheet_management/dataframe:Initialize a DataFr
    ...    {"filename": "b.jpg"},
    ...    {"filename": "c.jpg"},
    ... ]
-   >>> df1 = DataFrame(data)
-   >>> df1
+   >>> df = DataFrame(data)
+   >>> df
       filename
    0  a.jpg
    1  b.jpg
    2  c.jpg
 
-Next, users can create a new sheet:
+Set the DataFrame into dataset, then commit it:
 
 .. code:: python
 
-   draft[f"{SHEET_NAME}"] = df1
-   draft.upload()
-
-.. note::
-
-   Only changes made on the open draft can be synchronized to Graviti via the method
-   :meth:`~graviti.manager.draft.Draft.upload`.
-
-Or replacing the old sheet:
-
-.. code:: python
-
-   draft["train"] = df2
-   draft.upload()
+   dataset[f"{SHEET_NAME}"] = df
+   dataset.commit(f"{COMMIT_MESSAGE}")
 
 *************
  List Sheets
 *************
 
-List sheets for the specified version of the dataset:
+List sheet names :
 
 .. code:: python
 
-   dataset.checkout(f"{COMMIT_ID}")
    list(dataset.keys())
-
-List sheets of an open draft:
-
-.. code:: python
-
-   draft = dataset.drafts.get({DRAFT_NUMBER})
-   list(draft.keys())
 
 *************
  Get a Sheet
 *************
 
-Get a sheet for the specified version of the dataset by name:
+Get a sheet by name:
 
 .. code:: python
 
-   dataset.checkout(f"{REVISION}")
    dataset[f"{SHEET_NAME}"]
-
-Get a sheet of an open draft by name:
-
-.. code:: python
-
-   draft = dataset.drafts.get({DRAFT_NUMBER})
-   draft[f"{SHEET_NAME}"]
 
 ****************
  Delete a Sheet
 ****************
 
-Delete a sheet of the open draft by name:
+Delete a sheet by name:
 
 .. code:: python
 
-   del draft[f"{SHEET_NAME}"]
-   draft.upload()
+   del dataset[f"{SHEET_NAME}"]
+   dataset.commit(f"{COMMIT_MESSAGE}")
