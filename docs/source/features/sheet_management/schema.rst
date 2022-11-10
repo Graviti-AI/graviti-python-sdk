@@ -427,7 +427,7 @@ SDK supports adding and uploading binary files, whose schema must be of type ``f
    ... )
 
 When using the record in the above example as the schema of a DataFrame, the column of "image"
-stores image files. Please see :doc:`/features/sheet_management/binary_files` for more details about
+stores image files. Please see :doc:`/features/binary_files/index` for more details about
 data.
 
 ****************

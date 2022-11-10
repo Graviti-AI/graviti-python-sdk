@@ -14,13 +14,12 @@ videos. Each sheet has its own schema.
 Graviti SDK organizes the data of a sheet into a DataFrame format, which makes it more convenient
 and intuitive to get and modify the data.
 
-More details about the ``DataFrame``, ``Binary Files``, ``Schema`` and ``Search`` are as follows:
+More details about the ``DataFrame``, ``Schema`` and ``Search`` are as follows:
 
 .. toctree::
    :maxdepth: 1
 
    dataframe
-   binary_files
    schema
    search
 
