@@ -7,6 +7,7 @@
 
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
 
+from graviti.dataframe import DataFrame
 from graviti.manager.commit import Commit
 from graviti.manager.common import LIMIT
 from graviti.manager.lazy import LazyPagingList
@@ -16,7 +17,10 @@ from graviti.openapi import (
     get_search_history,
     get_search_record_count,
     list_search_histories,
+    list_search_records,
 )
+from graviti.paging import LazyLowerCaseFactory
+from graviti.portex import PortexRecordBase
 from graviti.utility import (
     CachedProperty,
     ReprMixin,
@@ -107,6 +111,35 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
             _workspace.name,
             _dataset.name,
             search_id=self.search_id,
+        )
+
+    def run(self, _schema: PortexRecordBase) -> DataFrame:
+        """Run the search and get the result DataFrame.
+
+        Returns:
+            The search result DataFrame.
+
+        """
+        _dataset = self._dataset
+        _workspace = _dataset.workspace
+
+        factory = LazyLowerCaseFactory(
+            self.record_count,
+            LIMIT,
+            lambda offset, limit: list_search_records(
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
+                _dataset.name,
+                search_id=self.search_id,
+                offset=offset,
+                limit=limit,
+            )["records"],
+            _schema.to_pyarrow(_to_backend=True),
+        )
+
+        return DataFrame._from_factory(  # pylint: disable=protected-access
+            factory, _schema, object_permission_manager=_dataset.object_permission_manager
         )
 
 
