@@ -14,9 +14,16 @@ from graviti.openapi import (
     create_search_history,
     delete_search_history,
     get_search_history,
+    get_search_record_count,
     list_search_histories,
 )
-from graviti.utility import ReprMixin, SortParam, check_type, convert_iso_to_datetime
+from graviti.utility import (
+    CachedProperty,
+    ReprMixin,
+    SortParam,
+    check_type,
+    convert_iso_to_datetime,
+)
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -46,7 +53,6 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         draft_number: The draft number of this search history.
         sheet: The sheet name of this search history.
         criteria: The criteria of this search history.
-        record_count: The record count of this search history.
         creator: The creator of this search history.
         created_at: The create time of this search history.
 
@@ -73,12 +79,35 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
 
         self.sheet = response["sheet"]
         self.criteria = response["criteria"]
-        self.record_count = response["record_count"]
+
+        record_count = response["record_count"]
+        if record_count is not None:
+            self.record_count = record_count
+
         self.creator = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.search_id}")'
+
+    @CachedProperty
+    def record_count(self) -> int:  # pylint: disable=method-hidden
+        """Get the record count of the search.
+
+        Returns:
+            The record count of the search.
+
+        """
+        _dataset = self._dataset
+        _workspace = _dataset.workspace
+
+        return get_search_record_count(
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            _dataset.name,
+            search_id=self.search_id,
+        )
 
 
 class SearchManager:
