@@ -35,7 +35,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
                     "draft_number": <int>,
                     "sheet": <str>,
                     "criteria": <dict>,
-                    "total_count": <int>,
+                    "record_count": <int>,
                     "creator": <str>,
                     "created_at": <str>,
                 },
@@ -46,7 +46,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         draft_number: The draft number of this search history.
         sheet: The sheet name of this search history.
         criteria: The criteria of this search history.
-        total_count: The total count of this search history.
+        record_count: The record count of this search history.
         creator: The creator of this search history.
         created_at: The create time of this search history.
 
@@ -57,7 +57,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         "draft_number",
         "sheet",
         "criteria",
-        "total_count",
+        "record_count",
         "creator",
         "created_at",
     )
@@ -73,7 +73,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
 
         self.sheet = response["sheet"]
         self.criteria = response["criteria"]
-        self.total_count = response["total_count"]
+        self.record_count = response["record_count"]
         self.creator = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
 
