@@ -14,6 +14,7 @@ from graviti.utility.collections import (
     UserSequence,
 )
 from graviti.utility.common import (
+    CachedProperty,
     LazyAttr,
     ModuleMocker,
     convert_datetime_to_gmt,
@@ -30,6 +31,7 @@ from graviti.utility.typing import NestedDict, PathLike, SortParam, check_type
 
 __all__ = [
     "AttrDict",
+    "CachedProperty",
     "FrozenNameOrderedDict",
     "INDENT",
     "LazyAttr",
