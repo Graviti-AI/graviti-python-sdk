@@ -189,7 +189,7 @@ def create_search_history(
             },
             "creator": "linjiX",
             "created_at": "2021-03-05T18:58:10Z",
-            "total_count": null
+            "record_count": null
         }
 
     """
@@ -258,7 +258,7 @@ def list_search_histories(
                     },
                     "creator": "linjiX",
                     "created_at": "2021-03-06T18:58:10Z",
-                    "total_count": 200
+                    "record_count": 200
                 },
                 {
                     "id": "53dbbedf35064f21a7b85def60de840e",
@@ -271,7 +271,7 @@ def list_search_histories(
                     },
                     "creator": "linjiX",
                     "created_at": "2021-03-05T18:58:10Z",
-                    "total_count": 1000
+                    "record_count": 1000
                 }
             ],
             "offset": 0,
@@ -333,7 +333,7 @@ def get_search_history(
             },
             "creator": "linjiX",
             "created_at": "2021-03-05T18:58:10Z",
-            "total_count": 1000
+            "record_count": 1000
         }
 
     """
@@ -372,7 +372,7 @@ def delete_search_history(
     open_api_do("DELETE", access_key, url)
 
 
-def get_search_total_count(
+def get_search_record_count(
     access_key: str,
     url: str,
     workspace: str,
@@ -381,7 +381,7 @@ def get_search_total_count(
     search_id: str,
 ) -> int:
     """Execute the OpenAPI `GET /v2/datasets/{workspace}/{dataset}/searches/{search_id}\
-    /total-count`.
+    /record-count`.
 
     Arguments:
         access_key: User's access key.
@@ -394,7 +394,7 @@ def get_search_total_count(
         The response of OpenAPI.
 
     Examples:
-        >>> get_search_total_count(
+        >>> get_search_record_count(
         ...     "ACCESSKEY-********",
         ...     "https://api.graviti.com",
         ...     "portex-test",
@@ -404,7 +404,7 @@ def get_search_total_count(
         1000
 
     """
-    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/total-count"
+    url = f"{url}/v2/datasets/{workspace}/{dataset}/searches/{search_id}/record-count"
 
     return open_api_do("GET", access_key, url).json()  # type: ignore[no-any-return]
 

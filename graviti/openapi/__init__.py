@@ -42,7 +42,7 @@ from graviti.openapi.search import (
     create_search_history,
     delete_search_history,
     get_search_history,
-    get_search_total_count,
+    get_search_record_count,
     list_search_histories,
     list_search_records,
 )
@@ -102,7 +102,7 @@ __all__ = [
     "get_object_permission",
     "get_revision",
     "get_search_history",
-    "get_search_total_count",
+    "get_search_record_count",
     "get_storage_config",
     "get_tag",
     "get_workspace",
