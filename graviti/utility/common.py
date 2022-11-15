@@ -15,7 +15,10 @@ from typing import Any, Callable, DefaultDict, Generic, Optional, Type, TypeVar,
 from typing_extensions import Protocol
 
 _T = TypeVar("_T")
-_S = TypeVar("_S", bound="LazyAttr[Any]")
+_S = TypeVar("_S")
+_LA = TypeVar("_LA", bound="LazyAttr[Any]")
+_CP = TypeVar("_CP", bound="CachedProperty[Any, Any]")
+
 _CallableWithoutReturnValue = TypeVar("_CallableWithoutReturnValue", bound=Callable[..., None])
 
 _WEEKS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -140,19 +143,54 @@ class LazyAttr(Generic[_T]):
         self._name = name
 
     @overload
-    def __get__(self: _S, obj: None, _: Type[_LazyLoad]) -> _S:
+    def __get__(self: _LA, obj: None, _: Type[_LazyLoad]) -> _LA:
         ...
 
     @overload
     def __get__(self, obj: _LazyLoad, _: Type[_LazyLoad]) -> _T:
         ...
 
-    def __get__(self: _S, obj: Optional[_LazyLoad], _: Type[_LazyLoad]) -> Union[_S, _T]:
+    def __get__(self: _LA, obj: Optional[_LazyLoad], _: Type[_LazyLoad]) -> Union[_LA, _T]:
         if obj is None:
             return self
 
         obj._load()
         return getattr(obj, self._name)  # type: ignore[no-any-return]
+
+
+class CachedProperty(Generic[_S, _T]):
+    """The descriptor for the cached property.
+
+    Arguments:
+        func: the property function needs to be cached.
+
+    """
+
+    _name: str
+
+    def __init__(self, func: Callable[[_S], _T]) -> None:
+        self._func = func
+        self.__doc__ = func.__doc__
+
+    def __set_name__(self, _: Type[_S], name: str) -> None:
+        self._name = name
+
+    @overload
+    def __get__(self: _CP, obj: None, _: Type[_S]) -> _CP:
+        ...
+
+    @overload
+    def __get__(self, obj: _S, _: Type[_S]) -> _T:
+        ...
+
+    def __get__(self: _CP, obj: Optional[_S], _: Type[_S]) -> Union[_CP, _T]:
+        if obj is None:
+            return self
+
+        value: _T = self._func(obj)
+        setattr(obj, self._name, value)
+
+        return value
 
 
 class ModuleMocker:
