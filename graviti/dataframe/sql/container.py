@@ -5,13 +5,9 @@
 
 """The search container and register."""
 
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Type, TypeVar, Union
+from typing import Any, ClassVar, Dict, Type, TypeVar, Union
 
 import graviti.portex as pt
-
-if TYPE_CHECKING:
-    from graviti.portex.base import PortexType
-
 
 _S = TypeVar("_S", bound="ScalarContainer")
 _A = TypeVar("_A", bound="ArrayContainer")
@@ -94,7 +90,7 @@ class SearchContainerRegister:
 
     """
 
-    def __init__(self, *portex_types: Type["PortexType"]) -> None:
+    def __init__(self, *portex_types: Type[pt.PortexType]) -> None:
         self._portex_types = portex_types
 
     def __call__(self, container: Type[_A]) -> Type[_A]:
