@@ -47,7 +47,7 @@ except ModuleNotFoundError:
 if TYPE_CHECKING:
     import pandas
 
-    from graviti.manager.permission import ObjectPermissionManager
+    from graviti.manager import ObjectPermissionManager, SearchHistory
 
 
 _T = TypeVar("_T", bound="DataFrame")
@@ -117,8 +117,8 @@ class DataFrame(Container):
 
     schema: pt.PortexRecordBase
     operations: Optional[List[DataFrameOperation]] = None
-    searcher: Optional[Callable[[Dict[str, Any], pt.PortexRecordBase], "DataFrame"]] = None
-    criteria: Optional[Dict[str, Any]] = None
+    search_creator: Optional[Callable[[Dict[str, Any]], "SearchHistory"]] = None
+    search_history: Optional["SearchHistory"] = None
 
     def __new__(
         cls: Type[_T],
@@ -1004,25 +1004,25 @@ class DataFrame(Container):
                 "Only online mode is supported now, "
                 "Please use 'engine.online' with block to enable the online mode."
             )
-        if self.searcher is None:
+        if self.search_creator is None:
             raise TypeError("'query' is not supported for the DataFrame not in a Commit")
 
         result = func(SqlRowSeries(self.schema))
-        if self.criteria is None:
+        if self.search_history is None:
             criteria = {"where": result.expr}
         else:
             criteria = {
                 "where": {
                     "$and": [
-                        self.criteria["where"],  # pylint: disable=unsubscriptable-object
+                        self.search_history.criteria["where"],
                         result.expr,
                     ]
                 }
             }
 
-        df = self.searcher(criteria, self.schema)  # pylint: disable=not-callable
-        df.criteria = criteria
-        df.searcher = self.searcher
+        search_history = self.search_creator(criteria)  # pylint: disable=not-callable
+        df = search_history.run()
+        df.search_history = search_history
         return df
 
     def apply(self, func: Callable[[Any], Any]) -> Container:
@@ -1054,15 +1054,16 @@ class DataFrame(Container):
                 "Only online mode is supported now, "
                 "Please use 'engine.online' with block to enable the online mode."
             )
-        if self.searcher is None:
+        if self.search_creator is None:
             raise TypeError("'apply' is not supported for the DataFrame not in a Commit")
 
         result = func(SqlRowSeries(self.schema))
-        criteria = {} if self.criteria is None else self.criteria.copy()
+        search_history = self.search_history
+        criteria = {} if search_history is None else search_history.criteria.copy()
         criteria["select"] = [{APPLY_KEY: result.expr}]
-        df = self.searcher(  # pylint: disable=not-callable
-            criteria, pt.record({APPLY_KEY: pt.array(result.schema)})
-        )
+
+        search_history = self.search_creator(criteria)  # pylint: disable=not-callable
+        df = search_history.run()
         return df[APPLY_KEY]
 
 
