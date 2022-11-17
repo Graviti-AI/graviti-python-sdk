@@ -7,20 +7,24 @@
 
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
 
+import graviti.portex as pt
 from graviti.dataframe import DataFrame
+from graviti.dataframe.sql.operator import get_type, infer_type
+from graviti.exception import CriteriaError
 from graviti.manager.commit import Commit
 from graviti.manager.common import LIMIT
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import (
     create_search_history,
     delete_search_history,
+    get_commit_sheet,
+    get_draft_sheet,
     get_search_history,
     get_search_record_count,
     list_search_histories,
     list_search_records,
 )
 from graviti.paging import LazyLowerCaseFactory
-from graviti.portex import PortexRecordBase
 from graviti.utility import (
     CachedProperty,
     ReprMixin,
@@ -74,25 +78,84 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, dataset: "Dataset", response: Dict[str, Any]) -> None:
         self._dataset = dataset
-        self.search_id = response["id"]
+        self.search_id: str = response["id"]
 
         if "commit_id" in response:
             self.commit = Commit(dataset, response["commit_id"])
         else:
-            self.draft_number = response["draft_number"]
+            self.draft_number: int = response["draft_number"]
 
-        self.sheet = response["sheet"]
-        self.criteria = response["criteria"]
+        self.sheet: str = response["sheet"]
+        self.criteria: Dict[str, Any] = response["criteria"]
 
         record_count = response["record_count"]
         if record_count is not None:
             self.record_count = record_count
 
-        self.creator = response["creator"]
+        self.creator: str = response["creator"]
         self.created_at = convert_iso_to_datetime(response["created_at"])
 
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.search_id}")'
+
+    def _get_sheet_schema(self) -> pt.record:
+        _dataset = self._dataset
+        _workspace = _dataset.workspace
+
+        if hasattr(self, "commit"):
+            return pt.record.from_yaml(
+                get_commit_sheet(
+                    _workspace.access_key,
+                    _workspace.url,
+                    _workspace.name,
+                    _dataset.name,
+                    commit_id=self.commit.commit_id,  # type: ignore[arg-type]
+                    sheet=self.sheet,
+                )["schema"]
+            )
+
+        return pt.record.from_yaml(
+            get_draft_sheet(
+                _workspace.access_key,
+                _workspace.url,
+                _workspace.name,
+                _dataset.name,
+                draft_number=self.draft_number,
+                sheet=self.sheet,
+            )["schema"]
+        )
+
+    def _infer_schema(self) -> pt.record:
+        sheet_schema = self._get_sheet_schema()
+
+        select = self.criteria.get("select")
+        if not select:
+            return sheet_schema
+
+        schema = pt.record([])
+        for item in select:
+            if isinstance(item, str) and item.startswith("$."):
+                column = item[2:]
+                pttype = get_type(sheet_schema, item)
+
+            elif isinstance(item, dict):
+                column, expr = item.copy().popitem()
+                pttype = infer_type(sheet_schema, expr)
+
+            else:
+                raise CriteriaError(f"Invalid column '{item}' in 'select'")
+
+            names = column.split(".")
+
+            target = schema
+            for name in names[:-1]:
+                target = target.setdefault(name, pt.record([]))  # type: ignore[assignment]
+                if not isinstance(target, pt.PortexRecordBase):
+                    raise CriteriaError(f"Expression '{item}' conflicts with other columns")
+
+            target[names[-1]] = pttype
+
+        return schema
 
     @CachedProperty
     def record_count(self) -> int:  # pylint: disable=method-hidden
@@ -113,7 +176,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
             search_id=self.search_id,
         )
 
-    def run(self, _schema: PortexRecordBase) -> DataFrame:
+    def run(self) -> DataFrame:
         """Run the search and get the result DataFrame.
 
         Returns:
@@ -123,6 +186,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         _dataset = self._dataset
         _workspace = _dataset.workspace
 
+        schema = self._infer_schema()
         factory = LazyLowerCaseFactory(
             self.record_count,
             LIMIT,
@@ -135,11 +199,11 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
                 offset=offset,
                 limit=limit,
             )["records"],
-            _schema.to_pyarrow(_to_backend=True),
+            schema.to_pyarrow(_to_backend=True),
         )
 
         return DataFrame._from_factory(  # pylint: disable=protected-access
-            factory, _schema, object_permission_manager=_dataset.object_permission_manager
+            factory, schema, object_permission_manager=_dataset.object_permission_manager
         )
 
 
