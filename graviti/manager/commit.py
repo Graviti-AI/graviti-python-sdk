@@ -6,7 +6,6 @@
 """The implementation of the Commit and CommitManager."""
 
 from datetime import datetime
-from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar, Union
 
 from graviti.dataframe import DataFrame
@@ -15,7 +14,6 @@ from graviti.manager.common import CURRENT_COMMIT, LIMIT, check_head_status
 from graviti.manager.lazy import LazyPagingList
 from graviti.manager.sheets import Sheets
 from graviti.openapi import (
-    create_search,
     get_commit,
     get_commit_sheet,
     get_revision,
@@ -24,8 +22,6 @@ from graviti.openapi import (
     list_commits,
 )
 from graviti.operation import SheetOperation
-from graviti.paging import LazyLowerCaseFactory
-from graviti.portex import PortexRecordBase
 from graviti.utility import LazyAttr, check_type, convert_iso_to_datetime
 
 if TYPE_CHECKING:
@@ -136,7 +132,11 @@ class Commit(Sheets):  # pylint: disable=too-many-instance-attributes
 
     def _init_dataframe(self, sheet_name: str) -> DataFrame:
         df = super()._init_dataframe(sheet_name)
-        df.searcher = partial(self.search, sheet_name)
+        df.search_creator = (
+            lambda criteria: self._dataset.searches._create(  # pylint: disable=protected-access
+                self.commit_id, None, sheet_name, criteria
+            )
+        )
         return df
 
     @classmethod
@@ -164,76 +164,6 @@ class Commit(Sheets):  # pylint: disable=too-many-instance-attributes
         obj._init(response)
 
         return obj
-
-    def search(
-        self, sheet: str, criteria: Dict[str, Any], schema: Optional[PortexRecordBase] = None
-    ) -> DataFrame:
-        """Create a search.
-
-        Arguments:
-            sheet: The sheet name.
-            criteria: The criteria of search.
-            schema: The schema of the search result DataFrame.
-
-        Raises:
-            NoCommitsError: When there is no commit on the current branch.
-
-        Returns:
-            The created :class:`~graviti.dataframe.DataFrame` instance.
-
-        """
-        if self.commit_id is None:
-            raise NoCommitsError("No commit on the current branch. Please commit a draft first")
-
-        _dataset = self._dataset
-        _workspace = _dataset.workspace
-        search_id = create_search(
-            _workspace.access_key,
-            _workspace.url,
-            _workspace.name,
-            _dataset.name,
-            commit_id=self.commit_id,
-            sheet=sheet,
-            criteria=criteria,
-            offset=0,
-            limit=1,
-        )["search_id"]
-
-        def _getter(
-            offset: Optional[int] = None,
-            limit: Optional[int] = None,
-            getter_criteria: Dict[str, Any] = criteria,
-        ) -> List[Dict[str, Any]]:
-            return create_search(  # type: ignore[no-any-return]
-                _workspace.access_key,
-                _workspace.url,
-                _workspace.name,
-                _dataset.name,
-                commit_id=self.commit_id,  # type: ignore[arg-type]
-                sheet=sheet,
-                search_id=search_id,
-                criteria=getter_criteria,
-                offset=offset,
-                limit=limit,
-            )["data"]
-
-        count_criteria = criteria.copy()
-        count_criteria["select"] = [{"count": {"$count": ["$."]}}]
-        total_count = _getter(getter_criteria=count_criteria)[0]["count"]
-
-        if schema is None:
-            schema = PortexRecordBase.from_yaml(self._get_sheet(sheet)["schema"])
-
-        factory = LazyLowerCaseFactory(
-            total_count,
-            LIMIT,
-            _getter,
-            schema.to_pyarrow(_to_backend=True),
-        )
-
-        return DataFrame._from_factory(  # pylint: disable=protected-access
-            factory, schema, object_permission_manager=_dataset.object_permission_manager
-        )
 
 
 class NamedCommit(Commit):
