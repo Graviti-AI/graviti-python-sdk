@@ -96,6 +96,10 @@ class ManagerError(GravitiException):
     """This is the base class for custom exceptions in Graviti manager module."""
 
 
+class CriteriaError(ManagerError):
+    """This class defines the exception for invalid search criteria."""
+
+
 class StatusError(ManagerError):
     """This class defines the exception for illegal status."""
 
