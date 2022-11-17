@@ -298,10 +298,10 @@ class SearchManager:
     def list(
         self,
         *,
-        commit_id: Optional[str],
-        draft_number: Optional[int],
-        sheet: Optional[str],
-        sort: SortParam,
+        commit_id: Optional[str] = None,
+        draft_number: Optional[int] = None,
+        sheet: Optional[str] = None,
+        sort: SortParam = None,
     ) -> LazyPagingList[SearchHistory]:
         """List Graviti search histories.
 
