@@ -38,7 +38,6 @@ from graviti.openapi.object import copy_objects, get_object_permission
 from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
 from graviti.openapi.search import (
-    create_search,
     create_search_history,
     delete_search_history,
     get_search_history,
@@ -76,7 +75,6 @@ __all__ = [
     "create_branch",
     "create_dataset",
     "create_draft",
-    "create_search",
     "create_search_history",
     "create_sheet",
     "create_tag",
