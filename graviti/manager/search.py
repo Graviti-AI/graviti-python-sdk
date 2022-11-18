@@ -202,9 +202,12 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
             schema.to_pyarrow(_to_backend=True),
         )
 
-        return DataFrame._from_factory(  # pylint: disable=protected-access
+        df = DataFrame._from_factory(  # pylint: disable=protected-access
             factory, schema, object_permission_manager=_dataset.object_permission_manager
         )
+        df.search_history = self
+
+        return df
 
 
 class SearchManager:
