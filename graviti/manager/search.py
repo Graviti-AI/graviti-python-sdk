@@ -125,9 +125,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
             )["schema"]
         )
 
-    def _infer_schema(self) -> pt.record:
-        sheet_schema = self._get_sheet_schema()
-
+    def _infer_schema(self, sheet_schema: pt.record) -> pt.record:
         select = self.criteria.get("select")
         if not select:
             return sheet_schema
@@ -176,6 +174,17 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
             search_id=self.search_id,
         )
 
+    @CachedProperty
+    def schema(self) -> pt.record:
+        """Get the schema of the search result.
+
+        Returns:
+            The schema of the search result.
+
+        """
+        sheet_schema = self._get_sheet_schema()
+        return self._infer_schema(sheet_schema)
+
     def run(self) -> DataFrame:
         """Run the search and get the result DataFrame.
 
@@ -186,7 +195,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
         _dataset = self._dataset
         _workspace = _dataset.workspace
 
-        schema = self._infer_schema()
+        schema = self.schema
         factory = LazyLowerCaseFactory(
             self.record_count,
             LIMIT,
@@ -199,7 +208,7 @@ class SearchHistory(ReprMixin):  # pylint: disable=too-many-instance-attributes
                 offset=offset,
                 limit=limit,
             )["records"],
-            schema.to_pyarrow(_to_backend=True),
+            schema.to_pyarrow(_to_backend=True),  # pylint: disable=no-member
         )
 
         df = DataFrame._from_factory(  # pylint: disable=protected-access
