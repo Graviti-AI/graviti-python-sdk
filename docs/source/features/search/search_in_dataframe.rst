@@ -5,10 +5,10 @@
  Search in DataFrame
 #####################
 
-This topic describes DataFrame search methods:
+Graviti SDK supports to triggered Graviti search from DataFrame through the following two methods:
 
--  :py:meth:`~graviti.dataframe.frame.DataFrame.query`
--  :py:meth:`~graviti.dataframe.frame.DataFrame.apply`
+-  :py:meth:`DataFrame.query() <graviti.dataframe.frame.DataFrame.query>`
+-  :py:meth:`DataFrame.apply() <graviti.dataframe.frame.DataFrame.apply>`
 
 *********************
  Dataset Preparation

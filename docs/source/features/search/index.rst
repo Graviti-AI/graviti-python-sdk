@@ -7,7 +7,10 @@
 
 Graviti Data Platform supports searching columns in sheet.
 
-More details about the ``Search History`` and ``Search in Dataframe`` are as follows:
+Check :doc:`/features/search/search_history` for managing search histories and get the search
+result.
+
+Check :doc:`/features/search/search_in_dataframe` for triggering a search from SDK.
 
 .. toctree::
    :maxdepth: 1
