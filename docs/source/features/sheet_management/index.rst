@@ -14,14 +14,13 @@ videos. Each sheet has its own schema.
 Graviti SDK organizes the data of a sheet into a DataFrame format, which makes it more convenient
 and intuitive to get and modify the data.
 
-More details about the ``DataFrame``, ``Schema`` and ``Search`` are as follows:
+More details about the ``DataFrame`` and ``Schema`` are as follows:
 
 .. toctree::
    :maxdepth: 1
 
    dataframe
    schema
-   search
 
 In the Graviti SDK, the relationship between sheet name, DataFrame and dataset is like the
 relationship between key, value and dict. Thus, SDK supports managing sheets like manipulating the
