@@ -1,9 +1,9 @@
 ..
    Copyright 2022 Graviti. Licensed under MIT License.
 
-########
- Search
-########
+#####################
+ Search in DataFrame
+#####################
 
 This topic describes DataFrame search methods:
 
