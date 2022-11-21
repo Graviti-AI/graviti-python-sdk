@@ -35,6 +35,13 @@ from graviti.openapi.dataset import (
 )
 from graviti.openapi.draft import create_draft, get_draft, list_drafts, update_draft
 from graviti.openapi.object import copy_objects, get_object_permission
+from graviti.openapi.record import (
+    add_records,
+    delete_records,
+    list_commit_records,
+    list_draft_records,
+    update_records,
+)
 from graviti.openapi.requests import do
 from graviti.openapi.schema import update_schema
 from graviti.openapi.search import (
@@ -67,6 +74,7 @@ RECORD_KEY = "__record_key"
 __all__ = [
     "RECORD_KEY",
     "add_data",
+    "add_records",
     "cancel_action_run",
     "commit_draft",
     "copy_objects",
@@ -82,6 +90,7 @@ __all__ = [
     "delete_branch",
     "delete_data",
     "delete_dataset",
+    "delete_records",
     "delete_search_history",
     "delete_sheet",
     "delete_tag",
@@ -108,10 +117,12 @@ __all__ = [
     "list_actions",
     "list_branches",
     "list_commit_data",
+    "list_commit_records",
     "list_commit_sheets",
     "list_commits",
     "list_datasets",
     "list_draft_data",
+    "list_draft_records",
     "list_draft_sheets",
     "list_drafts",
     "list_search_histories",
@@ -122,6 +133,7 @@ __all__ = [
     "update_data",
     "update_dataset",
     "update_draft",
+    "update_records",
     "update_schema",
     "update_storage_configs",
 ]
