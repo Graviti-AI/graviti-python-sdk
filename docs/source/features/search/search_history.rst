@@ -56,8 +56,8 @@ SDK provides method :meth:`~graviti.manager.search.SearchManager.delete` to dele
  Run a Search
 **************
 
-SDK provides method :meth:`~SearchHistory.run <graviti.manager.search.SearchHistory.run>` to run and
-get the search result.
+SDK provides method :meth:`SearchHistory.run() <graviti.manager.search.SearchHistory.run>` to run
+and get the search result.
 
 .. code:: python
 
