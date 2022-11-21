@@ -1021,7 +1021,7 @@ class DataFrame(Container):
             }
 
         search_history = self.search_creator(criteria)  # pylint: disable=not-callable
-        search_history.schema = result.schema
+        search_history.schema = self.schema.copy()  # type: ignore[assignment]
 
         df = search_history.run()
         df.search_history = search_history
@@ -1065,7 +1065,7 @@ class DataFrame(Container):
         criteria["select"] = [{APPLY_KEY: result.expr}]
 
         search_history = self.search_creator(criteria)  # pylint: disable=not-callable
-        schema: Any = pt.record({APPLY_KEY: result.schema})
+        schema: Any = pt.record({APPLY_KEY: pt.array(result.schema)})
         search_history.schema = schema
 
         df = search_history.run()
