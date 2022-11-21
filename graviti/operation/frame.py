@@ -13,10 +13,10 @@ from graviti.exception import ObjectCopyError
 from graviti.file import File, FileBase, RemoteFile
 from graviti.openapi import (
     RECORD_KEY,
-    add_data,
+    add_records,
     copy_objects,
-    delete_data,
-    update_data,
+    delete_records,
+    update_records,
     update_schema,
 )
 from graviti.operation.common import get_schema
@@ -155,14 +155,14 @@ class AddData(DataOperation):
                 _upload_files(local_files, dataset.object_permission_manager, file_pbar, jobs)
 
             _workspace = dataset.workspace
-            add_data(
+            add_records(
                 _workspace.access_key,
                 _workspace.url,
                 _workspace.name,
                 dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch.to_pylist(_to_backend=True),
+                records=batch.to_pylist(_to_backend=True),
             )
             data_pbar.update(len(batch))
 
@@ -266,14 +266,14 @@ class UpdateData(DataOperation):
                 _upload_files(local_files, dataset.object_permission_manager, file_pbar, jobs)
 
             _workspace = dataset.workspace
-            update_data(
+            update_records(
                 _workspace.access_key,
                 _workspace.url,
                 _workspace.name,
                 dataset.name,
                 draft_number=draft_number,
                 sheet=sheet,
-                data=batch.to_pylist(_to_backend=True),
+                records=batch.to_pylist(_to_backend=True),
             )
             data_pbar.update(len(batch))
 
@@ -311,7 +311,7 @@ class DeleteData(DataFrameOperation):
 
         """
         _workspace = dataset.workspace
-        delete_data(
+        delete_records(
             _workspace.access_key,
             _workspace.url,
             _workspace.name,

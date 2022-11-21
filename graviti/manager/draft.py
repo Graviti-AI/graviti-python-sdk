@@ -22,7 +22,7 @@ from graviti.openapi import (
     create_draft,
     get_draft,
     get_draft_sheet,
-    list_draft_data,
+    list_draft_records,
     list_draft_sheets,
     list_drafts,
     update_draft,
@@ -95,9 +95,9 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("#{self.number}: {self.title}")'
 
-    def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+    def _list_records(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         _workspace = self._dataset.workspace
-        return list_draft_data(  # type: ignore[no-any-return]
+        return list_draft_records(  # type: ignore[no-any-return]
             _workspace.access_key,
             _workspace.url,
             _workspace.name,
@@ -106,7 +106,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             sheet=sheet_name,
             offset=offset,
             limit=limit,
-        )["data"]
+        )["records"]
 
     def _list_sheets(self) -> Dict[str, Any]:
         _workspace = self._dataset.workspace
@@ -274,7 +274,7 @@ class Draft(Sheets):  # pylint: disable=too-many-instance-attributes
             factory = LazyLowerCaseFactory(
                 len(df),
                 LIMIT,
-                partial(self._list_data, sheet_name=name),
+                partial(self._list_records, sheet_name=name),
                 pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
             )
             df._refresh_data_from_factory(  # pylint: disable=protected-access)
