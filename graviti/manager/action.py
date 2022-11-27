@@ -6,16 +6,28 @@
 """The implementation of the Action and ActionManager."""
 
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
 
 from graviti.exception import ResourceNameError
 from graviti.manager.common import LIMIT
 from graviti.manager.lazy import LazyPagingList
-from graviti.openapi import create_action, delete_action, get_action, list_actions, update_action
-from graviti.openapi.action import create_action_run, get_action_run, list_action_runs
-from graviti.utility import ReprMixin, check_type
-from graviti.utility.common import convert_iso_to_datetime
-from graviti.utility.typing import SortParam
+from graviti.openapi import (
+    create_action,
+    create_action_run,
+    delete_action,
+    get_action,
+    get_action_run,
+    list_action_runs,
+    list_actions,
+    update_action,
+)
+from graviti.utility import (
+    CachedProperty,
+    ReprMixin,
+    SortParam,
+    check_type,
+    convert_iso_to_datetime,
+)
 
 if TYPE_CHECKING:
     from graviti.manager.dataset import Dataset
@@ -274,8 +286,34 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.ended_at = convert_iso_to_datetime(response["endeded_at"])
         self.duration = timedelta(seconds=response["duration"])
 
+        if "nodes" in response:
+            nodes: Any = [Node(self, item) for item in response["nodes"]]
+            self.nodes = nodes
+
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.name}")'
+
+    @CachedProperty
+    def nodes(self) -> List["Node"]:  # pylint: disable=method-hidden
+        """Get the nodes of the action run.
+
+        Returns:
+            The nodes of the action run.
+
+        """
+        _action = self._action
+        _dataset = _action._dataset  # pylint: disable=protected-access
+        _workspace = _dataset.workspace
+
+        response = get_action_run(
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            _dataset.name,
+            action=_action.name,
+            run_number=self.number,
+        )
+        return [Node(self, item) for item in response["nodes"]]
 
 
 class RunManager:
@@ -373,3 +411,47 @@ class RunManager:
             lambda offset, limit: self._generate(offset, limit, sort=sort),
             LIMIT,
         )
+
+
+class Node(ReprMixin):  # pylint: disable=too-many-instance-attributes
+    """This class defines the structure of a node of action run.
+
+    Arguments:
+        run: Class :class:`~graviti.manager.action.Run` instance.
+        response: The response of the OpenAPI associated with the action run node::
+
+                {
+                    "id": <str>,
+                    "name": <str>,
+                    "display_name": <str>,
+                    "phase": <str>,
+                    "started_at": <str>,
+                    "ended_at": <str>,
+                    "children": <list[str]>,
+                },
+
+    Attributes:
+        node_id: The id of this action run node.
+        name: The name of this action run node.
+        display_name: The display name of this action run node.
+        phase: The phase of this action run node.
+        started_at: The start time of this action run node.
+        ended_at: The end time of this action run node.
+        children: The children of this action run node.
+
+    """
+
+    _repr_attrs = ("phase", "started_at", "ended_at")
+
+    def __init__(self, run: Run, response: Dict[str, Any]) -> None:
+        self._run = run
+        self.node_id: str = response["id"]
+        self.name: str = response["name"]
+        self.display_name: str = response["display_name"]
+        self.phase: str = response["phase"]
+        self.started_at = convert_iso_to_datetime(response["started_at"])
+        self.ended_at = convert_iso_to_datetime(response["endeded_at"])
+        self.children: List[str] = response["children"]
+
+    def _repr_head(self) -> str:
+        return f'{self.__class__.__name__}("{self.node_id}")'
