@@ -6,7 +6,7 @@
 """Repr related methods."""
 
 from abc import ABC
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum, auto
 from typing import (
     Any,
@@ -284,7 +284,8 @@ def _repr_builtin_dict(obj: Mapping[Any, Any], level: int, maxlevel: int, foldin
 
 
 @_PrinterRegister(datetime)
-def _repr_datetime(obj: datetime, _: int, __: int, ___: bool) -> str:
+@_PrinterRegister(timedelta)
+def _repr_datetime(obj: Union[datetime, timedelta], _: int, __: int, ___: bool) -> str:
     return str(obj)
 
 
