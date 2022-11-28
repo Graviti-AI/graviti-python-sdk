@@ -283,7 +283,7 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.status = response["status"]
         self.arguments: Dict[str, Any] = response["arguments"]
         self.started_at = convert_iso_to_datetime(response["started_at"])
-        self.ended_at = convert_iso_to_datetime(response["endeded_at"])
+        self.ended_at = convert_iso_to_datetime(response["ended_at"])
         self.duration = timedelta(seconds=response["duration"])
 
         if "nodes" in response:
@@ -450,7 +450,7 @@ class Node(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.display_name: str = response["display_name"]
         self.phase: str = response["phase"]
         self.started_at = convert_iso_to_datetime(response["started_at"])
-        self.ended_at = convert_iso_to_datetime(response["endeded_at"])
+        self.ended_at = convert_iso_to_datetime(response["ended_at"])
         self.children: List[str] = response["children"]
 
     def _repr_head(self) -> str:
