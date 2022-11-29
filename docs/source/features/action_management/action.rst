@@ -56,7 +56,7 @@ SDK provides method :meth:`~graviti.manager.action.ActionManager.get` to get an 
  Update an Action
 ******************
 
-SDK provides method :meth:`~graviti.manager.action.Action.edit` to update an action:
+SDK provides method :meth:`Action.edit() <graviti.manager.action.Action.edit>` to update an action:
 
 Rename the action:
 
