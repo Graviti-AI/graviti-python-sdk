@@ -5,7 +5,7 @@
 
 """The implementation of the Action and ActionManager."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
 
 from graviti.exception import ResourceNameError
@@ -260,7 +260,6 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
                     "arguments": <dict>,
                     "started_at": <str>,
                     "ended_at": <str>,
-                    "duration": <int>,
                 },
 
     Attributes:
@@ -283,8 +282,14 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.status = response["status"]
         self.arguments: Dict[str, Any] = response["arguments"]
         self.started_at = convert_iso_to_datetime(response["started_at"])
-        self.ended_at = convert_iso_to_datetime(response["ended_at"])
-        self.duration = timedelta(seconds=response["duration"])
+
+        ended_at = response["ended_at"]
+        if ended_at is not None:
+            self.ended_at: Optional[datetime] = convert_iso_to_datetime(ended_at)
+            self.duration: Optional[timedelta] = self.ended_at - self.started_at
+        else:
+            self.ended_at = None
+            self.duration = None
 
         if "nodes" in response:
             nodes: Any = [Node(self, item) for item in response["nodes"]]
@@ -437,11 +442,12 @@ class Node(ReprMixin):  # pylint: disable=too-many-instance-attributes
         phase: The phase of this action run node.
         started_at: The start time of this action run node.
         ended_at: The end time of this action run node.
+        duration: The duration of this action run node.
         children: The children of this action run node.
 
     """
 
-    _repr_attrs = ("phase", "started_at", "ended_at")
+    _repr_attrs = ("phase", "started_at", "ended_at", "duration")
 
     def __init__(self, run: Run, response: Dict[str, Any]) -> None:
         self._run = run
@@ -450,7 +456,15 @@ class Node(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.display_name: str = response["display_name"]
         self.phase: str = response["phase"]
         self.started_at = convert_iso_to_datetime(response["started_at"])
-        self.ended_at = convert_iso_to_datetime(response["ended_at"])
+
+        ended_at = response["ended_at"]
+        if ended_at is not None:
+            self.ended_at: Optional[datetime] = convert_iso_to_datetime(ended_at)
+            self.duration: Optional[timedelta] = self.ended_at - self.started_at
+        else:
+            self.ended_at = None
+            self.duration = None
+
         self.children: List[str] = response["children"]
 
     def _repr_head(self) -> str:
