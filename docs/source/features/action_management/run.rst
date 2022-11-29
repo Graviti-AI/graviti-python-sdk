@@ -55,6 +55,18 @@ SDK provides method :meth:`~graviti.manager.action.RunManager.get` to get an act
 
    action.runs.get(f"{RUN_NUMBER}")
 
+**********************
+ Cancel an Action Run
+**********************
+
+SDK provides method :meth:`Run.cancel() <graviti.manager.action.Run.cancel>` to cancel an action
+run:
+
+.. code:: python
+
+   run = action.runs.get(f"{RUN_NUMBER}")
+   run.cancel()
+
 *****************
  Get the Run Log
 *****************
