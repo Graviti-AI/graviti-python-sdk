@@ -447,7 +447,7 @@ class Node(ReprMixin):  # pylint: disable=too-many-instance-attributes
 
     """
 
-    _repr_attrs = ("phase", "started_at", "ended_at", "duration")
+    _repr_attrs = ("node_id", "phase", "started_at", "ended_at", "duration")
 
     def __init__(self, run: Run, response: Dict[str, Any]) -> None:
         self._run = run
@@ -468,4 +468,4 @@ class Node(ReprMixin):  # pylint: disable=too-many-instance-attributes
         self.children: List[str] = response["children"]
 
     def _repr_head(self) -> str:
-        return f'{self.__class__.__name__}("{self.node_id}")'
+        return f'{self.__class__.__name__}("{self.display_name}")'
