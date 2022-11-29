@@ -111,3 +111,10 @@ SDK provides method :meth:`~graviti.manager.action.ActionManager.delete` to dele
 .. code:: python
 
    dataset.actions.delete(f"{ACTION_NAME}")
+
+***************
+ Run an Action
+***************
+
+"Run an Action" is equivalent to "Create an Action Run", check
+:ref:`features/action_management/run:Create An Action Run` to run an action.
