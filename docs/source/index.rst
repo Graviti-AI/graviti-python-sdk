@@ -33,9 +33,9 @@ a pythonic way to access datasets by Graviti OpenAPI.
    features/dataset_management
    features/version_control/index
    features/sheet_management/index
+   features/action_management/index
    features/binary_files/index
    features/search/index
-   features/action/index
 
 .. toctree::
    :hidden:
