@@ -12,6 +12,7 @@ from graviti.exception import ResourceNameError
 from graviti.manager.common import LIMIT
 from graviti.manager.lazy import LazyPagingList
 from graviti.openapi import (
+    cancel_action_run,
     create_action,
     create_action_run,
     delete_action,
@@ -348,6 +349,25 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
             f"{url}/dataset/{_workspace.name}/{_dataset.name}/actions/{_action.name}/"
             f"{self._workflow_id[len(_action.name)+1 :]}?fullId={self._workflow_id}"
         )
+
+    def cancel(self) -> None:
+        """Cancel the action run."""
+        _action = self._action
+        _dataset = _action._dataset  # pylint: disable=protected-access
+        _workspace = _dataset.workspace
+
+        response = cancel_action_run(
+            _workspace.access_key,
+            _workspace.url,
+            _workspace.name,
+            _dataset.name,
+            action=_action.name,
+            run_number=self.number,
+        )
+        self.status = response["status"]
+        self.ended_at = response["ended_at"]
+        nodes: Any = [Node(self, item) for item in response["nodes"]]
+        self.nodes = nodes
 
 
 class RunManager:
