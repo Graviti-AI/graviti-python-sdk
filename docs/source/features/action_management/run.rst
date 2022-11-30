@@ -54,3 +54,16 @@ SDK provides method :meth:`~graviti.manager.action.RunManager.get` to get an act
 .. code:: python
 
    action.runs.get(f"{RUN_NUMBER}")
+
+*****************
+ Get the Run Log
+*****************
+
+Get the log of an action run is not supported directly in SDK so far. The log can be get from the
+Graviti webpage which url can be found in the property :attr:`Run.url
+<graviti.manager.action.Run.url>`.
+
+.. code:: python
+
+   run = action.runs.get(f"{RUN_NUMBER}")
+   print(run.url)
