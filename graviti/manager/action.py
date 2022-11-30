@@ -256,6 +256,7 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
                     "id": <str>,
                     "number": <int>,
                     "name": <str>,
+                    "workflow_id": <str>,
                     "status": <int>,
                     "arguments": <dict>,
                     "started_at": <str>,
@@ -277,6 +278,7 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, action: Action, response: Dict[str, Any]) -> None:
         self._action = action
+        self._workflow_id = response["workflow_id"]
         self.number = response["number"]
         self.name = response["name"]
         self.status = response["status"]
@@ -319,6 +321,33 @@ class Run(ReprMixin):  # pylint: disable=too-many-instance-attributes
             run_number=self.number,
         )
         return [Node(self, item) for item in response["nodes"]]
+
+    @property
+    def url(self) -> str:
+        """Get the url of the action run.
+
+        Returns:
+            The url of the action run.
+
+        Raises:
+            ValueError: When the access key format is wrong.
+
+        """
+        _action = self._action
+        _dataset = _action._dataset  # pylint: disable=protected-access
+        _workspace = _dataset.workspace
+
+        if _workspace.access_key.startswith("Accesskey-"):
+            url = "https://gas.graviti.cn"
+        elif _workspace.access_key.startswith("ACCESSKEY-"):
+            url = "https://gas.graviti.com"
+        else:
+            raise ValueError("Wrong accesskey format!")
+
+        return (
+            f"{url}/dataset/{_workspace.name}/{_dataset.name}/actions/{_action.name}/"
+            f"{self._workflow_id[len(_action.name)+1 :]}?fullId={self._workflow_id}"
+        )
 
 
 class RunManager:
