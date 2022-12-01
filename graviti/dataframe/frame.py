@@ -209,7 +209,7 @@ class DataFrame(Container):
 
         df = self._create(pt.record({key: _value.schema}), None, self._name)
         df._columns = {key: _value}
-        df[RECORD_KEY] = root._record_key  # type: ignore[index, assignment]
+        df[RECORD_KEY] = root._record_key  # type: ignore[assignment]
 
         assert isinstance(self.schema, pt.record)
         root.operations.extend((UpdateSchema(self.schema, df), UpdateData(df)))

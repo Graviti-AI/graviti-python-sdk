@@ -120,7 +120,7 @@ class PortexType:
             if kwarg is not ...:
                 kwargs[name] = param.load(kwarg, _imports)
 
-        type_ = class_(**kwargs)  # type: ignore[call-arg]
+        type_ = class_(**kwargs)
         return type_
 
     @classmethod
@@ -209,7 +209,9 @@ class PortexType:
             A YAML representation of the Portex type.
 
         """
-        return yaml.dump(self.to_pyobj(), sort_keys=False, allow_unicode=True)
+        return yaml.dump(  # type: ignore[no-any-return]
+            self.to_pyobj(), sort_keys=False, allow_unicode=True
+        )
 
     def to_pyarrow(self, *, _to_backend: bool = False) -> pa.DataType:
         """Convert the Portex type to the corresponding builtin PyArrow DataType.
