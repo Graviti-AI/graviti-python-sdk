@@ -12,11 +12,11 @@ from graviti.portex import STANDARD_URL, ExternalElementResgister
 class Audio(File):
     """This class represents local audio files."""
 
-    __slots__ = File.__slots__
+    __slots__ = ()
 
 
 @ExternalElementResgister(STANDARD_URL, "main", "file.Audio")
 class RemoteAudio(RemoteFile):
     """This class represents remote audio files."""
 
-    __slots__ = RemoteFile.__slots__
+    __slots__ = ()

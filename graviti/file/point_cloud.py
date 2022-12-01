@@ -12,7 +12,7 @@ from graviti.portex import STANDARD_URL, ExternalElementResgister
 class PointCloud(File):
     """This class represents local point cloud files."""
 
-    __slots__ = File.__slots__
+    __slots__ = ()
 
 
 @ExternalElementResgister(
@@ -24,4 +24,4 @@ class PointCloud(File):
 class RemotePointCloud(RemoteFile):
     """This class represents remote point cloud files."""
 
-    __slots__ = RemoteFile.__slots__
+    __slots__ = ()

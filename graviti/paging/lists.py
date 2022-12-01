@@ -134,7 +134,7 @@ class PagingListBase(Sequence[_T], ReprMixin):
         self._offsets = Offsets(length, length)
 
     def _make_index_nonnegative(self, index: int) -> int:
-        return index if index >= 0 else self.__len__() + index
+        return index if index >= 0 else len(self) + index
 
     def _get_slice_positive_step(  # pylint: disable=too-many-locals
         self, start: int, stop: int, step: int
@@ -302,7 +302,7 @@ class PagingListBase(Sequence[_T], ReprMixin):
             The sliced PagingList at the given slice.
 
         """
-        start, stop, step = index.indices(self.__len__())
+        start, stop, step = index.indices(len(self))
 
         pages = (
             self._get_slice_positive_step(start, stop, step)
@@ -343,7 +343,7 @@ class PagingListBase(Sequence[_T], ReprMixin):
             ValueError: When the input size mismatches with the slice size (when step != 1).
 
         """
-        start, stop, step = index.indices(self.__len__())
+        start, stop, step = index.indices(len(self))
 
         if step == 1:
             self._update_pages(start, stop, values._pages)  # pylint: disable=protected-access
@@ -380,7 +380,7 @@ class PagingListBase(Sequence[_T], ReprMixin):
             ValueError: When the assign input size mismatches with the slice size (when step != 1).
 
         """
-        start, stop, step = index.indices(self.__len__())
+        start, stop, step = index.indices(len(self))
 
         if step == 1:
             array = self._array_creator(values)

@@ -102,7 +102,7 @@ class File(FileBase):
 
     """
 
-    __slots__ = FileBase.__slots__ + ("_path", "_checksum")
+    __slots__ = ("_path", "_checksum")
 
     _BUFFER_SIZE = 65536
 
@@ -221,7 +221,7 @@ class RemoteFile(FileBase):
 
     """
 
-    __slots__ = FileBase.__slots__ + ("_object_permission",)
+    __slots__ = ("_object_permission",)
 
     def __init__(
         self,

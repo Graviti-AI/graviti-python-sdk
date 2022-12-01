@@ -30,7 +30,7 @@ class Image(File):
 
     """
 
-    __slots__ = File.__slots__ + ("_height", "_width")
+    __slots__ = ("_height", "_width")
 
     _height: int
     _width: int
@@ -98,7 +98,7 @@ class RemoteImage(RemoteFile):
 
     """
 
-    __slots__ = RemoteFile.__slots__ + ("_height", "_width")
+    __slots__ = ("_height", "_width")
 
     _height: int
     _width: int

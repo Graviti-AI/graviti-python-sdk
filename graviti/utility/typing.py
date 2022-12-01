@@ -21,6 +21,7 @@ SortParam = Union[str, Iterable[str], None]
 class NestedDict(Protocol[_K, _V]):
     """Typehint for nested dict."""
 
+    # pylint: disable=unnecessary-ellipsis
     def __contains__(self, key: _K) -> bool:
         ...
 

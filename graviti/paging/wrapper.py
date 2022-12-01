@@ -118,7 +118,7 @@ class StructScalarWrapper(ScalarWrapper):
 
     """
 
-    __slots__ = ("_scalar", "_wrappers")
+    __slots__ = ("_wrappers",)
 
     def __init__(self, scalar: pa.StructScalar) -> None:  # pylint: disable=super-init-not-called
         self._scalar = scalar
@@ -161,7 +161,7 @@ class StructArrayWrapper(ArrayWrapper):
 
     """
 
-    __slots__ = ("_array", "_wrappers")
+    __slots__ = ("_wrappers",)
 
     scalar = StructScalarWrapper
 
@@ -198,7 +198,7 @@ class ListScalarWrapper(ScalarWrapper):
 
     """
 
-    __slots__ = ("_scalar", "_wrapper")
+    __slots__ = ("_wrapper",)
 
     def __init__(self, scalar: pa.ListScalar) -> None:  # pylint: disable=super-init-not-called
         self._scalar = scalar
@@ -242,7 +242,7 @@ class ListArrayWrapper(ArrayWrapper):
 
     """
 
-    __slots__ = ("_array", "_wrapper")
+    __slots__ = ("_wrapper",)
 
     scalar = ListScalarWrapper
 

@@ -117,7 +117,6 @@ class Series:
     @classmethod
     def _construct(cls, indices_data: Dict[str, Any]) -> "Series":
         obj: Series = object.__new__(cls)
-        # pylint: disable=protected-access
         obj._indices_data = indices_data
         obj._indices = list(indices_data.keys())
         return obj

@@ -44,7 +44,6 @@ class Factory:
             _: The input arguments.
 
         """
-        ...
 
 
 class FrozenFieldsFactory(Factory):
