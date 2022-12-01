@@ -289,7 +289,7 @@ class Series(Container):
         return cls(array, schema)
 
     def _repr_folding(self) -> str:
-        return f"{self.__class__.__name__}({self.__len__()})"
+        return f"{self.__class__.__name__}({len(self)})"
 
     def _get_repr_indices(self) -> Iterable[int]:
         return islice(range(len(self)), MAX_REPR_ROWS)
@@ -313,7 +313,7 @@ class Series(Container):
         self._data.set_slice(key, value._data)  # pylint: disable=protected-access
 
     def _del_item_by_location(self, key: Union[int, slice]) -> None:
-        self._data.__delitem__(key)
+        del self._data[key]
 
     def _refresh_data_from_factory(self, factory: LazyFactoryBase, _: _OPM) -> None:
         self._data = factory.create_pyarrow_list()
@@ -489,7 +489,7 @@ class PyarrowSeries(Series):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_permission_manager: _OPM = None,  # pylint: disable=unused-argument
+        object_permission_manager: _OPM = None,
     ) -> _P:
         obj = cls._create(schema, root, name)
         obj._data = PyArrowPagingList.from_pyarrow(array)
@@ -619,7 +619,7 @@ class ArraySeries(Series):
                 scalar.values, _item_schema, object_permission_manager=object_permission_manager
             )
         )
-        self._item_schema = _item_schema  # pylint: disable=protected-access
+        self._item_schema = _item_schema
         self._object_permission_manager = object_permission_manager
 
     def _extract_paging_list(self: _A, values: _A) -> MappedPagingList[Any]:
@@ -812,7 +812,7 @@ class EnumSeries(PyarrowSeries):
         root: Optional["DataFrame"] = None,
         name: Tuple[str, ...] = (),
         *,
-        object_permission_manager: _OPM = None,  # pylint: disable=unused-argument
+        object_permission_manager: _OPM = None,
     ) -> _E:
         obj = cls._create(schema, root, name)
 

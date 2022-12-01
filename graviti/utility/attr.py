@@ -104,9 +104,9 @@ class _AttrDict(Generic[_T], ReprMixin):
         try:
             prefix, suffix = key.split(".", 1)
         except ValueError:
-            return self._externals.__getitem__(key)
+            return self._externals[key]
 
-        return self._internals.__getitem__(prefix).__getitem__(suffix)
+        return self._internals[prefix][suffix]
 
     def _repr_head(self) -> str:
         return AttrDict.__name__

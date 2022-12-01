@@ -142,11 +142,11 @@ class Fields(NameOrderedDict[PortexType], FrozenFields):  # type: ignore[misc]
         self._check_key(name)
         self._check_value(portex_type)
 
-        if self.__contains__(name):
+        if name in self:
             raise KeyError(f'"{name}" already exists in the Fields')
 
         self._keys.insert(index, name)
-        self._data.__setitem__(name, portex_type)
+        self._data[name] = portex_type
 
     def astype(self, name: str, portex_type: PortexType) -> None:
         """Convert the type of the field with the given name to the new PortexType.
@@ -161,10 +161,10 @@ class Fields(NameOrderedDict[PortexType], FrozenFields):  # type: ignore[misc]
         """
         self._check_value(portex_type)
 
-        if not self.__contains__(name):
+        if name not in self:
             raise KeyError(f'"{name}" does not exist in the Fields')
 
-        self._data.__setitem__(name, portex_type)
+        self._data[name] = portex_type
 
     def rename(self, old_name: str, new_name: str) -> None:
         """Rename the name of a field.
@@ -176,8 +176,8 @@ class Fields(NameOrderedDict[PortexType], FrozenFields):  # type: ignore[misc]
         """
         self._check_key(new_name)
 
-        self._data.__setitem__(new_name, self._data.pop(old_name))
-        self._keys.__setitem__(self._keys.index(old_name), new_name)
+        self._data[new_name] = self._data.pop(old_name)
+        self._keys[self._keys.index(old_name)] = new_name
 
     @classmethod
     def from_pyobj(
@@ -296,7 +296,7 @@ class ConnectedFields(MutableMapping[str, PortexType]):
 
     def _get_indices(self, index: int) -> Tuple[int, int]:
         if index < 0:
-            index = self.__len__() + index
+            index = len(self) + index
 
         offset = index
         for i, length in enumerate(map(len, self._sequence)):

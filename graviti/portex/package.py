@@ -215,7 +215,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
         """
         for key, value in other.items():
-            self.__setitem__(key, value)
+            self[key] = value
 
     @classmethod
     def from_pyobj(cls: Type[_I], content: List[Dict[str, Any]]) -> _I:
@@ -255,7 +255,7 @@ class Imports(Mapping[str, Type["PortexType"]], ReprMixin):
 
         """
         for key in subpackage:
-            if self.__contains__(key):
+            if key in self:
                 raise KeyError("Duplicate names")
 
         self._subpackages[subpackage.package.repo] = subpackage

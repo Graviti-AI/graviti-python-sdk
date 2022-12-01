@@ -129,7 +129,7 @@ repos:
           [
             "--min-public-methods=0",
             "--good-names=i,j,k,m,n,x,y,z,w,fp,df,tz",
-            "--disable=bad-continuation,cyclic-import",
+            "--disable=cyclic-import",
             "--generated-members=torch.*,cv2.*",
             "--min-similarity-lines=15",
             "--notes=FIXME,XXX",

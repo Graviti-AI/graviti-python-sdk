@@ -65,7 +65,7 @@ class PortexType:
 
         return f"{lines[0]})"
 
-    def _get_column_count(self) -> int:  # pylint: disable=no-self-use
+    def _get_column_count(self) -> int:
         """Get the total column count of the portex type.
 
         Returns:

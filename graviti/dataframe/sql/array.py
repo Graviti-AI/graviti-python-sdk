@@ -30,7 +30,7 @@ _COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
 _AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NA = TypeVar("_NA", bound="NumberArray")
 _EA = TypeVar("_EA", bound="EnumArray")
-_TAB = TypeVar("_TAB", bound="TemporalArrayBase")
+_TAB = TypeVar("_TAB", bound="TemporalArrayBase")  # pylint: disable=invalid-name
 
 
 class LogicalOperatorsMixin(ArrayContainer):

@@ -33,7 +33,7 @@ from graviti.utility.repr import ReprMixin, ReprType
 _T = TypeVar("_T")
 _K = TypeVar("_K")
 _V = TypeVar("_V")
-_V_co = TypeVar("_V_co", covariant=True)  # pylint: disable=invalid-name
+_V_co = TypeVar("_V_co", covariant=True)
 
 _UMS = TypeVar("_UMS", bound="UserMutableSequence[Any]")
 
@@ -359,7 +359,7 @@ class UserMutableMapping(MutableMapping[_K, _V], UserMapping[_K, _V]):
         ...
 
     @overload
-    def update(self, **kwargs: _V) -> None:  # pylint: disable=arguments-differ,signature-differs
+    def update(self, **kwargs: _V) -> None:  # pylint: disable=arguments-differ
         ...
 
     def update(self, __m: Any = (), **kwargs: _V) -> None:  # pylint: disable=arguments-differ
@@ -424,9 +424,9 @@ class FrozenNameOrderedDict(Mapping[str, _V], ReprMixin):
     def _setitem(self, key: str, value: _V) -> None:
         self._check_key(key)
 
-        if not self._data.__contains__(key):
+        if key not in self._data:
             self._keys.append(key)
-        self._data.__setitem__(key, value)
+        self._data[key] = value
 
 
 class NameOrderedDict(MutableMapping[str, _V], FrozenNameOrderedDict[_V]):

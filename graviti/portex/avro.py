@@ -2,7 +2,6 @@
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
-# pylint: disable=super-init-not-called
 # flake8: noqa
 
 """Code converting PyArrow schema to Avro Schema."""

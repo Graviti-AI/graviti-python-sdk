@@ -721,7 +721,7 @@ class DataFrame(Container):
             (3, 2)
 
         """
-        return (self.__len__(), len(self.schema))
+        return (len(self), len(self.schema))
 
     @property
     def size(self) -> int:
@@ -736,7 +736,7 @@ class DataFrame(Container):
             4
 
         """
-        return self.__len__() * len(self.schema)
+        return len(self) * len(self.schema)
 
     def keys(self) -> Iterator[str]:
         """Return a iterator of the column names in DataFrame.
@@ -745,7 +745,7 @@ class DataFrame(Container):
             The column name iterator.
 
         """
-        return self.schema.__iter__()
+        return iter(self.schema)
 
     def items(self) -> Iterator[Tuple[str, "Container"]]:
         """Return a iterator of the column names and the columns in DataFrame.
@@ -931,7 +931,7 @@ class DataFrame(Container):
                 "'extend' is not supported for the DataFrame which is a member of another DataFrame"
             )
         if not isinstance(values, DataFrame):
-            values = DataFrame._from_pyarrow_and_pydict(  # pylint: disable=protected-access
+            values = DataFrame._from_pyarrow_and_pydict(
                 *self._pylist_to_pyarrow_and_pydict(values, self.schema), self.schema
             )
         elif not self.schema.to_pyarrow().equals(values.schema.to_pyarrow()):

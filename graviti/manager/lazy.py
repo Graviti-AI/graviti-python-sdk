@@ -204,7 +204,7 @@ class InitPage(LazyPage[_T]):
 
     """
 
-    __slots__ = LazyPage.__slots__ + ("total_count",)
+    __slots__ = ("total_count",)
 
     def __init__(  # pylint: disable=super-init-not-called
         self, offset: int, limit: int, func: PagingGenerator[_T]

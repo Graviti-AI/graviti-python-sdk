@@ -43,7 +43,7 @@ class PageBase(Sequence[_T]):
         self.get_item = array.__getitem__  # type: ignore[assignment]
 
     def _iter(self) -> Iterator[_T]:  # pylint: disable=method-hidden
-        return self.get_array().__iter__()
+        return iter(self.get_array())
 
     def get_item(self, index: int) -> _T:  # pylint: disable=method-hidden
         """Return the item at the given index.
@@ -55,7 +55,7 @@ class PageBase(Sequence[_T]):
             The item at the given index.
 
         """
-        return self.get_array().__getitem__(index)
+        return self.get_array()[index]
 
     def get_slice(
         self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None

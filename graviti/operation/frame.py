@@ -35,7 +35,7 @@ _MAX_ITEMS = 60000
 class DataFrameOperation:
     """This class defines the basic method of the operation on a DataFrame."""
 
-    def get_file_count(self) -> int:  # pylint: disable=no-self-use
+    def get_file_count(self) -> int:
         """Get the file amount to be uploaded.
 
         Returns:
@@ -44,7 +44,7 @@ class DataFrameOperation:
         """
         return 0
 
-    def get_data_count(self) -> int:  # pylint: disable=no-self-use
+    def get_data_count(self) -> int:
         """Get the data amount to be uploaded.
 
         Returns:
@@ -179,7 +179,7 @@ class UpdateSchema(DataFrameOperation):
         self._data = data
         self.schema = schema
 
-    def execute(  # pylint: disable=unused-argument
+    def execute(
         self,
         dataset: "Dataset",
         *,
@@ -289,7 +289,7 @@ class DeleteData(DataFrameOperation):
     def __init__(self, record_keys: List[str]) -> None:
         self.record_keys = record_keys
 
-    def execute(  # pylint: disable=unused-argument
+    def execute(
         self,
         dataset: "Dataset",
         *,

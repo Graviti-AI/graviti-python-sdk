@@ -4,7 +4,7 @@
 
 # linter
 pre-commit
-pylint == 2.11.1
+pylint == 2.15.7
 
 # optional dependences
 pillow >= 2.0.0

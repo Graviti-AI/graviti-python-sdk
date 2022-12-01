@@ -87,7 +87,6 @@ class DataFrameILocIndexer:
             return
 
         if isinstance(key, int):
-            # pylint: disable=protected-access
             value = self.obj._from_pyarrow(
                 self.obj._pylist_to_pyarrow([value], self.obj.schema),
                 self.obj.schema,
@@ -187,7 +186,6 @@ class DataFrameLocIndexer:
             return
 
         if isinstance(key, int):
-            # pylint: disable=protected-access
             value = self.obj._from_pyarrow(
                 self.obj._pylist_to_pyarrow([value], self.obj.schema),
                 self.obj.schema,

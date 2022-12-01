@@ -25,7 +25,7 @@ _COM = TypeVar("_COM", bound="ComparisonOperatorsMixin")
 _AOM = TypeVar("_AOM", bound="ArithmeticOperatorsMixin")
 _NS = TypeVar("_NS", bound="NumberScalar")
 _ES = TypeVar("_ES", bound="EnumScalar")
-_TSB = TypeVar("_TSB", bound="TemporalScalarBase")
+_TSB = TypeVar("_TSB", bound="TemporalScalarBase")  # pylint: disable=invalid-name
 
 
 class LogicalOperatorsMixin(ScalarContainer):
