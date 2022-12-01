@@ -7,11 +7,12 @@
 
 from sys import maxsize
 from typing import (
-    AbstractSet,
     Any,
     Dict,
+    ItemsView,
     Iterable,
     Iterator,
+    KeysView,
     List,
     Mapping,
     MutableMapping,
@@ -25,11 +26,24 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Protocol
+
 from graviti.utility.repr import ReprMixin, ReprType
 
 _T = TypeVar("_T")
 _K = TypeVar("_K")
 _V = TypeVar("_V")
+_V_co = TypeVar("_V_co", covariant=True)  # pylint: disable=invalid-name
+
+_UMS = TypeVar("_UMS", bound="UserMutableSequence[Any]")
+
+
+class _SupportsKeysAndGetItem(Protocol[_K, _V_co]):
+    def keys(self) -> Iterable[_K]:  # pylint: disable=missing-function-docstring
+        ...
+
+    def __getitem__(self, __key: _K) -> _V_co:
+        ...
 
 
 class UserSequence(Sequence[_T], ReprMixin):
@@ -128,8 +142,9 @@ class UserMutableSequence(MutableSequence[_T], UserSequence[_T]):
     def __delitem__(self, index: Union[int, slice]) -> None:
         self._data.__delitem__(index)
 
-    def __iadd__(self, value: Iterable[_T]) -> MutableSequence[_T]:
-        return self._data.__iadd__(value)
+    def __iadd__(self: _UMS, value: Iterable[_T]) -> _UMS:
+        self._data.__iadd__(value)
+        return self
 
     def insert(self, index: int, value: _T) -> None:
         """Insert object before index.
@@ -235,7 +250,7 @@ class UserMapping(Mapping[_K, _V], ReprMixin):
         """
         return self._data.get(key, default)
 
-    def items(self) -> AbstractSet[Tuple[_K, _V]]:
+    def items(self) -> ItemsView[_K, _V]:
         """Return a new view of the (key, value) pairs in dict.
 
         Returns:
@@ -244,7 +259,7 @@ class UserMapping(Mapping[_K, _V], ReprMixin):
         """
         return self._data.items()
 
-    def keys(self) -> AbstractSet[_K]:
+    def keys(self) -> KeysView[_K]:
         """Return a new view of the keys in dict.
 
         Returns:
@@ -333,7 +348,7 @@ class UserMutableMapping(MutableMapping[_K, _V], UserMapping[_K, _V]):
 
     @overload
     def update(  # pylint: disable=arguments-differ
-        self, __m: Mapping[_K, _V], **kwargs: _V
+        self, __m: _SupportsKeysAndGetItem[_K, _V], **kwargs: _V
     ) -> None:
         ...
 

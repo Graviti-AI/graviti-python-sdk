@@ -71,8 +71,8 @@ class FrozenFieldsFactory(Factory):
         """
         return FrozenFields(
             filter(
-                bool,
-                (factory(kwargs) for factory in self._factories),  # type: ignore[misc]
+                bool,  # type: ignore[arg-type]  # https://github.com/python/mypy/issues/12682
+                (factory(kwargs) for factory in self._factories),
             )
         )
 
@@ -243,7 +243,7 @@ class TypeFactory(Factory):
             The applied Portex type.
 
         """
-        return self.class_(**self.transform_kwargs(kwargs))  # type: ignore[call-arg]
+        return self.class_(**self.transform_kwargs(kwargs))
 
     def transform_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Transform the keyword arguments to what the base type needs.
