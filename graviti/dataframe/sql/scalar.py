@@ -55,14 +55,14 @@ class LogicalOperatorsMixin(ScalarContainer):
 class EqualOperatorsMixin(ScalarContainer):
     """A mixin for dynamically implementing equal operators."""
 
-    _LOCICAL_OPERATORS: ClassVar[Dict[str, str]] = {
+    _EQUAL_OPERATORS: ClassVar[Dict[str, str]] = {
         "__eq__": "eq",
         "__ne__": "ne",
     }
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        for meth, opt in cls._LOCICAL_OPERATORS.items():
+        for meth, opt in cls._EQUAL_OPERATORS.items():
             setattr(cls, meth, cls._get_equal_operator(opt))
 
     @classmethod
