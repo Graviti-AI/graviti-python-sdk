@@ -382,6 +382,7 @@ def _separate_files(
         elif isinstance(file, RemoteFile):
             source_dataset = file._object_permission._dataset
             if source_dataset._id == target_dataset._id:
+                file._post_key = file._key
                 continue
 
             try:
