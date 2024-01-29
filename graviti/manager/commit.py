@@ -17,7 +17,7 @@ from graviti.openapi import (
     get_commit,
     get_commit_sheet,
     get_revision,
-    list_commit_data,
+    list_commit_records,
     list_commit_sheets,
     list_commits,
 )
@@ -92,9 +92,9 @@ class Commit(Sheets):  # pylint: disable=too-many-instance-attributes
     def _repr_head(self) -> str:
         return f'{self.__class__.__name__}("{self.commit_id}")'
 
-    def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+    def _list_records(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         _workspace = self._dataset.workspace
-        return list_commit_data(  # type: ignore[no-any-return]
+        return list_commit_records(  # type: ignore[no-any-return]
             _workspace.access_key,
             _workspace.url,
             _workspace.name,
@@ -103,7 +103,7 @@ class Commit(Sheets):  # pylint: disable=too-many-instance-attributes
             sheet=sheet_name,
             offset=offset,
             limit=limit,
-        )["data"]
+        )["records"]
 
     def _list_sheets(self) -> Dict[str, Any]:
         if self.commit_id is None:

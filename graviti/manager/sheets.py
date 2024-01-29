@@ -76,7 +76,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
     def __iter__(self) -> Iterator[str]:
         return self._get_data().__iter__()
 
-    def _list_data(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
+    def _list_records(self, offset: int, limit: int, sheet_name: str) -> Dict[str, Any]:
         raise NotImplementedError
 
     def _list_sheets(self) -> Dict[str, Any]:
@@ -94,7 +94,7 @@ class Sheets(MutableMapping[str, DataFrame], ReprMixin):
         factory = LazyLowerCaseFactory(
             sheet["record_count"],
             LIMIT,
-            partial(self._list_data, sheet_name=sheet_name),
+            partial(self._list_records, sheet_name=sheet_name),
             pa.struct([pa.field(RECORD_KEY, pa.string()), *patype]),
         )
         df = DataFrame._from_factory(  # pylint: disable=protected-access
